@@ -5,6 +5,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     jenisDebitur: '',
     kodeFasilitas: '',
     sektorEkonomi: '',
+    isKBK: false,
   });
 
   useEffect(() => {
@@ -96,6 +98,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       jenisDebitur: '',
       kodeFasilitas: '',
       sektorEkonomi: '',
+      isKBK: false,
     });
   };
 
@@ -123,6 +126,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       kodeFasilitas: formData.kodeFasilitas,
       sektorEkonomi: formData.sektorEkonomi,
       type,
+      isKBK: type === 'telihan' ? formData.isKBK : false,
     });
 
     setSuccessMessage(`PK Berhasil diinput dengan Nomor: ${newItem.nomorPK}`);
@@ -213,6 +217,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
             jenisDebitur: item.jenisDebitur,
             kodeFasilitas: item.kodeFasilitas,
             sektorEkonomi: item.sektorEkonomi,
+            isKBK: false,
           });
           setIsEditOpen(true); 
         }}
@@ -244,8 +249,18 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
             </div>
             <div className="space-y-2">
               <Label>Plafon <span className="text-destructive">*</span></Label>
-              <Input value={formData.plafon} onChange={handlePlafonChange} placeholder="1,000,000.00" />
+              <Input value={formData.plafon} onChange={handlePlafonChange} placeholder="1.000.000" />
             </div>
+            {type === 'telihan' && (
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="isKBK" 
+                  checked={formData.isKBK} 
+                  onCheckedChange={(checked) => setFormData({...formData, isKBK: checked === true})} 
+                />
+                <Label htmlFor="isKBK" className="cursor-pointer">KBK (Kredit Berbasis Komunitas)</Label>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Jangka Waktu</Label>
               <Input value={formData.jangkaWaktu} onChange={(e) => setFormData({...formData, jangkaWaktu: e.target.value})} placeholder="Contoh: 12 Bulan" />

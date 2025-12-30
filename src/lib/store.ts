@@ -306,7 +306,7 @@ const isSpecialKreditType = (jenisKredit: string): boolean => {
   return produkKredit === 'KMK-KBK' || produkKredit === 'KI-KBK';
 };
 
-export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'>): PK => {
+export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'> & { isKBK?: boolean }): PK => {
   const items = getPK().filter(s => s.type === data.type);
   const nomor = items.length + 1;
   const now = new Date();
@@ -315,15 +315,22 @@ export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'>):
   const produkKredit = getProdukKreditByJenisKredit(data.jenisKredit);
   
   let nomorPK: string;
-  if (isSpecialKreditType(data.jenisKredit)) {
-    // Format khusus: [nomor pk 3 digit]/[PRODUK KREDIT]/BPD-TLH atau ULM-TLH/[bulan romawi]/[tahun numerik]
+  
+  // PK Telihan dengan checkbox KBK dicentang
+  if (data.type === 'telihan' && data.isKBK) {
+    // Format KBK: [nomor pk 3 digit]/[PRODUK KREDIT]/BPD-TLH/[bulan romawi]/[tahun numerik]
+    nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  } else if (data.type === 'meranti' && isSpecialKreditType(data.jenisKredit)) {
+    // PK Meranti dengan jenis kredit khusus (KMK-KBK atau KI-KBK)
     nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
   } else {
     // Format standar: [Nomor PK 3 Digit]/[Jenis Debitur 3 Digit]/[Kode Fasilitas 2 digit]/[Sektor ekonomi 4 digit]/BPD-TLH atau ULM-TLH/[Tahun Numerik]
     nomorPK = `${nomorPadded}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${now.getFullYear()}`;
   }
   
-  const newItem: PK = { ...data, id: generateId(), nomor, nomorPK, createdAt: now };
+  // Remove isKBK from data before saving
+  const { isKBK, ...saveData } = data;
+  const newItem: PK = { ...saveData, id: generateId(), nomor, nomorPK, createdAt: now };
   saveToStorage(STORAGE_KEYS.pk, [...getPK(), newItem]);
   return newItem;
 };

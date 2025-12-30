@@ -1,15 +1,12 @@
-// Currency input formatting hook
+// Currency input formatting hook - formats as user types (e.g., 1,000,000)
 export const formatCurrencyInput = (value: string): string => {
   // Remove all non-digit characters
   const digits = value.replace(/\D/g, '');
   if (!digits) return '';
   
-  // Parse to number and format with thousand separators
+  // Parse to number and format with thousand separators (no decimals)
   const num = parseInt(digits, 10);
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
+  return new Intl.NumberFormat('id-ID').format(num);
 };
 
 export const parseCurrencyValue = (formatted: string): number => {
