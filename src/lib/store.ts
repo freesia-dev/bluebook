@@ -36,11 +36,11 @@ const defaultUsers: User[] = [
 
 // Default config data
 const defaultJenisKredit: JenisKredit[] = [
-  { id: '1', nama: 'Kredit Modal Kerja' },
-  { id: '2', nama: 'Kredit Investasi' },
-  { id: '3', nama: 'Kredit Konsumtif' },
-  { id: '4', nama: 'Kredit Multiguna' },
-  { id: '5', nama: 'KPR' },
+  { id: '1', nama: 'Kredit Modal Kerja', produkKredit: 'KMK Umum' },
+  { id: '2', nama: 'Kredit Investasi', produkKredit: 'KI Umum' },
+  { id: '3', nama: 'Kredit Konsumtif', produkKredit: 'KK Pegawai' },
+  { id: '4', nama: 'Kredit Multiguna', produkKredit: 'Multiguna' },
+  { id: '5', nama: 'KPR', produkKredit: 'KPR Griya' },
 ];
 
 const defaultJenisDebitur: JenisDebitur[] = [
@@ -315,14 +315,23 @@ export const deleteKKMPAK = (id: string): void => {
 
 // Config functions
 export const getJenisKredit = (): JenisKredit[] => getFromStorage(STORAGE_KEYS.jenisKredit, defaultJenisKredit);
-export const addJenisKredit = (nama: string): JenisKredit => {
+export const addJenisKredit = (data: Omit<JenisKredit, 'id'>): JenisKredit => {
   const items = getJenisKredit();
-  const newItem: JenisKredit = { id: generateId(), nama };
+  const newItem: JenisKredit = { id: generateId(), ...data };
   saveToStorage(STORAGE_KEYS.jenisKredit, [...items, newItem]);
   return newItem;
 };
+export const updateJenisKredit = (id: string, data: Partial<JenisKredit>): void => {
+  const items = getJenisKredit().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.jenisKredit, items);
+};
 export const deleteJenisKredit = (id: string): void => {
   saveToStorage(STORAGE_KEYS.jenisKredit, getJenisKredit().filter(item => item.id !== id));
+};
+export const bulkUpdateJenisKredit = (data: Omit<JenisKredit, 'id'>[]): void => {
+  const existingItems = getJenisKredit();
+  const newItems = data.map(d => ({ ...d, id: generateId() }));
+  saveToStorage(STORAGE_KEYS.jenisKredit, [...existingItems, ...newItems]);
 };
 
 export const getJenisDebitur = (): JenisDebitur[] => getFromStorage(STORAGE_KEYS.jenisDebitur, defaultJenisDebitur);
@@ -332,8 +341,17 @@ export const addJenisDebitur = (data: Omit<JenisDebitur, 'id'>): JenisDebitur =>
   saveToStorage(STORAGE_KEYS.jenisDebitur, [...items, newItem]);
   return newItem;
 };
+export const updateJenisDebitur = (id: string, data: Partial<JenisDebitur>): void => {
+  const items = getJenisDebitur().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.jenisDebitur, items);
+};
 export const deleteJenisDebitur = (id: string): void => {
   saveToStorage(STORAGE_KEYS.jenisDebitur, getJenisDebitur().filter(item => item.id !== id));
+};
+export const bulkUpdateJenisDebitur = (data: Omit<JenisDebitur, 'id'>[]): void => {
+  const existingItems = getJenisDebitur();
+  const newItems = data.map(d => ({ ...d, id: generateId() }));
+  saveToStorage(STORAGE_KEYS.jenisDebitur, [...existingItems, ...newItems]);
 };
 
 export const getKodeFasilitas = (): KodeFasilitas[] => getFromStorage(STORAGE_KEYS.kodeFasilitas, defaultKodeFasilitas);
@@ -343,8 +361,17 @@ export const addKodeFasilitas = (data: Omit<KodeFasilitas, 'id'>): KodeFasilitas
   saveToStorage(STORAGE_KEYS.kodeFasilitas, [...items, newItem]);
   return newItem;
 };
+export const updateKodeFasilitas = (id: string, data: Partial<KodeFasilitas>): void => {
+  const items = getKodeFasilitas().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.kodeFasilitas, items);
+};
 export const deleteKodeFasilitas = (id: string): void => {
   saveToStorage(STORAGE_KEYS.kodeFasilitas, getKodeFasilitas().filter(item => item.id !== id));
+};
+export const bulkUpdateKodeFasilitas = (data: Omit<KodeFasilitas, 'id'>[]): void => {
+  const existingItems = getKodeFasilitas();
+  const newItems = data.map(d => ({ ...d, id: generateId() }));
+  saveToStorage(STORAGE_KEYS.kodeFasilitas, [...existingItems, ...newItems]);
 };
 
 export const getSektorEkonomi = (): SektorEkonomi[] => getFromStorage(STORAGE_KEYS.sektorEkonomi, defaultSektorEkonomi);
@@ -354,6 +381,21 @@ export const addSektorEkonomi = (data: Omit<SektorEkonomi, 'id'>): SektorEkonomi
   saveToStorage(STORAGE_KEYS.sektorEkonomi, [...items, newItem]);
   return newItem;
 };
+export const updateSektorEkonomi = (id: string, data: Partial<SektorEkonomi>): void => {
+  const items = getSektorEkonomi().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.sektorEkonomi, items);
+};
 export const deleteSektorEkonomi = (id: string): void => {
   saveToStorage(STORAGE_KEYS.sektorEkonomi, getSektorEkonomi().filter(item => item.id !== id));
+};
+export const bulkUpdateSektorEkonomi = (data: Omit<SektorEkonomi, 'id'>[]): void => {
+  const existingItems = getSektorEkonomi();
+  const newItems = data.map(d => ({ ...d, id: generateId() }));
+  saveToStorage(STORAGE_KEYS.sektorEkonomi, [...existingItems, ...newItems]);
+};
+
+// User update function
+export const updateUser = (id: string, data: Partial<User>): void => {
+  const items = getUsers().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.users, items);
 };

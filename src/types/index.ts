@@ -93,6 +93,7 @@ export interface KKMPAK {
 export interface JenisKredit {
   id: string;
   nama: string;
+  produkKredit: string;
 }
 
 export interface JenisDebitur {
