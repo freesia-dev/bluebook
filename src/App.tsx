@@ -12,6 +12,7 @@ import SuratKeluar from "./pages/SuratKeluar";
 import SPPKPage from "./pages/agenda-kredit/SPPKPage";
 import PKPage from "./pages/agenda-kredit/PKPage";
 import KKMPAKPage from "./pages/agenda-kredit/KKMPAKPage";
+import AgendaKreditPage from "./pages/agenda-kredit/AgendaKreditPage";
 import UsersPage from "./pages/konfigurasi/UsersPage";
 import ConfigPage from "./pages/konfigurasi/ConfigPage";
 import About from "./pages/About";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/surat-masuk" element={<SuratMasuk />} />
             <Route path="/surat-keluar" element={<SuratKeluar />} />
+            <Route path="/agenda-kredit/agenda-kredit" element={<AgendaKreditPage />} />
             <Route path="/agenda-kredit/sppk-telihan" element={<SPPKPage type="telihan" title="SPPK Telihan" />} />
             <Route path="/agenda-kredit/sppk-meranti" element={<SPPKPage type="meranti" title="SPPK Meranti" />} />
             <Route path="/agenda-kredit/pk-telihan" element={<PKPage type="telihan" title="PK Telihan" />} />

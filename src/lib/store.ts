@@ -1,6 +1,6 @@
 import { 
   User, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
-  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi
+  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry
 } from '@/types';
 
 // Helper to generate IDs
@@ -130,6 +130,7 @@ const STORAGE_KEYS = {
   users: 'bluebook_users',
   suratMasuk: 'bluebook_surat_masuk',
   suratKeluar: 'bluebook_surat_keluar',
+  agendaKreditEntry: 'bluebook_agenda_kredit_entry',
   sppk: 'bluebook_sppk',
   pk: 'bluebook_pk',
   kkmpak: 'bluebook_kkmpak',
@@ -163,6 +164,9 @@ export const initializeStorage = () => {
   }
   if (!localStorage.getItem(STORAGE_KEYS.suratKeluar)) {
     saveToStorage(STORAGE_KEYS.suratKeluar, sampleSuratKeluar);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.agendaKreditEntry)) {
+    saveToStorage(STORAGE_KEYS.agendaKreditEntry, []);
   }
   if (!localStorage.getItem(STORAGE_KEYS.sppk)) {
     saveToStorage(STORAGE_KEYS.sppk, sampleSPPK);
@@ -245,6 +249,25 @@ export const updateSuratKeluar = (id: string, data: Partial<SuratKeluar>): void 
 };
 export const deleteSuratKeluar = (id: string): void => {
   saveToStorage(STORAGE_KEYS.suratKeluar, getSuratKeluar().filter(item => item.id !== id));
+};
+
+// Agenda Kredit Entry functions (format: XXX/YYYY)
+export const getAgendaKreditEntry = (): AgendaKreditEntry[] => getFromStorage(STORAGE_KEYS.agendaKreditEntry, []);
+export const addAgendaKreditEntry = (data: Omit<AgendaKreditEntry, 'id' | 'nomor' | 'nomorAgenda' | 'createdAt'>): AgendaKreditEntry => {
+  const items = getAgendaKreditEntry();
+  const nomor = items.length + 1;
+  const now = new Date();
+  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${now.getFullYear()}`;
+  const newItem: AgendaKreditEntry = { ...data, id: generateId(), nomor, nomorAgenda, createdAt: now };
+  saveToStorage(STORAGE_KEYS.agendaKreditEntry, [...items, newItem]);
+  return newItem;
+};
+export const updateAgendaKreditEntry = (id: string, data: Partial<AgendaKreditEntry>): void => {
+  const items = getAgendaKreditEntry().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.agendaKreditEntry, items);
+};
+export const deleteAgendaKreditEntry = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.agendaKreditEntry, getAgendaKreditEntry().filter(item => item.id !== id));
 };
 
 // SPPK functions
