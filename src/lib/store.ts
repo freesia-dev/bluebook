@@ -293,16 +293,15 @@ export const deleteSPPK = (id: string): void => {
 // PK functions
 export const getPK = (): PK[] => getFromStorage(STORAGE_KEYS.pk, []);
 
-// Helper to get produkKredit from jenisKredit
-const getProdukKreditByJenisKredit = (jenisKredit: string): string => {
-  const jenisKreditList = getJenisKredit();
-  const found = jenisKreditList.find(jk => jk.nama === jenisKredit);
-  return found?.produkKredit || '';
+// Helper to get produkKredit from jenisKredit (format: "JENIS - PRODUK")
+const getProdukKreditFromValue = (jenisKredit: string): string => {
+  const parts = jenisKredit.split(' - ');
+  return parts.length > 1 ? parts[1] : '';
 };
 
 // Check if jenis kredit is special (KMK-KBK or KI-KBK)
 const isSpecialKreditType = (jenisKredit: string): boolean => {
-  const produkKredit = getProdukKreditByJenisKredit(jenisKredit);
+  const produkKredit = getProdukKreditFromValue(jenisKredit);
   return produkKredit === 'KMK-KBK' || produkKredit === 'KI-KBK';
 };
 
@@ -312,7 +311,7 @@ export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'> &
   const now = new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
   const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'ULM-TLH';
-  const produkKredit = getProdukKreditByJenisKredit(data.jenisKredit);
+  const produkKredit = getProdukKreditFromValue(data.jenisKredit);
   
   let nomorPK: string;
   
@@ -349,7 +348,7 @@ export const addKKMPAK = (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 'nomor
   const nomor = items.length + 1;
   const now = new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
-  const produkKredit = getProdukKreditByJenisKredit(data.jenisKredit);
+  const produkKredit = getProdukKreditFromValue(data.jenisKredit);
   
   let nomorKK: string;
   let nomorMPAK: string;

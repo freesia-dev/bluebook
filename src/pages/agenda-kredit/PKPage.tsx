@@ -243,7 +243,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
               <Select value={formData.jenisKredit} onValueChange={(v) => setFormData({...formData, jenisKredit: v})}>
                 <SelectTrigger><SelectValue placeholder="Pilih jenis kredit" /></SelectTrigger>
                 <SelectContent>
-                  {jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>))}
+                  {jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={`${jk.nama} - ${jk.produkKredit}`}>{jk.nama} - {jk.produkKredit}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
@@ -329,7 +329,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
             <div className="space-y-2"><Label>Jenis Kredit</Label>
               <Select value={formData.jenisKredit} onValueChange={(v) => setFormData({...formData, jenisKredit: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>))}</SelectContent>
+                <SelectContent>{jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={`${jk.nama} - ${jk.produkKredit}`}>{jk.nama} - {jk.produkKredit}</SelectItem>))}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2"><Label>Plafon</Label><Input value={formData.plafon} onChange={handlePlafonChange} /></div>
