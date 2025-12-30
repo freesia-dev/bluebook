@@ -1,0 +1,359 @@
+import { 
+  User, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
+  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi
+} from '@/types';
+
+// Helper to generate IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Roman numerals helper
+export const toRomanMonth = (month: number): string => {
+  const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+  return roman[month];
+};
+
+// Default admin user
+const defaultUsers: User[] = [
+  {
+    id: '1',
+    nama: 'Administrator',
+    username: 'admin',
+    password: 'admin123',
+    role: 'admin',
+    keterangan: 'Admin Utama Sistem',
+    createdAt: new Date(),
+  },
+  {
+    id: '2',
+    nama: 'User Demo',
+    username: 'user',
+    password: 'user123',
+    role: 'user',
+    keterangan: 'User Demo',
+    createdAt: new Date(),
+  },
+];
+
+// Default config data
+const defaultJenisKredit: JenisKredit[] = [
+  { id: '1', nama: 'Kredit Modal Kerja' },
+  { id: '2', nama: 'Kredit Investasi' },
+  { id: '3', nama: 'Kredit Konsumtif' },
+  { id: '4', nama: 'Kredit Multiguna' },
+  { id: '5', nama: 'KPR' },
+];
+
+const defaultJenisDebitur: JenisDebitur[] = [
+  { id: '1', kode: '001', keterangan: 'Perorangan' },
+  { id: '2', kode: '002', keterangan: 'Badan Usaha' },
+  { id: '3', kode: '003', keterangan: 'Koperasi' },
+];
+
+const defaultKodeFasilitas: KodeFasilitas[] = [
+  { id: '1', kode: '01', keterangan: 'Rekening Koran' },
+  { id: '2', kode: '02', keterangan: 'Demand Loan' },
+  { id: '3', kode: '03', keterangan: 'Fixed Loan' },
+];
+
+const defaultSektorEkonomi: SektorEkonomi[] = [
+  { id: '1', kode: '0101', keterangan: 'Pertanian' },
+  { id: '2', kode: '0201', keterangan: 'Pertambangan' },
+  { id: '3', kode: '0301', keterangan: 'Industri Pengolahan' },
+  { id: '4', kode: '0401', keterangan: 'Perdagangan' },
+];
+
+// Sample data
+const sampleSuratMasuk: SuratMasuk[] = [
+  {
+    id: '1',
+    nomor: 1,
+    nomorAgenda: '001/D-1/BPD-TLH/XII/2024',
+    kodeSurat: 'D-1',
+    nomorSuratMasuk: 'SM-2024/001',
+    namaPengirim: 'PT Bank Mandiri',
+    perihal: 'Permohonan Kerjasama',
+    tujuanDisposisi: 'Kepala Cabang',
+    status: 'Sudah Disposisi',
+    keterangan: '-',
+    userInput: 'admin',
+    createdAt: new Date('2024-12-20'),
+  },
+  {
+    id: '2',
+    nomor: 2,
+    nomorAgenda: '002/F-3/BPD-TLH/XII/2024',
+    kodeSurat: 'F-3',
+    nomorSuratMasuk: 'SM-2024/002',
+    namaPengirim: 'Kantor Pusat',
+    perihal: 'Perubahan Kebijakan Kredit',
+    tujuanDisposisi: 'Kabag Kredit',
+    status: 'Belum Disposisi',
+    keterangan: 'Segera ditindaklanjuti',
+    userInput: 'admin',
+    createdAt: new Date('2024-12-21'),
+  },
+];
+
+const sampleSuratKeluar: SuratKeluar[] = [
+  {
+    id: '1',
+    nomor: 1,
+    nomorAgenda: '001/E-1/BPD-TLH/XII/2024',
+    kodeSurat: 'E-1',
+    namaPenerima: 'PT Telkom Indonesia',
+    perihal: 'Undangan Rapat Kerjasama',
+    tujuanSurat: 'Jl. Jend. Sudirman No. 1',
+    status: 'Sudah Dikirim',
+    keterangan: '-',
+    userInput: 'admin',
+    createdAt: new Date('2024-12-20'),
+  },
+];
+
+const sampleSPPK: SPPK[] = [
+  {
+    id: '1',
+    nomor: 1,
+    nomorSPPK: '001/D-1/BPD-TLH/XII/2024',
+    namaDebitur: 'Ahmad Sulaiman',
+    jenisKredit: 'Kredit Modal Kerja',
+    plafon: 500000000,
+    jangkaWaktu: '12 Bulan',
+    marketing: 'BAP',
+    type: 'telihan',
+    createdAt: new Date('2024-12-20'),
+  },
+];
+
+// Storage functions
+const STORAGE_KEYS = {
+  users: 'bluebook_users',
+  suratMasuk: 'bluebook_surat_masuk',
+  suratKeluar: 'bluebook_surat_keluar',
+  sppk: 'bluebook_sppk',
+  pk: 'bluebook_pk',
+  kkmpak: 'bluebook_kkmpak',
+  jenisKredit: 'bluebook_jenis_kredit',
+  jenisDebitur: 'bluebook_jenis_debitur',
+  kodeFasilitas: 'bluebook_kode_fasilitas',
+  sektorEkonomi: 'bluebook_sektor_ekonomi',
+  currentUser: 'bluebook_current_user',
+};
+
+const getFromStorage = <T>(key: string, defaultValue: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+const saveToStorage = <T>(key: string, value: T): void => {
+  localStorage.setItem(key, JSON.stringify(value));
+};
+
+// Initialize storage with defaults
+export const initializeStorage = () => {
+  if (!localStorage.getItem(STORAGE_KEYS.users)) {
+    saveToStorage(STORAGE_KEYS.users, defaultUsers);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.suratMasuk)) {
+    saveToStorage(STORAGE_KEYS.suratMasuk, sampleSuratMasuk);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.suratKeluar)) {
+    saveToStorage(STORAGE_KEYS.suratKeluar, sampleSuratKeluar);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.sppk)) {
+    saveToStorage(STORAGE_KEYS.sppk, sampleSPPK);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.pk)) {
+    saveToStorage(STORAGE_KEYS.pk, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.kkmpak)) {
+    saveToStorage(STORAGE_KEYS.kkmpak, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.jenisKredit)) {
+    saveToStorage(STORAGE_KEYS.jenisKredit, defaultJenisKredit);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.jenisDebitur)) {
+    saveToStorage(STORAGE_KEYS.jenisDebitur, defaultJenisDebitur);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.kodeFasilitas)) {
+    saveToStorage(STORAGE_KEYS.kodeFasilitas, defaultKodeFasilitas);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.sektorEkonomi)) {
+    saveToStorage(STORAGE_KEYS.sektorEkonomi, defaultSektorEkonomi);
+  }
+};
+
+// User functions
+export const getUsers = (): User[] => getFromStorage(STORAGE_KEYS.users, defaultUsers);
+export const addUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
+  const users = getUsers();
+  const newUser: User = { ...user, id: generateId(), createdAt: new Date() };
+  saveToStorage(STORAGE_KEYS.users, [...users, newUser]);
+  return newUser;
+};
+export const deleteUser = (id: string): void => {
+  const users = getUsers().filter(u => u.id !== id);
+  saveToStorage(STORAGE_KEYS.users, users);
+};
+export const getCurrentUser = (): User | null => getFromStorage(STORAGE_KEYS.currentUser, null);
+export const setCurrentUser = (user: User | null): void => saveToStorage(STORAGE_KEYS.currentUser, user);
+export const login = (username: string, password: string): User | null => {
+  const users = getUsers();
+  const user = users.find(u => u.username === username && u.password === password);
+  if (user) setCurrentUser(user);
+  return user || null;
+};
+export const logout = (): void => setCurrentUser(null);
+
+// Surat Masuk functions
+export const getSuratMasuk = (): SuratMasuk[] => getFromStorage(STORAGE_KEYS.suratMasuk, []);
+export const addSuratMasuk = (data: Omit<SuratMasuk, 'id' | 'nomor' | 'nomorAgenda' | 'createdAt'>): SuratMasuk => {
+  const items = getSuratMasuk();
+  const nomor = items.length + 1;
+  const now = new Date();
+  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  const newItem: SuratMasuk = { ...data, id: generateId(), nomor, nomorAgenda, createdAt: now };
+  saveToStorage(STORAGE_KEYS.suratMasuk, [...items, newItem]);
+  return newItem;
+};
+export const updateSuratMasuk = (id: string, data: Partial<SuratMasuk>): void => {
+  const items = getSuratMasuk().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.suratMasuk, items);
+};
+export const deleteSuratMasuk = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.suratMasuk, getSuratMasuk().filter(item => item.id !== id));
+};
+
+// Surat Keluar functions
+export const getSuratKeluar = (): SuratKeluar[] => getFromStorage(STORAGE_KEYS.suratKeluar, []);
+export const addSuratKeluar = (data: Omit<SuratKeluar, 'id' | 'nomor' | 'nomorAgenda' | 'createdAt'>): SuratKeluar => {
+  const items = getSuratKeluar();
+  const nomor = items.length + 1;
+  const now = new Date();
+  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  const newItem: SuratKeluar = { ...data, id: generateId(), nomor, nomorAgenda, createdAt: now };
+  saveToStorage(STORAGE_KEYS.suratKeluar, [...items, newItem]);
+  return newItem;
+};
+export const updateSuratKeluar = (id: string, data: Partial<SuratKeluar>): void => {
+  const items = getSuratKeluar().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.suratKeluar, items);
+};
+export const deleteSuratKeluar = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.suratKeluar, getSuratKeluar().filter(item => item.id !== id));
+};
+
+// SPPK functions
+export const getSPPK = (): SPPK[] => getFromStorage(STORAGE_KEYS.sppk, []);
+export const addSPPK = (data: Omit<SPPK, 'id' | 'nomor' | 'nomorSPPK' | 'createdAt'>): SPPK => {
+  const items = getSPPK().filter(s => s.type === data.type);
+  const nomor = items.length + 1;
+  const now = new Date();
+  const prefix = data.type === 'telihan' ? 'D-1/BPD-TLH' : 'SPPK/ULM-TLH';
+  const nomorSPPK = `${String(nomor).padStart(3, '0')}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  const newItem: SPPK = { ...data, id: generateId(), nomor, nomorSPPK, createdAt: now };
+  saveToStorage(STORAGE_KEYS.sppk, [...getSPPK(), newItem]);
+  return newItem;
+};
+export const updateSPPK = (id: string, data: Partial<SPPK>): void => {
+  const items = getSPPK().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.sppk, items);
+};
+export const deleteSPPK = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.sppk, getSPPK().filter(item => item.id !== id));
+};
+
+// PK functions
+export const getPK = (): PK[] => getFromStorage(STORAGE_KEYS.pk, []);
+export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'>): PK => {
+  const items = getPK().filter(s => s.type === data.type);
+  const nomor = items.length + 1;
+  const now = new Date();
+  const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'ULM-TLH';
+  const nomorPK = `${String(nomor).padStart(3, '0')}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${toRomanMonth(now.getMonth())}`;
+  const newItem: PK = { ...data, id: generateId(), nomor, nomorPK, createdAt: now };
+  saveToStorage(STORAGE_KEYS.pk, [...getPK(), newItem]);
+  return newItem;
+};
+export const updatePK = (id: string, data: Partial<PK>): void => {
+  const items = getPK().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.pk, items);
+};
+export const deletePK = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.pk, getPK().filter(item => item.id !== id));
+};
+
+// KK & MPAK functions
+export const getKKMPAK = (): KKMPAK[] => getFromStorage(STORAGE_KEYS.kkmpak, []);
+export const addKKMPAK = (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 'nomorMPAK' | 'createdAt'>): KKMPAK => {
+  const items = getKKMPAK().filter(s => s.type === data.type);
+  const nomor = items.length + 1;
+  const now = new Date();
+  const nomorPadded = String(nomor).padStart(3, '0');
+  const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'UM-143';
+  const nomorKK = data.type === 'telihan' 
+    ? `${nomorPadded}/KK/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`
+    : `${nomorPadded}/${prefix}/${toRomanMonth(now.getMonth())}/${data.sektorEkonomi}/${data.jenisKredit}/${now.getFullYear()}`;
+  const nomorMPAK = data.type === 'telihan'
+    ? `${nomorPadded}/MPAK/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`
+    : nomorKK;
+  const newItem: KKMPAK = { ...data, id: generateId(), nomor, nomorKK, nomorMPAK, createdAt: now };
+  saveToStorage(STORAGE_KEYS.kkmpak, [...getKKMPAK(), newItem]);
+  return newItem;
+};
+export const updateKKMPAK = (id: string, data: Partial<KKMPAK>): void => {
+  const items = getKKMPAK().map(item => item.id === id ? { ...item, ...data } : item);
+  saveToStorage(STORAGE_KEYS.kkmpak, items);
+};
+export const deleteKKMPAK = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.kkmpak, getKKMPAK().filter(item => item.id !== id));
+};
+
+// Config functions
+export const getJenisKredit = (): JenisKredit[] => getFromStorage(STORAGE_KEYS.jenisKredit, defaultJenisKredit);
+export const addJenisKredit = (nama: string): JenisKredit => {
+  const items = getJenisKredit();
+  const newItem: JenisKredit = { id: generateId(), nama };
+  saveToStorage(STORAGE_KEYS.jenisKredit, [...items, newItem]);
+  return newItem;
+};
+export const deleteJenisKredit = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.jenisKredit, getJenisKredit().filter(item => item.id !== id));
+};
+
+export const getJenisDebitur = (): JenisDebitur[] => getFromStorage(STORAGE_KEYS.jenisDebitur, defaultJenisDebitur);
+export const addJenisDebitur = (data: Omit<JenisDebitur, 'id'>): JenisDebitur => {
+  const items = getJenisDebitur();
+  const newItem: JenisDebitur = { ...data, id: generateId() };
+  saveToStorage(STORAGE_KEYS.jenisDebitur, [...items, newItem]);
+  return newItem;
+};
+export const deleteJenisDebitur = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.jenisDebitur, getJenisDebitur().filter(item => item.id !== id));
+};
+
+export const getKodeFasilitas = (): KodeFasilitas[] => getFromStorage(STORAGE_KEYS.kodeFasilitas, defaultKodeFasilitas);
+export const addKodeFasilitas = (data: Omit<KodeFasilitas, 'id'>): KodeFasilitas => {
+  const items = getKodeFasilitas();
+  const newItem: KodeFasilitas = { ...data, id: generateId() };
+  saveToStorage(STORAGE_KEYS.kodeFasilitas, [...items, newItem]);
+  return newItem;
+};
+export const deleteKodeFasilitas = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.kodeFasilitas, getKodeFasilitas().filter(item => item.id !== id));
+};
+
+export const getSektorEkonomi = (): SektorEkonomi[] => getFromStorage(STORAGE_KEYS.sektorEkonomi, defaultSektorEkonomi);
+export const addSektorEkonomi = (data: Omit<SektorEkonomi, 'id'>): SektorEkonomi => {
+  const items = getSektorEkonomi();
+  const newItem: SektorEkonomi = { ...data, id: generateId() };
+  saveToStorage(STORAGE_KEYS.sektorEkonomi, [...items, newItem]);
+  return newItem;
+};
+export const deleteSektorEkonomi = (id: string): void => {
+  saveToStorage(STORAGE_KEYS.sektorEkonomi, getSektorEkonomi().filter(item => item.id !== id));
+};
