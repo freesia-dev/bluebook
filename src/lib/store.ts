@@ -292,12 +292,37 @@ export const deleteSPPK = (id: string): void => {
 
 // PK functions
 export const getPK = (): PK[] => getFromStorage(STORAGE_KEYS.pk, []);
+
+// Helper to get produkKredit from jenisKredit
+const getProdukKreditByJenisKredit = (jenisKredit: string): string => {
+  const jenisKreditList = getJenisKredit();
+  const found = jenisKreditList.find(jk => jk.nama === jenisKredit);
+  return found?.produkKredit || '';
+};
+
+// Check if jenis kredit is special (KMK-KBK or KI-KBK)
+const isSpecialKreditType = (jenisKredit: string): boolean => {
+  const produkKredit = getProdukKreditByJenisKredit(jenisKredit);
+  return produkKredit === 'KMK-KBK' || produkKredit === 'KI-KBK';
+};
+
 export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'>): PK => {
   const items = getPK().filter(s => s.type === data.type);
   const nomor = items.length + 1;
   const now = new Date();
+  const nomorPadded = String(nomor).padStart(3, '0');
   const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'ULM-TLH';
-  const nomorPK = `${String(nomor).padStart(3, '0')}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${toRomanMonth(now.getMonth())}`;
+  const produkKredit = getProdukKreditByJenisKredit(data.jenisKredit);
+  
+  let nomorPK: string;
+  if (isSpecialKreditType(data.jenisKredit)) {
+    // Format khusus: [nomor pk 3 digit]/[PRODUK KREDIT]/BPD-TLH atau ULM-TLH/[bulan romawi]/[tahun numerik]
+    nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  } else {
+    // Format standar: [Nomor PK 3 Digit]/[Jenis Debitur 3 Digit]/[Kode Fasilitas 2 digit]/[Sektor ekonomi 4 digit]/BPD-TLH atau ULM-TLH/[Tahun Numerik]
+    nomorPK = `${nomorPadded}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${now.getFullYear()}`;
+  }
+  
   const newItem: PK = { ...data, id: generateId(), nomor, nomorPK, createdAt: now };
   saveToStorage(STORAGE_KEYS.pk, [...getPK(), newItem]);
   return newItem;
@@ -317,13 +342,21 @@ export const addKKMPAK = (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 'nomor
   const nomor = items.length + 1;
   const now = new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
-  const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'UM-143';
-  const nomorKK = data.type === 'telihan' 
-    ? `${nomorPadded}/KK/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`
-    : `${nomorPadded}/${prefix}/${toRomanMonth(now.getMonth())}/${data.sektorEkonomi}/${data.jenisKredit}/${now.getFullYear()}`;
-  const nomorMPAK = data.type === 'telihan'
-    ? `${nomorPadded}/MPAK/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`
-    : nomorKK;
+  const produkKredit = getProdukKreditByJenisKredit(data.jenisKredit);
+  
+  let nomorKK: string;
+  let nomorMPAK: string;
+  
+  if (data.type === 'telihan') {
+    // Format Telihan: KK dan MPAK terpisah
+    nomorKK = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+    nomorMPAK = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  } else {
+    // Format Meranti: [nomor agenda 3 digit]/[bulan romawi]/[sektor ekonomi]/[PRODUK KREDIT]/2025
+    nomorKK = `${nomorPadded}/${toRomanMonth(now.getMonth())}/${data.sektorEkonomi}/${produkKredit}/${now.getFullYear()}`;
+    nomorMPAK = nomorKK;
+  }
+  
   const newItem: KKMPAK = { ...data, id: generateId(), nomor, nomorKK, nomorMPAK, createdAt: now };
   saveToStorage(STORAGE_KEYS.kkmpak, [...getKKMPAK(), newItem]);
   return newItem;

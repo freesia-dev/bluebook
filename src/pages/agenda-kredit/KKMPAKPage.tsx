@@ -30,13 +30,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { KKMPAK } from '@/types';
+import { KKMPAK, JenisKredit } from '@/types';
 import { 
   getKKMPAK, addKKMPAK, updateKKMPAK, deleteKKMPAK, 
   getJenisKredit, getJenisDebitur, getKodeFasilitas, getSektorEkonomi 
 } from '@/lib/store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
 import { CheckCircle2 } from 'lucide-react';
 
 interface KKMPAKPageProps {
@@ -47,7 +48,7 @@ interface KKMPAKPageProps {
 const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
   const [data, setData] = useState<KKMPAK[]>([]);
-  const [jenisKreditOptions, setJenisKreditOptions] = useState<{id: string; nama: string}[]>([]);
+  const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
   const [kodeFasilitasOptions, setKodeFasilitasOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
   const [sektorEkonomiOptions, setSektorEkonomiOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
@@ -98,6 +99,11 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     });
   };
 
+  const handlePlafonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setFormData({...formData, plafon: formatted});
+  };
+
   const handleAdd = () => {
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({ title: 'Validasi Error', description: 'Harap isi semua field yang wajib.', variant: 'destructive' });
@@ -107,7 +113,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     const newItem = addKKMPAK({
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
-      plafon: parseFloat(formData.plafon.replace(/\D/g, '')),
+      plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       jenisDebitur: formData.jenisDebitur,
       kodeFasilitas: formData.kodeFasilitas,
@@ -132,7 +138,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     updateKKMPAK(selectedItem.id, {
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
-      plafon: parseFloat(formData.plafon.replace(/\D/g, '')),
+      plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       jenisDebitur: formData.jenisDebitur,
       kodeFasilitas: formData.kodeFasilitas,
@@ -172,8 +178,9 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     toast({ title: 'Export Berhasil', description: 'Data berhasil diekspor.' });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+  const getJenisKreditLabel = (nama: string) => {
+    const jk = jenisKreditOptions.find(j => j.nama === nama);
+    return jk ? `${jk.nama} - ${jk.produkKredit}` : nama;
   };
 
   const columns = [
@@ -181,8 +188,8 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     { key: 'nomorKK', header: type === 'telihan' ? 'Nomor KK' : 'Nomor Agenda' },
     { key: 'nomorMPAK', header: 'Nomor MPAK' },
     { key: 'namaDebitur', header: 'Nama Debitur' },
-    { key: 'jenisKredit', header: 'Jenis Kredit' },
-    { key: 'plafon', header: 'Plafon', render: (item: KKMPAK) => formatCurrency(item.plafon) },
+    { key: 'jenisKredit', header: 'Jenis Kredit', render: (item: KKMPAK) => getJenisKreditLabel(item.jenisKredit) },
+    { key: 'plafon', header: 'Plafon', render: (item: KKMPAK) => formatCurrencyDisplay(item.plafon) },
     { key: 'jangkaWaktu', header: 'Jangka Waktu' },
     { key: 'jenisDebitur', header: 'Jenis Debitur' },
     { key: 'kodeFasilitas', header: 'Kode Fasilitas' },
@@ -204,7 +211,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
           setFormData({
             namaDebitur: item.namaDebitur,
             jenisKredit: item.jenisKredit,
-            plafon: item.plafon.toString(),
+            plafon: formatCurrencyInput(item.plafon.toString()),
             jangkaWaktu: item.jangkaWaktu,
             jenisDebitur: item.jenisDebitur,
             kodeFasilitas: item.kodeFasilitas,
@@ -229,10 +236,10 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
             <div className="space-y-2"><Label>Jenis Kredit <span className="text-destructive">*</span></Label>
               <Select value={formData.jenisKredit} onValueChange={(v) => setFormData({...formData, jenisKredit: v})}>
                 <SelectTrigger><SelectValue placeholder="Pilih jenis kredit" /></SelectTrigger>
-                <SelectContent>{jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={jk.nama}>{jk.nama}</SelectItem>))}</SelectContent>
+                <SelectContent>{jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Plafon <span className="text-destructive">*</span></Label><Input value={formData.plafon} onChange={(e) => setFormData({...formData, plafon: e.target.value})} placeholder="Jumlah plafon" /></div>
+            <div className="space-y-2"><Label>Plafon <span className="text-destructive">*</span></Label><Input value={formData.plafon} onChange={handlePlafonChange} placeholder="1,000,000.00" /></div>
             <div className="space-y-2"><Label>Jangka Waktu</Label><Input value={formData.jangkaWaktu} onChange={(e) => setFormData({...formData, jangkaWaktu: e.target.value})} placeholder="Contoh: 12 Bulan" /></div>
             <div className="space-y-2"><Label>Jenis Debitur</Label>
               <Select value={formData.jenisDebitur} onValueChange={(v) => setFormData({...formData, jenisDebitur: v})}>
@@ -269,8 +276,8 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
               <div><p className="text-sm text-muted-foreground">{type === 'telihan' ? 'Nomor KK' : 'Nomor Agenda'}</p><p className="font-medium">{selectedItem.nomorKK}</p></div>
               <div><p className="text-sm text-muted-foreground">Nomor MPAK</p><p className="font-medium">{selectedItem.nomorMPAK}</p></div>
               <div><p className="text-sm text-muted-foreground">Nama Debitur</p><p className="font-medium">{selectedItem.namaDebitur}</p></div>
-              <div><p className="text-sm text-muted-foreground">Jenis Kredit</p><p className="font-medium">{selectedItem.jenisKredit}</p></div>
-              <div><p className="text-sm text-muted-foreground">Plafon</p><p className="font-medium">{formatCurrency(selectedItem.plafon)}</p></div>
+              <div><p className="text-sm text-muted-foreground">Jenis Kredit</p><p className="font-medium">{getJenisKreditLabel(selectedItem.jenisKredit)}</p></div>
+              <div><p className="text-sm text-muted-foreground">Plafon</p><p className="font-medium">{formatCurrencyDisplay(selectedItem.plafon)}</p></div>
               <div><p className="text-sm text-muted-foreground">Jangka Waktu</p><p className="font-medium">{selectedItem.jangkaWaktu}</p></div>
               <div><p className="text-sm text-muted-foreground">Jenis Debitur</p><p className="font-medium">{selectedItem.jenisDebitur}</p></div>
               <div><p className="text-sm text-muted-foreground">Kode Fasilitas</p><p className="font-medium">{selectedItem.kodeFasilitas}</p></div>
@@ -290,10 +297,10 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
             <div className="space-y-2"><Label>Jenis Kredit</Label>
               <Select value={formData.jenisKredit} onValueChange={(v) => setFormData({...formData, jenisKredit: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={jk.nama}>{jk.nama}</SelectItem>))}</SelectContent>
+                <SelectContent>{jenisKreditOptions.map((jk) => (<SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Plafon</Label><Input value={formData.plafon} onChange={(e) => setFormData({...formData, plafon: e.target.value})} /></div>
+            <div className="space-y-2"><Label>Plafon</Label><Input value={formData.plafon} onChange={handlePlafonChange} /></div>
             <div className="space-y-2"><Label>Jangka Waktu</Label><Input value={formData.jangkaWaktu} onChange={(e) => setFormData({...formData, jangkaWaktu: e.target.value})} /></div>
             <div className="space-y-2"><Label>Jenis Debitur</Label>
               <Select value={formData.jenisDebitur} onValueChange={(v) => setFormData({...formData, jenisDebitur: v})}>
