@@ -258,7 +258,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
                   checked={formData.isKBK} 
                   onCheckedChange={(checked) => setFormData({...formData, isKBK: checked === true})} 
                 />
-                <Label htmlFor="isKBK" className="cursor-pointer">KBK (Kredit Berbasis Komunitas)</Label>
+                <Label htmlFor="isKBK" className="cursor-pointer">KBK (Kredit Bontang Kreatif)</Label>
               </div>
             )}
             <div className="space-y-2">
