@@ -88,6 +88,7 @@ export const Sidebar: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
 
   const agendaKreditItems = [
+    { label: 'Agenda Kredit', href: '/agenda-kredit/agenda-kredit' },
     { label: 'SPPK Telihan', href: '/agenda-kredit/sppk-telihan' },
     { label: 'SPPK Meranti', href: '/agenda-kredit/sppk-meranti' },
     { label: 'PK Telihan', href: '/agenda-kredit/pk-telihan' },

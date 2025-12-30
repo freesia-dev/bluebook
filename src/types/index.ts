@@ -26,6 +26,23 @@ export interface SuratMasuk {
   createdAt: Date;
 }
 
+// Agenda Kredit (menu baru - mirip surat masuk)
+export interface AgendaKreditEntry {
+  id: string;
+  nomor: number;
+  nomorAgenda: string; // format: XXX/YYYY
+  kodeSurat: string;
+  nomorSuratMasuk: string;
+  namaPengirim: string;
+  perihal: string;
+  tujuanDisposisi: string;
+  status: 'Belum Disposisi' | 'Sudah Disposisi';
+  keterangan: string;
+  userInput: string;
+  fileUrl?: string;
+  createdAt: Date;
+}
+
 // Surat Keluar types
 export interface SuratKeluar {
   id: string;
