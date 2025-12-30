@@ -30,10 +30,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { SPPK } from '@/types';
+import { SPPK, JenisKredit } from '@/types';
 import { getSPPK, addSPPK, updateSPPK, deleteSPPK, getJenisKredit } from '@/lib/store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
 import { CheckCircle2 } from 'lucide-react';
 
 interface SPPKPageProps {
@@ -44,7 +45,7 @@ interface SPPKPageProps {
 const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
   const [data, setData] = useState<SPPK[]>([]);
-  const [jenisKreditOptions, setJenisKreditOptions] = useState<string[]>([]);
+  const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -71,7 +72,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   };
 
   const loadOptions = () => {
-    setJenisKreditOptions(getJenisKredit().map(j => j.nama));
+    setJenisKreditOptions(getJenisKredit());
   };
 
   const resetForm = () => {
@@ -82,6 +83,11 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       jangkaWaktu: '',
       marketing: type === 'telihan' ? 'BAP' : '',
     });
+  };
+
+  const handlePlafonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setFormData({...formData, plafon: formatted});
   };
 
   const handleAdd = () => {
@@ -97,7 +103,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     const newItem = addSPPK({
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
-      plafon: parseFloat(formData.plafon.replace(/\D/g, '')),
+      plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       marketing: formData.marketing,
       type,
@@ -116,7 +122,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     updateSPPK(selectedItem.id, {
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
-      plafon: parseFloat(formData.plafon.replace(/\D/g, '')),
+      plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       marketing: formData.marketing,
     });
@@ -160,23 +166,20 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(value);
+  const getJenisKreditLabel = (nama: string) => {
+    const jk = jenisKreditOptions.find(j => j.nama === nama);
+    return jk ? `${jk.nama} - ${jk.produkKredit}` : nama;
   };
 
   const columns = [
     { key: 'nomor', header: 'No', className: 'w-[60px]' },
     { key: 'nomorSPPK', header: 'Nomor SPPK' },
     { key: 'namaDebitur', header: 'Nama Debitur' },
-    { key: 'jenisKredit', header: 'Jenis Kredit' },
+    { key: 'jenisKredit', header: 'Jenis Kredit', render: (item: SPPK) => getJenisKreditLabel(item.jenisKredit) },
     { 
       key: 'plafon', 
       header: 'Plafon',
-      render: (item: SPPK) => formatCurrency(item.plafon)
+      render: (item: SPPK) => formatCurrencyDisplay(item.plafon)
     },
     { key: 'jangkaWaktu', header: 'Jangka Waktu' },
     { key: 'marketing', header: 'Marketing' },
@@ -200,7 +203,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
           setFormData({
             namaDebitur: item.namaDebitur,
             jenisKredit: item.jenisKredit,
-            plafon: item.plafon.toString(),
+            plafon: formatCurrencyInput(item.plafon.toString()),
             jangkaWaktu: item.jangkaWaktu,
             marketing: item.marketing,
           });
@@ -235,7 +238,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
                 </SelectTrigger>
                 <SelectContent>
                   {jenisKreditOptions.map((jk) => (
-                    <SelectItem key={jk} value={jk}>{jk}</SelectItem>
+                    <SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -243,9 +246,9 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
             <div className="space-y-2">
               <Label>Plafon <span className="text-destructive">*</span></Label>
               <Input 
-                placeholder="Jumlah plafon"
+                placeholder="1,000,000.00"
                 value={formData.plafon}
-                onChange={(e) => setFormData({...formData, plafon: e.target.value})}
+                onChange={handlePlafonChange}
               />
             </div>
             <div className="space-y-2">
@@ -303,11 +306,11 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Jenis Kredit</p>
-                  <p className="font-medium">{selectedItem.jenisKredit}</p>
+                  <p className="font-medium">{getJenisKreditLabel(selectedItem.jenisKredit)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Plafon</p>
-                  <p className="font-medium">{formatCurrency(selectedItem.plafon)}</p>
+                  <p className="font-medium">{formatCurrencyDisplay(selectedItem.plafon)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Jangka Waktu</p>
@@ -352,7 +355,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
                 </SelectTrigger>
                 <SelectContent>
                   {jenisKreditOptions.map((jk) => (
-                    <SelectItem key={jk} value={jk}>{jk}</SelectItem>
+                    <SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -361,7 +364,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
               <Label>Plafon</Label>
               <Input 
                 value={formData.plafon}
-                onChange={(e) => setFormData({...formData, plafon: e.target.value})}
+                onChange={handlePlafonChange}
               />
             </div>
             <div className="space-y-2">
