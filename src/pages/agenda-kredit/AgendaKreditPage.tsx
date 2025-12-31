@@ -46,7 +46,7 @@ import { CheckCircle2 } from 'lucide-react';
 
 const AgendaKreditPage: React.FC = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { userName } = useAuth();
   const [data, setData] = useState<AgendaKreditEntry[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -103,7 +103,7 @@ const AgendaKreditPage: React.FC = () => {
       tujuanDisposisi: formData.tujuanDisposisi,
       status: 'Belum Disposisi',
       keterangan: formData.keterangan || '-',
-      userInput: user?.nama || 'Unknown',
+      userInput: userName || 'Unknown',
     });
 
     setSuccessMessage(`Data Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);
