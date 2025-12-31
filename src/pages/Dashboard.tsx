@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -14,18 +14,11 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
-import { 
-  getSuratMasuk, 
-  getSuratKeluar, 
-  getSPPK, 
-  getPK, 
-  getKKMPAK 
-} from '@/lib/supabase-store';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK } from '@/types';
+import { useDashboardData } from '@/hooks/use-dashboard-data';
 import {
   BarChart,
   Bar,
@@ -39,96 +32,82 @@ import {
   Cell,
 } from 'recharts';
 
+const COLORS = ['hsl(217, 91%, 45%)', 'hsl(45, 93%, 47%)', 'hsl(142, 76%, 36%)'];
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [suratMasuk, setSuratMasuk] = useState<SuratMasuk[]>([]);
-  const [suratKeluar, setSuratKeluar] = useState<SuratKeluar[]>([]);
-  const [sppk, setSppk] = useState<SPPK[]>([]);
-  const [pk, setPk] = useState<PK[]>([]);
-  const [kkmpak, setKkmpak] = useState<KKMPAK[]>([]);
-
-  const loadData = async () => {
-    try {
-      const [sm, sk, sp, p, km] = await Promise.all([
-        getSuratMasuk(),
-        getSuratKeluar(),
-        getSPPK(),
-        getPK(),
-        getKKMPAK()
-      ]);
-      setSuratMasuk(sm);
-      setSuratKeluar(sk);
-      setSppk(sp);
-      setPk(p);
-      setKkmpak(km);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
 
   useEffect(() => {
-    loadData();
-
-    // Set up realtime subscriptions
+    // Set up realtime subscriptions for live updates
     const channel = supabase
       .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'surat_masuk' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'surat_keluar' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sppk' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pk' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'kkmpak' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'surat_masuk' }, () => refetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'surat_keluar' }, () => refetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sppk' }, () => refetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pk' }, () => refetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'kkmpak' }, () => refetchAll())
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [refetchAll]);
 
-  const totalAgendaKredit = sppk.length + pk.length + kkmpak.length;
+  // Memoize computed values
+  const totalAgendaKredit = useMemo(() => sppk.length + pk.length + kkmpak.length, [sppk, pk, kkmpak]);
 
-  const barChartData = [
+  const barChartData = useMemo(() => [
     { name: 'Surat Masuk', value: suratMasuk.length, fill: 'hsl(217, 91%, 45%)' },
     { name: 'Surat Keluar', value: suratKeluar.length, fill: 'hsl(45, 93%, 47%)' },
     { name: 'SPPK', value: sppk.length, fill: 'hsl(142, 76%, 36%)' },
     { name: 'PK', value: pk.length, fill: 'hsl(262, 83%, 58%)' },
     { name: 'KK/MPAK', value: kkmpak.length, fill: 'hsl(0, 84%, 60%)' },
-  ];
+  ], [suratMasuk, suratKeluar, sppk, pk, kkmpak]);
 
-  const pieChartData = [
+  const pieChartData = useMemo(() => [
     { name: 'Surat Masuk', value: suratMasuk.length },
     { name: 'Surat Keluar', value: suratKeluar.length },
     { name: 'Agenda Kredit', value: totalAgendaKredit },
-  ];
+  ], [suratMasuk, suratKeluar, totalAgendaKredit]);
 
-  const COLORS = ['hsl(217, 91%, 45%)', 'hsl(45, 93%, 47%)', 'hsl(142, 76%, 36%)'];
+  // Memoize recent data (only compute when data changes)
+  const recentSuratMasuk = useMemo(() => 
+    [...suratMasuk]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5),
+    [suratMasuk]
+  );
+
+  const recentSuratKeluar = useMemo(() => 
+    [...suratKeluar]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5),
+    [suratKeluar]
+  );
+
+  const recentAgendaKredit = useMemo(() => 
+    [...sppk, ...pk.map(p => ({ ...p, nomorSPPK: p.nomorPK }))]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5),
+    [sppk, pk]
+  );
 
   const handleExportAll = () => {
     exportAllTables();
     toast({ title: 'Export Berhasil', description: 'Semua data telah diekspor ke file Excel.' });
   };
 
-  const recentSuratMasuk = [...suratMasuk].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  ).slice(0, 5);
-
-  const recentSuratKeluar = [...suratKeluar].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  ).slice(0, 5);
-
-  const recentAgendaKredit = [...sppk, ...pk.map(p => ({ ...p, nomorSPPK: p.nomorPK }))]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
-
   if (isLoading) {
     return (
       <MainLayout>
         <PageHeader title="Dashboard" description="Memuat data..." />
         <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-muted-foreground">Memuat data...</div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground">Memuat data...</p>
+          </div>
         </div>
       </MainLayout>
     );
