@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Heart } from 'lucide-react';
+import { BookOpen, Heart, Instagram, Linkedin } from 'lucide-react';
 
 const About: React.FC = () => {
   return (
@@ -19,7 +19,25 @@ const About: React.FC = () => {
               Dibuat dengan <Heart className="w-4 h-4 text-destructive fill-destructive" /> oleh
             </p>
             <p className="font-display text-xl font-semibold text-foreground mt-2">Haris Fadilah</p>
-            <p className="text-muted-foreground mt-1">© 2025</p>
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <a 
+                href="https://instagram.com/va.ys" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Instagram className="w-6 h-6" />
+              </a>
+              <a 
+                href="https://www.linkedin.com/in/harisf/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Linkedin className="w-6 h-6" />
+              </a>
+            </div>
+            <p className="text-muted-foreground mt-4">© 2025</p>
           </CardContent>
         </Card>
       </div>
