@@ -8,6 +8,8 @@ interface AuthContextType {
   userName: string;
   userRole: 'admin' | 'user';
   isAuthenticated: boolean;
+  isApproved: boolean;
+  isPending: boolean;
   isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -21,6 +23,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,13 +34,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer role check with setTimeout to prevent deadlock
+        // Defer role and approval check with setTimeout to prevent deadlock
         if (session?.user) {
           setTimeout(() => {
-            checkUserRole(session.user.id);
+            checkUserStatus(session.user.id);
           }, 0);
         } else {
           setIsAdmin(false);
+          setIsApproved(false);
+          setIsPending(false);
         }
       }
     );
@@ -46,7 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkUserRole(session.user.id);
+        checkUserStatus(session.user.id);
       }
       setIsLoading(false);
     });
@@ -54,27 +60,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkUserRole = async (userId: string) => {
+  const checkUserStatus = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Check role
+      const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
       
-      if (!error && data) {
-        setIsAdmin(data.role === 'admin');
+      setIsAdmin(roleData?.role === 'admin');
+
+      // Check approval status
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('status')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (profileData) {
+        setIsApproved(profileData.status === 'approved');
+        setIsPending(profileData.status === 'pending');
       } else {
-        setIsAdmin(false);
+        // If no profile exists (shouldn't happen, but fallback)
+        setIsApproved(false);
+        setIsPending(true);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error checking user status:', error);
       setIsAdmin(false);
+      setIsApproved(false);
+      setIsPending(false);
     }
   };
 
   const login = async (email: string, password: string): Promise<{ error: string | null }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -84,6 +106,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { error: 'Email atau password salah.' };
         }
         return { error: error.message };
+      }
+
+      // Check if user is approved
+      if (data.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+
+        if (profileData?.status === 'pending') {
+          // Sign out the user since they're not approved
+          await supabase.auth.signOut();
+          return { error: 'Akun Anda masih menunggu persetujuan admin. Silakan hubungi administrator.' };
+        }
+
+        if (profileData?.status === 'rejected') {
+          await supabase.auth.signOut();
+          return { error: 'Akun Anda telah ditolak. Silakan hubungi administrator.' };
+        }
       }
       
       return { error: null };
@@ -127,6 +169,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setIsApproved(false);
+    setIsPending(false);
   };
 
   // Get user name from metadata or email
@@ -139,7 +183,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       session,
       userName,
       userRole,
-      isAuthenticated: !!session,
+      isAuthenticated: !!session && isApproved,
+      isApproved,
+      isPending,
       isAdmin,
       isLoading,
       login,
