@@ -67,12 +67,14 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     loadOptions();
   }, [type]);
 
-  const loadData = () => {
-    setData(getSPPK().filter(s => s.type === type));
+  const loadData = async () => {
+    const allData = await getSPPK();
+    setData(allData.filter(s => s.type === type));
   };
 
-  const loadOptions = () => {
-    setJenisKreditOptions(getJenisKredit());
+  const loadOptions = async () => {
+    const jk = await getJenisKredit();
+    setJenisKreditOptions(jk);
   };
 
   const resetForm = () => {
@@ -90,7 +92,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     setFormData({...formData, plafon: formatted});
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({
         title: 'Validasi Error',
@@ -100,7 +102,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       return;
     }
 
-    const newItem = addSPPK({
+    const newItem = await addSPPK({
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
       plafon: parseCurrencyValue(formData.plafon),
@@ -116,10 +118,10 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     loadData();
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedItem) return;
     
-    updateSPPK(selectedItem.id, {
+    await updateSPPK(selectedItem.id, {
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
       plafon: parseCurrencyValue(formData.plafon),
@@ -135,10 +137,10 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     loadData();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedItem) return;
     
-    deleteSPPK(selectedItem.id);
+    await deleteSPPK(selectedItem.id);
     toast({
       title: 'Berhasil',
       description: 'Data SPPK berhasil dihapus.',

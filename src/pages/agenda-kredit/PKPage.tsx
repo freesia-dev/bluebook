@@ -78,15 +78,22 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     loadOptions();
   }, [type]);
 
-  const loadData = () => {
-    setData(getPK().filter(s => s.type === type));
+  const loadData = async () => {
+    const allData = await getPK();
+    setData(allData.filter(s => s.type === type));
   };
 
-  const loadOptions = () => {
-    setJenisKreditOptions(getJenisKredit());
-    setJenisDebiturOptions(getJenisDebitur());
-    setKodeFasilitasOptions(getKodeFasilitas());
-    setSektorEkonomiOptions(getSektorEkonomi());
+  const loadOptions = async () => {
+    const [jk, jd, kf, se] = await Promise.all([
+      getJenisKredit(),
+      getJenisDebitur(),
+      getKodeFasilitas(),
+      getSektorEkonomi()
+    ]);
+    setJenisKreditOptions(jk);
+    setJenisDebiturOptions(jd);
+    setKodeFasilitasOptions(kf);
+    setSektorEkonomiOptions(se);
   };
 
   const resetForm = () => {
@@ -107,7 +114,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     setFormData({...formData, plafon: formatted});
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({
         title: 'Validasi Error',
@@ -117,7 +124,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       return;
     }
 
-    const newItem = addPK({
+    const newItem = await addPK({
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
       plafon: parseCurrencyValue(formData.plafon),
@@ -136,10 +143,10 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     loadData();
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedItem) return;
     
-    updatePK(selectedItem.id, {
+    await updatePK(selectedItem.id, {
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
       plafon: parseCurrencyValue(formData.plafon),
@@ -154,9 +161,9 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     loadData();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedItem) return;
-    deletePK(selectedItem.id);
+    await deletePK(selectedItem.id);
     toast({ title: 'Berhasil', description: 'Data PK berhasil dihapus.' });
     setIsDeleteOpen(false);
     setSelectedItem(null);

@@ -76,15 +76,22 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     loadOptions();
   }, [type]);
 
-  const loadData = () => {
-    setData(getKKMPAK().filter(s => s.type === type));
+  const loadData = async () => {
+    const allData = await getKKMPAK();
+    setData(allData.filter(s => s.type === type));
   };
 
-  const loadOptions = () => {
-    setJenisKreditOptions(getJenisKredit());
-    setJenisDebiturOptions(getJenisDebitur());
-    setKodeFasilitasOptions(getKodeFasilitas());
-    setSektorEkonomiOptions(getSektorEkonomi());
+  const loadOptions = async () => {
+    const [jk, jd, kf, se] = await Promise.all([
+      getJenisKredit(),
+      getJenisDebitur(),
+      getKodeFasilitas(),
+      getSektorEkonomi()
+    ]);
+    setJenisKreditOptions(jk);
+    setJenisDebiturOptions(jd);
+    setKodeFasilitasOptions(kf);
+    setSektorEkonomiOptions(se);
   };
 
   const resetForm = () => {
@@ -104,13 +111,13 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     setFormData({...formData, plafon: formatted});
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({ title: 'Validasi Error', description: 'Harap isi semua field yang wajib.', variant: 'destructive' });
       return;
     }
 
-    const newItem = addKKMPAK({
+    const newItem = await addKKMPAK({
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
       plafon: parseCurrencyValue(formData.plafon),
@@ -132,10 +139,10 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     loadData();
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedItem) return;
     
-    updateKKMPAK(selectedItem.id, {
+    await updateKKMPAK(selectedItem.id, {
       namaDebitur: formData.namaDebitur,
       jenisKredit: formData.jenisKredit,
       plafon: parseCurrencyValue(formData.plafon),
@@ -150,9 +157,9 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     loadData();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedItem) return;
-    deleteKKMPAK(selectedItem.id);
+    await deleteKKMPAK(selectedItem.id);
     toast({ title: 'Berhasil', description: 'Data berhasil dihapus.' });
     setIsDeleteOpen(false);
     setSelectedItem(null);
