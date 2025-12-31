@@ -106,14 +106,6 @@ const Login: React.FC = () => {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm">
-            <p className="font-medium text-foreground mb-2">Demo Login:</p>
-            <div className="space-y-1 text-muted-foreground">
-              <p><span className="font-medium">Admin:</span> admin / admin123</p>
-              <p><span className="font-medium">User:</span> user / user123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
