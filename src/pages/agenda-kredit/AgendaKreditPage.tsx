@@ -103,7 +103,7 @@ const AgendaKreditPage: React.FC = () => {
   };
 
   const handleAdd = async () => {
-    if (!formData.kodeSurat || !formData.nomorSuratMasuk || !formData.namaPengirim || !formData.perihal) {
+    if (!formData.kodeSurat || !formData.namaPengirim || !formData.perihal) {
       toast({
         title: 'Validasi Error',
         description: 'Harap isi semua field yang wajib.',
@@ -115,7 +115,7 @@ const AgendaKreditPage: React.FC = () => {
     try {
       const newItem = await addAgendaKreditEntry({
         kodeSurat: formData.kodeSurat,
-        nomorSuratMasuk: formData.nomorSuratMasuk,
+        nomorSuratMasuk: '-',
         namaPengirim: formData.namaPengirim,
         perihal: formData.perihal,
         tujuanDisposisi: formData.tujuanDisposisi,
@@ -352,14 +352,6 @@ const AgendaKreditPage: React.FC = () => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nomor Surat Masuk <span className="text-destructive">*</span></Label>
-              <Input 
-                placeholder="Contoh: SM-2024/001" 
-                value={formData.nomorSuratMasuk}
-                onChange={(e) => setFormData({...formData, nomorSuratMasuk: e.target.value})}
-              />
             </div>
             <div className="space-y-2">
               <Label>Nama Pengirim <span className="text-destructive">*</span></Label>
