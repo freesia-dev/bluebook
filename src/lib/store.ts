@@ -1,5 +1,5 @@
 import { 
-  User, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
+  SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
   JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry
 } from '@/types';
 
@@ -11,28 +11,6 @@ export const toRomanMonth = (month: number): string => {
   const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
   return roman[month];
 };
-
-// Default admin user
-const defaultUsers: User[] = [
-  {
-    id: '1',
-    nama: 'Administrator',
-    username: 'admin',
-    password: 'admin123',
-    role: 'admin',
-    keterangan: 'Admin Utama Sistem',
-    createdAt: new Date(),
-  },
-  {
-    id: '2',
-    nama: 'User Demo',
-    username: 'user',
-    password: 'user123',
-    role: 'user',
-    keterangan: 'User Demo',
-    createdAt: new Date(),
-  },
-];
 
 // Default config data
 const defaultJenisKredit: JenisKredit[] = [
@@ -156,9 +134,6 @@ const saveToStorage = <T>(key: string, value: T): void => {
 
 // Initialize storage with defaults
 export const initializeStorage = () => {
-  if (!localStorage.getItem(STORAGE_KEYS.users)) {
-    saveToStorage(STORAGE_KEYS.users, defaultUsers);
-  }
   if (!localStorage.getItem(STORAGE_KEYS.suratMasuk)) {
     saveToStorage(STORAGE_KEYS.suratMasuk, sampleSuratMasuk);
   }
@@ -191,27 +166,8 @@ export const initializeStorage = () => {
   }
 };
 
-// User functions
-export const getUsers = (): User[] => getFromStorage(STORAGE_KEYS.users, defaultUsers);
-export const addUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
-  const users = getUsers();
-  const newUser: User = { ...user, id: generateId(), createdAt: new Date() };
-  saveToStorage(STORAGE_KEYS.users, [...users, newUser]);
-  return newUser;
-};
-export const deleteUser = (id: string): void => {
-  const users = getUsers().filter(u => u.id !== id);
-  saveToStorage(STORAGE_KEYS.users, users);
-};
-export const getCurrentUser = (): User | null => getFromStorage(STORAGE_KEYS.currentUser, null);
-export const setCurrentUser = (user: User | null): void => saveToStorage(STORAGE_KEYS.currentUser, user);
-export const login = (username: string, password: string): User | null => {
-  const users = getUsers();
-  const user = users.find(u => u.username === username && u.password === password);
-  if (user) setCurrentUser(user);
-  return user || null;
-};
-export const logout = (): void => setCurrentUser(null);
+// Note: User authentication is now handled via Supabase Auth
+// User roles are managed via user_roles table
 
 // Surat Masuk functions
 export const getSuratMasuk = (): SuratMasuk[] => getFromStorage(STORAGE_KEYS.suratMasuk, []);
@@ -456,8 +412,4 @@ export const bulkUpdateSektorEkonomi = (data: Omit<SektorEkonomi, 'id'>[]): void
   saveToStorage(STORAGE_KEYS.sektorEkonomi, [...existingItems, ...newItems]);
 };
 
-// User update function
-export const updateUser = (id: string, data: Partial<User>): void => {
-  const items = getUsers().map(item => item.id === id ? { ...item, ...data } : item);
-  saveToStorage(STORAGE_KEYS.users, items);
-};
+// Note: updateUser removed - user management is now via Supabase Auth and user_roles table

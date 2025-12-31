@@ -1,12 +1,9 @@
-// User types
-export interface User {
+// User Role type (for role management)
+export interface UserRole {
   id: string;
-  nama: string;
-  username: string;
-  password: string;
+  userId: string;
   role: 'admin' | 'user';
-  keterangan: string;
-  createdAt: Date;
+  email?: string;
 }
 
 // Surat Masuk types

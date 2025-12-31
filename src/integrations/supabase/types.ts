@@ -62,36 +62,6 @@ export type Database = {
         }
         Relationships: []
       }
-      app_users: {
-        Row: {
-          created_at: string
-          id: string
-          keterangan: string | null
-          nama: string
-          password: string
-          role: Database["public"]["Enums"]["app_role"]
-          username: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          keterangan?: string | null
-          nama: string
-          password: string
-          role?: Database["public"]["Enums"]["app_role"]
-          username: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          keterangan?: string | null
-          nama?: string
-          password?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          username?: string
-        }
-        Relationships: []
-      }
       jenis_debitur: {
         Row: {
           id: string

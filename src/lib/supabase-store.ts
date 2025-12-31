@@ -1,39 +1,31 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  User, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
+  UserRole, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
   JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry
 } from '@/types';
 import { toRomanMonth } from './store';
 
-// ============= USER FUNCTIONS =============
-export const getUsers = async (): Promise<User[]> => {
+// ============= USER ROLE FUNCTIONS =============
+export const getUserRoles = async (): Promise<UserRole[]> => {
   const { data, error } = await supabase
-    .from('app_users')
-    .select('*')
-    .order('created_at', { ascending: true });
+    .from('user_roles')
+    .select('*');
   
   if (error) throw error;
   
-  return data.map(u => ({
-    id: u.id,
-    nama: u.nama,
-    username: u.username,
-    password: u.password,
-    role: u.role as 'admin' | 'user',
-    keterangan: u.keterangan || '',
-    createdAt: new Date(u.created_at)
+  return data.map(r => ({
+    id: r.id,
+    userId: r.user_id,
+    role: r.role as 'admin' | 'user'
   }));
 };
 
-export const addUser = async (user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
+export const addUserRole = async (userId: string, role: 'admin' | 'user'): Promise<UserRole> => {
   const { data, error } = await supabase
-    .from('app_users')
+    .from('user_roles')
     .insert({
-      nama: user.nama,
-      username: user.username,
-      password: user.password,
-      role: user.role,
-      keterangan: user.keterangan
+      user_id: userId,
+      role: role
     })
     .select()
     .single();
@@ -42,25 +34,30 @@ export const addUser = async (user: Omit<User, 'id' | 'createdAt'>): Promise<Use
   
   return {
     id: data.id,
-    nama: data.nama,
-    username: data.username,
-    password: data.password,
-    role: data.role as 'admin' | 'user',
-    keterangan: data.keterangan || '',
-    createdAt: new Date(data.created_at)
+    userId: data.user_id,
+    role: data.role as 'admin' | 'user'
   };
 };
 
-export const deleteUser = async (id: string): Promise<void> => {
+export const updateUserRole = async (id: string, role: 'admin' | 'user'): Promise<void> => {
   const { error } = await supabase
-    .from('app_users')
+    .from('user_roles')
+    .update({ role })
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteUserRole = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('user_roles')
     .delete()
     .eq('id', id);
   
   if (error) throw error;
 };
 
-// Note: loginUser removed - using Supabase Auth instead
+// Note: Authentication is handled via Supabase Auth
 
 // ============= SURAT MASUK FUNCTIONS =============
 export const getSuratMasuk = async (): Promise<SuratMasuk[]> => {
