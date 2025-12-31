@@ -99,14 +99,26 @@ const Dashboard: React.FC = () => {
     toast({ title: 'Export Berhasil', description: 'Semua data telah diekspor ke file Excel.' });
   };
 
+  // Show skeleton while loading (handled by Suspense, but keep for data loading)
   if (isLoading) {
     return (
       <MainLayout>
-        <PageHeader title="Dashboard" description="Memuat data..." />
-        <div className="flex items-center justify-center h-64">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">Memuat data...</p>
+        <div className="space-y-6 animate-pulse">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="h-8 w-48 bg-muted rounded mb-2" />
+              <div className="h-4 w-72 bg-muted rounded" />
+            </div>
+            <div className="h-10 w-40 bg-muted rounded" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-muted rounded-xl" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="h-48 bg-muted rounded-xl" />
+            <div className="h-48 bg-muted rounded-xl" />
           </div>
         </div>
       </MainLayout>
