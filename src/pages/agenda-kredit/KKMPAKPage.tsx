@@ -34,7 +34,7 @@ import { KKMPAK, JenisKredit } from '@/types';
 import { 
   getKKMPAK, addKKMPAK, updateKKMPAK, deleteKKMPAK, 
   getJenisKredit, getJenisDebitur, getKodeFasilitas, getSektorEkonomi 
-} from '@/lib/store';
+} from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';

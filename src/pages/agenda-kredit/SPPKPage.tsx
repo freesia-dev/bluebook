@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { SPPK, JenisKredit } from '@/types';
-import { getSPPK, addSPPK, updateSPPK, deleteSPPK, getJenisKredit } from '@/lib/store';
+import { getSPPK, addSPPK, updateSPPK, deleteSPPK, getJenisKredit } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';

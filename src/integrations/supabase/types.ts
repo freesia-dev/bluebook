@@ -14,7 +14,381 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agenda_kredit_entry: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          id: string
+          keterangan: string | null
+          kode_surat: string
+          nama_pengirim: string
+          nomor: number
+          nomor_agenda: string
+          nomor_surat_masuk: string
+          perihal: string
+          status: string
+          tujuan_disposisi: string
+          user_input: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          keterangan?: string | null
+          kode_surat: string
+          nama_pengirim: string
+          nomor: number
+          nomor_agenda: string
+          nomor_surat_masuk: string
+          perihal: string
+          status?: string
+          tujuan_disposisi: string
+          user_input: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          keterangan?: string | null
+          kode_surat?: string
+          nama_pengirim?: string
+          nomor?: number
+          nomor_agenda?: string
+          nomor_surat_masuk?: string
+          perihal?: string
+          status?: string
+          tujuan_disposisi?: string
+          user_input?: string
+        }
+        Relationships: []
+      }
+      app_users: {
+        Row: {
+          created_at: string
+          id: string
+          keterangan: string | null
+          nama: string
+          password: string
+          role: Database["public"]["Enums"]["app_role"]
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          nama: string
+          password: string
+          role?: Database["public"]["Enums"]["app_role"]
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          nama?: string
+          password?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          username?: string
+        }
+        Relationships: []
+      }
+      jenis_debitur: {
+        Row: {
+          id: string
+          keterangan: string
+          kode: string
+        }
+        Insert: {
+          id?: string
+          keterangan: string
+          kode: string
+        }
+        Update: {
+          id?: string
+          keterangan?: string
+          kode?: string
+        }
+        Relationships: []
+      }
+      jenis_kredit: {
+        Row: {
+          id: string
+          nama: string
+          produk_kredit: string
+        }
+        Insert: {
+          id?: string
+          nama: string
+          produk_kredit: string
+        }
+        Update: {
+          id?: string
+          nama?: string
+          produk_kredit?: string
+        }
+        Relationships: []
+      }
+      kkmpak: {
+        Row: {
+          created_at: string
+          id: string
+          jangka_waktu: string
+          jenis_debitur: string
+          jenis_kredit: string
+          kode_fasilitas: string
+          nama_debitur: string
+          nomor: number
+          nomor_kk: string
+          nomor_mpak: string
+          plafon: number
+          sektor_ekonomi: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jangka_waktu: string
+          jenis_debitur: string
+          jenis_kredit: string
+          kode_fasilitas: string
+          nama_debitur: string
+          nomor: number
+          nomor_kk: string
+          nomor_mpak: string
+          plafon: number
+          sektor_ekonomi: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jangka_waktu?: string
+          jenis_debitur?: string
+          jenis_kredit?: string
+          kode_fasilitas?: string
+          nama_debitur?: string
+          nomor?: number
+          nomor_kk?: string
+          nomor_mpak?: string
+          plafon?: number
+          sektor_ekonomi?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      kode_fasilitas: {
+        Row: {
+          id: string
+          keterangan: string
+          kode: string
+        }
+        Insert: {
+          id?: string
+          keterangan: string
+          kode: string
+        }
+        Update: {
+          id?: string
+          keterangan?: string
+          kode?: string
+        }
+        Relationships: []
+      }
+      pk: {
+        Row: {
+          created_at: string
+          id: string
+          jangka_waktu: string
+          jenis_debitur: string
+          jenis_kredit: string
+          kode_fasilitas: string
+          nama_debitur: string
+          nomor: number
+          nomor_pk: string
+          plafon: number
+          sektor_ekonomi: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jangka_waktu: string
+          jenis_debitur: string
+          jenis_kredit: string
+          kode_fasilitas: string
+          nama_debitur: string
+          nomor: number
+          nomor_pk: string
+          plafon: number
+          sektor_ekonomi: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jangka_waktu?: string
+          jenis_debitur?: string
+          jenis_kredit?: string
+          kode_fasilitas?: string
+          nama_debitur?: string
+          nomor?: number
+          nomor_pk?: string
+          plafon?: number
+          sektor_ekonomi?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      sektor_ekonomi: {
+        Row: {
+          id: string
+          keterangan: string
+          kode: string
+        }
+        Insert: {
+          id?: string
+          keterangan: string
+          kode: string
+        }
+        Update: {
+          id?: string
+          keterangan?: string
+          kode?: string
+        }
+        Relationships: []
+      }
+      sppk: {
+        Row: {
+          created_at: string
+          id: string
+          jangka_waktu: string
+          jenis_kredit: string
+          marketing: string
+          nama_debitur: string
+          nomor: number
+          nomor_sppk: string
+          plafon: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jangka_waktu: string
+          jenis_kredit: string
+          marketing: string
+          nama_debitur: string
+          nomor: number
+          nomor_sppk: string
+          plafon: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jangka_waktu?: string
+          jenis_kredit?: string
+          marketing?: string
+          nama_debitur?: string
+          nomor?: number
+          nomor_sppk?: string
+          plafon?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      surat_keluar: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          id: string
+          keterangan: string | null
+          kode_surat: string
+          nama_penerima: string
+          nomor: number
+          nomor_agenda: string
+          perihal: string
+          status: string
+          tujuan_surat: string
+          user_input: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          keterangan?: string | null
+          kode_surat: string
+          nama_penerima: string
+          nomor: number
+          nomor_agenda: string
+          perihal: string
+          status?: string
+          tujuan_surat: string
+          user_input: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          keterangan?: string | null
+          kode_surat?: string
+          nama_penerima?: string
+          nomor?: number
+          nomor_agenda?: string
+          perihal?: string
+          status?: string
+          tujuan_surat?: string
+          user_input?: string
+        }
+        Relationships: []
+      }
+      surat_masuk: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          id: string
+          keterangan: string | null
+          kode_surat: string
+          nama_pengirim: string
+          nomor: number
+          nomor_agenda: string
+          nomor_surat_masuk: string
+          perihal: string
+          status: string
+          tujuan_disposisi: string
+          user_input: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          keterangan?: string | null
+          kode_surat: string
+          nama_pengirim: string
+          nomor: number
+          nomor_agenda: string
+          nomor_surat_masuk: string
+          perihal: string
+          status?: string
+          tujuan_disposisi: string
+          user_input: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          keterangan?: string | null
+          kode_surat?: string
+          nama_pengirim?: string
+          nomor?: number
+          nomor_agenda?: string
+          nomor_surat_masuk?: string
+          perihal?: string
+          status?: string
+          tujuan_disposisi?: string
+          user_input?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +397,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +524,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
