@@ -7,6 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { CalendarIcon, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -38,16 +44,16 @@ import {
   addAgendaKreditEntry, 
   updateAgendaKreditEntry, 
   deleteAgendaKreditEntry 
-} from '@/lib/store';
+} from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle2 } from 'lucide-react';
 
 const AgendaKreditPage: React.FC = () => {
   const { toast } = useToast();
   const { userName } = useAuth();
   const [data, setData] = useState<AgendaKreditEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -64,14 +70,24 @@ const AgendaKreditPage: React.FC = () => {
     perihal: '',
     tujuanDisposisi: '',
     keterangan: '',
+    tanggalMasuk: new Date(),
   });
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setData(getAgendaKreditEntry());
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const items = await getAgendaKreditEntry();
+      setData(items);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({ title: 'Error', description: 'Gagal memuat data.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -82,10 +98,11 @@ const AgendaKreditPage: React.FC = () => {
       perihal: '',
       tujuanDisposisi: '',
       keterangan: '',
+      tanggalMasuk: new Date(),
     });
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.kodeSurat || !formData.nomorSuratMasuk || !formData.namaPengirim || !formData.perihal) {
       toast({
         title: 'Validasi Error',
@@ -95,65 +112,83 @@ const AgendaKreditPage: React.FC = () => {
       return;
     }
 
-    const newItem = addAgendaKreditEntry({
-      kodeSurat: formData.kodeSurat,
-      nomorSuratMasuk: formData.nomorSuratMasuk,
-      namaPengirim: formData.namaPengirim,
-      perihal: formData.perihal,
-      tujuanDisposisi: formData.tujuanDisposisi,
-      status: 'Belum Disposisi',
-      keterangan: formData.keterangan || '-',
-      userInput: userName || 'Unknown',
-    });
+    try {
+      const newItem = await addAgendaKreditEntry({
+        kodeSurat: formData.kodeSurat,
+        nomorSuratMasuk: formData.nomorSuratMasuk,
+        namaPengirim: formData.namaPengirim,
+        perihal: formData.perihal,
+        tujuanDisposisi: formData.tujuanDisposisi,
+        status: 'Belum Disposisi',
+        keterangan: formData.keterangan || '-',
+        userInput: userName || 'Unknown',
+        tanggalMasuk: formData.tanggalMasuk,
+      });
 
-    setSuccessMessage(`Data Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);
-    setIsAddOpen(false);
-    setIsSuccessOpen(true);
-    resetForm();
-    loadData();
+      setSuccessMessage(`Data Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);
+      setIsAddOpen(false);
+      setIsSuccessOpen(true);
+      resetForm();
+      loadData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedItem) return;
     
-    updateAgendaKreditEntry(selectedItem.id, {
-      kodeSurat: formData.kodeSurat,
-      nomorSuratMasuk: formData.nomorSuratMasuk,
-      namaPengirim: formData.namaPengirim,
-      perihal: formData.perihal,
-      tujuanDisposisi: formData.tujuanDisposisi,
-      keterangan: formData.keterangan,
-    });
+    try {
+      await updateAgendaKreditEntry(selectedItem.id, {
+        kodeSurat: formData.kodeSurat,
+        nomorSuratMasuk: formData.nomorSuratMasuk,
+        namaPengirim: formData.namaPengirim,
+        perihal: formData.perihal,
+        tujuanDisposisi: formData.tujuanDisposisi,
+        keterangan: formData.keterangan,
+        tanggalMasuk: formData.tanggalMasuk,
+      });
 
-    toast({
-      title: 'Berhasil',
-      description: 'Data agenda kredit berhasil diperbarui.',
-    });
-    setIsEditOpen(false);
-    loadData();
+      toast({
+        title: 'Berhasil',
+        description: 'Data agenda kredit berhasil diperbarui.',
+      });
+      setIsEditOpen(false);
+      loadData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Gagal memperbarui data.', variant: 'destructive' });
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedItem) return;
     
-    deleteAgendaKreditEntry(selectedItem.id);
-    toast({
-      title: 'Berhasil',
-      description: 'Data agenda kredit berhasil dihapus.',
-    });
-    setIsDeleteOpen(false);
-    setSelectedItem(null);
-    loadData();
+    try {
+      await deleteAgendaKreditEntry(selectedItem.id);
+      toast({
+        title: 'Berhasil',
+        description: 'Data agenda kredit berhasil dihapus.',
+      });
+      setIsDeleteOpen(false);
+      setSelectedItem(null);
+      loadData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Gagal menghapus data.', variant: 'destructive' });
+    }
   };
 
-  const handleUpdateStatus = (item: AgendaKreditEntry) => {
+  const handleUpdateStatus = async (item: AgendaKreditEntry) => {
     const newStatus = item.status === 'Belum Disposisi' ? 'Sudah Disposisi' : 'Belum Disposisi';
-    updateAgendaKreditEntry(item.id, { status: newStatus });
-    toast({
-      title: 'Status Diperbarui',
-      description: `Status diubah menjadi ${newStatus}.`,
-    });
-    loadData();
+    try {
+      await updateAgendaKreditEntry(item.id, { status: newStatus });
+      toast({
+        title: 'Status Diperbarui',
+        description: `Status diubah menjadi ${newStatus}.`,
+      });
+      loadData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Gagal memperbarui status.', variant: 'destructive' });
+    }
   };
 
   const handleExport = () => {
@@ -168,7 +203,8 @@ const AgendaKreditPage: React.FC = () => {
       'Status': item.status,
       'Keterangan': item.keterangan,
       'User Input': item.userInput,
-      'Tanggal': new Date(item.createdAt).toLocaleDateString('id-ID'),
+      'Tanggal Masuk': new Date(item.tanggalMasuk).toLocaleDateString('id-ID'),
+      'Tanggal Input': new Date(item.createdAt).toLocaleDateString('id-ID'),
     }));
     exportToExcel(exportData, 'Agenda_Kredit', 'Agenda Kredit');
     toast({
@@ -184,7 +220,11 @@ const AgendaKreditPage: React.FC = () => {
     { key: 'nomorSuratMasuk', header: 'Nomor Surat' },
     { key: 'namaPengirim', header: 'Pengirim' },
     { key: 'perihal', header: 'Perihal' },
-    { key: 'tujuanDisposisi', header: 'Tujuan Disposisi' },
+    { 
+      key: 'tanggalMasuk', 
+      header: 'Tgl Masuk',
+      render: (item: AgendaKreditEntry) => new Date(item.tanggalMasuk).toLocaleDateString('id-ID')
+    },
     { 
       key: 'status', 
       header: 'Status',
@@ -205,6 +245,46 @@ const AgendaKreditPage: React.FC = () => {
     acc[item.kategori].push(item);
     return acc;
   }, {} as Record<string, typeof KODE_SURAT_LIST>);
+
+  const DatePickerField = ({ label, value, onChange, required = false }: { label: string; value: Date; onChange: (date: Date) => void; required?: boolean }) => (
+    <div className="space-y-2">
+      <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !value && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={value}
+            onSelect={(date) => date && onChange(date)}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <PageHeader title="Agenda Kredit" description="Kelola data agenda kredit KC Telihan" />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-pulse text-muted-foreground">Memuat data...</div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -228,6 +308,7 @@ const AgendaKreditPage: React.FC = () => {
             perihal: item.perihal,
             tujuanDisposisi: item.tujuanDisposisi,
             keterangan: item.keterangan,
+            tanggalMasuk: new Date(item.tanggalMasuk),
           });
           setIsEditOpen(true); 
         }}
@@ -238,7 +319,7 @@ const AgendaKreditPage: React.FC = () => {
 
       {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Tambah Agenda Kredit</DialogTitle>
             <DialogDescription>
@@ -246,6 +327,12 @@ const AgendaKreditPage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField 
+              label="Tanggal Masuk Surat" 
+              value={formData.tanggalMasuk} 
+              onChange={(date) => setFormData({...formData, tanggalMasuk: date})}
+              required
+            />
             <div className="space-y-2">
               <Label>Jenis Kode Surat <span className="text-destructive">*</span></Label>
               <Select value={formData.kodeSurat} onValueChange={(v) => setFormData({...formData, kodeSurat: v})}>
@@ -362,6 +449,10 @@ const AgendaKreditPage: React.FC = () => {
                   <p className="font-medium">{selectedItem.userInput}</p>
                 </div>
                 <div>
+                  <p className="text-sm text-muted-foreground">Tanggal Masuk</p>
+                  <p className="font-medium">{new Date(selectedItem.tanggalMasuk).toLocaleDateString('id-ID')}</p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Tanggal Input</p>
                   <p className="font-medium">{new Date(selectedItem.createdAt).toLocaleDateString('id-ID')}</p>
                 </div>
@@ -376,11 +467,16 @@ const AgendaKreditPage: React.FC = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Edit Agenda Kredit</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField 
+              label="Tanggal Masuk Surat" 
+              value={formData.tanggalMasuk} 
+              onChange={(date) => setFormData({...formData, tanggalMasuk: date})}
+            />
             <div className="space-y-2">
               <Label>Jenis Kode Surat</Label>
               <Select value={formData.kodeSurat} onValueChange={(v) => setFormData({...formData, kodeSurat: v})}>
@@ -471,8 +567,10 @@ const AgendaKreditPage: React.FC = () => {
               <CheckCircle2 className="w-8 h-8 text-success" />
             </div>
             <p className="text-lg font-medium text-foreground">{successMessage}</p>
-            <Button onClick={() => setIsSuccessOpen(false)}>OK</Button>
           </div>
+          <DialogFooter className="justify-center">
+            <Button onClick={() => setIsSuccessOpen(false)}>OK</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </MainLayout>

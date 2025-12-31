@@ -7,6 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { CalendarIcon, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -42,7 +48,6 @@ import {
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle2 } from 'lucide-react';
 
 const SuratMasukPage: React.FC = () => {
   const { toast } = useToast();
@@ -64,6 +69,7 @@ const SuratMasukPage: React.FC = () => {
     perihal: '',
     tujuanDisposisi: '',
     keterangan: '',
+    tanggalMasuk: new Date(),
   });
 
   useEffect(() => {
@@ -91,6 +97,7 @@ const SuratMasukPage: React.FC = () => {
       perihal: '',
       tujuanDisposisi: '',
       keterangan: '',
+      tanggalMasuk: new Date(),
     });
   };
 
@@ -110,6 +117,7 @@ const SuratMasukPage: React.FC = () => {
         status: 'Belum Disposisi',
         keterangan: formData.keterangan || '-',
         userInput: userName || 'Unknown',
+        tanggalMasuk: formData.tanggalMasuk,
       });
 
       setSuccessMessage(`Surat Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);
@@ -133,6 +141,7 @@ const SuratMasukPage: React.FC = () => {
         perihal: formData.perihal,
         tujuanDisposisi: formData.tujuanDisposisi,
         keterangan: formData.keterangan,
+        tanggalMasuk: formData.tanggalMasuk,
       });
 
       toast({ title: 'Berhasil', description: 'Data surat masuk berhasil diperbarui.' });
@@ -180,7 +189,8 @@ const SuratMasukPage: React.FC = () => {
       'Status': item.status,
       'Keterangan': item.keterangan,
       'User Input': item.userInput,
-      'Tanggal': new Date(item.createdAt).toLocaleDateString('id-ID'),
+      'Tanggal Masuk': new Date(item.tanggalMasuk).toLocaleDateString('id-ID'),
+      'Tanggal Input': new Date(item.createdAt).toLocaleDateString('id-ID'),
     }));
     exportToExcel(exportData, 'Surat_Masuk', 'Surat Masuk');
     toast({ title: 'Export Berhasil', description: 'Data surat masuk berhasil diekspor.' });
@@ -193,7 +203,11 @@ const SuratMasukPage: React.FC = () => {
     { key: 'nomorSuratMasuk', header: 'Nomor Surat' },
     { key: 'namaPengirim', header: 'Pengirim' },
     { key: 'perihal', header: 'Perihal' },
-    { key: 'tujuanDisposisi', header: 'Tujuan Disposisi' },
+    { 
+      key: 'tanggalMasuk', 
+      header: 'Tgl Masuk',
+      render: (item: SuratMasuk) => new Date(item.tanggalMasuk).toLocaleDateString('id-ID')
+    },
     { 
       key: 'status', 
       header: 'Status',
@@ -214,6 +228,35 @@ const SuratMasukPage: React.FC = () => {
     acc[item.kategori].push(item);
     return acc;
   }, {} as Record<string, typeof KODE_SURAT_LIST>);
+
+  const DatePickerField = ({ label, value, onChange, required = false }: { label: string; value: Date; onChange: (date: Date) => void; required?: boolean }) => (
+    <div className="space-y-2">
+      <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !value && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={value}
+            onSelect={(date) => date && onChange(date)}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -245,6 +288,7 @@ const SuratMasukPage: React.FC = () => {
             perihal: item.perihal,
             tujuanDisposisi: item.tujuanDisposisi,
             keterangan: item.keterangan,
+            tanggalMasuk: new Date(item.tanggalMasuk),
           });
           setIsEditOpen(true); 
         }}
@@ -255,12 +299,18 @@ const SuratMasukPage: React.FC = () => {
 
       {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Tambah Surat Masuk</DialogTitle>
             <DialogDescription>Masukkan data surat masuk baru</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField 
+              label="Tanggal Masuk Surat" 
+              value={formData.tanggalMasuk} 
+              onChange={(date) => setFormData({...formData, tanggalMasuk: date})}
+              required
+            />
             <div className="space-y-2">
               <Label>Jenis Kode Surat <span className="text-destructive">*</span></Label>
               <Select value={formData.kodeSurat} onValueChange={(v) => setFormData({...formData, kodeSurat: v})}>
@@ -321,6 +371,7 @@ const SuratMasukPage: React.FC = () => {
                 <div><p className="text-sm text-muted-foreground">Status</p><Badge variant={selectedItem.status === 'Sudah Disposisi' ? 'default' : 'secondary'}>{selectedItem.status}</Badge></div>
                 <div className="col-span-2"><p className="text-sm text-muted-foreground">Keterangan</p><p className="font-medium">{selectedItem.keterangan}</p></div>
                 <div><p className="text-sm text-muted-foreground">User Input</p><p className="font-medium">{selectedItem.userInput}</p></div>
+                <div><p className="text-sm text-muted-foreground">Tanggal Masuk</p><p className="font-medium">{new Date(selectedItem.tanggalMasuk).toLocaleDateString('id-ID')}</p></div>
                 <div><p className="text-sm text-muted-foreground">Tanggal Input</p><p className="font-medium">{new Date(selectedItem.createdAt).toLocaleDateString('id-ID')}</p></div>
               </div>
             </div>
@@ -331,9 +382,14 @@ const SuratMasukPage: React.FC = () => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-display">Edit Surat Masuk</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField 
+              label="Tanggal Masuk Surat" 
+              value={formData.tanggalMasuk} 
+              onChange={(date) => setFormData({...formData, tanggalMasuk: date})}
+            />
             <div className="space-y-2">
               <Label>Jenis Kode Surat</Label>
               <Select value={formData.kodeSurat} onValueChange={(v) => setFormData({...formData, kodeSurat: v})}>

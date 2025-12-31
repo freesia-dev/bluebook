@@ -27,6 +27,7 @@ export type Database = {
           nomor_surat_masuk: string
           perihal: string
           status: string
+          tanggal_masuk: string | null
           tujuan_disposisi: string
           user_input: string
         }
@@ -42,6 +43,7 @@ export type Database = {
           nomor_surat_masuk: string
           perihal: string
           status?: string
+          tanggal_masuk?: string | null
           tujuan_disposisi: string
           user_input: string
         }
@@ -57,6 +59,7 @@ export type Database = {
           nomor_surat_masuk?: string
           perihal?: string
           status?: string
+          tanggal_masuk?: string | null
           tujuan_disposisi?: string
           user_input?: string
         }
@@ -351,6 +354,7 @@ export type Database = {
           nomor_surat_masuk: string
           perihal: string
           status: string
+          tanggal_masuk: string | null
           tujuan_disposisi: string
           user_input: string
         }
@@ -366,6 +370,7 @@ export type Database = {
           nomor_surat_masuk: string
           perihal: string
           status?: string
+          tanggal_masuk?: string | null
           tujuan_disposisi: string
           user_input: string
         }
@@ -381,6 +386,7 @@ export type Database = {
           nomor_surat_masuk?: string
           perihal?: string
           status?: string
+          tanggal_masuk?: string | null
           tujuan_disposisi?: string
           user_input?: string
         }
