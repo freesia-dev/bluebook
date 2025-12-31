@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Pencil } from 'lucide-react';
 import { UserRole } from '@/types';
-import { getUserRoles, addUserRole, deleteUserRole } from '@/lib/supabase-store';
+import { getUserRoles, addUserRole, updateUserRole, deleteUserRole } from '@/lib/supabase-store';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserRoleDisplay extends UserRole {
@@ -22,9 +24,11 @@ const UsersPage: React.FC = () => {
   const [data, setData] = useState<UserRoleDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<UserRoleDisplay | null>(null);
   const [formData, setFormData] = useState({ userId: '', role: 'user' as 'admin' | 'user' });
+  const [editFormData, setEditFormData] = useState({ role: 'user' as 'admin' | 'user' });
 
   useEffect(() => { 
     loadData();
@@ -34,7 +38,19 @@ const UsersPage: React.FC = () => {
     setIsLoading(true);
     try {
       const roles = await getUserRoles();
-      setData(roles);
+      
+      // Fetch user emails from auth - we'll get the current user's email at minimum
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentUserEmail = sessionData?.session?.user?.email;
+      const currentUserId = sessionData?.session?.user?.id;
+      
+      // Map roles with email (we can only reliably get current user's email)
+      const rolesWithEmail: UserRoleDisplay[] = roles.map(r => ({
+        ...r,
+        email: r.userId === currentUserId ? currentUserEmail : undefined
+      }));
+      
+      setData(rolesWithEmail);
     } catch (error) {
       console.error('Error loading user roles:', error);
       toast({ title: 'Error', description: 'Gagal memuat data role user.', variant: 'destructive' });
@@ -62,6 +78,19 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  const handleEdit = async () => {
+    if (!selectedItem) return;
+    try {
+      await updateUserRole(selectedItem.id, editFormData.role);
+      toast({ title: 'Berhasil', description: 'Role user berhasil diperbarui.' });
+      setIsEditOpen(false);
+      loadData();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Gagal memperbarui role user.';
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+    }
+  };
+
   const handleDelete = async () => {
     if (!selectedItem) return;
     try {
@@ -75,9 +104,55 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  const openEditDialog = (item: UserRoleDisplay) => {
+    setSelectedItem(item);
+    setEditFormData({ role: item.role });
+    setIsEditOpen(true);
+  };
+
   const columns = [
-    { key: 'userId', header: 'User ID' },
-    { key: 'role', header: 'Role', render: (item: UserRoleDisplay) => <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>{item.role}</Badge> },
+    { 
+      key: 'email', 
+      header: 'Email / User ID', 
+      render: (item: UserRoleDisplay) => (
+        <div className="flex flex-col">
+          {item.email ? (
+            <>
+              <span className="font-medium">{item.email}</span>
+              <span className="text-xs text-muted-foreground">{item.userId}</span>
+            </>
+          ) : (
+            <span className="font-mono text-sm">{item.userId}</span>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'role', 
+      header: 'Role', 
+      render: (item: UserRoleDisplay) => (
+        <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>
+          {item.role === 'admin' ? 'Admin (IT)' : 'User'}
+        </Badge>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Aksi',
+      render: (item: UserRoleDisplay) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            openEditDialog(item);
+          }}
+        >
+          <Pencil className="h-4 w-4 mr-1" />
+          Edit
+        </Button>
+      )
+    }
   ];
 
   if (isLoading) {
@@ -93,7 +168,7 @@ const UsersPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader title="Pengaturan Role User" description="Kelola role pengguna sistem (gunakan User ID dari Supabase Auth)" />
+      <PageHeader title="Pengaturan Role User" description="Kelola role pengguna sistem" />
       <DataTable 
         data={data} 
         columns={columns} 
@@ -105,7 +180,8 @@ const UsersPage: React.FC = () => {
       
       {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Tambah Role User</DialogTitle></DialogHeader>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Tambah Role User</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>User ID (UUID dari Supabase Auth) <span className="text-destructive">*</span></Label>
@@ -127,13 +203,61 @@ const UsersPage: React.FC = () => {
               </Select>
             </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIsAddOpen(false)}>Batal</Button><Button onClick={handleAdd}>Simpan</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>Batal</Button>
+            <Button onClick={handleAdd}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Role User</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>User</Label>
+              <div className="p-2 bg-muted rounded-md">
+                {selectedItem?.email ? (
+                  <div>
+                    <span className="font-medium">{selectedItem.email}</span>
+                    <p className="text-xs text-muted-foreground">{selectedItem.userId}</p>
+                  </div>
+                ) : (
+                  <span className="font-mono text-sm">{selectedItem?.userId}</span>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editFormData.role} onValueChange={(v: 'admin' | 'user') => setEditFormData({...editFormData, role: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin (IT)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
+            <Button onClick={handleEdit}>Simpan</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Hapus Role User?</AlertDialogTitle><AlertDialogDescription>Apakah Anda yakin ingin menghapus role user ini?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Role User?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus role user {selectedItem?.email || selectedItem?.userId}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </MainLayout>
