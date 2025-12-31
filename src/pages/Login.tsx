@@ -106,7 +106,8 @@ const Login: React.FC = () => {
     } else {
       toast({
         title: 'Pendaftaran Berhasil',
-        description: 'Akun Anda telah dibuat. Silakan login.',
+        description: 'Akun Anda telah dibuat dan menunggu persetujuan admin. Anda akan dihubungi setelah akun disetujui.',
+        duration: 8000,
       });
       setNama('');
       setEmail('');
