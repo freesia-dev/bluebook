@@ -5,6 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { 
+  DashboardSkeleton, 
+  TablePageSkeleton, 
+  GenericPageSkeleton 
+} from "@/components/ui/page-skeleton";
 
 // Lazy load pages for better performance
 const Login = lazy(() => import("./pages/Login"));
@@ -20,13 +25,10 @@ const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const About = lazy(() => import("./pages/About"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Loading fallback component
-const PageLoader = () => (
+// Minimal login loader (no layout needed)
+const LoginLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="flex flex-col items-center gap-4">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      <p className="text-muted-foreground text-sm">Memuat halaman...</p>
-    </div>
+    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -49,28 +51,62 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/surat-masuk" element={<SuratMasuk />} />
-              <Route path="/surat-keluar" element={<SuratKeluar />} />
-              <Route path="/agenda-kredit/agenda-kredit" element={<AgendaKreditPage />} />
-              <Route path="/agenda-kredit/sppk-telihan" element={<SPPKPage type="telihan" title="SPPK Telihan" />} />
-              <Route path="/agenda-kredit/sppk-meranti" element={<SPPKPage type="meranti" title="SPPK Meranti" />} />
-              <Route path="/agenda-kredit/pk-telihan" element={<PKPage type="telihan" title="PK Telihan" />} />
-              <Route path="/agenda-kredit/pk-meranti" element={<PKPage type="meranti" title="PK Meranti" />} />
-              <Route path="/agenda-kredit/kk-mpak-telihan" element={<KKMPAKPage type="telihan" title="KK & MPAK Telihan" />} />
-              <Route path="/agenda-kredit/agenda-mpak-meranti" element={<KKMPAKPage type="meranti" title="Agenda & MPAK Meranti" />} />
-              <Route path="/konfigurasi/users" element={<UsersPage />} />
-              <Route path="/konfigurasi/jenis-kredit" element={<ConfigPage type="jenis-kredit" />} />
-              <Route path="/konfigurasi/jenis-debitur" element={<ConfigPage type="jenis-debitur" />} />
-              <Route path="/konfigurasi/kode-fasilitas" element={<ConfigPage type="kode-fasilitas" />} />
-              <Route path="/konfigurasi/sektor-ekonomi" element={<ConfigPage type="sektor-ekonomi" />} />
-              <Route path="/about" element={<About />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <Routes>
+            <Route path="/login" element={
+              <Suspense fallback={<LoginLoader />}><Login /></Suspense>
+            } />
+            <Route path="/" element={
+              <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
+            } />
+            <Route path="/surat-masuk" element={
+              <Suspense fallback={<TablePageSkeleton />}><SuratMasuk /></Suspense>
+            } />
+            <Route path="/surat-keluar" element={
+              <Suspense fallback={<TablePageSkeleton />}><SuratKeluar /></Suspense>
+            } />
+            <Route path="/agenda-kredit/agenda-kredit" element={
+              <Suspense fallback={<TablePageSkeleton />}><AgendaKreditPage /></Suspense>
+            } />
+            <Route path="/agenda-kredit/sppk-telihan" element={
+              <Suspense fallback={<TablePageSkeleton />}><SPPKPage type="telihan" title="SPPK Telihan" /></Suspense>
+            } />
+            <Route path="/agenda-kredit/sppk-meranti" element={
+              <Suspense fallback={<TablePageSkeleton />}><SPPKPage type="meranti" title="SPPK Meranti" /></Suspense>
+            } />
+            <Route path="/agenda-kredit/pk-telihan" element={
+              <Suspense fallback={<TablePageSkeleton />}><PKPage type="telihan" title="PK Telihan" /></Suspense>
+            } />
+            <Route path="/agenda-kredit/pk-meranti" element={
+              <Suspense fallback={<TablePageSkeleton />}><PKPage type="meranti" title="PK Meranti" /></Suspense>
+            } />
+            <Route path="/agenda-kredit/kk-mpak-telihan" element={
+              <Suspense fallback={<TablePageSkeleton />}><KKMPAKPage type="telihan" title="KK & MPAK Telihan" /></Suspense>
+            } />
+            <Route path="/agenda-kredit/agenda-mpak-meranti" element={
+              <Suspense fallback={<TablePageSkeleton />}><KKMPAKPage type="meranti" title="Agenda & MPAK Meranti" /></Suspense>
+            } />
+            <Route path="/konfigurasi/users" element={
+              <Suspense fallback={<TablePageSkeleton />}><UsersPage /></Suspense>
+            } />
+            <Route path="/konfigurasi/jenis-kredit" element={
+              <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="jenis-kredit" /></Suspense>
+            } />
+            <Route path="/konfigurasi/jenis-debitur" element={
+              <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="jenis-debitur" /></Suspense>
+            } />
+            <Route path="/konfigurasi/kode-fasilitas" element={
+              <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="kode-fasilitas" /></Suspense>
+            } />
+            <Route path="/konfigurasi/sektor-ekonomi" element={
+              <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="sektor-ekonomi" /></Suspense>
+            } />
+            <Route path="/about" element={
+              <Suspense fallback={<GenericPageSkeleton />}><About /></Suspense>
+            } />
+            <Route path="*" element={
+              <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
+            } />
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
