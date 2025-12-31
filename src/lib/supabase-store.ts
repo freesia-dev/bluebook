@@ -81,6 +81,7 @@ export const getSuratMasuk = async (): Promise<SuratMasuk[]> => {
     keterangan: s.keterangan || '',
     userInput: s.user_input,
     fileUrl: s.file_url || undefined,
+    tanggalMasuk: new Date((s as any).tanggal_masuk || s.created_at),
     createdAt: new Date(s.created_at)
   }));
 };
@@ -94,8 +95,8 @@ export const addSuratMasuk = async (data: Omit<SuratMasuk, 'id' | 'nomor' | 'nom
     .limit(1);
   
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  const now = new Date();
-  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  const tanggalMasuk = data.tanggalMasuk || new Date();
+  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(tanggalMasuk.getMonth())}/${tanggalMasuk.getFullYear()}`;
   
   const { data: result, error } = await supabase
     .from('surat_masuk')
@@ -110,7 +111,8 @@ export const addSuratMasuk = async (data: Omit<SuratMasuk, 'id' | 'nomor' | 'nom
       status: data.status,
       keterangan: data.keterangan,
       user_input: data.userInput,
-      file_url: data.fileUrl
+      file_url: data.fileUrl,
+      tanggal_masuk: tanggalMasuk.toISOString()
     })
     .select()
     .single();
@@ -130,6 +132,7 @@ export const addSuratMasuk = async (data: Omit<SuratMasuk, 'id' | 'nomor' | 'nom
     keterangan: result.keterangan || '',
     userInput: result.user_input,
     fileUrl: result.file_url || undefined,
+    tanggalMasuk: new Date((result as any).tanggal_masuk || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -144,6 +147,7 @@ export const updateSuratMasuk = async (id: string, data: Partial<SuratMasuk>): P
   if (data.status !== undefined) updateData.status = data.status;
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
+  if (data.tanggalMasuk !== undefined) updateData.tanggal_masuk = data.tanggalMasuk.toISOString();
   
   const { error } = await supabase
     .from('surat_masuk')
@@ -282,6 +286,7 @@ export const getAgendaKreditEntry = async (): Promise<AgendaKreditEntry[]> => {
     keterangan: s.keterangan || '',
     userInput: s.user_input,
     fileUrl: s.file_url || undefined,
+    tanggalMasuk: new Date((s as any).tanggal_masuk || s.created_at),
     createdAt: new Date(s.created_at)
   }));
 };
@@ -294,8 +299,8 @@ export const addAgendaKreditEntry = async (data: Omit<AgendaKreditEntry, 'id' | 
     .limit(1);
   
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  const now = new Date();
-  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${now.getFullYear()}`;
+  const tanggalMasuk = data.tanggalMasuk || new Date();
+  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${tanggalMasuk.getFullYear()}`;
   
   const { data: result, error } = await supabase
     .from('agenda_kredit_entry')
@@ -310,7 +315,8 @@ export const addAgendaKreditEntry = async (data: Omit<AgendaKreditEntry, 'id' | 
       status: data.status,
       keterangan: data.keterangan,
       user_input: data.userInput,
-      file_url: data.fileUrl
+      file_url: data.fileUrl,
+      tanggal_masuk: tanggalMasuk.toISOString()
     })
     .select()
     .single();
@@ -330,6 +336,7 @@ export const addAgendaKreditEntry = async (data: Omit<AgendaKreditEntry, 'id' | 
     keterangan: result.keterangan || '',
     userInput: result.user_input,
     fileUrl: result.file_url || undefined,
+    tanggalMasuk: new Date((result as any).tanggal_masuk || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -338,12 +345,13 @@ export const updateAgendaKreditEntry = async (id: string, data: Partial<AgendaKr
   const updateData: Record<string, unknown> = {};
   if (data.kodeSurat !== undefined) updateData.kode_surat = data.kodeSurat;
   if (data.nomorSuratMasuk !== undefined) updateData.nomor_surat_masuk = data.nomorSuratMasuk;
-  if (data.namaPengirim !== undefined) updateData.namaPengirim = data.namaPengirim;
+  if (data.namaPengirim !== undefined) updateData.nama_pengirim = data.namaPengirim;
   if (data.perihal !== undefined) updateData.perihal = data.perihal;
   if (data.tujuanDisposisi !== undefined) updateData.tujuan_disposisi = data.tujuanDisposisi;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
+  if (data.tanggalMasuk !== undefined) updateData.tanggal_masuk = data.tanggalMasuk.toISOString();
   
   const { error } = await supabase
     .from('agenda_kredit_entry')

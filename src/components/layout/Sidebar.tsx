@@ -9,10 +9,10 @@ import {
   Info,
   ChevronDown,
   ChevronRight,
-  FileText,
   BookOpen,
   LogOut,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,9 +24,10 @@ interface NavItemProps {
   href?: string;
   children?: { label: string; href: string }[];
   isActive?: boolean;
+  onNavigate?: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, onNavigate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
@@ -52,6 +53,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
               <Link
                 key={child.href}
                 to={child.href}
+                onClick={onNavigate}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200",
                   "hover:bg-sidebar-accent text-sidebar-foreground/80 hover:text-sidebar-foreground",
@@ -71,6 +73,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
   return (
     <Link
       to={href || '/'}
+      onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
         "hover:bg-sidebar-accent text-sidebar-foreground",
@@ -83,7 +86,12 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
   );
 };
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const { userName, userRole, logout, isAdmin } = useAuth();
 
@@ -113,78 +121,109 @@ export const Sidebar: React.FC = () => {
       ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 gradient-dark">
-      <div className="flex h-full flex-col">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border">
-          <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-sidebar-primary-foreground" />
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed left-0 top-0 z-50 h-screen w-64 gradient-dark transition-transform duration-300",
+        "lg:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="flex h-full flex-col">
+          {/* Logo */}
+          <div className="flex items-center justify-between px-6 py-6 border-b border-sidebar-border">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-sidebar-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="font-display text-xl font-bold text-sidebar-foreground">Bluebook</h1>
+                <p className="text-xs text-sidebar-foreground/60">Telihan</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <X className="w-5 h-5" />
+            </Button>
           </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-sidebar-foreground">Bluebook</h1>
-            <p className="text-xs text-sidebar-foreground/60">Telihan</p>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <NavItem 
+              icon={LayoutDashboard} 
+              label="Dashboard" 
+              href="/" 
+              isActive={location.pathname === '/'} 
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={Mail} 
+              label="Surat Masuk" 
+              href="/surat-masuk" 
+              isActive={location.pathname === '/surat-masuk'} 
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={Send} 
+              label="Surat Keluar" 
+              href="/surat-keluar" 
+              isActive={location.pathname === '/surat-keluar'} 
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={CreditCard} 
+              label="Agenda Kredit" 
+              children={agendaKreditItems}
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={Settings} 
+              label="Konfigurasi" 
+              children={konfigurasiItems}
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={Info} 
+              label="About" 
+              href="/about" 
+              isActive={location.pathname === '/about'} 
+              onNavigate={onClose}
+            />
+          </nav>
+
+          {/* User Info */}
+          <div className="px-4 py-4 border-t border-sidebar-border">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center">
+                <User className="w-5 h-5 text-sidebar-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
+                <p className="text-xs text-sidebar-foreground/60 capitalize">{userRole}</p>
+              </div>
+            </div>
+            <Button 
+              onClick={logout}
+              variant="ghost" 
+              className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
           </div>
         </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <NavItem 
-            icon={LayoutDashboard} 
-            label="Dashboard" 
-            href="/" 
-            isActive={location.pathname === '/'} 
-          />
-          <NavItem 
-            icon={Mail} 
-            label="Surat Masuk" 
-            href="/surat-masuk" 
-            isActive={location.pathname === '/surat-masuk'} 
-          />
-          <NavItem 
-            icon={Send} 
-            label="Surat Keluar" 
-            href="/surat-keluar" 
-            isActive={location.pathname === '/surat-keluar'} 
-          />
-          <NavItem 
-            icon={CreditCard} 
-            label="Agenda Kredit" 
-            children={agendaKreditItems}
-          />
-          <NavItem 
-            icon={Settings} 
-            label="Konfigurasi" 
-            children={konfigurasiItems}
-          />
-          <NavItem 
-            icon={Info} 
-            label="About" 
-            href="/about" 
-            isActive={location.pathname === '/about'} 
-          />
-        </nav>
-
-        {/* User Info */}
-        <div className="px-4 py-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <User className="w-5 h-5 text-sidebar-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-              <p className="text-xs text-sidebar-foreground/60 capitalize">{userRole}</p>
-            </div>
-          </div>
-          <Button 
-            onClick={logout}
-            variant="ghost" 
-            className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

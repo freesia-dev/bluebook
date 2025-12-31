@@ -54,6 +54,7 @@ const sampleSuratMasuk: SuratMasuk[] = [
     status: 'Sudah Disposisi',
     keterangan: '-',
     userInput: 'admin',
+    tanggalMasuk: new Date('2024-12-20'),
     createdAt: new Date('2024-12-20'),
   },
   {
@@ -68,6 +69,7 @@ const sampleSuratMasuk: SuratMasuk[] = [
     status: 'Belum Disposisi',
     keterangan: 'Segera ditindaklanjuti',
     userInput: 'admin',
+    tanggalMasuk: new Date('2024-12-21'),
     createdAt: new Date('2024-12-21'),
   },
 ];

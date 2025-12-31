@@ -20,6 +20,7 @@ export interface SuratMasuk {
   keterangan: string;
   userInput: string;
   fileUrl?: string;
+  tanggalMasuk: Date;
   createdAt: Date;
 }
 
@@ -37,6 +38,7 @@ export interface AgendaKreditEntry {
   keterangan: string;
   userInput: string;
   fileUrl?: string;
+  tanggalMasuk: Date;
   createdAt: Date;
 }
 
