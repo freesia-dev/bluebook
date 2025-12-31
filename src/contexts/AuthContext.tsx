@@ -62,27 +62,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const checkUserStatus = async (userId: string) => {
     try {
-      // Check role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      setIsAdmin(roleData?.role === 'admin');
+      // Parallel queries for maximum speed
+      const [roleResult, profileResult] = await Promise.all([
+        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+        supabase.from('profiles').select('status').eq('user_id', userId).maybeSingle()
+      ]);
 
-      // Check approval status
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('status')
-        .eq('user_id', userId)
-        .maybeSingle();
+      setIsAdmin(roleResult.data?.role === 'admin');
       
-      if (profileData) {
-        setIsApproved(profileData.status === 'approved');
-        setIsPending(profileData.status === 'pending');
+      if (profileResult.data) {
+        setIsApproved(profileResult.data.status === 'approved');
+        setIsPending(profileResult.data.status === 'pending');
       } else {
-        // If no profile exists (shouldn't happen, but fallback)
         setIsApproved(false);
         setIsPending(true);
       }
@@ -108,24 +99,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { error: error.message };
       }
 
-      // Check if user is approved
+      // Parallel check for role and profile status
       if (data.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('status')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
+        const [roleResult, profileResult] = await Promise.all([
+          supabase.from('user_roles').select('role').eq('user_id', data.user.id).maybeSingle(),
+          supabase.from('profiles').select('status').eq('user_id', data.user.id).maybeSingle()
+        ]);
 
-        if (profileData?.status === 'pending') {
-          // Sign out the user since they're not approved
+        const status = profileResult.data?.status;
+        
+        if (status === 'pending') {
           await supabase.auth.signOut();
           return { error: 'Akun Anda masih menunggu persetujuan admin. Silakan hubungi administrator.' };
         }
 
-        if (profileData?.status === 'rejected') {
+        if (status === 'rejected') {
           await supabase.auth.signOut();
           return { error: 'Akun Anda telah ditolak. Silakan hubungi administrator.' };
         }
+
+        // Set state immediately without waiting for onAuthStateChange
+        setIsAdmin(roleResult.data?.role === 'admin');
+        setIsApproved(status === 'approved');
+        setIsPending(status === 'pending');
       }
       
       return { error: null };
