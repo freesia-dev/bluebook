@@ -38,7 +38,6 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       add: (d: any) => addJenisKredit({ nama: d.nama, produkKredit: d.produkKredit }), 
       update: (id: string, d: any) => updateJenisKredit(id, { nama: d.nama, produkKredit: d.produkKredit }),
       del: deleteJenisKredit, 
-      bulk: bulkUpdateJenisKredit,
       columns: [{ key: 'nama', header: 'Jenis Kredit' }, { key: 'produkKredit', header: 'Produk Kredit' }],
       templateData: [{ 'Jenis Kredit': 'Contoh Jenis', 'Produk Kredit': 'Contoh Produk' }],
       parseExcel: (row: any) => ({ nama: row['Jenis Kredit'] || '', produkKredit: row['Produk Kredit'] || '' })
@@ -49,7 +48,6 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       add: (d: any) => addJenisDebitur({ kode: d.kode, keterangan: d.keterangan }), 
       update: (id: string, d: any) => updateJenisDebitur(id, { kode: d.kode, keterangan: d.keterangan }),
       del: deleteJenisDebitur, 
-      bulk: bulkUpdateJenisDebitur,
       columns: [{ key: 'kode', header: 'Kode' }, { key: 'keterangan', header: 'Keterangan' }],
       templateData: [{ 'Kode': '001', 'Keterangan': 'Contoh Debitur' }],
       parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
@@ -60,7 +58,6 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       add: (d: any) => addKodeFasilitas({ kode: d.kode, keterangan: d.keterangan }), 
       update: (id: string, d: any) => updateKodeFasilitas(id, { kode: d.kode, keterangan: d.keterangan }),
       del: deleteKodeFasilitas, 
-      bulk: bulkUpdateKodeFasilitas,
       columns: [{ key: 'kode', header: 'Kode' }, { key: 'keterangan', header: 'Keterangan' }],
       templateData: [{ 'Kode': '01', 'Keterangan': 'Contoh Fasilitas' }],
       parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
@@ -71,7 +68,6 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       add: (d: any) => addSektorEkonomi({ kode: d.kode, keterangan: d.keterangan }), 
       update: (id: string, d: any) => updateSektorEkonomi(id, { kode: d.kode, keterangan: d.keterangan }),
       del: deleteSektorEkonomi, 
-      bulk: bulkUpdateSektorEkonomi,
       columns: [{ key: 'kode', header: 'Kode' }, { key: 'keterangan', header: 'Keterangan' }],
       templateData: [{ 'Kode': '0101', 'Keterangan': 'Contoh Sektor' }],
       parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
@@ -79,33 +75,41 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
   };
 
   const cfg = config[type];
-  useEffect(() => { setData(cfg.get()); }, [type]);
+
+  const loadData = async () => {
+    const result = await cfg.get();
+    setData(result);
+  };
+
+  useEffect(() => { 
+    loadData(); 
+  }, [type]);
 
   const resetForm = () => setFormData({ nama: '', produkKredit: '', kode: '', keterangan: '' });
 
-  const handleAdd = () => {
-    cfg.add(formData);
+  const handleAdd = async () => {
+    await cfg.add(formData);
     toast({ title: 'Berhasil', description: 'Data berhasil ditambahkan.' });
     setIsAddOpen(false);
     resetForm();
-    setData(cfg.get());
+    loadData();
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedItem) return;
-    cfg.update(selectedItem.id, formData);
+    await cfg.update(selectedItem.id, formData);
     toast({ title: 'Berhasil', description: 'Data berhasil diperbarui.' });
     setIsEditOpen(false);
     resetForm();
-    setData(cfg.get());
+    loadData();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedItem) return;
-    cfg.del(selectedItem.id);
+    await cfg.del(selectedItem.id);
     toast({ title: 'Berhasil', description: 'Data berhasil dihapus.' });
     setIsDeleteOpen(false);
-    setData(cfg.get());
+    loadData();
   };
 
   const openEdit = (item: any) => {
@@ -125,12 +129,12 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
     XLSX.writeFile(wb, `Template_${cfg.title.replace(/\s/g, '_')}.xlsx`);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const bstr = evt.target?.result;
       const wb = XLSX.read(bstr, { type: 'binary' });
       const wsname = wb.SheetNames[0];
@@ -143,9 +147,12 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       });
 
       if (parsedData.length > 0) {
-        cfg.bulk(parsedData as any);
+        // Add each item individually
+        for (const item of parsedData) {
+          await cfg.add(item);
+        }
         toast({ title: 'Berhasil', description: `${parsedData.length} data berhasil diimport.` });
-        setData(cfg.get());
+        loadData();
       } else {
         toast({ title: 'Error', description: 'Tidak ada data valid ditemukan.', variant: 'destructive' });
       }
