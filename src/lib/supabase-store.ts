@@ -60,26 +60,7 @@ export const deleteUser = async (id: string): Promise<void> => {
   if (error) throw error;
 };
 
-export const loginUser = async (username: string, password: string): Promise<User | null> => {
-  const { data, error } = await supabase
-    .from('app_users')
-    .select('*')
-    .eq('username', username)
-    .eq('password', password)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  
-  return {
-    id: data.id,
-    nama: data.nama,
-    username: data.username,
-    password: data.password,
-    role: data.role as 'admin' | 'user',
-    keterangan: data.keterangan || '',
-    createdAt: new Date(data.created_at)
-  };
-};
+// Note: loginUser removed - using Supabase Auth instead
 
 // ============= SURAT MASUK FUNCTIONS =============
 export const getSuratMasuk = async (): Promise<SuratMasuk[]> => {

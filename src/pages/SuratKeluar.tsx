@@ -46,7 +46,7 @@ import { CheckCircle2 } from 'lucide-react';
 
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { userName } = useAuth();
   const [data, setData] = useState<SuratKeluar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -100,7 +100,7 @@ const SuratKeluarPage: React.FC = () => {
         tujuanSurat: formData.tujuanSurat,
         status: 'Belum Dikirim',
         keterangan: formData.keterangan || '-',
-        userInput: user?.nama || 'Unknown',
+        userInput: userName || 'Unknown',
       });
 
       setSuccessMessage(`Surat Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);

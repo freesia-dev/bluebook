@@ -85,7 +85,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const { userName, userRole, logout, isAdmin } = useAuth();
 
   const agendaKreditItems = [
     { label: 'Agenda Kredit', href: '/agenda-kredit/agenda-kredit' },
@@ -171,8 +171,8 @@ export const Sidebar: React.FC = () => {
               <User className="w-5 h-5 text-sidebar-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.nama}</p>
-              <p className="text-xs text-sidebar-foreground/60 capitalize">{user?.role}</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
+              <p className="text-xs text-sidebar-foreground/60 capitalize">{userRole}</p>
             </div>
           </div>
           <Button 
