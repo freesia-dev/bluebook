@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
-  getJenisKredit, addJenisKredit, deleteJenisKredit, updateJenisKredit, bulkUpdateJenisKredit,
-  getJenisDebitur, addJenisDebitur, deleteJenisDebitur, updateJenisDebitur, bulkUpdateJenisDebitur,
-  getKodeFasilitas, addKodeFasilitas, deleteKodeFasilitas, updateKodeFasilitas, bulkUpdateKodeFasilitas,
-  getSektorEkonomi, addSektorEkonomi, deleteSektorEkonomi, updateSektorEkonomi, bulkUpdateSektorEkonomi
-} from '@/lib/store';
+  getJenisKredit, addJenisKredit, deleteJenisKredit, updateJenisKredit,
+  getJenisDebitur, addJenisDebitur, deleteJenisDebitur, updateJenisDebitur,
+  getKodeFasilitas, addKodeFasilitas, deleteKodeFasilitas, updateKodeFasilitas,
+  getSektorEkonomi, addSektorEkonomi, deleteSektorEkonomi, updateSektorEkonomi
+} from '@/lib/supabase-store';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';

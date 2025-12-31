@@ -35,7 +35,7 @@ import { PK, JenisKredit } from '@/types';
 import { 
   getPK, addPK, updatePK, deletePK, 
   getJenisKredit, getJenisDebitur, getKodeFasilitas, getSektorEkonomi 
-} from '@/lib/store';
+} from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
