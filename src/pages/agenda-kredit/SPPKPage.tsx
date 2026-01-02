@@ -5,6 +5,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,7 +41,10 @@ import { getSPPK, addSPPK, updateSPPK, deleteSPPK, getJenisKredit } from '@/lib/
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface SPPKPageProps {
   type: 'telihan' | 'meranti';
@@ -60,6 +69,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     plafon: '',
     jangkaWaktu: '',
     marketing: type === 'telihan' ? 'BAP' : '',
+    tanggal: new Date(),
   });
 
   useEffect(() => {
@@ -84,6 +94,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       plafon: '',
       jangkaWaktu: '',
       marketing: type === 'telihan' ? 'BAP' : '',
+      tanggal: new Date(),
     });
   };
 
@@ -109,6 +120,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       jangkaWaktu: formData.jangkaWaktu,
       marketing: formData.marketing,
       type,
+      tanggal: formData.tanggal,
     });
 
     setSuccessMessage(`SPPK Berhasil diinput dengan Nomor: ${newItem.nomorSPPK}`);
@@ -127,6 +139,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       marketing: formData.marketing,
+      tanggal: formData.tanggal,
     });
 
     toast({
@@ -159,7 +172,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       'Plafon': item.plafon,
       'Jangka Waktu': item.jangkaWaktu,
       'Marketing': item.marketing,
-      'Tanggal': new Date(item.createdAt).toLocaleDateString('id-ID'),
+      'Tanggal': item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-',
     }));
     exportToExcel(exportData, `SPPK_${type.charAt(0).toUpperCase() + type.slice(1)}`, 'SPPK');
     toast({
@@ -173,6 +186,23 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     return jk ? `${jk.nama} - ${jk.produkKredit}` : id;
   };
 
+  const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={value} onSelect={(date) => date && onChange(date)} initialFocus className="p-3 pointer-events-auto" />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   const columns = [
     { key: 'nomor', header: 'No', className: 'w-[60px]' },
     { key: 'nomorSPPK', header: 'Nomor SPPK' },
@@ -184,6 +214,11 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       render: (item: SPPK) => formatCurrencyDisplay(item.plafon)
     },
     { key: 'jangkaWaktu', header: 'Jangka Waktu' },
+    { 
+      key: 'tanggal', 
+      header: 'Tanggal',
+      render: (item: SPPK) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-'
+    },
     { key: 'marketing', header: 'Marketing' },
   ];
 
@@ -208,6 +243,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
             plafon: formatCurrencyInput(item.plafon.toString()),
             jangkaWaktu: item.jangkaWaktu,
             marketing: item.marketing,
+            tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
           });
           setIsEditOpen(true); 
         }}
@@ -218,12 +254,13 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
 
       {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Tambah {title}</DialogTitle>
             <DialogDescription>Masukkan data SPPK baru</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField value={formData.tanggal} onChange={(date) => setFormData({...formData, tanggal: date})} label="Tanggal" />
             <div className="space-y-2">
               <Label>Nama Debitur <span className="text-destructive">*</span></Label>
               <Input 
@@ -323,6 +360,10 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
                   <p className="font-medium">{selectedItem.marketing}</p>
                 </div>
                 <div>
+                  <p className="text-sm text-muted-foreground">Tanggal</p>
+                  <p className="font-medium">{selectedItem.tanggal ? format(new Date(selectedItem.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}</p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Tanggal Input</p>
                   <p className="font-medium">{new Date(selectedItem.createdAt).toLocaleDateString('id-ID')}</p>
                 </div>
@@ -337,11 +378,12 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Edit SPPK</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField value={formData.tanggal} onChange={(date) => setFormData({...formData, tanggal: date})} label="Tanggal" />
             <div className="space-y-2">
               <Label>Nama Debitur</Label>
               <Input 

@@ -5,6 +5,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +44,10 @@ import {
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface KKMPAKPageProps {
   type: 'telihan' | 'meranti';
@@ -69,6 +78,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     jenisDebitur: '',
     kodeFasilitas: '',
     sektorEkonomi: '',
+    tanggal: new Date(),
   });
 
   useEffect(() => {
@@ -103,6 +113,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
       jenisDebitur: '',
       kodeFasilitas: '',
       sektorEkonomi: '',
+      tanggal: new Date(),
     });
   };
 
@@ -126,6 +137,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
       kodeFasilitas: formData.kodeFasilitas,
       sektorEkonomi: formData.sektorEkonomi,
       type,
+      tanggal: formData.tanggal,
     });
 
     const msg = type === 'telihan' 
@@ -150,6 +162,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
       jenisDebitur: formData.jenisDebitur,
       kodeFasilitas: formData.kodeFasilitas,
       sektorEkonomi: formData.sektorEkonomi,
+      tanggal: formData.tanggal,
     });
 
     toast({ title: 'Berhasil', description: 'Data berhasil diperbarui.' });
@@ -178,7 +191,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
       'Jenis Debitur': item.jenisDebitur,
       'Kode Fasilitas': item.kodeFasilitas,
       'Sektor Ekonomi': item.sektorEkonomi,
-      'Tanggal': new Date(item.createdAt).toLocaleDateString('id-ID'),
+      'Tanggal': item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-',
     }));
     const filename = type === 'telihan' ? 'KK_MPAK_Telihan' : 'Agenda_MPAK_Meranti';
     exportToExcel(exportData, filename, type === 'telihan' ? 'KK MPAK' : 'Agenda MPAK');
@@ -190,6 +203,23 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     return jk ? `${jk.nama} - ${jk.produkKredit}` : id;
   };
 
+  const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={value} onSelect={(date) => date && onChange(date)} initialFocus className="p-3 pointer-events-auto" />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   const columns = [
     { key: 'nomor', header: 'No', className: 'w-[60px]' },
     { key: 'nomorKK', header: type === 'telihan' ? 'Nomor KK' : 'Nomor Agenda' },
@@ -197,10 +227,12 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     { key: 'namaDebitur', header: 'Nama Debitur' },
     { key: 'jenisKredit', header: 'Jenis Kredit', render: (item: KKMPAK) => getJenisKreditLabel(item.jenisKredit) },
     { key: 'plafon', header: 'Plafon', render: (item: KKMPAK) => formatCurrencyDisplay(item.plafon) },
+    { 
+      key: 'tanggal', 
+      header: 'Tanggal',
+      render: (item: KKMPAK) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-'
+    },
     { key: 'jangkaWaktu', header: 'Jangka Waktu' },
-    { key: 'jenisDebitur', header: 'Jenis Debitur' },
-    { key: 'kodeFasilitas', header: 'Kode Fasilitas' },
-    { key: 'sektorEkonomi', header: 'Sektor Ekonomi' },
   ];
 
   return (
@@ -223,6 +255,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
             jenisDebitur: item.jenisDebitur,
             kodeFasilitas: item.kodeFasilitas,
             sektorEkonomi: item.sektorEkonomi,
+            tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
           });
           setIsEditOpen(true); 
         }}
@@ -239,6 +272,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
             <DialogDescription>Masukkan data baru</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField value={formData.tanggal} onChange={(date) => setFormData({...formData, tanggal: date})} label="Tanggal" />
             <div className="space-y-2"><Label>Nama Debitur <span className="text-destructive">*</span></Label><Input value={formData.namaDebitur} onChange={(e) => setFormData({...formData, namaDebitur: e.target.value})} placeholder="Nama debitur" /></div>
             <div className="space-y-2"><Label>Jenis Kredit <span className="text-destructive">*</span></Label>
               <Select value={formData.jenisKredit} onValueChange={(v) => setFormData({...formData, jenisKredit: v})}>
@@ -286,6 +320,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
               <div><p className="text-sm text-muted-foreground">Jenis Kredit</p><p className="font-medium">{getJenisKreditLabel(selectedItem.jenisKredit)}</p></div>
               <div><p className="text-sm text-muted-foreground">Plafon</p><p className="font-medium">{formatCurrencyDisplay(selectedItem.plafon)}</p></div>
               <div><p className="text-sm text-muted-foreground">Jangka Waktu</p><p className="font-medium">{selectedItem.jangkaWaktu}</p></div>
+              <div><p className="text-sm text-muted-foreground">Tanggal</p><p className="font-medium">{selectedItem.tanggal ? format(new Date(selectedItem.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}</p></div>
               <div><p className="text-sm text-muted-foreground">Jenis Debitur</p><p className="font-medium">{selectedItem.jenisDebitur}</p></div>
               <div><p className="text-sm text-muted-foreground">Kode Fasilitas</p><p className="font-medium">{selectedItem.kodeFasilitas}</p></div>
               <div><p className="text-sm text-muted-foreground">Sektor Ekonomi</p><p className="font-medium">{selectedItem.sektorEkonomi}</p></div>
@@ -300,6 +335,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-display">Edit {type === 'telihan' ? 'KK & MPAK' : 'Agenda & MPAK'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
+            <DatePickerField value={formData.tanggal} onChange={(date) => setFormData({...formData, tanggal: date})} label="Tanggal" />
             <div className="space-y-2"><Label>Nama Debitur</Label><Input value={formData.namaDebitur} onChange={(e) => setFormData({...formData, namaDebitur: e.target.value})} /></div>
             <div className="space-y-2"><Label>Jenis Kredit</Label>
               <Select value={formData.jenisKredit} onValueChange={(v) => setFormData({...formData, jenisKredit: v})}>

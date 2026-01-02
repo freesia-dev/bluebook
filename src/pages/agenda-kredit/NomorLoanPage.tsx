@@ -7,6 +7,7 @@ import type { Column } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +46,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NomorLoan, PK } from "@/types";
 import { 
@@ -57,7 +58,8 @@ import {
 } from "@/lib/supabase-store";
 import { exportToExcel } from "@/lib/export";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 const STARTING_LOAN_NUMBER = 14306840;
 const SKEMA_OPTIONS = ['Supermikro', 'Mikro', 'Kecil'];
@@ -83,7 +85,8 @@ export default function NomorLoanPage() {
     nomorLoan: '',
     pkId: '',
     skema: '',
-    unitKerja: ''
+    unitKerja: '',
+    tanggal: new Date(),
   });
 
   useEffect(() => {
@@ -136,7 +139,8 @@ export default function NomorLoanPage() {
       nomorLoan: getNextLoanNumber().toString(),
       pkId: '',
       skema: '',
-      unitKerja: ''
+      unitKerja: '',
+      tanggal: new Date(),
     });
   };
 
@@ -187,7 +191,8 @@ export default function NomorLoanPage() {
         jangkaWaktu: pk.jangkaWaktu,
         skema: formData.skema,
         unitKerja: formData.unitKerja,
-        pkId: formData.pkId
+        pkId: formData.pkId,
+        tanggal: formData.tanggal,
       });
       
       setData(prev => [...prev, newData]);
@@ -219,7 +224,8 @@ export default function NomorLoanPage() {
       nomorLoan: item.nomorLoan,
       pkId: item.pkId || '',
       skema: item.skema,
-      unitKerja: item.unitKerja
+      unitKerja: item.unitKerja,
+      tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
     });
     setIsEditDialogOpen(true);
   };
@@ -259,7 +265,8 @@ export default function NomorLoanPage() {
         jangkaWaktu: pk.jangkaWaktu,
         skema: formData.skema,
         unitKerja: formData.unitKerja,
-        pkId: formData.pkId
+        pkId: formData.pkId,
+        tanggal: formData.tanggal,
       });
       
       await loadData();
@@ -316,7 +323,8 @@ export default function NomorLoanPage() {
       'Plafon Kredit': item.plafon,
       'Jangka Waktu': item.jangkaWaktu,
       'Skema': item.skema,
-      'Unit Kerja': item.unitKerja
+      'Unit Kerja': item.unitKerja,
+      'Tanggal': item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-',
     }));
     exportToExcel(exportData, 'nomor-loan');
   };
@@ -329,6 +337,23 @@ export default function NomorLoanPage() {
     }).format(value);
   };
 
+  const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar mode="single" selected={value} onSelect={(date) => date && onChange(date)} initialFocus className="p-3 pointer-events-auto" />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   const columns: Column<NomorLoan>[] = [
     { key: 'nomor', header: 'No', className: 'w-16' },
     { key: 'namaDebitur', header: 'Nama Debitur' },
@@ -340,7 +365,11 @@ export default function NomorLoanPage() {
       header: 'Plafon Kredit',
       render: (item) => formatCurrency(item.plafon)
     },
-    { key: 'jangkaWaktu', header: 'Jangka Waktu' },
+    { 
+      key: 'tanggal', 
+      header: 'Tanggal',
+      render: (item) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-'
+    },
     { key: 'skema', header: 'Skema' },
     { key: 'unitKerja', header: 'Unit Kerja' },
   ];
@@ -374,13 +403,15 @@ export default function NomorLoanPage() {
 
       {/* Add Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tambah Nomor Loan</DialogTitle>
             <DialogDescription>Generate nomor loan baru</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
+            <DatePickerField value={formData.tanggal} onChange={(date) => setFormData(prev => ({ ...prev, tanggal: date }))} label="Tanggal" />
+            
             <div className="space-y-2">
               <Label>Unit Kerja</Label>
               <Select
@@ -507,6 +538,9 @@ export default function NomorLoanPage() {
               <div className="text-muted-foreground">
                 {successData.produkKredit} - {successData.skema} - {successData.unitKerja}
               </div>
+              <div className="text-sm text-muted-foreground">
+                Tanggal: {successData.tanggal ? format(new Date(successData.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}
+              </div>
             </div>
           )}
 
@@ -549,6 +583,9 @@ export default function NomorLoanPage() {
                 
                 <span className="text-muted-foreground">Unit Kerja:</span>
                 <span className="font-medium">{selectedItem.unitKerja}</span>
+                
+                <span className="text-muted-foreground">Tanggal:</span>
+                <span className="font-medium">{selectedItem.tanggal ? format(new Date(selectedItem.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}</span>
               </div>
             </div>
           )}
@@ -561,12 +598,14 @@ export default function NomorLoanPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Nomor Loan</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
+            <DatePickerField value={formData.tanggal} onChange={(date) => setFormData(prev => ({ ...prev, tanggal: date }))} label="Tanggal" />
+            
             <div className="space-y-2">
               <Label>Unit Kerja</Label>
               <Select
