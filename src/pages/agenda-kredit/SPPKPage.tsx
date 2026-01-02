@@ -168,9 +168,9 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     });
   };
 
-  const getJenisKreditLabel = (nama: string) => {
-    const jk = jenisKreditOptions.find(j => j.nama === nama);
-    return jk ? `${jk.nama} - ${jk.produkKredit}` : nama;
+  const getJenisKreditLabel = (id: string) => {
+    const jk = jenisKreditOptions.find(j => j.id === id);
+    return jk ? `${jk.nama} - ${jk.produkKredit}` : id;
   };
 
   const columns = [
@@ -240,7 +240,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
                 </SelectTrigger>
                 <SelectContent>
                   {jenisKreditOptions.map((jk) => (
-                    <SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>
+                    <SelectItem key={jk.id} value={jk.id}>{jk.nama} - {jk.produkKredit}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -357,7 +357,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
                 </SelectTrigger>
                 <SelectContent>
                   {jenisKreditOptions.map((jk) => (
-                    <SelectItem key={jk.id} value={jk.nama}>{jk.nama} - {jk.produkKredit}</SelectItem>
+                    <SelectItem key={jk.id} value={jk.id}>{jk.nama} - {jk.produkKredit}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
