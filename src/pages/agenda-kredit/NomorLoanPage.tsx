@@ -32,14 +32,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { NomorLoan, PK, JenisKredit } from "@/types";
+import { NomorLoan, PK } from "@/types";
 import { 
   getNomorLoan, 
   addNomorLoan, 
   updateNomorLoan, 
   deleteNomorLoan,
-  getPK,
-  getJenisKredit
+  getPK
 } from "@/lib/supabase-store";
 import { exportToExcel } from "@/lib/export";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,7 +53,6 @@ export default function NomorLoanPage() {
   const { isAdmin } = useAuth();
   const [data, setData] = useState<NomorLoan[]>([]);
   const [pkData, setPkData] = useState<PK[]>([]);
-  const [jenisKreditData, setJenisKreditData] = useState<JenisKredit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -67,7 +65,6 @@ export default function NomorLoanPage() {
   const [formData, setFormData] = useState({
     nomorLoan: '',
     pkId: '',
-    jenisKreditId: '',
     skema: '',
     unitKerja: ''
   });
@@ -79,14 +76,12 @@ export default function NomorLoanPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [loanData, pkResult, jenisKreditResult] = await Promise.all([
+      const [loanData, pkResult] = await Promise.all([
         getNomorLoan(),
-        getPK(),
-        getJenisKredit()
+        getPK()
       ]);
       setData(loanData);
       setPkData(pkResult);
-      setJenisKreditData(jenisKreditResult);
     } catch (error) {
       toast({
         title: "Error",
@@ -119,23 +114,10 @@ export default function NomorLoanPage() {
     return pkData.find(pk => pk.id === formData.pkId);
   }, [pkData, formData.pkId]);
 
-  // Get jenis kredit label
-  const getJenisKreditLabel = (id: string): string => {
-    const jk = jenisKreditData.find(j => j.id === id);
-    return jk ? `${jk.produkKredit} - ${jk.nama}` : id;
-  };
-
-  // Get produk kredit only
-  const getProdukKreditOnly = (id: string): string => {
-    const jk = jenisKreditData.find(j => j.id === id);
-    return jk ? jk.produkKredit : id;
-  };
-
   const resetForm = () => {
     setFormData({
       nomorLoan: getNextLoanNumber().toString(),
       pkId: '',
-      jenisKreditId: '',
       skema: '',
       unitKerja: ''
     });
@@ -147,7 +129,7 @@ export default function NomorLoanPage() {
   };
 
   const handleAdd = async () => {
-    if (!formData.nomorLoan || !formData.pkId || !formData.jenisKreditId || !formData.skema || !formData.unitKerja) {
+    if (!formData.nomorLoan || !formData.pkId || !formData.skema || !formData.unitKerja) {
       toast({
         title: "Error",
         description: "Semua field harus diisi",
@@ -171,8 +153,8 @@ export default function NomorLoanPage() {
         nomorLoan: formData.nomorLoan,
         namaDebitur: pk.namaDebitur,
         nomorPK: pk.nomorPK,
-        jenisKredit: formData.jenisKreditId,
-        produkKredit: getProdukKreditOnly(formData.jenisKreditId),
+        jenisKredit: pk.jenisKredit,
+        produkKredit: pk.jenisKredit.split(' - ')[0] || pk.jenisKredit,
         plafon: pk.plafon,
         jangkaWaktu: pk.jangkaWaktu,
         skema: formData.skema,
@@ -208,7 +190,6 @@ export default function NomorLoanPage() {
     setFormData({
       nomorLoan: item.nomorLoan,
       pkId: item.pkId || '',
-      jenisKreditId: item.jenisKredit,
       skema: item.skema,
       unitKerja: item.unitKerja
     });
@@ -233,8 +214,8 @@ export default function NomorLoanPage() {
         nomorLoan: formData.nomorLoan,
         namaDebitur: pk.namaDebitur,
         nomorPK: pk.nomorPK,
-        jenisKredit: formData.jenisKreditId,
-        produkKredit: getProdukKreditOnly(formData.jenisKreditId),
+        jenisKredit: pk.jenisKredit,
+        produkKredit: pk.jenisKredit.split(' - ')[0] || pk.jenisKredit,
         plafon: pk.plafon,
         jangkaWaktu: pk.jangkaWaktu,
         skema: formData.skema,
@@ -292,7 +273,7 @@ export default function NomorLoanPage() {
       'Nama Debitur': item.namaDebitur,
       'No. PK': item.nomorPK,
       'No. Loan': item.nomorLoan,
-      'Jenis Kredit': getJenisKreditLabel(item.jenisKredit),
+      'Jenis Kredit': item.jenisKredit,
       'Plafon Kredit': item.plafon,
       'Jangka Waktu': item.jangkaWaktu,
       'Skema': item.skema,
@@ -314,11 +295,7 @@ export default function NomorLoanPage() {
     { key: 'namaDebitur', header: 'Nama Debitur' },
     { key: 'nomorPK', header: 'No. PK' },
     { key: 'nomorLoan', header: 'No. Loan' },
-    { 
-      key: 'jenisKredit', 
-      header: 'Jenis Kredit',
-      render: (item) => getJenisKreditLabel(item.jenisKredit)
-    },
+    { key: 'jenisKredit', header: 'Jenis Kredit' },
     { 
       key: 'plafon', 
       header: 'Plafon Kredit',
@@ -328,18 +305,6 @@ export default function NomorLoanPage() {
     { key: 'skema', header: 'Skema' },
     { key: 'unitKerja', header: 'Unit Kerja' },
   ];
-
-  // Group jenis kredit by produk
-  const groupedJenisKredit = useMemo(() => {
-    const grouped: Record<string, JenisKredit[]> = {};
-    jenisKreditData.forEach(jk => {
-      if (!grouped[jk.produkKredit]) {
-        grouped[jk.produkKredit] = [];
-      }
-      grouped[jk.produkKredit].push(jk);
-    });
-    return grouped;
-  }, [jenisKreditData]);
 
   if (isLoading) {
     return (
@@ -421,6 +386,7 @@ export default function NomorLoanPage() {
                 <p><span className="font-medium">Nomor PK:</span> {selectedPk.nomorPK}</p>
                 <p><span className="font-medium">Plafon:</span> {formatCurrency(selectedPk.plafon)}</p>
                 <p><span className="font-medium">Jangka Waktu:</span> {selectedPk.jangkaWaktu}</p>
+                <p><span className="font-medium">Jenis Kredit:</span> {selectedPk.jenisKredit}</p>
               </div>
             )}
 
@@ -433,32 +399,6 @@ export default function NomorLoanPage() {
                 placeholder="Nomor Loan"
               />
               <p className="text-xs text-muted-foreground">Auto-generate, bisa diedit jika diperlukan</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Jenis Kredit</Label>
-              <Select
-                value={formData.jenisKreditId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, jenisKreditId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Jenis Kredit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(groupedJenisKredit).map(([produk, items]) => (
-                    <div key={produk}>
-                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
-                        {produk}
-                      </div>
-                      {items.map(jk => (
-                        <SelectItem key={jk.id} value={jk.id}>
-                          {jk.nama}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
@@ -529,7 +469,7 @@ export default function NomorLoanPage() {
                 <span className="font-medium">{selectedItem.nomorPK}</span>
                 
                 <span className="text-muted-foreground">Jenis Kredit:</span>
-                <span className="font-medium">{getJenisKreditLabel(selectedItem.jenisKredit)}</span>
+                <span className="font-medium">{selectedItem.jenisKredit}</span>
                 
                 <span className="text-muted-foreground">Plafon:</span>
                 <span className="font-medium">{formatCurrency(selectedItem.plafon)}</span>
@@ -599,6 +539,15 @@ export default function NomorLoanPage() {
               </Select>
             </div>
 
+            {selectedPk && (
+              <div className="p-3 bg-muted rounded-lg space-y-1 text-sm">
+                <p><span className="font-medium">Nomor PK:</span> {selectedPk.nomorPK}</p>
+                <p><span className="font-medium">Plafon:</span> {formatCurrency(selectedPk.plafon)}</p>
+                <p><span className="font-medium">Jangka Waktu:</span> {selectedPk.jangkaWaktu}</p>
+                <p><span className="font-medium">Jenis Kredit:</span> {selectedPk.jenisKredit}</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Nomor Loan</Label>
               <Input
@@ -606,32 +555,6 @@ export default function NomorLoanPage() {
                 value={formData.nomorLoan}
                 onChange={(e) => setFormData(prev => ({ ...prev, nomorLoan: e.target.value }))}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Jenis Kredit</Label>
-              <Select
-                value={formData.jenisKreditId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, jenisKreditId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Jenis Kredit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(groupedJenisKredit).map(([produk, items]) => (
-                    <div key={produk}>
-                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
-                        {produk}
-                      </div>
-                      {items.map(jk => (
-                        <SelectItem key={jk.id} value={jk.id}>
-                          {jk.nama}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
