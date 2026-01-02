@@ -20,6 +20,7 @@ const SPPKPage = lazy(() => import("./pages/agenda-kredit/SPPKPage"));
 const PKPage = lazy(() => import("./pages/agenda-kredit/PKPage"));
 const KKMPAKPage = lazy(() => import("./pages/agenda-kredit/KKMPAKPage"));
 const AgendaKreditPage = lazy(() => import("./pages/agenda-kredit/AgendaKreditPage"));
+const NomorLoanPage = lazy(() => import("./pages/agenda-kredit/NomorLoanPage"));
 const UsersPage = lazy(() => import("./pages/konfigurasi/UsersPage"));
 const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const About = lazy(() => import("./pages/About"));
@@ -84,6 +85,9 @@ const App = () => (
             } />
             <Route path="/agenda-kredit/agenda-mpak-meranti" element={
               <Suspense fallback={<TablePageSkeleton />}><KKMPAKPage type="meranti" title="Agenda & MPAK Meranti" /></Suspense>
+            } />
+            <Route path="/agenda-kredit/nomor-loan" element={
+              <Suspense fallback={<TablePageSkeleton />}><NomorLoanPage /></Suspense>
             } />
             <Route path="/konfigurasi/users" element={
               <Suspense fallback={<TablePageSkeleton />}><UsersPage /></Suspense>

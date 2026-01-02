@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   UserRole, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
-  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry
+  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan
 } from '@/types';
 import { toRomanMonth } from './store';
 
@@ -905,6 +905,111 @@ export const updateSektorEkonomi = async (id: string, data: Partial<SektorEkonom
 export const deleteSektorEkonomi = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('sektor_ekonomi')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+// ============= NOMOR LOAN FUNCTIONS =============
+export const getNomorLoan = async (): Promise<NomorLoan[]> => {
+  const { data, error } = await supabase
+    .from('nomor_loan')
+    .select('*')
+    .order('nomor', { ascending: true });
+  
+  if (error) throw error;
+  
+  return data.map(n => ({
+    id: n.id,
+    nomor: n.nomor,
+    nomorLoan: n.nomor_loan,
+    namaDebitur: n.nama_debitur,
+    nomorPK: n.nomor_pk,
+    jenisKredit: n.jenis_kredit,
+    produkKredit: n.produk_kredit,
+    plafon: n.plafon,
+    jangkaWaktu: n.jangka_waktu,
+    skema: n.skema,
+    unitKerja: n.unit_kerja,
+    pkId: n.pk_id || undefined,
+    createdAt: new Date(n.created_at)
+  }));
+};
+
+export const addNomorLoan = async (data: Omit<NomorLoan, 'id' | 'nomor' | 'createdAt'>): Promise<NomorLoan> => {
+  // Get next nomor
+  const { data: existing, error: countError } = await supabase
+    .from('nomor_loan')
+    .select('nomor')
+    .order('nomor', { ascending: false })
+    .limit(1);
+  
+  if (countError) throw countError;
+  
+  const nextNomor = existing && existing.length > 0 ? existing[0].nomor + 1 : 1;
+  
+  const { data: result, error } = await supabase
+    .from('nomor_loan')
+    .insert({
+      nomor: nextNomor,
+      nomor_loan: data.nomorLoan,
+      nama_debitur: data.namaDebitur,
+      nomor_pk: data.nomorPK,
+      jenis_kredit: data.jenisKredit,
+      produk_kredit: data.produkKredit,
+      plafon: data.plafon,
+      jangka_waktu: data.jangkaWaktu,
+      skema: data.skema,
+      unit_kerja: data.unitKerja,
+      pk_id: data.pkId || null
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  return {
+    id: result.id,
+    nomor: result.nomor,
+    nomorLoan: result.nomor_loan,
+    namaDebitur: result.nama_debitur,
+    nomorPK: result.nomor_pk,
+    jenisKredit: result.jenis_kredit,
+    produkKredit: result.produk_kredit,
+    plafon: result.plafon,
+    jangkaWaktu: result.jangka_waktu,
+    skema: result.skema,
+    unitKerja: result.unit_kerja,
+    pkId: result.pk_id || undefined,
+    createdAt: new Date(result.created_at)
+  };
+};
+
+export const updateNomorLoan = async (id: string, data: Partial<NomorLoan>): Promise<void> => {
+  const updateData: Record<string, unknown> = {};
+  if (data.nomorLoan !== undefined) updateData.nomor_loan = data.nomorLoan;
+  if (data.namaDebitur !== undefined) updateData.nama_debitur = data.namaDebitur;
+  if (data.nomorPK !== undefined) updateData.nomor_pk = data.nomorPK;
+  if (data.jenisKredit !== undefined) updateData.jenis_kredit = data.jenisKredit;
+  if (data.produkKredit !== undefined) updateData.produk_kredit = data.produkKredit;
+  if (data.plafon !== undefined) updateData.plafon = data.plafon;
+  if (data.jangkaWaktu !== undefined) updateData.jangka_waktu = data.jangkaWaktu;
+  if (data.skema !== undefined) updateData.skema = data.skema;
+  if (data.unitKerja !== undefined) updateData.unit_kerja = data.unitKerja;
+  if (data.pkId !== undefined) updateData.pk_id = data.pkId;
+  
+  const { error } = await supabase
+    .from('nomor_loan')
+    .update(updateData)
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const deleteNomorLoan = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('nomor_loan')
     .delete()
     .eq('id', id);
   

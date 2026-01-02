@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Download, Plus, Filter, Eye, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface Column<T> {
+export interface Column<T> {
   key: keyof T | string;
   header: string;
   render?: (item: T) => React.ReactNode;

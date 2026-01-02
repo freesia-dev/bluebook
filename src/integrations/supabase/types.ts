@@ -167,6 +167,62 @@ export type Database = {
         }
         Relationships: []
       }
+      nomor_loan: {
+        Row: {
+          created_at: string
+          id: string
+          jangka_waktu: string
+          jenis_kredit: string
+          nama_debitur: string
+          nomor: number
+          nomor_loan: string
+          nomor_pk: string
+          pk_id: string | null
+          plafon: number
+          produk_kredit: string
+          skema: string
+          unit_kerja: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jangka_waktu: string
+          jenis_kredit: string
+          nama_debitur: string
+          nomor: number
+          nomor_loan: string
+          nomor_pk: string
+          pk_id?: string | null
+          plafon: number
+          produk_kredit: string
+          skema: string
+          unit_kerja: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jangka_waktu?: string
+          jenis_kredit?: string
+          nama_debitur?: string
+          nomor?: number
+          nomor_loan?: string
+          nomor_pk?: string
+          pk_id?: string | null
+          plafon?: number
+          produk_kredit?: string
+          skema?: string
+          unit_kerja?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nomor_loan_pk_id_fkey"
+            columns: ["pk_id"]
+            isOneToOne: false
+            referencedRelation: "pk"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pk: {
         Row: {
           created_at: string

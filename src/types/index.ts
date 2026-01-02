@@ -105,6 +105,23 @@ export interface KKMPAK {
   createdAt: Date;
 }
 
+// Nomor Loan types
+export interface NomorLoan {
+  id: string;
+  nomor: number;
+  nomorLoan: string;
+  namaDebitur: string;
+  nomorPK: string;
+  jenisKredit: string;
+  produkKredit: string;
+  plafon: number;
+  jangkaWaktu: string;
+  skema: string;
+  unitKerja: string;
+  pkId?: string;
+  createdAt: Date;
+}
+
 // Config types
 export interface JenisKredit {
   id: string;
