@@ -32,6 +32,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { NomorLoan, PK } from "@/types";
 import { 
   getNomorLoan, 
@@ -61,6 +76,8 @@ export default function NomorLoanPage() {
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<NomorLoan | null>(null);
   const [successData, setSuccessData] = useState<NomorLoan | null>(null);
+  const [pkComboboxOpen, setPkComboboxOpen] = useState(false);
+  const [editPkComboboxOpen, setEditPkComboboxOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     nomorLoan: '',
@@ -138,6 +155,17 @@ export default function NomorLoanPage() {
       return;
     }
 
+    // Check for duplicate nomor loan
+    const isDuplicate = data.some(d => d.nomorLoan === formData.nomorLoan);
+    if (isDuplicate) {
+      toast({
+        title: "Error",
+        description: "Nomor Loan sudah ada dalam database. Silakan gunakan nomor lain.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const pk = pkData.find(p => p.id === formData.pkId);
     if (!pk) {
       toast({
@@ -198,6 +226,17 @@ export default function NomorLoanPage() {
 
   const handleUpdate = async () => {
     if (!selectedItem) return;
+
+    // Check for duplicate nomor loan (exclude current item)
+    const isDuplicate = data.some(d => d.nomorLoan === formData.nomorLoan && d.id !== selectedItem.id);
+    if (isDuplicate) {
+      toast({
+        title: "Error",
+        description: "Nomor Loan sudah ada dalam database. Silakan gunakan nomor lain.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const pk = pkData.find(p => p.id === formData.pkId);
     if (!pk) {
@@ -363,22 +402,50 @@ export default function NomorLoanPage() {
 
             <div className="space-y-2">
               <Label>Nama Debitur (dari PK)</Label>
-              <Select
-                value={formData.pkId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, pkId: value }))}
-                disabled={!formData.unitKerja}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={formData.unitKerja ? "Pilih Debitur" : "Pilih Unit Kerja dulu"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredPkData.map(pk => (
-                    <SelectItem key={pk.id} value={pk.id}>
-                      {pk.namaDebitur} - {pk.nomorPK}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={pkComboboxOpen} onOpenChange={setPkComboboxOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={pkComboboxOpen}
+                    className="w-full justify-between"
+                    disabled={!formData.unitKerja}
+                  >
+                    {formData.pkId
+                      ? filteredPkData.find((pk) => pk.id === formData.pkId)?.namaDebitur + " - " + filteredPkData.find((pk) => pk.id === formData.pkId)?.nomorPK
+                      : formData.unitKerja ? "Cari nama debitur..." : "Pilih Unit Kerja dulu"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Cari nama debitur..." />
+                    <CommandList>
+                      <CommandEmpty>Tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredPkData.map((pk) => (
+                          <CommandItem
+                            key={pk.id}
+                            value={`${pk.namaDebitur} ${pk.nomorPK}`}
+                            onSelect={() => {
+                              setFormData(prev => ({ ...prev, pkId: pk.id }));
+                              setPkComboboxOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.pkId === pk.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {pk.namaDebitur} - {pk.nomorPK}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {selectedPk && (
@@ -521,22 +588,50 @@ export default function NomorLoanPage() {
 
             <div className="space-y-2">
               <Label>Nama Debitur (dari PK)</Label>
-              <Select
-                value={formData.pkId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, pkId: value }))}
-                disabled={!formData.unitKerja}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Debitur" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredPkData.map(pk => (
-                    <SelectItem key={pk.id} value={pk.id}>
-                      {pk.namaDebitur} - {pk.nomorPK}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={editPkComboboxOpen} onOpenChange={setEditPkComboboxOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={editPkComboboxOpen}
+                    className="w-full justify-between"
+                    disabled={!formData.unitKerja}
+                  >
+                    {formData.pkId
+                      ? filteredPkData.find((pk) => pk.id === formData.pkId)?.namaDebitur + " - " + filteredPkData.find((pk) => pk.id === formData.pkId)?.nomorPK
+                      : "Cari nama debitur..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[400px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Cari nama debitur..." />
+                    <CommandList>
+                      <CommandEmpty>Tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredPkData.map((pk) => (
+                          <CommandItem
+                            key={pk.id}
+                            value={`${pk.namaDebitur} ${pk.nomorPK}`}
+                            onSelect={() => {
+                              setFormData(prev => ({ ...prev, pkId: pk.id }));
+                              setEditPkComboboxOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.pkId === pk.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {pk.namaDebitur} - {pk.nomorPK}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {selectedPk && (

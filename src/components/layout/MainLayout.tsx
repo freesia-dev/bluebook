@@ -22,8 +22,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b border-border px-4 py-3 flex items-center gap-3">
+      {/* Header with menu button */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-background border-b border-border px-4 py-3 flex items-center gap-3">
         <Button 
           variant="ghost" 
           size="icon"
@@ -35,11 +35,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className={cn(
-        "min-h-screen transition-all duration-300",
-        "lg:ml-64",
-        "pt-16 lg:pt-0"
-      )}>
+      <main className="min-h-screen pt-16">
         <div className="p-4 md:p-6">
           {children}
         </div>

@@ -13,7 +13,7 @@ const About: React.FC = () => {
               <BookOpen className="w-10 h-10 text-primary-foreground" />
             </div>
             <h1 className="font-display text-3xl font-bold text-foreground mb-2">Bluebook Telihan</h1>
-            <p className="text-lg text-muted-foreground mb-6 italic">"In Bluebook we Trust!"</p>
+            <p className="text-lg text-muted-foreground mb-6 italic">"Digital Logbook Bankaltimtara KCP Telihan"</p>
             <div className="h-px bg-border my-6" />
             <p className="text-muted-foreground flex items-center justify-center gap-2">
               Dibuat dengan <Heart className="w-4 h-4 text-destructive fill-destructive" /> oleh
