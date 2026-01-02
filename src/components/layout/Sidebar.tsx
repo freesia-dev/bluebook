@@ -134,7 +134,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside className={cn(
         "fixed left-0 top-0 z-50 h-screen w-64 gradient-dark transition-transform duration-300",
-        "lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-full flex-col">
@@ -153,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               variant="ghost" 
               size="icon" 
               onClick={onClose}
-              className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-sidebar-foreground hover:bg-sidebar-accent"
             >
               <X className="w-5 h-5" />
             </Button>
