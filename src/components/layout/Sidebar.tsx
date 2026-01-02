@@ -103,6 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'PK Meranti', href: '/agenda-kredit/pk-meranti' },
     { label: 'KK & MPAK Telihan', href: '/agenda-kredit/kk-mpak-telihan' },
     { label: 'Agenda & MPAK Meranti', href: '/agenda-kredit/agenda-mpak-meranti' },
+    { label: 'Nomor Loan', href: '/agenda-kredit/nomor-loan' },
   ];
 
   const konfigurasiItems = isAdmin
