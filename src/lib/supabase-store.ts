@@ -187,6 +187,7 @@ export const getSuratKeluar = async (): Promise<SuratKeluar[]> => {
     keterangan: s.keterangan || '',
     userInput: s.user_input,
     fileUrl: s.file_url || undefined,
+    tanggal: new Date((s as any).tanggal || s.created_at),
     createdAt: new Date(s.created_at)
   }));
 };
@@ -199,8 +200,8 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
     .limit(1);
   
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  const now = new Date();
-  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  const tanggal = data.tanggal || new Date();
+  const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   
   const { data: result, error } = await supabase
     .from('surat_keluar')
@@ -214,7 +215,8 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
       status: data.status,
       keterangan: data.keterangan,
       user_input: data.userInput,
-      file_url: data.fileUrl
+      file_url: data.fileUrl,
+      tanggal: tanggal.toISOString()
     })
     .select()
     .single();
@@ -233,6 +235,7 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
     keterangan: result.keterangan || '',
     userInput: result.user_input,
     fileUrl: result.file_url || undefined,
+    tanggal: new Date((result as any).tanggal || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -246,6 +249,7 @@ export const updateSuratKeluar = async (id: string, data: Partial<SuratKeluar>):
   if (data.status !== undefined) updateData.status = data.status;
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
+  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
   
   const { error } = await supabase
     .from('surat_keluar')
@@ -389,6 +393,7 @@ export const getSPPK = async (): Promise<SPPK[]> => {
     jangkaWaktu: s.jangka_waktu,
     marketing: s.marketing,
     type: s.type as 'telihan' | 'meranti',
+    tanggal: new Date((s as any).tanggal || s.created_at),
     createdAt: new Date(s.created_at)
   }));
 };
@@ -402,9 +407,9 @@ export const addSPPK = async (data: Omit<SPPK, 'id' | 'nomor' | 'nomorSPPK' | 'c
     .limit(1);
   
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  const now = new Date();
+  const tanggal = data.tanggal || new Date();
   const prefix = data.type === 'telihan' ? 'D-1/BPD-TLH' : 'SPPK/ULM-TLH';
-  const nomorSPPK = `${String(nomor).padStart(3, '0')}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+  const nomorSPPK = `${String(nomor).padStart(3, '0')}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   
   const { data: result, error } = await supabase
     .from('sppk')
@@ -416,7 +421,8 @@ export const addSPPK = async (data: Omit<SPPK, 'id' | 'nomor' | 'nomorSPPK' | 'c
       plafon: data.plafon,
       jangka_waktu: data.jangkaWaktu,
       marketing: data.marketing,
-      type: data.type
+      type: data.type,
+      tanggal: tanggal.toISOString()
     })
     .select()
     .single();
@@ -433,6 +439,7 @@ export const addSPPK = async (data: Omit<SPPK, 'id' | 'nomor' | 'nomorSPPK' | 'c
     jangkaWaktu: result.jangka_waktu,
     marketing: result.marketing,
     type: result.type as 'telihan' | 'meranti',
+    tanggal: new Date((result as any).tanggal || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -444,6 +451,7 @@ export const updateSPPK = async (id: string, data: Partial<SPPK>): Promise<void>
   if (data.plafon !== undefined) updateData.plafon = data.plafon;
   if (data.jangkaWaktu !== undefined) updateData.jangka_waktu = data.jangkaWaktu;
   if (data.marketing !== undefined) updateData.marketing = data.marketing;
+  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
   
   const { error } = await supabase
     .from('sppk')
@@ -483,6 +491,7 @@ export const getPK = async (): Promise<PK[]> => {
     kodeFasilitas: s.kode_fasilitas,
     sektorEkonomi: s.sektor_ekonomi,
     type: s.type as 'telihan' | 'meranti',
+    tanggal: new Date((s as any).tanggal || s.created_at),
     createdAt: new Date(s.created_at)
   }));
 };
@@ -508,7 +517,7 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
     .limit(1);
   
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  const now = new Date();
+  const tanggal = data.tanggal || new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
   const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'ULM-TLH';
   const produkKredit = getProdukKreditFromValue(data.jenisKredit);
@@ -517,11 +526,11 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
   
   // PK Telihan dengan checkbox KBK dicentang
   if (data.type === 'telihan' && data.isKBK) {
-    nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+    nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else if (data.type === 'meranti' && isSpecialKreditType(data.jenisKredit)) {
-    nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+    nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else {
-    nomorPK = `${nomorPadded}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${now.getFullYear()}`;
+    nomorPK = `${nomorPadded}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${tanggal.getFullYear()}`;
   }
   
   const { isKBK, ...saveData } = data;
@@ -538,7 +547,8 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
       jenis_debitur: saveData.jenisDebitur,
       kode_fasilitas: saveData.kodeFasilitas,
       sektor_ekonomi: saveData.sektorEkonomi,
-      type: saveData.type
+      type: saveData.type,
+      tanggal: tanggal.toISOString()
     })
     .select()
     .single();
@@ -557,6 +567,7 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
     kodeFasilitas: result.kode_fasilitas,
     sektorEkonomi: result.sektor_ekonomi,
     type: result.type as 'telihan' | 'meranti',
+    tanggal: new Date((result as any).tanggal || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -570,6 +581,7 @@ export const updatePK = async (id: string, data: Partial<PK>): Promise<void> => 
   if (data.jenisDebitur !== undefined) updateData.jenis_debitur = data.jenisDebitur;
   if (data.kodeFasilitas !== undefined) updateData.kode_fasilitas = data.kodeFasilitas;
   if (data.sektorEkonomi !== undefined) updateData.sektor_ekonomi = data.sektorEkonomi;
+  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
   
   const { error } = await supabase
     .from('pk')
@@ -610,6 +622,7 @@ export const getKKMPAK = async (): Promise<KKMPAK[]> => {
     kodeFasilitas: s.kode_fasilitas,
     sektorEkonomi: s.sektor_ekonomi,
     type: s.type as 'telihan' | 'meranti',
+    tanggal: new Date((s as any).tanggal || s.created_at),
     createdAt: new Date(s.created_at)
   }));
 };
@@ -623,7 +636,7 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
     .limit(1);
   
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  const now = new Date();
+  const tanggal = data.tanggal || new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
   const produkKredit = getProdukKreditFromValue(data.jenisKredit);
   
@@ -631,10 +644,10 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
   let nomorMPAK: string;
   
   if (data.type === 'telihan') {
-    nomorKK = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
-    nomorMPAK = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
+    nomorKK = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
+    nomorMPAK = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else {
-    nomorKK = `${nomorPadded}/${toRomanMonth(now.getMonth())}/${data.sektorEkonomi}/${produkKredit}/${now.getFullYear()}`;
+    nomorKK = `${nomorPadded}/${toRomanMonth(tanggal.getMonth())}/${data.sektorEkonomi}/${produkKredit}/${tanggal.getFullYear()}`;
     nomorMPAK = nomorKK;
   }
   
@@ -651,7 +664,8 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
       jenis_debitur: data.jenisDebitur,
       kode_fasilitas: data.kodeFasilitas,
       sektor_ekonomi: data.sektorEkonomi,
-      type: data.type
+      type: data.type,
+      tanggal: tanggal.toISOString()
     })
     .select()
     .single();
@@ -671,6 +685,7 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
     kodeFasilitas: result.kode_fasilitas,
     sektorEkonomi: result.sektor_ekonomi,
     type: result.type as 'telihan' | 'meranti',
+    tanggal: new Date((result as any).tanggal || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -684,6 +699,7 @@ export const updateKKMPAK = async (id: string, data: Partial<KKMPAK>): Promise<v
   if (data.jenisDebitur !== undefined) updateData.jenis_debitur = data.jenisDebitur;
   if (data.kodeFasilitas !== undefined) updateData.kode_fasilitas = data.kodeFasilitas;
   if (data.sektorEkonomi !== undefined) updateData.sektor_ekonomi = data.sektorEkonomi;
+  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
   
   const { error } = await supabase
     .from('kkmpak')
@@ -933,6 +949,7 @@ export const getNomorLoan = async (): Promise<NomorLoan[]> => {
     skema: n.skema,
     unitKerja: n.unit_kerja,
     pkId: n.pk_id || undefined,
+    tanggal: new Date((n as any).tanggal || n.created_at),
     createdAt: new Date(n.created_at)
   }));
 };
@@ -948,6 +965,7 @@ export const addNomorLoan = async (data: Omit<NomorLoan, 'id' | 'nomor' | 'creat
   if (countError) throw countError;
   
   const nextNomor = existing && existing.length > 0 ? existing[0].nomor + 1 : 1;
+  const tanggal = data.tanggal || new Date();
   
   const { data: result, error } = await supabase
     .from('nomor_loan')
@@ -962,7 +980,8 @@ export const addNomorLoan = async (data: Omit<NomorLoan, 'id' | 'nomor' | 'creat
       jangka_waktu: data.jangkaWaktu,
       skema: data.skema,
       unit_kerja: data.unitKerja,
-      pk_id: data.pkId || null
+      pk_id: data.pkId || null,
+      tanggal: tanggal.toISOString()
     })
     .select()
     .single();
@@ -982,6 +1001,7 @@ export const addNomorLoan = async (data: Omit<NomorLoan, 'id' | 'nomor' | 'creat
     skema: result.skema,
     unitKerja: result.unit_kerja,
     pkId: result.pk_id || undefined,
+    tanggal: new Date((result as any).tanggal || result.created_at),
     createdAt: new Date(result.created_at)
   };
 };
@@ -998,6 +1018,7 @@ export const updateNomorLoan = async (id: string, data: Partial<NomorLoan>): Pro
   if (data.skema !== undefined) updateData.skema = data.skema;
   if (data.unitKerja !== undefined) updateData.unit_kerja = data.unitKerja;
   if (data.pkId !== undefined) updateData.pk_id = data.pkId;
+  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
   
   const { error } = await supabase
     .from('nomor_loan')

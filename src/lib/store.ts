@@ -86,6 +86,7 @@ const sampleSuratKeluar: SuratKeluar[] = [
     status: 'Sudah Dikirim',
     keterangan: '-',
     userInput: 'admin',
+    tanggal: new Date('2024-12-20'),
     createdAt: new Date('2024-12-20'),
   },
 ];

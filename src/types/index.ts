@@ -55,6 +55,7 @@ export interface SuratKeluar {
   keterangan: string;
   userInput: string;
   fileUrl?: string;
+  tanggal?: Date;
   createdAt: Date;
 }
 
@@ -69,6 +70,7 @@ export interface SPPK {
   jangkaWaktu: string;
   marketing: 'BAP' | 'NON BAP' | string;
   type: 'telihan' | 'meranti';
+  tanggal?: Date;
   createdAt: Date;
 }
 
@@ -85,6 +87,7 @@ export interface PK {
   kodeFasilitas: string;
   sektorEkonomi: string;
   type: 'telihan' | 'meranti';
+  tanggal?: Date;
   createdAt: Date;
 }
 
@@ -102,6 +105,7 @@ export interface KKMPAK {
   kodeFasilitas: string;
   sektorEkonomi: string;
   type: 'telihan' | 'meranti';
+  tanggal?: Date;
   createdAt: Date;
 }
 
@@ -119,6 +123,7 @@ export interface NomorLoan {
   skema: string;
   unitKerja: string;
   pkId?: string;
+  tanggal?: Date;
   createdAt: Date;
 }
 
