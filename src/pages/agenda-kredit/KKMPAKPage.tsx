@@ -39,7 +39,7 @@ import {
 import { KKMPAK, JenisKredit } from '@/types';
 import { 
   getKKMPAK, addKKMPAK, updateKKMPAK, deleteKKMPAK, 
-  getJenisKredit, getJenisDebitur, getKodeFasilitas, getSektorEkonomi 
+  getJenisKredit, getJenisDebitur, getJenisPenggunaan, getSektorEkonomi 
 } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
@@ -94,15 +94,15 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   };
 
   const loadOptions = async () => {
-    const [jk, jd, kf, se] = await Promise.all([
+    const [jk, jd, jp, se] = await Promise.all([
       getJenisKredit(),
       getJenisDebitur(),
-      getKodeFasilitas(),
+      getJenisPenggunaan(),
       getSektorEkonomi()
     ]);
     setJenisKreditOptions(jk);
     setJenisDebiturOptions(jd);
-    setKodeFasilitasOptions(kf);
+    setKodeFasilitasOptions(jp);
     setSektorEkonomiOptions(se);
   };
 

@@ -85,7 +85,7 @@ export const exportAllTables = () => {
     'Plafon': item.plafon,
     'Jangka Waktu': item.jangkaWaktu,
     'Jenis Debitur': item.jenisDebitur,
-    'Kode Fasilitas': item.kodeFasilitas,
+    'Jenis Penggunaan': item.jenisPenggunaan,
     'Sektor Ekonomi': item.sektorEkonomi,
     'Tanggal': new Date(item.createdAt).toLocaleDateString('id-ID'),
   }));
@@ -102,7 +102,7 @@ export const exportAllTables = () => {
     'Plafon': item.plafon,
     'Jangka Waktu': item.jangkaWaktu,
     'Jenis Debitur': item.jenisDebitur,
-    'Kode Fasilitas': item.kodeFasilitas,
+    'Jenis Penggunaan': item.jenisPenggunaan,
     'Sektor Ekonomi': item.sektorEkonomi,
     'Tanggal': new Date(item.createdAt).toLocaleDateString('id-ID'),
   }));

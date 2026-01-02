@@ -40,7 +40,7 @@ import {
 import { PK, JenisKredit } from '@/types';
 import { 
   getPK, addPK, updatePK, deletePK, 
-  getJenisKredit, getJenisDebitur, getKodeFasilitas, getSektorEkonomi 
+  getJenisKredit, getJenisDebitur, getJenisPenggunaan, getSektorEkonomi 
 } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +62,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const [data, setData] = useState<PK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
-  const [kodeFasilitasOptions, setKodeFasilitasOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
+  const [jenisPenggunaanOptions, setJenisPenggunaanOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
   const [sektorEkonomiOptions, setSektorEkonomiOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
   
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -79,7 +79,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     plafon: '',
     jangkaWaktu: '',
     jenisDebitur: '',
-    kodeFasilitas: '',
+    jenisPenggunaan: '',
     sektorEkonomi: '',
     isKBK: false,
     tanggal: new Date(),
@@ -96,15 +96,15 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   };
 
   const loadOptions = async () => {
-    const [jk, jd, kf, se] = await Promise.all([
+    const [jk, jd, jp, se] = await Promise.all([
       getJenisKredit(),
       getJenisDebitur(),
-      getKodeFasilitas(),
+      getJenisPenggunaan(),
       getSektorEkonomi()
     ]);
     setJenisKreditOptions(jk);
     setJenisDebiturOptions(jd);
-    setKodeFasilitasOptions(kf);
+    setJenisPenggunaanOptions(jp);
     setSektorEkonomiOptions(se);
   };
 
@@ -115,7 +115,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       plafon: '',
       jangkaWaktu: '',
       jenisDebitur: '',
-      kodeFasilitas: '',
+      jenisPenggunaan: '',
       sektorEkonomi: '',
       isKBK: false,
       tanggal: new Date(),
@@ -143,7 +143,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       jenisDebitur: formData.jenisDebitur,
-      kodeFasilitas: formData.kodeFasilitas,
+      jenisPenggunaan: formData.jenisPenggunaan,
       sektorEkonomi: formData.sektorEkonomi,
       type,
       isKBK: type === 'telihan' ? formData.isKBK : false,
@@ -166,7 +166,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       plafon: parseCurrencyValue(formData.plafon),
       jangkaWaktu: formData.jangkaWaktu,
       jenisDebitur: formData.jenisDebitur,
-      kodeFasilitas: formData.kodeFasilitas,
+      jenisPenggunaan: formData.jenisPenggunaan,
       sektorEkonomi: formData.sektorEkonomi,
       tanggal: formData.tanggal,
     });
@@ -194,7 +194,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       'Plafon': item.plafon,
       'Jangka Waktu': item.jangkaWaktu,
       'Jenis Debitur': item.jenisDebitur,
-      'Kode Fasilitas': item.kodeFasilitas,
+      'Jenis Penggunaan': item.jenisPenggunaan,
       'Sektor Ekonomi': item.sektorEkonomi,
       'Tanggal': item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-',
     }));
@@ -257,7 +257,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
             plafon: formatCurrencyInput(item.plafon.toString()),
             jangkaWaktu: item.jangkaWaktu,
             jenisDebitur: item.jenisDebitur,
-            kodeFasilitas: item.kodeFasilitas,
+            jenisPenggunaan: item.jenisPenggunaan,
             sektorEkonomi: item.sektorEkonomi,
             isKBK: false,
             tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
@@ -320,11 +320,11 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Kode Fasilitas</Label>
-              <Select value={formData.kodeFasilitas} onValueChange={(v) => setFormData({...formData, kodeFasilitas: v})}>
-                <SelectTrigger><SelectValue placeholder="Pilih kode fasilitas" /></SelectTrigger>
+              <Label>Jenis Penggunaan</Label>
+              <Select value={formData.jenisPenggunaan} onValueChange={(v) => setFormData({...formData, jenisPenggunaan: v})}>
+                <SelectTrigger><SelectValue placeholder="Pilih jenis penggunaan" /></SelectTrigger>
                 <SelectContent>
-                  {kodeFasilitasOptions.map((kf) => (<SelectItem key={kf.id} value={kf.kode}>{kf.kode} - {kf.keterangan}</SelectItem>))}
+                  {jenisPenggunaanOptions.map((jp) => (<SelectItem key={jp.id} value={jp.kode}>{jp.kode} - {jp.keterangan}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
@@ -358,7 +358,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
               <div><p className="text-sm text-muted-foreground">Jangka Waktu</p><p className="font-medium">{selectedItem.jangkaWaktu}</p></div>
               <div><p className="text-sm text-muted-foreground">Tanggal</p><p className="font-medium">{selectedItem.tanggal ? format(new Date(selectedItem.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}</p></div>
               <div><p className="text-sm text-muted-foreground">Jenis Debitur</p><p className="font-medium">{selectedItem.jenisDebitur}</p></div>
-              <div><p className="text-sm text-muted-foreground">Kode Fasilitas</p><p className="font-medium">{selectedItem.kodeFasilitas}</p></div>
+              <div><p className="text-sm text-muted-foreground">Jenis Penggunaan</p><p className="font-medium">{selectedItem.jenisPenggunaan}</p></div>
               <div><p className="text-sm text-muted-foreground">Sektor Ekonomi</p><p className="font-medium">{selectedItem.sektorEkonomi}</p></div>
             </div>
           )}
@@ -387,10 +387,10 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
                 <SelectContent>{jenisDebiturOptions.map((jd) => (<SelectItem key={jd.id} value={jd.kode}>{jd.kode} - {jd.keterangan}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Kode Fasilitas</Label>
-              <Select value={formData.kodeFasilitas} onValueChange={(v) => setFormData({...formData, kodeFasilitas: v})}>
+            <div className="space-y-2"><Label>Jenis Penggunaan</Label>
+              <Select value={formData.jenisPenggunaan} onValueChange={(v) => setFormData({...formData, jenisPenggunaan: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{kodeFasilitasOptions.map((kf) => (<SelectItem key={kf.id} value={kf.kode}>{kf.kode} - {kf.keterangan}</SelectItem>))}</SelectContent>
+                <SelectContent>{jenisPenggunaanOptions.map((jp) => (<SelectItem key={jp.id} value={jp.kode}>{jp.kode} - {jp.keterangan}</SelectItem>))}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2"><Label>Sektor Ekonomi</Label>

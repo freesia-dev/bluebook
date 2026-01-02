@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   UserRole, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
-  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan
+  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan, JenisPenggunaan
 } from '@/types';
 import { toRomanMonth } from './store';
 
@@ -488,7 +488,7 @@ export const getPK = async (): Promise<PK[]> => {
     plafon: Number(s.plafon),
     jangkaWaktu: s.jangka_waktu,
     jenisDebitur: s.jenis_debitur,
-    kodeFasilitas: s.kode_fasilitas,
+    jenisPenggunaan: s.jenis_penggunaan,
     sektorEkonomi: s.sektor_ekonomi,
     type: s.type as 'telihan' | 'meranti',
     tanggal: new Date((s as any).tanggal || s.created_at),
@@ -530,7 +530,11 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
   } else if (data.type === 'meranti' && isSpecialKreditType(data.jenisKredit)) {
     nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else {
-    nomorPK = `${nomorPadded}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${tanggal.getFullYear()}`;
+    // Format: [nomor pk 3 digit]/[jenis debitur 3 digit]/[Jenis Penggunaan 2 digit]/[sektor ekonomi 4 digit]/BPD-TLH atau ULM-TLH/[tahun numerik]
+    const jenisDebiturPadded = String(data.jenisDebitur).padStart(3, '0');
+    const jenisPenggunaanPadded = String(data.jenisPenggunaan).padStart(2, '0');
+    const sektorEkonomiPadded = String(data.sektorEkonomi).padStart(4, '0');
+    nomorPK = `${nomorPadded}/${jenisDebiturPadded}/${jenisPenggunaanPadded}/${sektorEkonomiPadded}/${prefix}/${tanggal.getFullYear()}`;
   }
   
   const { isKBK, ...saveData } = data;
@@ -545,7 +549,7 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
       plafon: saveData.plafon,
       jangka_waktu: saveData.jangkaWaktu,
       jenis_debitur: saveData.jenisDebitur,
-      kode_fasilitas: saveData.kodeFasilitas,
+      jenis_penggunaan: saveData.jenisPenggunaan,
       sektor_ekonomi: saveData.sektorEkonomi,
       type: saveData.type,
       tanggal: tanggal.toISOString()
@@ -564,7 +568,7 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
     plafon: Number(result.plafon),
     jangkaWaktu: result.jangka_waktu,
     jenisDebitur: result.jenis_debitur,
-    kodeFasilitas: result.kode_fasilitas,
+    jenisPenggunaan: result.jenis_penggunaan,
     sektorEkonomi: result.sektor_ekonomi,
     type: result.type as 'telihan' | 'meranti',
     tanggal: new Date((result as any).tanggal || result.created_at),
@@ -579,7 +583,7 @@ export const updatePK = async (id: string, data: Partial<PK>): Promise<void> => 
   if (data.plafon !== undefined) updateData.plafon = data.plafon;
   if (data.jangkaWaktu !== undefined) updateData.jangka_waktu = data.jangkaWaktu;
   if (data.jenisDebitur !== undefined) updateData.jenis_debitur = data.jenisDebitur;
-  if (data.kodeFasilitas !== undefined) updateData.kode_fasilitas = data.kodeFasilitas;
+  if (data.jenisPenggunaan !== undefined) updateData.jenis_penggunaan = data.jenisPenggunaan;
   if (data.sektorEkonomi !== undefined) updateData.sektor_ekonomi = data.sektorEkonomi;
   if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
   
@@ -647,7 +651,9 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
     nomorKK = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
     nomorMPAK = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else {
-    nomorKK = `${nomorPadded}/${toRomanMonth(tanggal.getMonth())}/${data.sektorEkonomi}/${produkKredit}/${tanggal.getFullYear()}`;
+    // Format Meranti: [nomor agenda 3 digit]/UM-143/[sektor ekonomi 4 digit]/[Produk Kredit]/[tahun numerik]
+    const sektorEkonomiPadded = String(data.sektorEkonomi).padStart(4, '0');
+    nomorKK = `${nomorPadded}/UM-143/${sektorEkonomiPadded}/${produkKredit}/${tanggal.getFullYear()}`;
     nomorMPAK = nomorKK;
   }
   
@@ -825,9 +831,10 @@ export const deleteJenisDebitur = async (id: string): Promise<void> => {
   if (error) throw error;
 };
 
-export const getKodeFasilitas = async (): Promise<KodeFasilitas[]> => {
+// ============= JENIS PENGGUNAAN FUNCTIONS =============
+export const getJenisPenggunaan = async (): Promise<JenisPenggunaan[]> => {
   const { data, error } = await supabase
-    .from('kode_fasilitas')
+    .from('jenis_penggunaan')
     .select('*');
   
   if (error) throw error;
@@ -839,9 +846,9 @@ export const getKodeFasilitas = async (): Promise<KodeFasilitas[]> => {
   }));
 };
 
-export const addKodeFasilitas = async (data: Omit<KodeFasilitas, 'id'>): Promise<KodeFasilitas> => {
+export const addJenisPenggunaan = async (data: Omit<JenisPenggunaan, 'id'>): Promise<JenisPenggunaan> => {
   const { data: result, error } = await supabase
-    .from('kode_fasilitas')
+    .from('jenis_penggunaan')
     .insert({
       kode: data.kode,
       keterangan: data.keterangan
@@ -858,18 +865,18 @@ export const addKodeFasilitas = async (data: Omit<KodeFasilitas, 'id'>): Promise
   };
 };
 
-export const updateKodeFasilitas = async (id: string, data: Partial<KodeFasilitas>): Promise<void> => {
+export const updateJenisPenggunaan = async (id: string, data: Partial<JenisPenggunaan>): Promise<void> => {
   const { error } = await supabase
-    .from('kode_fasilitas')
+    .from('jenis_penggunaan')
     .update(data)
     .eq('id', id);
   
   if (error) throw error;
 };
 
-export const deleteKodeFasilitas = async (id: string): Promise<void> => {
+export const deleteJenisPenggunaan = async (id: string): Promise<void> => {
   const { error } = await supabase
-    .from('kode_fasilitas')
+    .from('jenis_penggunaan')
     .delete()
     .eq('id', id);
   

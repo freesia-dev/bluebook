@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { 
   getJenisKredit, addJenisKredit, deleteJenisKredit, updateJenisKredit,
   getJenisDebitur, addJenisDebitur, deleteJenisDebitur, updateJenisDebitur,
-  getKodeFasilitas, addKodeFasilitas, deleteKodeFasilitas, updateKodeFasilitas,
+  getJenisPenggunaan, addJenisPenggunaan, deleteJenisPenggunaan, updateJenisPenggunaan,
   getSektorEkonomi, addSektorEkonomi, deleteSektorEkonomi, updateSektorEkonomi
 } from '@/lib/supabase-store';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +18,7 @@ import { Upload, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface ConfigPageProps {
-  type: 'jenis-kredit' | 'jenis-debitur' | 'kode-fasilitas' | 'sektor-ekonomi';
+  type: 'jenis-kredit' | 'jenis-debitur' | 'jenis-penggunaan' | 'sektor-ekonomi';
 }
 
 const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
@@ -52,15 +52,15 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       templateData: [{ 'Kode': '001', 'Keterangan': 'Contoh Debitur' }],
       parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
     },
-    'kode-fasilitas': { 
-      title: 'Kode Fasilitas', 
-      get: getKodeFasilitas, 
-      add: (d: any) => addKodeFasilitas({ kode: d.kode, keterangan: d.keterangan }), 
-      update: (id: string, d: any) => updateKodeFasilitas(id, { kode: d.kode, keterangan: d.keterangan }),
-      del: deleteKodeFasilitas, 
-      columns: [{ key: 'kode', header: 'Kode' }, { key: 'keterangan', header: 'Keterangan' }],
-      templateData: [{ 'Kode': '01', 'Keterangan': 'Contoh Fasilitas' }],
-      parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
+    'jenis-penggunaan': { 
+      title: 'Jenis Penggunaan', 
+      get: getJenisPenggunaan, 
+      add: (d: any) => addJenisPenggunaan({ kode: d.kode, keterangan: d.keterangan }), 
+      update: (id: string, d: any) => updateJenisPenggunaan(id, { kode: d.kode, keterangan: d.keterangan }),
+      del: deleteJenisPenggunaan, 
+      columns: [{ key: 'kode', header: 'Kode Penggunaan' }, { key: 'keterangan', header: 'Keterangan' }],
+      templateData: [{ 'Kode Penggunaan': '01', 'Keterangan': 'Contoh Penggunaan' }],
+      parseExcel: (row: any) => ({ kode: String(row['Kode Penggunaan'] || ''), keterangan: row['Keterangan'] || '' })
     },
     'sektor-ekonomi': { 
       title: 'Sektor Ekonomi', 

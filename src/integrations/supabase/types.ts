@@ -101,6 +101,24 @@ export type Database = {
         }
         Relationships: []
       }
+      jenis_penggunaan: {
+        Row: {
+          id: string
+          keterangan: string
+          kode: string
+        }
+        Insert: {
+          id?: string
+          keterangan: string
+          kode: string
+        }
+        Update: {
+          id?: string
+          keterangan?: string
+          kode?: string
+        }
+        Relationships: []
+      }
       kkmpak: {
         Row: {
           created_at: string
@@ -236,7 +254,7 @@ export type Database = {
           jangka_waktu: string
           jenis_debitur: string
           jenis_kredit: string
-          kode_fasilitas: string
+          jenis_penggunaan: string
           nama_debitur: string
           nomor: number
           nomor_pk: string
@@ -251,7 +269,7 @@ export type Database = {
           jangka_waktu: string
           jenis_debitur: string
           jenis_kredit: string
-          kode_fasilitas: string
+          jenis_penggunaan: string
           nama_debitur: string
           nomor: number
           nomor_pk: string
@@ -266,7 +284,7 @@ export type Database = {
           jangka_waktu?: string
           jenis_debitur?: string
           jenis_kredit?: string
-          kode_fasilitas?: string
+          jenis_penggunaan?: string
           nama_debitur?: string
           nomor?: number
           nomor_pk?: string
