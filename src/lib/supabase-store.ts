@@ -663,9 +663,10 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
     nomorKK = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
     nomorMPAK = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else {
-    // Format Meranti: [nomor 3 digit]/UM-143/[sektor ekonomi 4 digit]/[Produk Kredit]/[tahun numerik]
+    // Format Meranti: [nomor 3 digit]/UM-143/[bulan romawi]/[sektor ekonomi 4 digit]/[Produk Kredit]/[tahun numerik]
     const sektorEkonomiPadded = String(data.sektorEkonomi).padStart(4, '0');
-    nomorKK = `${nomorPadded}/UM-143/${sektorEkonomiPadded}/${produkKredit}/${tanggal.getFullYear()}`;
+    const bulanRomawi = toRomanMonth(tanggal.getMonth());
+    nomorKK = `${nomorPadded}/UM-143/${bulanRomawi}/${sektorEkonomiPadded}/${produkKredit}/${tanggal.getFullYear()}`;
     nomorMPAK = nomorKK;
   }
   
