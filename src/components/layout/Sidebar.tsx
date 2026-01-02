@@ -28,11 +28,12 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, onNavigate }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  // Auto-expand submenu if a child is active
+  const hasActiveChild = children?.some(child => location.pathname === child.href) || false;
+  const [isOpen, setIsOpen] = useState(hasActiveChild);
 
   if (children) {
-    const hasActiveChild = children.some(child => location.pathname === child.href);
     return (
       <div>
         <button

@@ -30,6 +30,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   addLabel?: string;
   showActions?: boolean;
+  canDelete?: boolean;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -43,6 +44,7 @@ export function DataTable<T extends { id: string }>({
   searchPlaceholder = 'Cari...',
   addLabel = 'Tambah',
   showActions = true,
+  canDelete = true,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [filterColumn, setFilterColumn] = useState<string>('');
@@ -146,7 +148,7 @@ export function DataTable<T extends { id: string }>({
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
-                        {onDelete && (
+                        {onDelete && canDelete && (
                           <Button
                             variant="ghost"
                             size="icon"

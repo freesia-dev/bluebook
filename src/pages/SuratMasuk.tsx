@@ -51,7 +51,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const SuratMasukPage: React.FC = () => {
   const { toast } = useToast();
-  const { userName } = useAuth();
+  const { userName, isAdmin } = useAuth();
   const [data, setData] = useState<SuratMasuk[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -295,6 +295,7 @@ const SuratMasukPage: React.FC = () => {
           setIsEditOpen(true); 
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        canDelete={isAdmin}
         searchPlaceholder="Cari surat masuk..."
         addLabel="Tambah Surat Masuk"
       />
