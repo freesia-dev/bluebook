@@ -642,7 +642,19 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
   const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
   const tanggal = data.tanggal || new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
-  const produkKredit = getProdukKreditFromValue(data.jenisKredit);
+  
+  // Get produkKredit from jenis_kredit table based on ID
+  let produkKredit = '';
+  if (data.jenisKredit) {
+    const { data: jenisKreditData } = await supabase
+      .from('jenis_kredit')
+      .select('produk_kredit')
+      .eq('id', data.jenisKredit)
+      .single();
+    if (jenisKreditData) {
+      produkKredit = jenisKreditData.produk_kredit;
+    }
+  }
   
   let nomorKK: string;
   let nomorMPAK: string;
@@ -651,7 +663,7 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
     nomorKK = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
     nomorMPAK = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   } else {
-    // Format Meranti: [nomor agenda 3 digit]/UM-143/[sektor ekonomi 4 digit]/[Produk Kredit]/[tahun numerik]
+    // Format Meranti: [nomor 3 digit]/UM-143/[sektor ekonomi 4 digit]/[Produk Kredit]/[tahun numerik]
     const sektorEkonomiPadded = String(data.sektorEkonomi).padStart(4, '0');
     nomorKK = `${nomorPadded}/UM-143/${sektorEkonomiPadded}/${produkKredit}/${tanggal.getFullYear()}`;
     nomorMPAK = nomorKK;
