@@ -123,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile only */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -131,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
       
-      {/* Sidebar */}
+      {/* Sidebar - always fixed position, slides in/out */}
       <aside className={cn(
         "fixed left-0 top-0 z-50 h-screen w-64 gradient-dark transition-transform duration-300",
         isOpen ? "translate-x-0" : "-translate-x-full"
