@@ -190,7 +190,9 @@ const SuratKeluarPage: React.FC = () => {
     },
   ];
 
-  const groupedKodeSurat = KODE_SURAT_LIST.reduce((acc, item) => {
+  // Filter out D-1 (Nasabah Kredit) - only available in Agenda Kredit
+  const filteredKodeSurat = KODE_SURAT_LIST.filter(item => item.kode !== 'D-1');
+  const groupedKodeSurat = filteredKodeSurat.reduce((acc, item) => {
     if (!acc[item.kategori]) acc[item.kategori] = [];
     acc[item.kategori].push(item);
     return acc;
