@@ -282,8 +282,11 @@ export const addPK = (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'> &
     // PK Meranti dengan jenis kredit khusus (KMK-KBK atau KI-KBK)
     nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(now.getMonth())}/${now.getFullYear()}`;
   } else {
-    // Format standar: [Nomor PK 3 Digit]/[Jenis Debitur 3 Digit]/[Kode Fasilitas 2 digit]/[Sektor ekonomi 4 digit]/BPD-TLH atau ULM-TLH/[Tahun Numerik]
-    nomorPK = `${nomorPadded}/${data.jenisDebitur}/${data.kodeFasilitas}/${data.sektorEkonomi}/${prefix}/${now.getFullYear()}`;
+    // Format: [nomor pk 3 digit]/[jenis debitur 3 digit]/[Jenis Penggunaan 2 digit]/[sektor ekonomi 4 digit]/BPD-TLH atau ULM-TLH/[tahun numerik]
+    const jenisDebiturPadded = String(data.jenisDebitur).padStart(3, '0');
+    const jenisPenggunaanPadded = String(data.jenisPenggunaan).padStart(2, '0');
+    const sektorEkonomiPadded = String(data.sektorEkonomi).padStart(4, '0');
+    nomorPK = `${nomorPadded}/${jenisDebiturPadded}/${jenisPenggunaanPadded}/${sektorEkonomiPadded}/${prefix}/${now.getFullYear()}`;
   }
   
   // Remove isKBK from data before saving

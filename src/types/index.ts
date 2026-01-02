@@ -84,11 +84,18 @@ export interface PK {
   plafon: number;
   jangkaWaktu: string;
   jenisDebitur: string;
-  kodeFasilitas: string;
+  jenisPenggunaan: string;
   sektorEkonomi: string;
   type: 'telihan' | 'meranti';
   tanggal?: Date;
   createdAt: Date;
+}
+
+// Jenis Penggunaan type
+export interface JenisPenggunaan {
+  id: string;
+  kode: string;
+  keterangan: string;
 }
 
 // KK & MPAK types

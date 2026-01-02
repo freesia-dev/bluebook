@@ -112,13 +112,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Pengaturan User', href: '/konfigurasi/users' },
         { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
         { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
-        { label: 'Kode Fasilitas', href: '/konfigurasi/kode-fasilitas' },
+        { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
       ]
     : [
         { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
         { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
-        { label: 'Kode Fasilitas', href: '/konfigurasi/kode-fasilitas' },
+        { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
       ];
 

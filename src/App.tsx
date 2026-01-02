@@ -98,8 +98,8 @@ const App = () => (
             <Route path="/konfigurasi/jenis-debitur" element={
               <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="jenis-debitur" /></Suspense>
             } />
-            <Route path="/konfigurasi/kode-fasilitas" element={
-              <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="kode-fasilitas" /></Suspense>
+            <Route path="/konfigurasi/jenis-penggunaan" element={
+              <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="jenis-penggunaan" /></Suspense>
             } />
             <Route path="/konfigurasi/sektor-ekonomi" element={
               <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="sektor-ekonomi" /></Suspense>
