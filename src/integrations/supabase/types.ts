@@ -115,6 +115,7 @@ export type Database = {
           nomor_mpak: string
           plafon: number
           sektor_ekonomi: string
+          tanggal: string | null
           type: string
         }
         Insert: {
@@ -130,6 +131,7 @@ export type Database = {
           nomor_mpak: string
           plafon: number
           sektor_ekonomi: string
+          tanggal?: string | null
           type: string
         }
         Update: {
@@ -145,6 +147,7 @@ export type Database = {
           nomor_mpak?: string
           plafon?: number
           sektor_ekonomi?: string
+          tanggal?: string | null
           type?: string
         }
         Relationships: []
@@ -181,6 +184,7 @@ export type Database = {
           plafon: number
           produk_kredit: string
           skema: string
+          tanggal: string | null
           unit_kerja: string
         }
         Insert: {
@@ -196,6 +200,7 @@ export type Database = {
           plafon: number
           produk_kredit: string
           skema: string
+          tanggal?: string | null
           unit_kerja: string
         }
         Update: {
@@ -211,6 +216,7 @@ export type Database = {
           plafon?: number
           produk_kredit?: string
           skema?: string
+          tanggal?: string | null
           unit_kerja?: string
         }
         Relationships: [
@@ -236,6 +242,7 @@ export type Database = {
           nomor_pk: string
           plafon: number
           sektor_ekonomi: string
+          tanggal: string | null
           type: string
         }
         Insert: {
@@ -250,6 +257,7 @@ export type Database = {
           nomor_pk: string
           plafon: number
           sektor_ekonomi: string
+          tanggal?: string | null
           type: string
         }
         Update: {
@@ -264,6 +272,7 @@ export type Database = {
           nomor_pk?: string
           plafon?: number
           sektor_ekonomi?: string
+          tanggal?: string | null
           type?: string
         }
         Relationships: []
@@ -324,6 +333,7 @@ export type Database = {
           nomor: number
           nomor_sppk: string
           plafon: number
+          tanggal: string | null
           type: string
         }
         Insert: {
@@ -336,6 +346,7 @@ export type Database = {
           nomor: number
           nomor_sppk: string
           plafon: number
+          tanggal?: string | null
           type: string
         }
         Update: {
@@ -348,6 +359,7 @@ export type Database = {
           nomor?: number
           nomor_sppk?: string
           plafon?: number
+          tanggal?: string | null
           type?: string
         }
         Relationships: []
@@ -364,6 +376,7 @@ export type Database = {
           nomor_agenda: string
           perihal: string
           status: string
+          tanggal: string | null
           tujuan_surat: string
           user_input: string
         }
@@ -378,6 +391,7 @@ export type Database = {
           nomor_agenda: string
           perihal: string
           status?: string
+          tanggal?: string | null
           tujuan_surat: string
           user_input: string
         }
@@ -392,6 +406,7 @@ export type Database = {
           nomor_agenda?: string
           perihal?: string
           status?: string
+          tanggal?: string | null
           tujuan_surat?: string
           user_input?: string
         }
