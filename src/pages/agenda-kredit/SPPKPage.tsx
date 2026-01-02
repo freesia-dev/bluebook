@@ -40,6 +40,7 @@ import { SPPK, JenisKredit } from '@/types';
 import { getSPPK, addSPPK, updateSPPK, deleteSPPK, getJenisKredit } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
 import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -53,6 +54,7 @@ interface SPPKPageProps {
 
 const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [data, setData] = useState<SPPK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -248,6 +250,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
           setIsEditOpen(true); 
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        canDelete={isAdmin}
         searchPlaceholder="Cari SPPK..."
         addLabel="Tambah SPPK"
       />

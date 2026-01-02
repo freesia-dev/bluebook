@@ -55,7 +55,7 @@ import { cn } from '@/lib/utils';
 
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
-  const { userName } = useAuth();
+  const { userName, isAdmin } = useAuth();
   const [data, setData] = useState<SuratKeluar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -267,6 +267,7 @@ const SuratKeluarPage: React.FC = () => {
           setIsEditOpen(true); 
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        canDelete={isAdmin}
         searchPlaceholder="Cari surat keluar..."
         addLabel="Tambah Surat Keluar"
       />

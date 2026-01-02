@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, KeyRound, Check, X } from 'lucide-react';
+import { Pencil, KeyRound, Check, X, UserPlus } from 'lucide-react';
 import { UserRole } from '@/types';
 import { getUserRoles, addUserRole, updateUserRole, deleteUserRole } from '@/lib/supabase-store';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +52,16 @@ const UsersPage: React.FC = () => {
   const [editFormData, setEditFormData] = useState({ role: 'user' as 'admin' | 'user' });
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  
+  // Create user form
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({ 
+    email: '', 
+    password: '', 
+    nama: '', 
+    role: 'user' as 'admin' | 'user' 
+  });
 
   useEffect(() => { 
     loadData();
@@ -216,6 +226,38 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!createUserForm.email || !createUserForm.password || !createUserForm.nama) {
+      toast({ title: 'Error', description: 'Email, password, dan nama wajib diisi.', variant: 'destructive' });
+      return;
+    }
+
+    if (createUserForm.password.length < 6) {
+      toast({ title: 'Error', description: 'Password minimal 6 karakter.', variant: 'destructive' });
+      return;
+    }
+
+    setIsCreatingUser(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: createUserForm
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({ title: 'Berhasil', description: 'User berhasil dibuat.' });
+      setIsCreateUserOpen(false);
+      setCreateUserForm({ email: '', password: '', nama: '', role: 'user' });
+      loadData();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Gagal membuat user.';
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
   const openEditDialog = (item: UserRoleDisplay) => {
     setSelectedItem(item);
     setEditFormData({ role: item.role });
@@ -336,8 +378,13 @@ const UsersPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader title="Pengaturan User" description="Kelola pengguna dan role sistem" />
-      
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+        <PageHeader title="Pengaturan User" description="Kelola pengguna dan role sistem" />
+        <Button onClick={() => setIsCreateUserOpen(true)} className="gap-2">
+          <UserPlus className="w-4 h-4" />
+          Buat User Baru
+        </Button>
+      </div>
       <Tabs defaultValue="roles" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="roles">Role User ({data.length})</TabsTrigger>
@@ -464,6 +511,57 @@ const UsersPage: React.FC = () => {
             <Button variant="outline" onClick={() => setIsResetPasswordOpen(false)}>Batal</Button>
             <Button onClick={handleResetPassword} disabled={isResetting}>
               {isResetting ? 'Menyimpan...' : 'Reset Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Buat User Baru</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nama <span className="text-destructive">*</span></Label>
+              <Input 
+                value={createUserForm.nama} 
+                onChange={(e) => setCreateUserForm({...createUserForm, nama: e.target.value})} 
+                placeholder="Nama lengkap"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email <span className="text-destructive">*</span></Label>
+              <Input 
+                type="email"
+                value={createUserForm.email} 
+                onChange={(e) => setCreateUserForm({...createUserForm, email: e.target.value})} 
+                placeholder="email@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password <span className="text-destructive">*</span></Label>
+              <Input 
+                type="password"
+                value={createUserForm.password} 
+                onChange={(e) => setCreateUserForm({...createUserForm, password: e.target.value})} 
+                placeholder="Minimal 6 karakter"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={createUserForm.role} onValueChange={(v: 'admin' | 'user') => setCreateUserForm({...createUserForm, role: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin (IT)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateUserOpen(false)}>Batal</Button>
+            <Button onClick={handleCreateUser} disabled={isCreatingUser}>
+              {isCreatingUser ? 'Menyimpan...' : 'Buat User'}
             </Button>
           </DialogFooter>
         </DialogContent>

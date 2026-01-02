@@ -44,6 +44,7 @@ import {
 } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
 import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -57,6 +58,7 @@ interface PKPageProps {
 
 const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [data, setData] = useState<PK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
@@ -263,6 +265,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
           setIsEditOpen(true); 
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        canDelete={isAdmin}
         searchPlaceholder="Cari PK..."
         addLabel="Tambah PK"
       />

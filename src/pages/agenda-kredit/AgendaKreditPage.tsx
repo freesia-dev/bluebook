@@ -51,7 +51,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const AgendaKreditPage: React.FC = () => {
   const { toast } = useToast();
-  const { userName } = useAuth();
+  const { userName, isAdmin } = useAuth();
   const [data, setData] = useState<AgendaKreditEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -313,6 +313,7 @@ const AgendaKreditPage: React.FC = () => {
           setIsEditOpen(true); 
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        canDelete={isAdmin}
         searchPlaceholder="Cari agenda kredit..."
         addLabel="Tambah Agenda Kredit"
       />

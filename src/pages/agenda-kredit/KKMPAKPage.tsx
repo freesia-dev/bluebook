@@ -43,6 +43,7 @@ import {
 } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
 import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -56,6 +57,7 @@ interface KKMPAKPageProps {
 
 const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [data, setData] = useState<KKMPAK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
@@ -260,6 +262,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
           setIsEditOpen(true); 
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        canDelete={isAdmin}
         searchPlaceholder={`Cari ${type === 'telihan' ? 'KK & MPAK' : 'Agenda & MPAK'}...`}
         addLabel={`Tambah ${type === 'telihan' ? 'KK & MPAK' : 'Agenda & MPAK'}`}
       />
