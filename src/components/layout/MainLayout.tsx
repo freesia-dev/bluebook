@@ -3,15 +3,16 @@ import { Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isDemo } = useAuth();
   // Default open on desktop (lg+), closed on mobile
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -60,6 +61,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         sidebarOpen ? "lg:ml-64" : "ml-0"
       )}>
         <div className="p-4 md:p-6">
+          {isDemo && (
+            <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+              <Eye className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-600 dark:text-amber-400">
+                Anda login sebagai <strong>Demo User</strong> (View Only). Anda hanya dapat melihat data, tidak dapat menambah, mengubah, atau menghapus.
+              </AlertDescription>
+            </Alert>
+          )}
           {children}
         </div>
       </main>
