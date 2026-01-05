@@ -67,7 +67,8 @@ const UNIT_KERJA_OPTIONS = ['KCP Telihan', 'Meranti'];
 
 export default function NomorLoanPage() {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<NomorLoan[]>([]);
   const [pkData, setPkData] = useState<PK[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -150,6 +151,7 @@ export default function NomorLoanPage() {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.nomorLoan || !formData.pkId || !formData.skema || !formData.unitKerja) {
       toast({
         title: "Error",
@@ -180,6 +182,7 @@ export default function NomorLoanPage() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const newData = await addNomorLoan({
         nomorLoan: formData.nomorLoan,
@@ -210,6 +213,8 @@ export default function NomorLoanPage() {
         description: "Gagal menambahkan data",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -399,6 +404,7 @@ export default function NomorLoanPage() {
         onEdit={handleEdit}
         onDelete={isAdmin ? handleDelete : undefined}
         onExport={handleExport}
+        canEdit={canEdit}
       />
 
       {/* Add Dialog */}
@@ -519,7 +525,9 @@ export default function NomorLoanPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

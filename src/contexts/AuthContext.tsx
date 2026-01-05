@@ -6,11 +6,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userName: string;
-  userRole: 'admin' | 'user';
+  userRole: 'admin' | 'user' | 'demo';
   isAuthenticated: boolean;
   isApproved: boolean;
   isPending: boolean;
   isAdmin: boolean;
+  isDemo: boolean;
+  canEdit: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   signup: (email: string, password: string, nama: string) => Promise<{ error: string | null }>;
@@ -23,6 +25,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }, 0);
         } else {
           setIsAdmin(false);
+          setIsDemo(false);
           setIsApproved(false);
           setIsPending(false);
         }
@@ -69,6 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ]);
 
       setIsAdmin(roleResult.data?.role === 'admin');
+      setIsDemo(roleResult.data?.role === 'demo');
       
       if (profileResult.data) {
         setIsApproved(profileResult.data.status === 'approved');
@@ -80,6 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Error checking user status:', error);
       setIsAdmin(false);
+      setIsDemo(false);
       setIsApproved(false);
       setIsPending(false);
     }
@@ -120,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Set state immediately without waiting for onAuthStateChange
         setIsAdmin(roleResult.data?.role === 'admin');
+        setIsDemo(roleResult.data?.role === 'demo');
         setIsApproved(status === 'approved');
         setIsPending(status === 'pending');
       }
@@ -165,13 +172,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setIsDemo(false);
     setIsApproved(false);
     setIsPending(false);
   };
 
   // Get user name from metadata or email
   const userName = user?.user_metadata?.nama || user?.email?.split('@')[0] || 'User';
-  const userRole: 'admin' | 'user' = isAdmin ? 'admin' : 'user';
+  // Demo users can only view, not edit
+  const userRole: 'admin' | 'user' | 'demo' = isAdmin ? 'admin' : isDemo ? 'demo' : 'user';
+  const canEdit = !isDemo; // Demo users cannot edit
 
   return (
     <AuthContext.Provider value={{
@@ -183,6 +193,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isApproved,
       isPending,
       isAdmin,
+      isDemo,
+      canEdit,
       isLoading,
       login,
       signup,

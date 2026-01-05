@@ -48,8 +48,8 @@ const UsersPage: React.FC = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<UserRoleDisplay | null>(null);
-  const [formData, setFormData] = useState({ userId: '', role: 'user' as 'admin' | 'user' });
-  const [editFormData, setEditFormData] = useState({ role: 'user' as 'admin' | 'user' });
+  const [formData, setFormData] = useState({ userId: '', role: 'user' as 'admin' | 'user' | 'demo' });
+  const [editFormData, setEditFormData] = useState({ role: 'user' as 'admin' | 'user' | 'demo' });
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   
@@ -60,7 +60,7 @@ const UsersPage: React.FC = () => {
     email: '', 
     password: '', 
     nama: '', 
-    role: 'user' as 'admin' | 'user' 
+    role: 'user' as 'admin' | 'user' | 'demo'
   });
 
   useEffect(() => { 
@@ -298,8 +298,8 @@ const UsersPage: React.FC = () => {
       key: 'role', 
       header: 'Role', 
       render: (item: UserRoleDisplay) => (
-        <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>
-          {item.role === 'admin' ? 'Admin (IT)' : 'User'}
+        <Badge variant={item.role === 'admin' ? 'default' : item.role === 'demo' ? 'outline' : 'secondary'}>
+          {item.role === 'admin' ? 'Admin (IT)' : item.role === 'demo' ? 'Demo (View Only)' : 'User'}
         </Badge>
       )
     },
@@ -469,11 +469,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={editFormData.role} onValueChange={(v: 'admin' | 'user') => setEditFormData({...editFormData, role: v})}>
+              <Select value={editFormData.role} onValueChange={(v: 'admin' | 'user' | 'demo') => setEditFormData({...editFormData, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin (IT)</SelectItem>
+                  <SelectItem value="demo">Demo (View Only)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -549,11 +550,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={createUserForm.role} onValueChange={(v: 'admin' | 'user') => setCreateUserForm({...createUserForm, role: v})}>
+              <Select value={createUserForm.role} onValueChange={(v: 'admin' | 'user' | 'demo') => setCreateUserForm({...createUserForm, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin (IT)</SelectItem>
+                  <SelectItem value="demo">Demo (View Only)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

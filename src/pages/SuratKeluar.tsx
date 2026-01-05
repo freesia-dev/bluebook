@@ -55,7 +55,8 @@ import { cn } from '@/lib/utils';
 
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
-  const { userName, isAdmin } = useAuth();
+  const { userName, isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<SuratKeluar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -97,11 +98,13 @@ const SuratKeluarPage: React.FC = () => {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.kodeSurat || !formData.namaPenerima || !formData.perihal) {
       toast({ title: 'Validasi Error', description: 'Harap isi semua field yang wajib.', variant: 'destructive' });
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const newItem = await addSuratKeluar({
         kodeSurat: formData.kodeSurat,
@@ -121,6 +124,8 @@ const SuratKeluarPage: React.FC = () => {
       loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -268,6 +273,7 @@ const SuratKeluarPage: React.FC = () => {
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
         canDelete={isAdmin}
+        canEdit={canEdit}
         searchPlaceholder="Cari surat keluar..."
         addLabel="Tambah Surat Keluar"
       />
@@ -302,7 +308,9 @@ const SuratKeluarPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

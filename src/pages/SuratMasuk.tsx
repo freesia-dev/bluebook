@@ -51,7 +51,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const SuratMasukPage: React.FC = () => {
   const { toast } = useToast();
-  const { userName, isAdmin } = useAuth();
+  const { userName, isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<SuratMasuk[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -102,11 +103,13 @@ const SuratMasukPage: React.FC = () => {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.kodeSurat || !formData.nomorSuratMasuk || !formData.namaPengirim || !formData.perihal) {
       toast({ title: 'Validasi Error', description: 'Harap isi semua field yang wajib.', variant: 'destructive' });
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const newItem = await addSuratMasuk({
         kodeSurat: formData.kodeSurat,
@@ -127,6 +130,8 @@ const SuratMasukPage: React.FC = () => {
       loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -296,6 +301,7 @@ const SuratMasukPage: React.FC = () => {
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
         canDelete={isAdmin}
+        canEdit={canEdit}
         searchPlaceholder="Cari surat masuk..."
         addLabel="Tambah Surat Masuk"
       />
@@ -353,7 +359,9 @@ const SuratMasukPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

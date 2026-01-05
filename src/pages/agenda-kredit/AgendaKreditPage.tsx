@@ -51,7 +51,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const AgendaKreditPage: React.FC = () => {
   const { toast } = useToast();
-  const { userName, isAdmin } = useAuth();
+  const { userName, isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<AgendaKreditEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -103,6 +104,7 @@ const AgendaKreditPage: React.FC = () => {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.kodeSurat || !formData.namaPengirim || !formData.perihal) {
       toast({
         title: 'Validasi Error',
@@ -112,6 +114,7 @@ const AgendaKreditPage: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const newItem = await addAgendaKreditEntry({
         kodeSurat: formData.kodeSurat,
@@ -132,6 +135,8 @@ const AgendaKreditPage: React.FC = () => {
       loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,6 +319,7 @@ const AgendaKreditPage: React.FC = () => {
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
         canDelete={isAdmin}
+        canEdit={canEdit}
         searchPlaceholder="Cari agenda kredit..."
         addLabel="Tambah Agenda Kredit"
       />
@@ -389,7 +395,9 @@ const AgendaKreditPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

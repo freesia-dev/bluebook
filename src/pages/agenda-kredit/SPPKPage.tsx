@@ -54,7 +54,8 @@ interface SPPKPageProps {
 
 const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<SPPK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -106,6 +107,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({
         title: 'Validasi Error',
@@ -115,21 +117,26 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       return;
     }
 
-    const newItem = await addSPPK({
-      namaDebitur: formData.namaDebitur,
-      jenisKredit: formData.jenisKredit,
-      plafon: parseCurrencyValue(formData.plafon),
-      jangkaWaktu: formData.jangkaWaktu,
-      marketing: formData.marketing,
-      type,
-      tanggal: formData.tanggal,
-    });
+    setIsSubmitting(true);
+    try {
+      const newItem = await addSPPK({
+        namaDebitur: formData.namaDebitur,
+        jenisKredit: formData.jenisKredit,
+        plafon: parseCurrencyValue(formData.plafon),
+        jangkaWaktu: formData.jangkaWaktu,
+        marketing: formData.marketing,
+        type,
+        tanggal: formData.tanggal,
+      });
 
-    setSuccessMessage(`SPPK Berhasil diinput dengan Nomor: ${newItem.nomorSPPK}`);
-    setIsAddOpen(false);
-    setIsSuccessOpen(true);
-    resetForm();
-    loadData();
+      setSuccessMessage(`SPPK Berhasil diinput dengan Nomor: ${newItem.nomorSPPK}`);
+      setIsAddOpen(false);
+      setIsSuccessOpen(true);
+      resetForm();
+      loadData();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEdit = async () => {
@@ -251,6 +258,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
         canDelete={isAdmin}
+        canEdit={canEdit}
         searchPlaceholder="Cari SPPK..."
         addLabel="Tambah SPPK"
       />
@@ -324,7 +332,9 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

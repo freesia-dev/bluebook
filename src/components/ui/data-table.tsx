@@ -46,6 +46,7 @@ interface DataTableProps<T> {
   addLabel?: string;
   showActions?: boolean;
   canDelete?: boolean;
+  canEdit?: boolean;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -60,6 +61,7 @@ export function DataTable<T extends { id: string }>({
   addLabel = 'Tambah',
   showActions = true,
   canDelete = true,
+  canEdit = true,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [filterColumn, setFilterColumn] = useState<string>('');
@@ -231,7 +233,7 @@ export function DataTable<T extends { id: string }>({
             Export
           </Button>
         )}
-        {onAdd && (
+        {onAdd && canEdit && (
           <Button size="sm" className="gap-2" onClick={onAdd}>
             <Plus className="w-4 h-4" />
             {addLabel}
@@ -293,7 +295,7 @@ export function DataTable<T extends { id: string }>({
                             <Eye className="h-4 w-4" />
                           </Button>
                         )}
-                        {onEdit && (
+                        {onEdit && canEdit && (
                           <Button
                             variant="ghost"
                             size="icon"

@@ -10,7 +10,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   nama: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'demo';
 }
 
 const handler = async (req: Request): Promise<Response> => {

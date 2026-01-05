@@ -57,7 +57,8 @@ interface KKMPAKPageProps {
 
 const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<KKMPAK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
@@ -125,32 +126,38 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({ title: 'Validasi Error', description: 'Harap isi semua field yang wajib.', variant: 'destructive' });
       return;
     }
 
-    const newItem = await addKKMPAK({
-      namaDebitur: formData.namaDebitur,
-      jenisKredit: formData.jenisKredit,
-      plafon: parseCurrencyValue(formData.plafon),
-      jangkaWaktu: formData.jangkaWaktu,
-      jenisDebitur: formData.jenisDebitur,
-      kodeFasilitas: formData.kodeFasilitas,
-      sektorEkonomi: formData.sektorEkonomi,
-      type,
-      tanggal: formData.tanggal,
-    });
+    setIsSubmitting(true);
+    try {
+      const newItem = await addKKMPAK({
+        namaDebitur: formData.namaDebitur,
+        jenisKredit: formData.jenisKredit,
+        plafon: parseCurrencyValue(formData.plafon),
+        jangkaWaktu: formData.jangkaWaktu,
+        jenisDebitur: formData.jenisDebitur,
+        kodeFasilitas: formData.kodeFasilitas,
+        sektorEkonomi: formData.sektorEkonomi,
+        type,
+        tanggal: formData.tanggal,
+      });
 
-    const msg = type === 'telihan' 
-      ? `KK Berhasil diinput dengan Nomor: ${newItem.nomorKK}\nMPAK Berhasil diinput dengan Nomor: ${newItem.nomorMPAK}`
-      : `Agenda dan MPAK Berhasil diinput dengan Nomor: ${newItem.nomorKK}`;
-    
-    setSuccessMessage(msg);
-    setIsAddOpen(false);
-    setIsSuccessOpen(true);
-    resetForm();
-    loadData();
+      const msg = type === 'telihan' 
+        ? `KK Berhasil diinput dengan Nomor: ${newItem.nomorKK}\nMPAK Berhasil diinput dengan Nomor: ${newItem.nomorMPAK}`
+        : `Agenda dan MPAK Berhasil diinput dengan Nomor: ${newItem.nomorKK}`;
+      
+      setSuccessMessage(msg);
+      setIsAddOpen(false);
+      setIsSuccessOpen(true);
+      resetForm();
+      loadData();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEdit = async () => {
@@ -263,6 +270,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
         canDelete={isAdmin}
+        canEdit={canEdit}
         searchPlaceholder={`Cari ${type === 'telihan' ? 'KK & MPAK' : 'Agenda & MPAK'}...`}
         addLabel={`Tambah ${type === 'telihan' ? 'KK & MPAK' : 'Agenda & MPAK'}`}
       />
@@ -306,7 +314,9 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

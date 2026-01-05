@@ -58,7 +58,8 @@ interface PKPageProps {
 
 const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canEdit } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<PK[]>([]);
   const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
   const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
@@ -128,6 +129,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   };
 
   const handleAdd = async () => {
+    if (isSubmitting) return;
     if (!formData.namaDebitur || !formData.jenisKredit || !formData.plafon) {
       toast({
         title: 'Validasi Error',
@@ -137,24 +139,29 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       return;
     }
 
-    const newItem = await addPK({
-      namaDebitur: formData.namaDebitur,
-      jenisKredit: formData.jenisKredit,
-      plafon: parseCurrencyValue(formData.plafon),
-      jangkaWaktu: formData.jangkaWaktu,
-      jenisDebitur: formData.jenisDebitur,
-      jenisPenggunaan: formData.jenisPenggunaan,
-      sektorEkonomi: formData.sektorEkonomi,
-      type,
-      isKBK: type === 'telihan' ? formData.isKBK : false,
-      tanggal: formData.tanggal,
-    });
+    setIsSubmitting(true);
+    try {
+      const newItem = await addPK({
+        namaDebitur: formData.namaDebitur,
+        jenisKredit: formData.jenisKredit,
+        plafon: parseCurrencyValue(formData.plafon),
+        jangkaWaktu: formData.jangkaWaktu,
+        jenisDebitur: formData.jenisDebitur,
+        jenisPenggunaan: formData.jenisPenggunaan,
+        sektorEkonomi: formData.sektorEkonomi,
+        type,
+        isKBK: type === 'telihan' ? formData.isKBK : false,
+        tanggal: formData.tanggal,
+      });
 
-    setSuccessMessage(`PK Berhasil diinput dengan Nomor: ${newItem.nomorPK}`);
-    setIsAddOpen(false);
-    setIsSuccessOpen(true);
-    resetForm();
-    loadData();
+      setSuccessMessage(`PK Berhasil diinput dengan Nomor: ${newItem.nomorPK}`);
+      setIsAddOpen(false);
+      setIsSuccessOpen(true);
+      resetForm();
+      loadData();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEdit = async () => {
@@ -266,6 +273,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
         }}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
         canDelete={isAdmin}
+        canEdit={canEdit}
         searchPlaceholder="Cari PK..."
         addLabel="Tambah PK"
       />
@@ -340,7 +348,9 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
