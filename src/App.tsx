@@ -10,6 +10,7 @@ import {
   TablePageSkeleton, 
   GenericPageSkeleton 
 } from "@/components/ui/page-skeleton";
+import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 
 // Lazy load pages for better performance
 const Login = lazy(() => import("./pages/Login"));
@@ -33,6 +34,12 @@ const LoginLoader = () => (
   </div>
 );
 
+// Component to handle inactivity logout
+const InactivityHandler = () => {
+  useInactivityLogout();
+  return null;
+};
+
 // Configure QueryClient with caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +56,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
+        <InactivityHandler />
         <Toaster />
         <Sonner />
         <BrowserRouter>

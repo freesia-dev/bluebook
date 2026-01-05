@@ -94,9 +94,17 @@ const Dashboard: React.FC = () => {
     [sppk, pk]
   );
 
-  const handleExportAll = () => {
-    exportAllTables();
-    toast({ title: 'Export Berhasil', description: 'Semua data telah diekspor ke file Excel.' });
+  const handleExportAll = async () => {
+    try {
+      await exportAllTables();
+      toast({ title: 'Export Berhasil', description: 'Semua data telah diekspor ke file Excel.' });
+    } catch (error) {
+      toast({ 
+        title: 'Export Gagal', 
+        description: 'Terjadi kesalahan saat mengekspor data.', 
+        variant: 'destructive' 
+      });
+    }
   };
 
   // Show skeleton while loading (handled by Suspense, but keep for data loading)
