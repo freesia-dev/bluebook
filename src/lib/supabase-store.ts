@@ -16,11 +16,11 @@ export const getUserRoles = async (): Promise<UserRole[]> => {
   return data.map(r => ({
     id: r.id,
     userId: r.user_id,
-    role: r.role as 'admin' | 'user'
+    role: r.role as 'admin' | 'user' | 'demo'
   }));
 };
 
-export const addUserRole = async (userId: string, role: 'admin' | 'user'): Promise<UserRole> => {
+export const addUserRole = async (userId: string, role: 'admin' | 'user' | 'demo'): Promise<UserRole> => {
   const { data, error } = await supabase
     .from('user_roles')
     .insert({
@@ -35,11 +35,11 @@ export const addUserRole = async (userId: string, role: 'admin' | 'user'): Promi
   return {
     id: data.id,
     userId: data.user_id,
-    role: data.role as 'admin' | 'user'
+    role: data.role as 'admin' | 'user' | 'demo'
   };
 };
 
-export const updateUserRole = async (id: string, role: 'admin' | 'user'): Promise<void> => {
+export const updateUserRole = async (id: string, role: 'admin' | 'user' | 'demo'): Promise<void> => {
   const { error } = await supabase
     .from('user_roles')
     .update({ role })

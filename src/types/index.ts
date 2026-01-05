@@ -2,7 +2,7 @@
 export interface UserRole {
   id: string;
   userId: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'demo';
   email?: string;
 }
 

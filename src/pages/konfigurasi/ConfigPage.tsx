@@ -14,6 +14,7 @@ import {
   getSektorEkonomi, addSektorEkonomi, deleteSektorEkonomi, updateSektorEkonomi
 } from '@/lib/supabase-store';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Upload, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -23,6 +24,7 @@ interface ConfigPageProps {
 
 const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
   const { toast } = useToast();
+  const { canEdit } = useAuth();
   const [data, setData] = useState<any[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -189,7 +191,8 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
         onAdd={() => { resetForm(); setIsAddOpen(true); }} 
         onEdit={openEdit}
         onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }} 
-        addLabel={`Tambah ${cfg.title}`} 
+        addLabel={`Tambah ${cfg.title}`}
+        canEdit={canEdit}
       />
       
       {/* Add Dialog */}
