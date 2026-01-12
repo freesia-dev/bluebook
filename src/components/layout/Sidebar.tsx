@@ -9,7 +9,6 @@ import {
   Info,
   ChevronDown,
   ChevronRight,
-  BookOpen,
   LogOut,
   User,
   X
@@ -17,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import logoImage from '@/assets/logo_bluebook.png';
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -139,11 +139,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}>
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-6 border-b border-sidebar-border">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-sidebar-primary-foreground" />
-              </div>
+              <img 
+                src={logoImage} 
+                alt="Bluebook Logo" 
+                className="w-12 h-12 object-contain"
+              />
               <div>
                 <h1 className="font-display text-xl font-bold text-sidebar-foreground">Bluebook</h1>
                 <p className="text-xs text-sidebar-foreground/60">Telihan</p>
