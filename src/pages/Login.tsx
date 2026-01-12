@@ -28,43 +28,30 @@ const signupSchema = z.object({
 
 // Loading Screen Component
 const LoadingScreen: React.FC = () => (
-  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-    {/* Animated background circles */}
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute top-1/3 left-1/3 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/3 right-1/3 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
-    </div>
+  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
+    {/* Subtle background gradient */}
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
     
-    {/* Logo with animations */}
-    <div className="relative z-10 flex flex-col items-center gap-6">
-      <div className="relative">
-        {/* Outer ring */}
-        <div className="absolute inset-0 w-32 h-32 border-4 border-primary/30 rounded-full animate-spin" style={{ animationDuration: '3s' }} />
-        {/* Inner ring */}
-        <div className="absolute inset-2 w-28 h-28 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" style={{ animationDuration: '1.5s' }} />
+    {/* Centered content */}
+    <div className="relative z-10 flex flex-col items-center gap-8">
+      {/* Logo with spinner */}
+      <div className="relative flex items-center justify-center">
+        {/* Spinner ring */}
+        <div className="absolute w-24 h-24 border-3 border-muted rounded-full" />
+        <div className="absolute w-24 h-24 border-3 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" style={{ animationDuration: '1s' }} />
         {/* Logo */}
         <img 
           src={logoImage} 
           alt="Bluebook Logo" 
-          className="w-32 h-32 object-contain animate-pulse drop-shadow-2xl"
-          style={{ animationDuration: '2s' }}
+          className="w-16 h-16 object-contain"
         />
       </div>
       
-      <div className="text-center space-y-2">
-        <h2 className="font-display text-2xl font-bold text-foreground animate-pulse">
-          Bluebook Telihan
-        </h2>
-        <p className="text-muted-foreground animate-pulse" style={{ animationDelay: '0.3s' }}>
+      {/* Text */}
+      <div className="text-center space-y-1">
+        <p className="text-sm font-medium text-muted-foreground">
           Memuat...
         </p>
-      </div>
-      
-      {/* Loading dots */}
-      <div className="flex gap-2">
-        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
       </div>
     </div>
   </div>
@@ -183,18 +170,11 @@ const Login: React.FC = () => {
 
       <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
         <CardHeader className="text-center pb-2">
-          {/* Animated Logo */}
-          <div className="relative mx-auto mb-4 group cursor-pointer">
-            {/* Glow effect on hover */}
-            <div className="absolute inset-0 w-24 h-24 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            {/* Rotating ring on hover */}
-            <div className="absolute inset-0 w-24 h-24 border-2 border-transparent group-hover:border-primary/30 rounded-full transition-all duration-500 group-hover:animate-spin" style={{ animationDuration: '3s' }} />
-            <img 
-              src={logoImage} 
-              alt="Bluebook Logo" 
-              className="w-24 h-24 object-contain drop-shadow-lg relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-2xl animate-[float_3s_ease-in-out_infinite]"
-            />
-          </div>
+          <img 
+            src={logoImage} 
+            alt="Bluebook Logo" 
+            className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-lg"
+          />
           <CardTitle className="font-display text-3xl font-bold text-foreground">Bluebook Telihan</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">
             In Bluebook we Trust!
@@ -343,14 +323,6 @@ const Login: React.FC = () => {
           </Tabs>
         </CardContent>
       </Card>
-
-      {/* Add float animation keyframe */}
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-      `}</style>
     </div>
   );
 };
