@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import logoImage from '@/assets/logo_bluebook.png';
 
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -127,9 +128,11 @@ const Login: React.FC = () => {
 
       <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center pb-2">
-          <div className="w-16 h-16 mx-auto rounded-2xl gradient-primary flex items-center justify-center mb-4 shadow-glow">
-            <BookOpen className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <img 
+            src={logoImage} 
+            alt="Bluebook Logo" 
+            className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-lg"
+          />
           <CardTitle className="font-display text-3xl font-bold text-foreground">Bluebook Telihan</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">
             In Bluebook we Trust!
