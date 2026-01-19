@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Plus, Filter, Eye, Edit, Trash2, X } from 'lucide-react';
+import { Search, Download, Plus, Filter, Eye, Edit, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Popover,
@@ -32,6 +32,7 @@ export interface Column<T> {
   render?: (item: T) => React.ReactNode;
   className?: string;
   filterable?: boolean;
+  sortable?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -49,7 +50,9 @@ interface DataTableProps<T> {
   canEdit?: boolean;
 }
 
-export function DataTable<T extends { id: string }>({
+type SortOrder = 'asc' | 'desc' | null;
+
+export function DataTable<T extends { id: string; created_at?: string; nomor?: number }>({
   data,
   columns,
   onAdd,
@@ -67,6 +70,7 @@ export function DataTable<T extends { id: string }>({
   const [filterColumn, setFilterColumn] = useState<string>('');
   const [filterValue, setFilterValue] = useState<string>('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc'); // Default: terbaru
 
   // Get unique values for filter dropdown
   const getUniqueValues = (columnKey: string): string[] => {
@@ -88,34 +92,62 @@ export function DataTable<T extends { id: string }>({
     return !nonFilterableKeys.includes(key);
   });
 
-  const filteredData = data.filter((item) => {
-    // Apply search filter
-    const matchesSearch = !search || columns.some((col) => {
-      const value = item[col.key as keyof T];
-      if (typeof value === 'string') {
-        return value.toLowerCase().includes(search.toLowerCase());
-      }
-      if (typeof value === 'number') {
-        return value.toString().includes(search);
-      }
-      return false;
+  const filteredData = useMemo(() => {
+    let result = data.filter((item) => {
+      // Apply search filter
+      const matchesSearch = !search || columns.some((col) => {
+        const value = item[col.key as keyof T];
+        if (typeof value === 'string') {
+          return value.toLowerCase().includes(search.toLowerCase());
+        }
+        if (typeof value === 'number') {
+          return value.toString().includes(search);
+        }
+        return false;
+      });
+
+      // Apply column filter
+      const matchesFilter = !filterColumn || !filterValue || (() => {
+        const value = item[filterColumn as keyof T];
+        if (typeof value === 'string') {
+          return value === filterValue;
+        }
+        return true;
+      })();
+
+      return matchesSearch && matchesFilter;
     });
 
-    // Apply column filter
-    const matchesFilter = !filterColumn || !filterValue || (() => {
-      const value = item[filterColumn as keyof T];
-      if (typeof value === 'string') {
-        return value === filterValue;
-      }
-      return true;
-    })();
+    // Apply sorting
+    if (sortOrder) {
+      result = [...result].sort((a, b) => {
+        // Try to sort by created_at first, then by nomor
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const aNomor = a.nomor ?? 0;
+        const bNomor = b.nomor ?? 0;
 
-    return matchesSearch && matchesFilter;
-  });
+        if (aDate && bDate) {
+          return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+        return sortOrder === 'desc' ? bNomor - aNomor : aNomor - bNomor;
+      });
+    }
+
+    return result;
+  }, [data, search, columns, filterColumn, filterValue, sortOrder]);
 
   const clearFilter = () => {
     setFilterColumn('');
     setFilterValue('');
+  };
+
+  const toggleSortOrder = () => {
+    if (sortOrder === 'desc') {
+      setSortOrder('asc');
+    } else {
+      setSortOrder('desc');
+    }
   };
 
   const hasActiveFilter = filterColumn && filterValue;
@@ -214,6 +246,21 @@ export function DataTable<T extends { id: string }>({
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Sort Button */}
+        <Button 
+          variant={sortOrder ? "default" : "outline"} 
+          size="sm" 
+          className="gap-2"
+          onClick={toggleSortOrder}
+        >
+          {sortOrder === 'desc' ? (
+            <ArrowDown className="w-4 h-4" />
+          ) : (
+            <ArrowUp className="w-4 h-4" />
+          )}
+          {sortOrder === 'desc' ? 'Terbaru' : 'Terlama'}
+        </Button>
 
         {hasActiveFilter && (
           <Button 
