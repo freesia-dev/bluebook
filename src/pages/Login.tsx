@@ -72,7 +72,7 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
@@ -110,7 +110,7 @@ const Login: React.FC = () => {
       });
       // Keep loading screen visible during navigation
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 500);
     }
     setIsLoading(false);

@@ -166,8 +166,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <NavItem 
               icon={LayoutDashboard} 
               label="Dashboard" 
-              href="/" 
-              isActive={location.pathname === '/'} 
+              href="/dashboard" 
+              isActive={location.pathname === '/dashboard'} 
               onNavigate={onClose}
             />
             <NavItem 

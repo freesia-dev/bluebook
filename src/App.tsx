@@ -13,6 +13,7 @@ import {
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 
 // Lazy load pages for better performance
+const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SuratMasuk = lazy(() => import("./pages/SuratMasuk"));
@@ -61,10 +62,13 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={
+              <Suspense fallback={<LoginLoader />}><Index /></Suspense>
+            } />
             <Route path="/login" element={
               <Suspense fallback={<LoginLoader />}><Login /></Suspense>
             } />
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
             } />
             <Route path="/surat-masuk" element={
