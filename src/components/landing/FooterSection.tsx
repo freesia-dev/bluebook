@@ -16,7 +16,7 @@ const FooterSection = () => {
             </div>
             <div className="text-left">
               <span className="text-2xl font-bold text-white block">
-                Bluebook TLH
+                Bluebook Telihan
               </span>
               <span className="text-sm text-slate-400">
                 Digital Logbook System
@@ -31,7 +31,7 @@ const FooterSection = () => {
 
           {/* Description */}
           <p className="text-slate-400 max-w-md mb-8">
-            Internal Application – Bank Kaltimtara KCP Telihan. 
+            Internal Application – Bankaltimtara KCP Telihan. 
             Solusi digital untuk pengelolaan administrasi perbankan.
           </p>
 
@@ -56,10 +56,10 @@ const FooterSection = () => {
 
           {/* Copyright */}
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Bluebook TLH. All rights reserved.
+            © {new Date().getFullYear()} Bluebook Telihan. All rights reserved.
           </p>
           <p className="text-xs text-slate-600 mt-2">
-            Dibangun dengan ❤️ untuk Bank Kaltimtara KCP Telihan
+            Dibangun dengan ❤️ untuk Bankaltimtara KCP Telihan
           </p>
         </div>
       </div>

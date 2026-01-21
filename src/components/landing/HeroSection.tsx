@@ -33,7 +33,7 @@ const HeroSection = () => {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
                 Selamat Datang di{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-amber-400">
-                  Bluebook TLH
+                  Bluebook Telihan
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl text-blue-100/80 font-medium">
@@ -43,7 +43,7 @@ const HeroSection = () => {
 
             {/* Description */}
             <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
-              Sistem Digital Logbook yang dirancang khusus untuk Bank Kaltimtara KCP Telihan. 
+              Sistem Digital Logbook yang dirancang khusus untuk Bankaltimtara KCP Telihan. 
               Kelola surat-menyurat dan agenda kredit secara digital, efisien, dan terintegrasi.
             </p>
 
@@ -64,7 +64,7 @@ const HeroSection = () => {
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <Play className="mr-2 w-5 h-5" />
-                Lihat Demo
+                Lihat Fitur
               </Button>
             </div>
 
@@ -99,7 +99,7 @@ const HeroSection = () => {
                   />
                 </div>
                 <div className="text-center mt-6">
-                  <h2 className="text-2xl lg:text-3xl font-bold text-white">Bluebook TLH</h2>
+                  <h2 className="text-2xl lg:text-3xl font-bold text-white">Bluebook Telihan</h2>
                   <p className="text-brand-secondary font-medium mt-2">In Bluebook we Trust!</p>
                 </div>
 
