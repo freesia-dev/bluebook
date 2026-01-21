@@ -29,9 +29,9 @@ const FinalCTASection = () => {
 
           {/* Main heading */}
           <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Siap Bergabung dengan{" "}
+            Menuju Transformasi Digital dengan{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-amber-300">
-              Bluebook?
+              Bluebook!
             </span>
           </h2>
 
@@ -64,7 +64,7 @@ const FinalCTASection = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-blue-100">
             <div className="flex items-center gap-2">
               <Mail className="w-5 h-5" />
-              <span>support@bluebook-tlh.my.id</span>
+              <span>kcptlh.143@gmail.com</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-blue-300" />
             <div className="flex items-center gap-2">
