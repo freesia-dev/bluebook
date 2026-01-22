@@ -11,7 +11,8 @@ import {
   ChevronRight,
   LogOut,
   User,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,7 +30,6 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, onNavigate }) => {
   const location = useLocation();
-  // Auto-expand submenu if a child is active
   const hasActiveChild = children?.some(child => location.pathname === child.href) || false;
   const [isOpen, setIsOpen] = useState(hasActiveChild);
 
@@ -39,13 +39,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-            "hover:bg-sidebar-accent text-sidebar-foreground",
-            hasActiveChild && "bg-sidebar-accent"
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+            "hover:bg-sidebar-accent text-sidebar-foreground/80 hover:text-sidebar-foreground",
+            hasActiveChild && "bg-sidebar-accent text-sidebar-foreground"
           )}
         >
           <Icon className="w-5 h-5" />
-          <span className="flex-1 text-left font-medium">{label}</span>
+          <span className="flex-1 text-left font-medium text-sm">{label}</span>
           {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </button>
         {isOpen && (
@@ -56,13 +56,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
                 to={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200",
-                  "hover:bg-sidebar-accent text-sidebar-foreground/80 hover:text-sidebar-foreground",
-                  location.pathname === child.href && "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                  "relative flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200",
+                  "hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                  location.pathname === child.href && "bg-sidebar-primary text-sidebar-primary-foreground font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-6 before:bg-sidebar-primary before:rounded-r-full"
                 )}
               >
-                <span className="w-2 h-2 rounded-full bg-current opacity-50" />
-                <span>{child.label}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+                <span className="text-sm">{child.label}</span>
               </Link>
             ))}
           </div>
@@ -76,13 +76,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
       to={href || '/'}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-        "hover:bg-sidebar-accent text-sidebar-foreground",
-        isActive && "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+        "relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+        "hover:bg-sidebar-accent text-sidebar-foreground/80 hover:text-sidebar-foreground",
+        isActive && "bg-sidebar-primary text-sidebar-primary-foreground font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-sidebar-primary before:rounded-r-full"
       )}
     >
       <Icon className="w-5 h-5" />
-      <span className="font-medium">{label}</span>
+      <span className="font-medium text-sm">{label}</span>
     </Link>
   );
 };
@@ -124,45 +124,48 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Overlay for mobile only */}
+      {/* Overlay for mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
       
-      {/* Sidebar - always fixed position, slides in/out */}
+      {/* Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen w-64 gradient-dark transition-transform duration-300",
+        "fixed left-0 top-0 z-50 h-screen w-72 gradient-dark transition-transform duration-300 shadow-xl",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-sidebar-border">
+          {/* Logo Header */}
+          <div className="flex items-center justify-between px-6 py-5 border-b border-sidebar-border/50">
             <div className="flex items-center gap-3">
-              <img 
-                src={logoImage} 
-                alt="Bluebook Logo" 
-                className="w-12 h-12 object-contain"
-              />
+              <div className="relative">
+                <img 
+                  src={logoImage} 
+                  alt="Bluebook Logo" 
+                  className="w-12 h-12 object-contain drop-shadow-lg"
+                />
+                <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-sidebar-primary animate-pulse" />
+              </div>
               <div>
-                <h1 className="font-display text-xl font-bold text-sidebar-foreground">Bluebook</h1>
-                <p className="text-xs text-sidebar-foreground/60">Telihan</p>
+                <h1 className="font-display text-xl font-bold text-sidebar-foreground tracking-tight">Bluebook</h1>
+                <p className="text-xs text-sidebar-primary font-medium">Telihan</p>
               </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={onClose}
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-xl"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-4 py-5 space-y-1.5 overflow-y-auto">
             <NavItem 
               icon={LayoutDashboard} 
               label="Dashboard" 
@@ -205,24 +208,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             />
           </nav>
 
-          {/* User Info */}
-          <div className="px-4 py-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <User className="w-5 h-5 text-sidebar-foreground" />
+          {/* User Section */}
+          <div className="px-4 py-4 border-t border-sidebar-border/50">
+            <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-sidebar-accent/50">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shadow-lg">
+                <User className="w-5 h-5 text-sidebar-primary-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-                <p className="text-xs text-sidebar-foreground/60 capitalize">{userRole}</p>
+                <p className="text-sm font-semibold text-sidebar-foreground truncate">{userName}</p>
+                <p className="text-xs text-sidebar-primary capitalize font-medium">{userRole}</p>
               </div>
             </div>
             <Button 
               onClick={logout}
               variant="ghost" 
-              className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-xl py-3"
             >
               <LogOut className="w-4 h-4" />
-              Logout
+              <span className="text-sm font-medium">Logout</span>
             </Button>
           </div>
         </div>

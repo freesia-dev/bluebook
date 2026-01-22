@@ -6,20 +6,23 @@
 
 @layer base {
   :root {
-    /* Brand Colors - Bluebook TLH */
+    /* Brand Colors - Bluebook Telihan */
     --brand-primary: 207 87% 29%;
     --brand-secondary: 27 89% 60%;
     
-    /* Primary Blue - Banking Blue */
-    --primary: 207 87% 29%;
+    /* Primary Blue - Deep Banking Blue */
+    --primary: 207 78% 21%;
     --primary-foreground: 0 0% 100%;
     
     /* Secondary - Golden Accent */
     --secondary: 27 89% 60%;
     --secondary-foreground: 222 84% 10%;
     
+    /* Accent Blue */
+    --accent-blue: 199 89% 48%;
+    
     /* Background & Surfaces */
-    --background: 210 20% 98%;
+    --background: 210 20% 97%;
     --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
@@ -47,35 +50,46 @@
     --warning: 45 93% 47%;
     --warning-foreground: 222 84% 10%;
     
+    /* Info */
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    
     /* Borders & Inputs */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 207 87% 29%;
     
-    --radius: 0.625rem;
+    --radius: 0.75rem;
     
-    /* Sidebar */
-    --sidebar-background: 207 87% 15%;
+    /* Sidebar - Modern Dark */
+    --sidebar-background: 207 78% 12%;
     --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 27 89% 60%;
     --sidebar-primary-foreground: 222 84% 10%;
-    --sidebar-accent: 207 87% 25%;
+    --sidebar-accent: 207 78% 18%;
     --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 207 87% 25%;
+    --sidebar-border: 207 78% 20%;
     --sidebar-ring: 27 89% 60%;
     
     /* Custom Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(207 87% 29%), hsl(207 87% 22%));
-    --gradient-secondary: linear-gradient(135deg, hsl(27 89% 60%), hsl(35 93% 50%));
-    --gradient-dark: linear-gradient(135deg, hsl(207 87% 15%), hsl(222 47% 11%));
-    --gradient-hero: linear-gradient(135deg, hsl(207 87% 29%) 0%, hsl(207 87% 22%) 50%, hsl(27 89% 60%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(207 78% 21%), hsl(207 78% 15%));
+    --gradient-secondary: linear-gradient(135deg, hsl(27 89% 60%), hsl(35 93% 55%));
+    --gradient-dark: linear-gradient(180deg, hsl(207 78% 12%), hsl(222 47% 8%));
+    --gradient-hero: linear-gradient(135deg, hsl(207 78% 21%) 0%, hsl(207 78% 15%) 50%, hsl(27 89% 60%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(207 87% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(207 87% 15% / 0.1), 0 2px 4px -2px hsl(207 87% 15% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(207 87% 15% / 0.1), 0 4px 6px -4px hsl(207 87% 15% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(207 87% 15% / 0.1), 0 8px 10px -6px hsl(207 87% 15% / 0.1);
-    --shadow-glow: 0 0 20px hsl(207 87% 29% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(207 78% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(207 78% 15% / 0.08), 0 2px 4px -2px hsl(207 78% 15% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(207 78% 15% / 0.08), 0 4px 6px -4px hsl(207 78% 15% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(207 78% 15% / 0.1), 0 8px 10px -6px hsl(207 78% 15% / 0.08);
+    --shadow-glow: 0 0 30px hsl(207 78% 21% / 0.2);
+    --shadow-glow-secondary: 0 0 30px hsl(27 89% 60% / 0.2);
   }
 
   .dark {
@@ -115,6 +129,9 @@
     --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 217 32% 17%;
     --sidebar-ring: 45 93% 55%;
+    
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -154,10 +171,41 @@
     background: var(--gradient-hero);
   }
   
+  /* Glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--glass-shadow);
+  }
+  
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
   
+  .shadow-glow-secondary {
+    box-shadow: var(--shadow-glow-secondary);
+  }
+  
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  /* Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
@@ -169,6 +217,20 @@
   .animate-slide-in {
     animation: slideIn 0.3s ease-out forwards;
   }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  /* Stagger animations */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
 }
 
 @keyframes fadeIn {
@@ -202,22 +264,48 @@
   }
 }
 
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--primary) / 0.3);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.5);
+}
+
+/* Selection */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--primary));
 }
