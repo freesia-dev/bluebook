@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -42,17 +43,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       
       {/* Header with menu button */}
       <header className={cn(
-        "fixed top-0 right-0 z-30 bg-background border-b border-border px-4 py-3 flex items-center gap-3 transition-all duration-300",
+        "fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300",
         sidebarOpen ? "left-64" : "left-0"
       )}>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-        <h1 className="font-display font-bold text-lg">Bluebook Telihan</h1>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <h1 className="font-display font-bold text-lg">Bluebook Telihan</h1>
+        </div>
+        <ThemeToggle />
       </header>
 
       {/* Main Content - shifts when sidebar is open on desktop */}
