@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Outfit', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -42,6 +42,10 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -78,12 +82,18 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
       },
       boxShadow: {
         'soft': '0 2px 15px -3px hsl(var(--primary) / 0.1), 0 10px 20px -2px hsl(var(--primary) / 0.04)',
-        'glow': '0 0 20px hsl(var(--primary) / 0.3)',
-        'card': '0 1px 3px 0 hsl(217 91% 15% / 0.1), 0 1px 2px -1px hsl(217 91% 15% / 0.1)',
-        'card-hover': '0 10px 15px -3px hsl(217 91% 15% / 0.1), 0 4px 6px -4px hsl(217 91% 15% / 0.1)',
+        'glow': '0 0 20px hsl(var(--primary) / 0.25)',
+        'card': '0 1px 3px hsl(207 87% 15% / 0.04), 0 4px 12px hsl(207 87% 15% / 0.06)',
+        'card-hover': '0 4px 12px hsl(207 87% 15% / 0.08), 0 8px 24px hsl(207 87% 15% / 0.1)',
+        'button': '0 2px 4px hsl(207 87% 15% / 0.1)',
+        'button-hover': '0 4px 8px hsl(207 87% 15% / 0.15)',
+        'elevated': '0 4px 6px -1px hsl(207 87% 15% / 0.08), 0 2px 4px -2px hsl(207 87% 15% / 0.08)',
+        'elevated-lg': '0 10px 15px -3px hsl(207 87% 15% / 0.08), 0 4px 6px -4px hsl(207 87% 15% / 0.08)',
       },
       keyframes: {
         "accordion-down": {

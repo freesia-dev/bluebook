@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -18,8 +18,8 @@
     --secondary: 27 89% 60%;
     --secondary-foreground: 222 84% 10%;
     
-    /* Background & Surfaces */
-    --background: 210 20% 98%;
+    /* Background & Surfaces - Soft warm gray, not pure white */
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
@@ -29,53 +29,61 @@
     --popover-foreground: 222 47% 11%;
     
     /* Muted & Accent */
-    --muted: 214 32% 91%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 9% 46%;
     
     --accent: 207 87% 96%;
     --accent-foreground: 207 87% 29%;
     
-    /* Destructive */
-    --destructive: 0 84% 60%;
+    /* Semantic Colors */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     
-    /* Success */
-    --success: 142 76% 36%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     
-    /* Warning */
-    --warning: 45 93% 47%;
+    --warning: 38 92% 50%;
     --warning-foreground: 222 84% 10%;
     
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    
     /* Borders & Inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 207 87% 29%;
     
-    --radius: 0.625rem;
+    --radius: 0.75rem;
     
     /* Sidebar */
     --sidebar-background: 207 87% 15%;
     --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 27 89% 60%;
     --sidebar-primary-foreground: 222 84% 10%;
-    --sidebar-accent: 207 87% 25%;
+    --sidebar-accent: 207 87% 22%;
     --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 207 87% 25%;
+    --sidebar-border: 207 60% 25%;
     --sidebar-ring: 27 89% 60%;
     
     /* Custom Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(207 87% 29%), hsl(207 87% 22%));
+    --gradient-primary: linear-gradient(135deg, hsl(207 87% 32%), hsl(207 87% 22%));
     --gradient-secondary: linear-gradient(135deg, hsl(27 89% 60%), hsl(35 93% 50%));
     --gradient-dark: linear-gradient(135deg, hsl(207 87% 15%), hsl(222 47% 11%));
     --gradient-hero: linear-gradient(135deg, hsl(207 87% 29%) 0%, hsl(207 87% 22%) 50%, hsl(27 89% 60%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 20% 98%));
+    --gradient-stat: linear-gradient(135deg, hsl(207 87% 29%), hsl(207 87% 35%));
     
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(207 87% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(207 87% 15% / 0.1), 0 2px 4px -2px hsl(207 87% 15% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(207 87% 15% / 0.1), 0 4px 6px -4px hsl(207 87% 15% / 0.1);
+    /* Enhanced Shadows */
+    --shadow-xs: 0 1px 2px 0 hsl(207 87% 15% / 0.03);
+    --shadow-sm: 0 1px 3px 0 hsl(207 87% 15% / 0.06), 0 1px 2px -1px hsl(207 87% 15% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(207 87% 15% / 0.08), 0 2px 4px -2px hsl(207 87% 15% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(207 87% 15% / 0.08), 0 4px 6px -4px hsl(207 87% 15% / 0.08);
     --shadow-xl: 0 20px 25px -5px hsl(207 87% 15% / 0.1), 0 8px 10px -6px hsl(207 87% 15% / 0.1);
-    --shadow-glow: 0 0 20px hsl(207 87% 29% / 0.3);
+    --shadow-glow: 0 0 20px hsl(207 87% 29% / 0.25);
+    --shadow-card: 0 1px 3px hsl(207 87% 15% / 0.04), 0 4px 12px hsl(207 87% 15% / 0.06);
+    --shadow-card-hover: 0 4px 12px hsl(207 87% 15% / 0.08), 0 8px 24px hsl(207 87% 15% / 0.1);
+    --shadow-button: 0 2px 4px hsl(207 87% 15% / 0.1);
+    --shadow-button-hover: 0 4px 8px hsl(207 87% 15% / 0.15);
   }
 
   .dark {
@@ -124,18 +132,110 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    @apply tracking-tight;
+  }
+
+  /* Enhanced focus states */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Modern Card Styles */
+  .card-modern {
+    @apply bg-card rounded-xl border border-border/50;
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s ease;
+  }
+  
+  .card-modern:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
+  }
+
+  /* Stat Card Primary */
+  .stat-card-primary {
+    background: var(--gradient-stat);
+    @apply text-primary-foreground rounded-xl;
+    box-shadow: var(--shadow-md), 0 0 0 1px hsl(var(--primary) / 0.1);
+  }
+
+  /* Table Styles */
+  .table-modern {
+    @apply w-full;
+  }
+
+  .table-modern thead {
+    @apply bg-muted/60 sticky top-0 z-10;
+  }
+
+  .table-modern thead th {
+    @apply font-semibold text-muted-foreground text-xs uppercase tracking-wider py-4 px-4;
+  }
+
+  .table-modern tbody tr {
+    @apply transition-colors duration-150;
+  }
+
+  .table-modern tbody tr:nth-child(even) {
+    @apply bg-muted/20;
+  }
+
+  .table-modern tbody tr:hover {
+    @apply bg-primary/5;
+  }
+
+  /* Modern Badge Styles */
+  .badge-success {
+    @apply bg-success/10 text-success border border-success/20;
+  }
+
+  .badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20;
+  }
+
+  .badge-danger {
+    @apply bg-destructive/10 text-destructive border border-destructive/20;
+  }
+
+  .badge-info {
+    @apply bg-info/10 text-info border border-info/20;
+  }
+
+  .badge-neutral {
+    @apply bg-muted text-muted-foreground border border-border;
+  }
+
+  /* Button Enhancements */
+  .btn-primary-elevated {
+    @apply bg-primary text-primary-foreground font-medium;
+    box-shadow: var(--shadow-button);
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary-elevated:hover {
+    @apply bg-primary/90;
+    box-shadow: var(--shadow-button-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary-elevated:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-xs);
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   }
   
   .gradient-primary {
@@ -153,9 +253,25 @@
   .gradient-hero {
     background: var(--gradient-hero);
   }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .gradient-stat {
+    background: var(--gradient-stat);
+  }
   
   .shadow-glow {
     box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
   }
   
   .animate-fade-in {
@@ -168,6 +284,27 @@
   
   .animate-slide-in {
     animation: slideIn 0.3s ease-out forwards;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Text truncate with ellipsis */
+  .text-truncate {
+    @apply truncate;
+  }
+
+  /* Smooth scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.2) transparent;
   }
 }
 
@@ -209,15 +346,34 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: hsl(var(--muted) / 0.5);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.3);
+  background: hsl(var(--primary) / 0.2);
   border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
+  background: hsl(var(--primary) / 0.4);
+  background-clip: content-box;
+}
+
+/* Print styles for Panduan page */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  
+  .print-break-before {
+    page-break-before: always;
+  }
 }

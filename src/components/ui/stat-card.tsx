@@ -23,47 +23,61 @@ export const StatCard: React.FC<StatCardProps> = ({
   className,
 }) => {
   const variants = {
-    default: 'bg-card',
-    primary: 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground',
-    secondary: 'bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground',
-    success: 'bg-gradient-to-br from-success to-success/80 text-success-foreground',
-    warning: 'bg-gradient-to-br from-warning to-warning/80 text-warning-foreground',
+    default: 'bg-card border border-border/50',
+    primary: 'bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground border-0',
+    secondary: 'bg-gradient-to-br from-secondary via-secondary to-secondary/80 text-secondary-foreground border-0',
+    success: 'bg-gradient-to-br from-success via-success to-success/80 text-success-foreground border-0',
+    warning: 'bg-gradient-to-br from-warning via-warning to-warning/80 text-warning-foreground border-0',
   };
 
   const iconVariants = {
-    default: 'bg-primary/10 text-primary',
-    primary: 'bg-primary-foreground/20 text-primary-foreground',
-    secondary: 'bg-secondary-foreground/20 text-secondary-foreground',
-    success: 'bg-success-foreground/20 text-success-foreground',
-    warning: 'bg-warning-foreground/20 text-warning-foreground',
+    default: 'bg-primary/10 text-primary shadow-sm',
+    primary: 'bg-primary-foreground/20 text-primary-foreground backdrop-blur-sm',
+    secondary: 'bg-secondary-foreground/20 text-secondary-foreground backdrop-blur-sm',
+    success: 'bg-success-foreground/20 text-success-foreground backdrop-blur-sm',
+    warning: 'bg-warning-foreground/20 text-warning-foreground backdrop-blur-sm',
+  };
+
+  const trendColors = {
+    default: trend?.isPositive ? 'text-success' : 'text-destructive',
+    primary: trend?.isPositive ? 'text-success-foreground/90' : 'text-destructive-foreground/90',
+    secondary: trend?.isPositive ? 'text-success' : 'text-destructive',
+    success: 'text-success-foreground/80',
+    warning: trend?.isPositive ? 'text-success' : 'text-destructive',
   };
 
   return (
     <div className={cn(
-      "rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300",
+      "rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5",
       variants[variant],
       className
     )}>
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
           <p className={cn(
-            "text-sm font-medium",
-            variant === 'default' ? 'text-muted-foreground' : 'opacity-80'
+            "text-sm font-medium tracking-wide",
+            variant === 'default' ? 'text-muted-foreground' : 'opacity-85'
           )}>
             {title}
           </p>
-          <p className="mt-2 text-3xl font-display font-bold">{value}</p>
+          <p className="mt-3 text-3xl font-display font-bold tracking-tight">{value}</p>
           {trend && (
-            <p className={cn(
-              "mt-1 text-sm font-medium",
-              trend.isPositive ? 'text-success' : 'text-destructive'
+            <div className={cn(
+              "mt-2 flex items-center gap-1.5 text-sm font-medium",
+              trendColors[variant]
             )}>
-              {trend.isPositive ? '+' : ''}{trend.value}% dari bulan lalu
-            </p>
+              <span className={cn(
+                "inline-flex items-center justify-center w-5 h-5 rounded-full text-xs",
+                trend.isPositive ? 'bg-success/20' : 'bg-destructive/20'
+              )}>
+                {trend.isPositive ? '↑' : '↓'}
+              </span>
+              <span>{Math.abs(trend.value)}% dari bulan lalu</span>
+            </div>
           )}
         </div>
         <div className={cn(
-          "rounded-lg p-3",
+          "rounded-xl p-3 transition-transform duration-200",
           iconVariants[variant]
         )}>
           <Icon className="w-6 h-6" />
