@@ -46,13 +46,31 @@ export const StatCard: React.FC<StatCardProps> = ({
     warning: trend?.isPositive ? 'text-success' : 'text-destructive',
   };
 
+  // Silhouette icon opacity based on variant
+  const silhouetteOpacity = {
+    default: 'opacity-[0.04]',
+    primary: 'opacity-[0.08]',
+    secondary: 'opacity-[0.08]',
+    success: 'opacity-[0.08]',
+    warning: 'opacity-[0.08]',
+  };
+
   return (
     <div className={cn(
-      "rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5",
+      "relative rounded-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5 overflow-hidden",
       variants[variant],
       className
     )}>
-      <div className="flex items-start justify-between gap-4">
+      {/* Background Silhouette Icon */}
+      <div className="absolute -right-4 -bottom-4 pointer-events-none">
+        <Icon className={cn(
+          "w-32 h-32 transform rotate-12",
+          variant === 'default' ? 'text-primary' : 'text-current',
+          silhouetteOpacity[variant]
+        )} strokeWidth={1.5} />
+      </div>
+
+      <div className="relative z-10 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <p className={cn(
             "text-sm font-medium tracking-wide",
