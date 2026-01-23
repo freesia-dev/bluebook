@@ -36,8 +36,8 @@ const FinalCTASection = () => {
           </h2>
 
           <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Ayo mulai dan rasakan kemudahan mengelola administrasi perbankan 
-            secara digital dan terpercaya sekarang juga!
+            Akses sistem sekarang untuk mengelola administrasi dan agenda kredit 
+            KCP Telihan secara digital dan terintegrasi.
           </p>
 
           {/* CTA Buttons */}
@@ -54,9 +54,9 @@ const FinalCTASection = () => {
               size="lg" 
               variant="outline"
               className="px-10 py-7 text-lg font-semibold border-2 border-white/30 text-white hover:bg-white/10 bg-transparent hover:border-white/50 transition-all duration-300"
-              onClick={() => navigate('/login?mode=register')}
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Daftar Akun
+              Lihat Fitur
             </Button>
           </div>
 

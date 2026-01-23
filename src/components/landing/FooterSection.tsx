@@ -31,8 +31,8 @@ const FooterSection = () => {
 
           {/* Description */}
           <p className="text-slate-400 max-w-md mb-8">
-            Internal Application – Bankaltimtara KCP Telihan. 
-            Solusi digital untuk pengelolaan administrasi perbankan.
+            Aplikasi Internal – Bankaltimtara KCP Telihan. 
+            Sistem digital untuk pengelolaan administrasi dan agenda kredit.
           </p>
 
           {/* Links */}
