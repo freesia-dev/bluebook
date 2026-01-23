@@ -37,14 +37,14 @@ const HeroSection = () => {
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl text-blue-100/80 font-medium">
-                Solusi Andal untuk Pengelolaan Administrasi Perbankan
+                Sistem Administrasi Digital Internal
               </p>
             </div>
 
             {/* Description */}
             <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
-              Sistem Digital Logbook yang dirancang khusus untuk Bankaltimtara KCP Telihan. 
-              Kelola surat-menyurat dan agenda kredit secara digital, efisien, dan terintegrasi.
+              Portal internal untuk pegawai Bankaltimtara KCP Telihan. 
+              Akses mudah untuk mengelola surat-menyurat dan agenda kredit secara digital dan terintegrasi.
             </p>
 
             {/* CTA Buttons */}

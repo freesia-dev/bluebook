@@ -33,16 +33,16 @@ const ExplainerSection = () => {
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="inline-block px-4 py-2 rounded-full bg-white/10 text-brand-secondary font-semibold text-sm mb-4">
-            CARA KERJA
+            PANDUAN PENGGUNAAN
           </span>
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
-            Mulai dalam{" "}
+            Cara Menggunakan{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-amber-400">
-              3 Langkah Mudah
+              Sistem Ini
             </span>
           </h2>
           <p className="text-lg text-slate-300 leading-relaxed">
-            Tidak perlu training panjang. Bluebook dirancang agar mudah dipahami dan langsung bisa digunakan.
+            Sistem ini mudah dipahami. Ikuti langkah berikut untuk mulai menggunakan Bluebook.
           </p>
         </div>
 

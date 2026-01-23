@@ -59,17 +59,17 @@ const FeaturesSection = () => {
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="inline-block px-4 py-2 rounded-full bg-brand-primary/10 text-brand-primary font-semibold text-sm mb-4">
-            KEUNGGULAN UTAMA
+            FITUR SISTEM
           </span>
           <h2 className="text-3xl lg:text-5xl font-bold text-slate-900 mb-6">
-            Fitur yang Membuat{" "}
+            Apa Saja yang Bisa{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">
-              Perbedaan
+              Dilakukan?
             </span>
           </h2>
           <p className="text-lg text-slate-600 leading-relaxed">
-            Solusi lengkap untuk pengelolaan administrasi dan agenda kredit perbankan 
-            yang modern, aman, dan mudah digunakan.
+            Berbagai fitur untuk membantu pekerjaan administrasi dan pengelolaan agenda kredit 
+            di KCP Telihan secara lebih efisien.
           </p>
         </div>
 
