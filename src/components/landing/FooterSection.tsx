@@ -40,7 +40,7 @@ const FooterSection = () => {
             <a href="#features" className="text-slate-400 hover:text-white transition-colors">
               Fitur
             </a>
-            <a href="#" className="text-slate-400 hover:text-white transition-colors">
+            <a href="/panduan" className="text-slate-400 hover:text-white transition-colors">
               Panduan
             </a>
             <a href="#" className="text-slate-400 hover:text-white transition-colors">

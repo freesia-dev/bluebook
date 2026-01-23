@@ -26,6 +26,7 @@ const NomorLoanPage = lazy(() => import("./pages/agenda-kredit/NomorLoanPage"));
 const UsersPage = lazy(() => import("./pages/konfigurasi/UsersPage"));
 const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const About = lazy(() => import("./pages/About"));
+const Panduan = lazy(() => import("./pages/Panduan"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Minimal login loader (no layout needed)
@@ -118,6 +119,9 @@ const App = () => (
             } />
             <Route path="/about" element={
               <Suspense fallback={<GenericPageSkeleton />}><About /></Suspense>
+            } />
+            <Route path="/panduan" element={
+              <Suspense fallback={<GenericPageSkeleton />}><Panduan /></Suspense>
             } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
