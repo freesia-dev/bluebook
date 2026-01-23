@@ -153,16 +153,16 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
   const hasActiveFilter = filterColumn && filterValue;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-10 h-10 bg-background border-border/60 focus:border-primary/50 transition-colors"
           />
         </div>
         
@@ -171,28 +171,28 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
             <Button 
               variant={hasActiveFilter ? "default" : "outline"} 
               size="sm" 
-              className="gap-2"
+              className="gap-2 h-10"
             >
               <Filter className="w-4 h-4" />
               Filter
               {hasActiveFilter && (
-                <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary-foreground/20">
                   1
                 </Badge>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80" align="start">
+          <PopoverContent className="w-80 p-4" align="start">
             <div className="space-y-4">
-              <div className="font-medium">Filter Data</div>
+              <div className="font-semibold text-foreground">Filter Data</div>
               
               <div className="space-y-2">
-                <Label>Kolom</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Kolom</Label>
                 <Select value={filterColumn} onValueChange={(value) => {
                   setFilterColumn(value);
                   setFilterValue('');
                 }}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="Pilih kolom" />
                   </SelectTrigger>
                   <SelectContent>
@@ -207,9 +207,9 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
 
               {filterColumn && (
                 <div className="space-y-2">
-                  <Label>Nilai</Label>
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nilai</Label>
                   <Select value={filterValue} onValueChange={setFilterValue}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10">
                       <SelectValue placeholder="Pilih nilai" />
                     </SelectTrigger>
                     <SelectContent>
@@ -223,11 +223,11 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 h-9"
                   onClick={() => {
                     clearFilter();
                     setIsFilterOpen(false);
@@ -237,7 +237,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                 </Button>
                 <Button 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 h-9"
                   onClick={() => setIsFilterOpen(false)}
                 >
                   Terapkan
@@ -251,7 +251,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
         <Button 
           variant={sortOrder ? "default" : "outline"} 
           size="sm" 
-          className="gap-2"
+          className="gap-2 h-10"
           onClick={toggleSortOrder}
         >
           {sortOrder === 'desc' ? (
@@ -266,22 +266,24 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
           <Button 
             variant="ghost" 
             size="sm" 
-            className="gap-1 text-muted-foreground"
+            className="gap-1.5 text-muted-foreground hover:text-foreground h-10"
             onClick={clearFilter}
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
             Hapus Filter
           </Button>
         )}
 
+        <div className="flex-1" />
+
         {onExport && (
-          <Button variant="outline" size="sm" className="gap-2" onClick={onExport}>
+          <Button variant="outline" size="sm" className="gap-2 h-10" onClick={onExport}>
             <Download className="w-4 h-4" />
             Export
           </Button>
         )}
         {onAdd && canEdit && (
-          <Button size="sm" className="gap-2" onClick={onAdd}>
+          <Button size="sm" className="gap-2 h-10" onClick={onAdd}>
             <Plus className="w-4 h-4" />
             {addLabel}
           </Button>
@@ -292,51 +294,62 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
       {hasActiveFilter && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Filter aktif:</span>
-          <Badge variant="secondary">
+          <Badge variant="secondary" className="font-medium">
             {columns.find(c => String(c.key) === filterColumn)?.header}: {filterValue}
           </Badge>
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-lg border bg-card shadow-card overflow-hidden">
+      <div className="rounded-xl border border-border/50 bg-card shadow-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
+            <TableRow className="bg-muted/60 hover:bg-muted/60 border-b-2 border-border/30">
               {columns.map((col) => (
                 <TableHead key={col.key as string} className={cn("font-semibold", col.className)}>
                   {col.header}
                 </TableHead>
               ))}
-              {showActions && <TableHead className="w-[100px] text-center">Aksi</TableHead>}
+              {showActions && <TableHead className="w-[120px] text-center">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredData.length === 0 ? (
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableCell 
                   colSpan={columns.length + (showActions ? 1 : 0)} 
-                  className="h-24 text-center text-muted-foreground"
+                  className="h-32 text-center text-muted-foreground"
                 >
-                  Tidak ada data
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
+                      <Search className="w-5 h-5 text-muted-foreground/50" />
+                    </div>
+                    <span>Tidak ada data</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((item) => (
-                <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
+              filteredData.map((item, index) => (
+                <TableRow 
+                  key={item.id} 
+                  className={cn(
+                    "group transition-all duration-150",
+                    index % 2 === 1 && "bg-muted/20"
+                  )}
+                >
                   {columns.map((col) => (
-                    <TableCell key={col.key as string} className={col.className}>
+                    <TableCell key={col.key as string} className={cn("py-3.5", col.className)}>
                       {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
                     </TableCell>
                   ))}
                   {showActions && (
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-1">
+                    <TableCell className="py-3.5">
+                      <div className="flex items-center justify-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
                         {onView && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                            className="h-8 w-8 rounded-lg text-primary hover:text-primary hover:bg-primary/10 transition-colors"
                             onClick={() => onView(item)}
                           >
                             <Eye className="h-4 w-4" />
@@ -346,7 +359,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-warning hover:text-warning hover:bg-warning/10"
+                            className="h-8 w-8 rounded-lg text-warning hover:text-warning hover:bg-warning/10 transition-colors"
                             onClick={() => onEdit(item)}
                           >
                             <Edit className="h-4 w-4" />
@@ -356,7 +369,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
                             onClick={() => onDelete(item)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -373,8 +386,10 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>Menampilkan {filteredData.length} dari {data.length} data</p>
+      <div className="flex items-center justify-between px-1">
+        <p className="text-sm text-muted-foreground">
+          Menampilkan <span className="font-medium text-foreground">{filteredData.length}</span> dari <span className="font-medium text-foreground">{data.length}</span> data
+        </p>
       </div>
     </div>
   );
