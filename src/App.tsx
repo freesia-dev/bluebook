@@ -29,6 +29,7 @@ const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const About = lazy(() => import("./pages/About"));
 const Panduan = lazy(() => import("./pages/Panduan"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const UnderConstruction = lazy(() => import("./pages/UnderConstruction"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -124,6 +125,16 @@ const App = () => (
             } />
             <Route path="/panduan" element={
               <Suspense fallback={<GenericPageSkeleton />}><Panduan /></Suspense>
+            } />
+            {/* ATM Telihan Routes - Under Construction */}
+            <Route path="/atm-telihan/database-pengisian" element={
+              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+            } />
+            <Route path="/atm-telihan/ba-pengisian" element={
+              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+            } />
+            <Route path="/atm-telihan/konfigurasi" element={
+              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
             } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>

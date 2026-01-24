@@ -11,7 +11,8 @@ import {
   ChevronRight,
   LogOut,
   User,
-  X
+  X,
+  Banknote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -115,6 +116,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Nomor Loan', href: '/agenda-kredit/nomor-loan' },
   ];
 
+  const atmTelihanItems = [
+    { label: 'Database Pengisian ATM', href: '/atm-telihan/database-pengisian' },
+    { label: 'BA Pengisian ATM', href: '/atm-telihan/ba-pengisian' },
+    { label: 'Konfigurasi ATM', href: '/atm-telihan/konfigurasi' },
+  ];
+
   const konfigurasiItems = isAdmin
     ? [
         { label: 'Pengaturan User', href: '/konfigurasi/users' },
@@ -196,6 +203,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               icon={CreditCard} 
               label="Agenda Kredit" 
               children={agendaKreditItems}
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={Banknote} 
+              label="ATM Telihan" 
+              children={atmTelihanItems}
               onNavigate={onClose}
             />
             <NavItem 
