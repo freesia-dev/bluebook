@@ -197,3 +197,73 @@ export const KODE_SURAT_LIST: KodeSurat[] = [
   { kategori: 'Pengumuman & Siaran ke Eksternal', uraian: 'Edaran & Pengumuman Perbankan', kode: 'G-1' },
   { kategori: 'Pengumuman & Siaran ke Eksternal', uraian: 'Pelanggan', kode: 'G-2' },
 ];
+
+// ============= ATM TYPES =============
+export interface PengisianATM {
+  id: string;
+  nomor: number;
+  hari: string;
+  tanggal: Date;
+  jam: string;
+  sisaCartridge1: number;
+  sisaCartridge2: number;
+  sisaCartridge3: number;
+  sisaCartridge4: number;
+  tambahCartridge1: number;
+  tambahCartridge2: number;
+  tambahCartridge3: number;
+  tambahCartridge4: number;
+  saldoBukuBesar: number;
+  kartuTertelan: number;
+  terbilang: string;
+  notes: string;
+  jumlahSelisih: number;
+  keteranganSelisih: string;
+  namaTeller: string;
+  jumlahDisetor: number;
+  setorKeRekTitipan: number;
+  yangMenyerahkan: string;
+  tellerSelisih: string;
+  retracts: number;
+  userInput: string;
+  createdAt: Date;
+}
+
+export interface ATMConfig {
+  id: string;
+  nama: string;
+  jabatan: string;
+  keterangan?: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface KartuTertelan {
+  id: string;
+  pengisianAtmId: string;
+  nomorKartu: string;
+  namaNasabah?: string;
+  bank: string;
+  createdAt: Date;
+}
+
+export interface SelisihATM {
+  id: string;
+  pengisianAtmId: string;
+  tanggal: Date;
+  noReff?: string;
+  nominal: number;
+  keterangan?: string;
+  createdAt: Date;
+}
+
+// Day names in Indonesian
+export const HARI_LIST = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
+
+// Jabatan options for ATM config
+export const JABATAN_ATM_LIST = [
+  'PETUGAS ATM',
+  'TELLER',
+  'PEMIMPIN KCP',
+  'PGS. PEMIMPIN KCP',
+];

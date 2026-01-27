@@ -65,6 +65,33 @@ export type Database = {
         }
         Relationships: []
       }
+      atm_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          jabatan: string
+          keterangan: string | null
+          nama: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          jabatan: string
+          keterangan?: string | null
+          nama: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          jabatan?: string
+          keterangan?: string | null
+          nama?: string
+        }
+        Relationships: []
+      }
       jenis_debitur: {
         Row: {
           id: string
@@ -118,6 +145,41 @@ export type Database = {
           kode?: string
         }
         Relationships: []
+      }
+      kartu_tertelan: {
+        Row: {
+          bank: string
+          created_at: string
+          id: string
+          nama_nasabah: string | null
+          nomor_kartu: string
+          pengisian_atm_id: string | null
+        }
+        Insert: {
+          bank?: string
+          created_at?: string
+          id?: string
+          nama_nasabah?: string | null
+          nomor_kartu: string
+          pengisian_atm_id?: string | null
+        }
+        Update: {
+          bank?: string
+          created_at?: string
+          id?: string
+          nama_nasabah?: string | null
+          nomor_kartu?: string
+          pengisian_atm_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kartu_tertelan_pengisian_atm_id_fkey"
+            columns: ["pengisian_atm_id"]
+            isOneToOne: false
+            referencedRelation: "pengisian_atm"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kkmpak: {
         Row: {
@@ -247,6 +309,96 @@ export type Database = {
           },
         ]
       }
+      pengisian_atm: {
+        Row: {
+          created_at: string
+          hari: string
+          id: string
+          jam: string
+          jumlah_disetor: number
+          jumlah_selisih: number
+          kartu_tertelan: number
+          keterangan_selisih: string | null
+          nama_teller: string | null
+          nomor: number
+          notes: string | null
+          retracts: number
+          saldo_buku_besar: number
+          setor_ke_rek_titipan: number
+          sisa_cartridge_1: number
+          sisa_cartridge_2: number
+          sisa_cartridge_3: number
+          sisa_cartridge_4: number
+          tambah_cartridge_1: number
+          tambah_cartridge_2: number
+          tambah_cartridge_3: number
+          tambah_cartridge_4: number
+          tanggal: string
+          teller_selisih: string | null
+          terbilang: string | null
+          user_input: string
+          yang_menyerahkan: string | null
+        }
+        Insert: {
+          created_at?: string
+          hari: string
+          id?: string
+          jam: string
+          jumlah_disetor?: number
+          jumlah_selisih?: number
+          kartu_tertelan?: number
+          keterangan_selisih?: string | null
+          nama_teller?: string | null
+          nomor: number
+          notes?: string | null
+          retracts?: number
+          saldo_buku_besar?: number
+          setor_ke_rek_titipan?: number
+          sisa_cartridge_1?: number
+          sisa_cartridge_2?: number
+          sisa_cartridge_3?: number
+          sisa_cartridge_4?: number
+          tambah_cartridge_1?: number
+          tambah_cartridge_2?: number
+          tambah_cartridge_3?: number
+          tambah_cartridge_4?: number
+          tanggal: string
+          teller_selisih?: string | null
+          terbilang?: string | null
+          user_input: string
+          yang_menyerahkan?: string | null
+        }
+        Update: {
+          created_at?: string
+          hari?: string
+          id?: string
+          jam?: string
+          jumlah_disetor?: number
+          jumlah_selisih?: number
+          kartu_tertelan?: number
+          keterangan_selisih?: string | null
+          nama_teller?: string | null
+          nomor?: number
+          notes?: string | null
+          retracts?: number
+          saldo_buku_besar?: number
+          setor_ke_rek_titipan?: number
+          sisa_cartridge_1?: number
+          sisa_cartridge_2?: number
+          sisa_cartridge_3?: number
+          sisa_cartridge_4?: number
+          tambah_cartridge_1?: number
+          tambah_cartridge_2?: number
+          tambah_cartridge_3?: number
+          tambah_cartridge_4?: number
+          tanggal?: string
+          teller_selisih?: string | null
+          terbilang?: string | null
+          user_input?: string
+          yang_menyerahkan?: string | null
+        }
+        Relationships: []
+      }
       pk: {
         Row: {
           created_at: string
@@ -339,6 +491,44 @@ export type Database = {
           kode?: string
         }
         Relationships: []
+      }
+      selisih_atm: {
+        Row: {
+          created_at: string
+          id: string
+          keterangan: string | null
+          no_reff: string | null
+          nominal: number
+          pengisian_atm_id: string | null
+          tanggal: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          no_reff?: string | null
+          nominal?: number
+          pengisian_atm_id?: string | null
+          tanggal: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          no_reff?: string | null
+          nominal?: number
+          pengisian_atm_id?: string | null
+          tanggal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "selisih_atm_pengisian_atm_id_fkey"
+            columns: ["pengisian_atm_id"]
+            isOneToOne: false
+            referencedRelation: "pengisian_atm"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sppk: {
         Row: {
