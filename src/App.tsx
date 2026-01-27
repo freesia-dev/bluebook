@@ -30,6 +30,9 @@ const About = lazy(() => import("./pages/About"));
 const Panduan = lazy(() => import("./pages/Panduan"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UnderConstruction = lazy(() => import("./pages/UnderConstruction"));
+const DatabasePengisianATM = lazy(() => import("./pages/atm-telihan/DatabasePengisianATM"));
+const BAPengisianATM = lazy(() => import("./pages/atm-telihan/BAPengisianATM"));
+const KonfigurasiATMPage = lazy(() => import("./pages/atm-telihan/KonfigurasiATMPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -126,15 +129,15 @@ const App = () => (
             <Route path="/panduan" element={
               <Suspense fallback={<GenericPageSkeleton />}><Panduan /></Suspense>
             } />
-            {/* ATM Telihan Routes - Under Construction */}
+            {/* ATM Telihan Routes */}
             <Route path="/atm-telihan/database-pengisian" element={
-              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+              <Suspense fallback={<TablePageSkeleton />}><DatabasePengisianATM /></Suspense>
             } />
             <Route path="/atm-telihan/ba-pengisian" element={
-              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+              <Suspense fallback={<GenericPageSkeleton />}><BAPengisianATM /></Suspense>
             } />
             <Route path="/atm-telihan/konfigurasi" element={
-              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+              <Suspense fallback={<TablePageSkeleton />}><KonfigurasiATMPage /></Suspense>
             } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
