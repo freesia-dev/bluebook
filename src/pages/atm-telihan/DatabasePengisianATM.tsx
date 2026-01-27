@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DebouncedInput } from '@/components/ui/debounced-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,40 +27,6 @@ import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '
 import { ATMStatistics } from '@/components/atm/ATMStatistics';
 
 const DENOMINASI = 100000; // Rp 100.000 per lembar
-
-// Debounced input component to fix mobile keyboard closing issue
-interface DebouncedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
-  value: string;
-  onValueChange: (value: string) => void;
-  delay?: number;
-}
-
-const DebouncedInput = React.memo(({ value, onValueChange, delay = 0, ...props }: DebouncedInputProps) => {
-  const [localValue, setLocalValue] = useState(value);
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Sync with external value only when not focused
-  useEffect(() => {
-    if (document.activeElement !== inputRef.current) {
-      setLocalValue(value);
-    }
-  }, [value]);
-  
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    onValueChange(newValue);
-  }, [onValueChange]);
-
-  return (
-    <Input
-      ref={inputRef}
-      {...props}
-      value={localValue}
-      onChange={handleChange}
-    />
-  );
-});
 
 const DatabasePengisianATM = () => {
   const { toast } = useToast();
