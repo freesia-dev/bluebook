@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -23,8 +23,43 @@ import { CalendarIcon, CheckCircle2, Calculator, Banknote, CreditCard, Users, Cl
 import { cn } from '@/lib/utils';
 import { exportToExcel } from '@/lib/export';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
+import { ATMStatistics } from '@/components/atm/ATMStatistics';
 
 const DENOMINASI = 100000; // Rp 100.000 per lembar
+
+// Debounced input component to fix mobile keyboard closing issue
+interface DebouncedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+  value: string;
+  onValueChange: (value: string) => void;
+  delay?: number;
+}
+
+const DebouncedInput = React.memo(({ value, onValueChange, delay = 0, ...props }: DebouncedInputProps) => {
+  const [localValue, setLocalValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Sync with external value only when not focused
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setLocalValue(value);
+    }
+  }, [value]);
+  
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    onValueChange(newValue);
+  }, [onValueChange]);
+
+  return (
+    <Input
+      ref={inputRef}
+      {...props}
+      value={localValue}
+      onChange={handleChange}
+    />
+  );
+});
 
 const DatabasePengisianATM = () => {
   const { toast } = useToast();
@@ -360,11 +395,12 @@ const DatabasePengisianATM = () => {
               {[1, 2, 3, 4].map((num) => (
                 <div key={`sisa-${num}`} className="space-y-1">
                   <Label className="text-xs text-muted-foreground">#{num}</Label>
-                  <Input 
-                    type="number" 
+                  <DebouncedInput 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="0" 
                     value={formData[`sisaCartridge${num}` as keyof typeof formData] as string} 
-                    onChange={(e) => setFormData({...formData, [`sisaCartridge${num}`]: e.target.value})}
+                    onValueChange={(v) => setFormData(prev => ({...prev, [`sisaCartridge${num}`]: v}))}
                     className="text-center"
                   />
                 </div>
@@ -382,11 +418,12 @@ const DatabasePengisianATM = () => {
               {[1, 2, 3, 4].map((num) => (
                 <div key={`tambah-${num}`} className="space-y-1">
                   <Label className="text-xs text-muted-foreground">#{num}</Label>
-                  <Input 
-                    type="number" 
+                  <DebouncedInput 
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="0" 
                     value={formData[`tambahCartridge${num}` as keyof typeof formData] as string} 
-                    onChange={(e) => setFormData({...formData, [`tambahCartridge${num}`]: e.target.value})}
+                    onValueChange={(v) => setFormData(prev => ({...prev, [`tambahCartridge${num}`]: v}))}
                     className="text-center"
                   />
                 </div>
@@ -409,19 +446,21 @@ const DatabasePengisianATM = () => {
             <Label className="flex items-center gap-2">
               Saldo Buku Besar <span className="text-destructive">*</span>
             </Label>
-            <Input 
+            <DebouncedInput 
+              inputMode="numeric"
               value={formData.saldoBukuBesar} 
-              onChange={(e) => setFormData({...formData, saldoBukuBesar: formatCurrencyInput(e.target.value)})} 
+              onValueChange={(v) => setFormData(prev => ({...prev, saldoBukuBesar: formatCurrencyInput(v)}))} 
               placeholder="1.000.000" 
               className="font-mono"
             />
           </div>
           <div className="space-y-2">
             <Label>Kartu Tertelan</Label>
-            <Input 
-              type="number" 
+            <DebouncedInput 
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={formData.kartuTertelan} 
-              onChange={(e) => setFormData({...formData, kartuTertelan: e.target.value})} 
+              onValueChange={(v) => setFormData(prev => ({...prev, kartuTertelan: v}))} 
               placeholder="0" 
               className="text-center"
             />
@@ -562,6 +601,9 @@ const DatabasePengisianATM = () => {
           title="Database Pengisian ATM"
           description="Kelola data pengisian ATM Telihan"
         />
+
+        {/* Statistics Section */}
+        <ATMStatistics data={data} />
 
         <DataTable
           data={data}
