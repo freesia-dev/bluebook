@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { PengisianATM, ATMConfig } from '@/types';
@@ -17,10 +19,12 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, CheckCircle2 } from 'lucide-react';
+import { CalendarIcon, CheckCircle2, Calculator, Banknote, CreditCard, Users, Clock, FileText, TrendingUp, TrendingDown, Equal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { exportToExcel } from '@/lib/export';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
+
+const DENOMINASI = 100000; // Rp 100.000 per lembar
 
 const DatabasePengisianATM = () => {
   const { toast } = useToast();
@@ -52,18 +56,56 @@ const DatabasePengisianATM = () => {
     tambahCartridge4: '',
     saldoBukuBesar: '',
     kartuTertelan: '0',
-    notes: '',
-    jumlahSelisih: '',
-    keteranganSelisih: '',
-    namaTeller: '',
-    jumlahDisetor: '',
-    setorKeRekTitipan: '',
     yangMenyerahkan: '',
+    namaTeller: '',
     tellerSelisih: '',
-    retracts: '0',
   });
 
   const [formData, setFormData] = useState(getDefaultForm());
+
+  // ============= AUTO CALCULATIONS =============
+  const calculations = useMemo(() => {
+    const saldoBukuBesar = parseCurrencyValue(formData.saldoBukuBesar);
+    const sisaFisik = 
+      (parseInt(formData.sisaCartridge1) || 0) +
+      (parseInt(formData.sisaCartridge2) || 0) +
+      (parseInt(formData.sisaCartridge3) || 0) +
+      (parseInt(formData.sisaCartridge4) || 0);
+    
+    const lembarATM = Math.floor(saldoBukuBesar / DENOMINASI);
+    const lembarFisik = sisaFisik;
+    const uangFisik = sisaFisik * DENOMINASI;
+    
+    // Selisih = Uang Fisik - Saldo Buku Besar
+    const selisihNominal = uangFisik - saldoBukuBesar;
+    const selisihAbs = Math.abs(selisihNominal);
+    const keteranganSelisih = selisihNominal > 0 ? 'LEBIH' : selisihNominal < 0 ? 'KURANG' : '-';
+    
+    // Jumlah disetor ke Teller = Saldo Buku Besar
+    const jumlahDisetor = saldoBukuBesar;
+    
+    // Setor ke Rek Titipan = Selisih Lebih (jika ada)
+    const setorKeRekTitipan = selisihNominal > 0 ? selisihNominal : 0;
+    
+    // Retracts = lembar yang disetor ke teller + lembar ke rek titipan
+    const retracts = Math.floor(jumlahDisetor / DENOMINASI) + Math.floor(setorKeRekTitipan / DENOMINASI);
+    
+    // Notes format: ATM=XXX FISIK=XXX
+    const notes = `ATM=${lembarATM} FISIK=${lembarFisik}`;
+    
+    return {
+      lembarATM,
+      lembarFisik,
+      uangFisik,
+      selisihNominal,
+      selisihAbs,
+      keteranganSelisih,
+      jumlahDisetor,
+      setorKeRekTitipan,
+      retracts,
+      notes
+    };
+  }, [formData.saldoBukuBesar, formData.sisaCartridge1, formData.sisaCartridge2, formData.sisaCartridge3, formData.sisaCartridge4]);
 
   useEffect(() => {
     loadData();
@@ -120,15 +162,15 @@ const DatabasePengisianATM = () => {
         saldoBukuBesar: parseCurrencyValue(formData.saldoBukuBesar),
         kartuTertelan,
         terbilang: angkaTerbilang(kartuTertelan),
-        notes: formData.notes,
-        jumlahSelisih: parseCurrencyValue(formData.jumlahSelisih),
-        keteranganSelisih: formData.keteranganSelisih,
+        notes: calculations.notes,
+        jumlahSelisih: calculations.selisihAbs,
+        keteranganSelisih: calculations.keteranganSelisih,
         namaTeller: formData.namaTeller,
-        jumlahDisetor: parseCurrencyValue(formData.jumlahDisetor),
-        setorKeRekTitipan: parseCurrencyValue(formData.setorKeRekTitipan),
+        jumlahDisetor: calculations.jumlahDisetor,
+        setorKeRekTitipan: calculations.setorKeRekTitipan,
         yangMenyerahkan: formData.yangMenyerahkan,
         tellerSelisih: formData.tellerSelisih,
-        retracts: parseInt(formData.retracts) || 0,
+        retracts: calculations.retracts,
         userInput: userName || 'System',
       });
 
@@ -167,15 +209,15 @@ const DatabasePengisianATM = () => {
         saldoBukuBesar: parseCurrencyValue(formData.saldoBukuBesar),
         kartuTertelan,
         terbilang: angkaTerbilang(kartuTertelan),
-        notes: formData.notes,
-        jumlahSelisih: parseCurrencyValue(formData.jumlahSelisih),
-        keteranganSelisih: formData.keteranganSelisih,
+        notes: calculations.notes,
+        jumlahSelisih: calculations.selisihAbs,
+        keteranganSelisih: calculations.keteranganSelisih,
         namaTeller: formData.namaTeller,
-        jumlahDisetor: parseCurrencyValue(formData.jumlahDisetor),
-        setorKeRekTitipan: parseCurrencyValue(formData.setorKeRekTitipan),
+        jumlahDisetor: calculations.jumlahDisetor,
+        setorKeRekTitipan: calculations.setorKeRekTitipan,
         yangMenyerahkan: formData.yangMenyerahkan,
         tellerSelisih: formData.tellerSelisih,
-        retracts: parseInt(formData.retracts) || 0,
+        retracts: calculations.retracts,
       });
 
       toast({ title: 'Sukses', description: 'Data berhasil diperbarui' });
@@ -238,13 +280,24 @@ const DatabasePengisianATM = () => {
     { key: 'jam', header: 'Jam' },
     { key: 'saldoBukuBesar', header: 'Saldo Buku Besar', render: (item) => formatCurrencyDisplay(item.saldoBukuBesar) },
     { key: 'kartuTertelan', header: 'Kartu Tertelan', render: (item) => item.kartuTertelan.toString() },
-    { key: 'jumlahSelisih', header: 'Selisih', render: (item) => item.jumlahSelisih > 0 ? formatCurrencyDisplay(item.jumlahSelisih) : '-' },
+    { 
+      key: 'jumlahSelisih', 
+      header: 'Selisih', 
+      render: (item) => item.jumlahSelisih > 0 ? (
+        <Badge variant={item.keteranganSelisih === 'LEBIH' ? 'default' : 'destructive'}>
+          {formatCurrencyDisplay(item.jumlahSelisih)} ({item.keteranganSelisih})
+        </Badge>
+      ) : <span className="text-muted-foreground">-</span>
+    },
     { key: 'yangMenyerahkan', header: 'Petugas' },
   ];
 
   const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label className="flex items-center gap-2">
+        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+        {label}
+      </Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground")}>
@@ -261,189 +314,244 @@ const DatabasePengisianATM = () => {
 
   const FormFields = () => (
     <div className="space-y-6">
-      {/* Tanggal dan Jam */}
-      <div className="grid grid-cols-2 gap-4">
-        <DatePickerField 
-          value={formData.tanggal} 
-          onChange={(date) => setFormData({...formData, tanggal: date})} 
-          label="Tanggal" 
-        />
-        <div className="space-y-2">
-          <Label>Jam</Label>
-          <Input 
-            type="time" 
-            value={formData.jam} 
-            onChange={(e) => setFormData({...formData, jam: e.target.value})} 
+      {/* Section 1: Waktu & Tanggal */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            Waktu Pengisian
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <DatePickerField 
+            value={formData.tanggal} 
+            onChange={(date) => setFormData({...formData, tanggal: date})} 
+            label="Tanggal" 
           />
-        </div>
-      </div>
-
-      {/* Sisa Cartridge */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Sisa Cartridge (Lembar)</Label>
-        <div className="grid grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 1</Label>
-            <Input type="number" placeholder="0" value={formData.sisaCartridge1} onChange={(e) => setFormData({...formData, sisaCartridge1: e.target.value})} />
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              Jam
+            </Label>
+            <Input 
+              type="time" 
+              value={formData.jam} 
+              onChange={(e) => setFormData({...formData, jam: e.target.value})} 
+              className="h-10"
+            />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 2</Label>
-            <Input type="number" placeholder="0" value={formData.sisaCartridge2} onChange={(e) => setFormData({...formData, sisaCartridge2: e.target.value})} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 3</Label>
-            <Input type="number" placeholder="0" value={formData.sisaCartridge3} onChange={(e) => setFormData({...formData, sisaCartridge3: e.target.value})} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 4</Label>
-            <Input type="number" placeholder="0" value={formData.sisaCartridge4} onChange={(e) => setFormData({...formData, sisaCartridge4: e.target.value})} />
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Tambah Cartridge */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Tambah Cartridge (Lembar)</Label>
-        <div className="grid grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 1</Label>
-            <Input type="number" placeholder="0" value={formData.tambahCartridge1} onChange={(e) => setFormData({...formData, tambahCartridge1: e.target.value})} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 2</Label>
-            <Input type="number" placeholder="0" value={formData.tambahCartridge2} onChange={(e) => setFormData({...formData, tambahCartridge2: e.target.value})} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 3</Label>
-            <Input type="number" placeholder="0" value={formData.tambahCartridge3} onChange={(e) => setFormData({...formData, tambahCartridge3: e.target.value})} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Cartridge 4</Label>
-            <Input type="number" placeholder="0" value={formData.tambahCartridge4} onChange={(e) => setFormData({...formData, tambahCartridge4: e.target.value})} />
-          </div>
-        </div>
-      </div>
-
-      {/* Saldo dan Kartu */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Saldo Buku Besar <span className="text-destructive">*</span></Label>
-          <Input 
-            value={formData.saldoBukuBesar} 
-            onChange={(e) => setFormData({...formData, saldoBukuBesar: formatCurrencyInput(e.target.value)})} 
-            placeholder="1.000.000" 
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Kartu Tertelan</Label>
-          <Input 
-            type="number" 
-            value={formData.kartuTertelan} 
-            onChange={(e) => setFormData({...formData, kartuTertelan: e.target.value})} 
-            placeholder="0" 
-          />
-        </div>
-      </div>
-
-      {/* Retracts */}
-      <div className="space-y-2">
-        <Label>Retracts</Label>
-        <Input 
-          type="number" 
-          value={formData.retracts} 
-          onChange={(e) => setFormData({...formData, retracts: e.target.value})} 
-          placeholder="0" 
-        />
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-2">
-        <Label>Notes / Keterangan</Label>
-        <Textarea 
-          value={formData.notes} 
-          onChange={(e) => setFormData({...formData, notes: e.target.value})} 
-          placeholder="ATM=FISIK=..." 
-          rows={2}
-        />
-      </div>
-
-      {/* Selisih */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Jumlah Selisih</Label>
-          <Input 
-            value={formData.jumlahSelisih} 
-            onChange={(e) => setFormData({...formData, jumlahSelisih: formatCurrencyInput(e.target.value)})} 
-            placeholder="0" 
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Keterangan Selisih</Label>
-          <Select value={formData.keteranganSelisih} onValueChange={(v) => setFormData({...formData, keteranganSelisih: v})}>
-            <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="-">-</SelectItem>
-              <SelectItem value="LEBIH">LEBIH</SelectItem>
-              <SelectItem value="KURANG">KURANG</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Setoran */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Jumlah Disetor ke Teller</Label>
-          <Input 
-            value={formData.jumlahDisetor} 
-            onChange={(e) => setFormData({...formData, jumlahDisetor: formatCurrencyInput(e.target.value)})} 
-            placeholder="0" 
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Setor ke Rek Titipan ATM</Label>
-          <Input 
-            value={formData.setorKeRekTitipan} 
-            onChange={(e) => setFormData({...formData, setorKeRekTitipan: formatCurrencyInput(e.target.value)})} 
-            placeholder="0" 
-          />
-        </div>
-      </div>
-
-      {/* Petugas */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Yang Menyerahkan (Petugas ATM)</Label>
-          <Select value={formData.yangMenyerahkan} onValueChange={(v) => setFormData({...formData, yangMenyerahkan: v})}>
-            <SelectTrigger><SelectValue placeholder="Pilih petugas" /></SelectTrigger>
-            <SelectContent>
-              {getPetugasOptions().map(p => (
-                <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+      {/* Section 2: Sisa & Tambah Cartridge */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-primary" />
+            Data Cartridge (Lembar)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Sisa Cartridge
+            </Label>
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((num) => (
+                <div key={`sisa-${num}`} className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">#{num}</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    value={formData[`sisaCartridge${num}` as keyof typeof formData] as string} 
+                    onChange={(e) => setFormData({...formData, [`sisaCartridge${num}`]: e.target.value})}
+                    className="text-center"
+                  />
+                </div>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Teller Penerima</Label>
-          <Select value={formData.namaTeller} onValueChange={(v) => setFormData({...formData, namaTeller: v})}>
-            <SelectTrigger><SelectValue placeholder="Pilih teller" /></SelectTrigger>
-            <SelectContent>
-              {getTellerOptions().map(t => (
-                <SelectItem key={t.id} value={t.nama}>{t.nama}</SelectItem>
+            </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-3">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Tambah Cartridge
+            </Label>
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((num) => (
+                <div key={`tambah-${num}`} className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">#{num}</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="0" 
+                    value={formData[`tambahCartridge${num}` as keyof typeof formData] as string} 
+                    onChange={(e) => setFormData({...formData, [`tambahCartridge${num}`]: e.target.value})}
+                    className="text-center"
+                  />
+                </div>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="space-y-2">
-        <Label>Teller Selisih</Label>
-        <Input 
-          value={formData.tellerSelisih} 
-          onChange={(e) => setFormData({...formData, tellerSelisih: e.target.value})} 
-          placeholder="Nama/Kode Teller" 
-        />
-      </div>
+      {/* Section 3: Saldo & Kartu Tertelan */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Banknote className="h-4 w-4 text-primary" />
+            Saldo & Kartu
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              Saldo Buku Besar <span className="text-destructive">*</span>
+            </Label>
+            <Input 
+              value={formData.saldoBukuBesar} 
+              onChange={(e) => setFormData({...formData, saldoBukuBesar: formatCurrencyInput(e.target.value)})} 
+              placeholder="1.000.000" 
+              className="font-mono"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Kartu Tertelan</Label>
+            <Input 
+              type="number" 
+              value={formData.kartuTertelan} 
+              onChange={(e) => setFormData({...formData, kartuTertelan: e.target.value})} 
+              placeholder="0" 
+              className="text-center"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section 4: Auto-Calculated Summary */}
+      <Card className="border-accent bg-accent/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-accent-foreground" />
+            Perhitungan Otomatis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Notes Display */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 rounded-lg bg-background border">
+              <div className="text-xs text-muted-foreground mb-1">Lembar ATM (Buku Besar)</div>
+              <div className="text-xl font-bold text-primary">{calculations.lembarATM.toLocaleString('id-ID')}</div>
+              <div className="text-xs text-muted-foreground">= {formatCurrencyDisplay(parseCurrencyValue(formData.saldoBukuBesar))} / 100.000</div>
+            </div>
+            <div className="p-3 rounded-lg bg-background border">
+              <div className="text-xs text-muted-foreground mb-1">Lembar Fisik (Cartridge)</div>
+              <div className="text-xl font-bold text-primary">{calculations.lembarFisik.toLocaleString('id-ID')}</div>
+              <div className="text-xs text-muted-foreground">= {formatCurrencyDisplay(calculations.uangFisik)}</div>
+            </div>
+          </div>
+          
+          {/* Selisih Display */}
+          <div className={cn(
+            "p-3 rounded-lg border-2 flex items-center justify-between",
+            calculations.selisihNominal > 0 ? "border-success bg-success/10" : 
+            calculations.selisihNominal < 0 ? "border-destructive bg-destructive/10" : 
+            "border-muted bg-muted/20"
+          )}>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Selisih (Fisik - Buku Besar)</div>
+              <div className="text-xl font-bold flex items-center gap-2">
+                {calculations.selisihNominal > 0 ? (
+                  <>
+                    <TrendingUp className="h-5 w-5 text-success" />
+                    <span className="text-success">+{formatCurrencyDisplay(calculations.selisihAbs)}</span>
+                  </>
+                ) : calculations.selisihNominal < 0 ? (
+                  <>
+                    <TrendingDown className="h-5 w-5 text-destructive" />
+                    <span className="text-destructive">-{formatCurrencyDisplay(calculations.selisihAbs)}</span>
+                  </>
+                ) : (
+                  <>
+                    <Equal className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Nihil</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <Badge variant={calculations.selisihNominal > 0 ? 'default' : calculations.selisihNominal < 0 ? 'destructive' : 'secondary'}>
+              {calculations.keteranganSelisih}
+            </Badge>
+          </div>
+          
+          {/* Setoran Summary */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <div className="text-xs text-muted-foreground mb-1">Disetor ke Teller</div>
+              <div className="font-semibold text-sm">{formatCurrencyDisplay(calculations.jumlahDisetor)}</div>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <div className="text-xs text-muted-foreground mb-1">Setor Rek Titipan</div>
+              <div className="font-semibold text-sm">{formatCurrencyDisplay(calculations.setorKeRekTitipan)}</div>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <div className="text-xs text-muted-foreground mb-1">Total Retracts</div>
+              <div className="font-semibold text-sm">{calculations.retracts.toLocaleString('id-ID')} lembar</div>
+            </div>
+          </div>
+          
+          {/* Notes */}
+          <div className="p-3 rounded-lg bg-muted/50 border">
+            <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+              <FileText className="h-3 w-3" /> Notes (Otomatis)
+            </div>
+            <div className="font-mono text-sm">{calculations.notes}</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section 5: Petugas */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            Petugas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Yang Menyerahkan (Petugas ATM)</Label>
+            <Select value={formData.yangMenyerahkan} onValueChange={(v) => setFormData({...formData, yangMenyerahkan: v})}>
+              <SelectTrigger><SelectValue placeholder="Pilih petugas" /></SelectTrigger>
+              <SelectContent>
+                {getPetugasOptions().map(p => (
+                  <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Teller Penerima</Label>
+            <Select value={formData.namaTeller} onValueChange={(v) => setFormData({...formData, namaTeller: v})}>
+              <SelectTrigger><SelectValue placeholder="Pilih teller" /></SelectTrigger>
+              <SelectContent>
+                {getTellerOptions().map(t => (
+                  <SelectItem key={t.id} value={t.nama}>{t.nama}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2 space-y-2">
+            <Label>Teller Selisih (jika ada)</Label>
+            <Input 
+              value={formData.tellerSelisih} 
+              onChange={(e) => setFormData({...formData, tellerSelisih: e.target.value})} 
+              placeholder="Nama/Kode Teller yang menangani selisih" 
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -476,15 +584,9 @@ const DatabasePengisianATM = () => {
               tambahCartridge4: item.tambahCartridge4.toString(),
               saldoBukuBesar: formatCurrencyInput(item.saldoBukuBesar.toString()),
               kartuTertelan: item.kartuTertelan.toString(),
-              notes: item.notes,
-              jumlahSelisih: item.jumlahSelisih > 0 ? formatCurrencyInput(item.jumlahSelisih.toString()) : '',
-              keteranganSelisih: item.keteranganSelisih || '-',
-              namaTeller: item.namaTeller,
-              jumlahDisetor: item.jumlahDisetor > 0 ? formatCurrencyInput(item.jumlahDisetor.toString()) : '',
-              setorKeRekTitipan: item.setorKeRekTitipan > 0 ? formatCurrencyInput(item.setorKeRekTitipan.toString()) : '',
               yangMenyerahkan: item.yangMenyerahkan,
+              namaTeller: item.namaTeller,
               tellerSelisih: item.tellerSelisih,
-              retracts: item.retracts.toString(),
             });
             setIsEditOpen(true);
           }}
@@ -501,7 +603,7 @@ const DatabasePengisianATM = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Tambah Data Pengisian ATM</DialogTitle>
-            <DialogDescription>Masukkan data pengisian ATM baru</DialogDescription>
+            <DialogDescription>Masukkan data pengisian ATM baru. Perhitungan selisih dan setoran otomatis dihitung.</DialogDescription>
           </DialogHeader>
           <FormFields />
           <DialogFooter>
@@ -518,7 +620,7 @@ const DatabasePengisianATM = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Edit Data Pengisian ATM</DialogTitle>
-            <DialogDescription>Perbarui data pengisian ATM</DialogDescription>
+            <DialogDescription>Perbarui data pengisian ATM. Perhitungan otomatis akan diperbarui.</DialogDescription>
           </DialogHeader>
           <FormFields />
           <DialogFooter>
@@ -567,11 +669,13 @@ const DatabasePengisianATM = () => {
                 <div><span className="text-muted-foreground">Retracts:</span> <strong>{selectedItem.retracts}</strong></div>
                 <div><span className="text-muted-foreground">Selisih:</span> <strong>{selectedItem.jumlahSelisih > 0 ? `${formatCurrencyDisplay(selectedItem.jumlahSelisih)} (${selectedItem.keteranganSelisih})` : '-'}</strong></div>
                 <div><span className="text-muted-foreground">Petugas:</span> <strong>{selectedItem.yangMenyerahkan}</strong></div>
+                <div><span className="text-muted-foreground">Disetor ke Teller:</span> <strong>{formatCurrencyDisplay(selectedItem.jumlahDisetor)}</strong></div>
+                <div><span className="text-muted-foreground">Setor Rek Titipan:</span> <strong>{formatCurrencyDisplay(selectedItem.setorKeRekTitipan)}</strong></div>
               </div>
               {selectedItem.notes && (
                 <div className="border-t pt-4">
                   <span className="text-muted-foreground text-sm">Notes:</span>
-                  <p className="mt-1">{selectedItem.notes}</p>
+                  <p className="mt-1 font-mono">{selectedItem.notes}</p>
                 </div>
               )}
             </div>
