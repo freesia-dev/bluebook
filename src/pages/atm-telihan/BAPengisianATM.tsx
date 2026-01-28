@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { PengisianATM, ATMConfig, KartuTertelan, SelisihATM } from '@/types';
-import { getPengisianATM, getATMConfig, getKartuTertelan, getSelisihATM, angkaTerbilang, formatRupiah } from '@/lib/atm-store';
+import { getPengisianATM, getATMConfig, getKartuTertelan, getSelisihATM, angkaTerbilang, formatRupiah, addKartuTertelan, deleteKartuTertelan } from '@/lib/atm-store';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Printer, Download } from 'lucide-react';
+import { FileText, Printer, Plus, Trash2 } from 'lucide-react';
+import baHeader from '@/assets/ba-header.png';
 
 const BAPengisianATM = () => {
   const { toast } = useToast();
@@ -23,6 +25,12 @@ const BAPengisianATM = () => {
   const [kartuTertelan, setKartuTertelan] = useState<KartuTertelan[]>([]);
   const [selisihList, setSelisihList] = useState<SelisihATM[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // New kartu tertelan form
+  const [newKartuNomor, setNewKartuNomor] = useState('');
+  const [newKartuNama, setNewKartuNama] = useState('');
+  const [newKartuBank, setNewKartuBank] = useState('BANKALTIMTARA');
+  const [isAddingKartu, setIsAddingKartu] = useState(false);
 
   useEffect(() => {
     const initData = async () => {
@@ -82,6 +90,51 @@ const BAPengisianATM = () => {
       setSelisihList(sl);
     } catch (error) {
       console.error('Failed to load details:', error);
+    }
+  };
+
+  const handleAddKartuTertelan = async () => {
+    if (!selectedData || !newKartuNomor.trim()) {
+      toast({ title: 'Error', description: 'Nomor kartu wajib diisi', variant: 'destructive' });
+      return;
+    }
+    
+    setIsAddingKartu(true);
+    try {
+      await addKartuTertelan({
+        pengisianAtmId: selectedData.id,
+        nomorKartu: newKartuNomor.trim(),
+        namaNasabah: newKartuNama.trim() || undefined,
+        bank: newKartuBank
+      });
+      
+      // Refresh kartu tertelan list
+      await loadDetails(selectedData.id);
+      
+      // Reset form
+      setNewKartuNomor('');
+      setNewKartuNama('');
+      setNewKartuBank('BANKALTIMTARA');
+      
+      toast({ title: 'Sukses', description: 'Kartu tertelan berhasil ditambahkan' });
+    } catch (error) {
+      console.error('Failed to add kartu tertelan:', error);
+      toast({ title: 'Error', description: 'Gagal menambahkan kartu tertelan', variant: 'destructive' });
+    } finally {
+      setIsAddingKartu(false);
+    }
+  };
+
+  const handleDeleteKartuTertelan = async (id: string) => {
+    if (!selectedData) return;
+    
+    try {
+      await deleteKartuTertelan(id);
+      await loadDetails(selectedData.id);
+      toast({ title: 'Sukses', description: 'Kartu tertelan berhasil dihapus' });
+    } catch (error) {
+      console.error('Failed to delete kartu tertelan:', error);
+      toast({ title: 'Error', description: 'Gagal menghapus kartu tertelan', variant: 'destructive' });
     }
   };
 
@@ -204,15 +257,22 @@ const BAPengisianATM = () => {
 
         {/* Preview */}
         {selectedData && values && (
+          <>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Preview Berita Acara</CardTitle>
             </CardHeader>
             <CardContent>
               <div ref={printRef} className="bg-white p-8 text-black text-sm" style={{ fontFamily: "'Times New Roman', serif" }}>
-                {/* Header */}
+                {/* Header with Logo */}
+                <div className="mb-4">
+                  <img src={baHeader} alt="Header BA" className="w-full h-auto" />
+                  <div className="border-b-2 border-black mt-2"></div>
+                </div>
+
+                {/* Document Code */}
                 <div className="text-center mb-6">
-                  <p className="text-xs mb-1">ATM-132-01</p>
+                  <p className="text-xs mb-1">ATM-143-01</p>
                   <h1 className="text-base font-bold">BERITA ACARA KAS ATM, DISKET MUTASI TRANSAKSI ATM,</h1>
                   <h1 className="text-base font-bold">STRUK ATM DAN KARTU TERTELAN</h1>
                 </div>
@@ -221,8 +281,8 @@ const BAPengisianATM = () => {
                 <div className="mb-6">
                   <p className="font-bold mb-3">A. KAS ATM</p>
                   <p className="mb-4 text-justify leading-relaxed">
-                    Pada hari ini {selectedData.hari} Tanggal {format(selectedData.tanggal, 'dd MMMM yyyy', { locale: id })} Jam {selectedData.jam}, 
-                    kami yang bertanda tangan di bawah ini telah melakukan cash opname pada mesin ATM di KTM15401 
+                    Pada hari ini {selectedData.hari.toUpperCase()} Tanggal {format(selectedData.tanggal, 'dd MMMM yyyy', { locale: id })} Jam {selectedData.jam}, 
+                    kami yang bertanda tangan di bawah ini telah melakukan cash opname pada mesin ATM di KTM14301 
                     dan selanjutnya mengisi/menambah uang pada mesin ATM tersebut
                   </p>
                   <p className="mb-3">
@@ -303,7 +363,7 @@ const BAPengisianATM = () => {
                 <div className="mb-6">
                   <p className="font-bold mb-2">C. KARTU TERTELAN</p>
                   <p className="mb-3">
-                    Disamping itu pada kotak kartu tertelan ditemukan {selectedData.kartuTertelan} ( {selectedData.terbilang} ) Buah Kartu sebagai berikut:
+                    Disamping itu pada kotak kartu tertelan ditemukan {kartuTertelan.length} ( {kartuTertelan.length > 0 ? angkaTerbilang(kartuTertelan.length) : 'Nol'} ) Buah Kartu sebagai berikut:
                   </p>
                   {kartuTertelan.length > 0 ? (
                     <table className="w-full border-collapse border border-black mb-4">
@@ -387,6 +447,89 @@ const BAPengisianATM = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Kartu Tertelan Editor */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Edit Data Kartu Tertelan</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Current Cards */}
+              {kartuTertelan.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Kartu Tertelan Saat Ini</Label>
+                  <div className="space-y-2">
+                    {kartuTertelan.map((kt, idx) => (
+                      <div key={kt.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium w-6">{idx + 1}.</span>
+                        <div className="flex-1 grid grid-cols-3 gap-2 text-sm">
+                          <span>{kt.nomorKartu}</span>
+                          <span>{kt.namaNasabah || '-'}</span>
+                          <span>{kt.bank}</span>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteKartuTertelan(kt.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Card Form */}
+              <div className="space-y-3 pt-4 border-t">
+                <Label className="text-sm font-medium">Tambah Kartu Tertelan Baru</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Nomor Kartu *</Label>
+                    <Input
+                      placeholder="Nomor kartu..."
+                      value={newKartuNomor}
+                      onChange={(e) => setNewKartuNomor(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Nama Nasabah</Label>
+                    <Input
+                      placeholder="Nama nasabah (opsional)..."
+                      value={newKartuNama}
+                      onChange={(e) => setNewKartuNama(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Bank</Label>
+                    <Select value={newKartuBank} onValueChange={setNewKartuBank}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BANKALTIMTARA">BANKALTIMTARA</SelectItem>
+                        <SelectItem value="BRI">BRI</SelectItem>
+                        <SelectItem value="BNI">BNI</SelectItem>
+                        <SelectItem value="MANDIRI">MANDIRI</SelectItem>
+                        <SelectItem value="BCA">BCA</SelectItem>
+                        <SelectItem value="LAINNYA">LAINNYA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleAddKartuTertelan} 
+                  disabled={isAddingKartu || !newKartuNomor.trim()}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  {isAddingKartu ? 'Menyimpan...' : 'Tambah Kartu'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          </>
         )}
 
         {!selectedData && (
