@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -54,54 +54,23 @@ const KonfigurasiATMPage = () => {
 
   const resetForm = () => setFormData({ nama: '', jabatan: '', keterangan: '', isActive: true });
 
-  const parseNamaList = (raw: string) => {
-    // allow multi-line input for faster entry
-    // - each line becomes one record
-    // - ignore empty lines
-    // - trim each line
-    return raw
-      .split(/\r?\n/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-  };
-
   const handleAdd = async () => {
     if (isSubmitting) return;
-    const namaList = parseNamaList(formData.nama);
-    if (namaList.length === 0 || !formData.jabatan) {
+    if (!formData.nama.trim() || !formData.jabatan) {
       toast({ title: 'Validasi Error', description: 'Nama dan Jabatan wajib diisi.', variant: 'destructive' });
-      return;
-    }
-
-    // lightweight client-side validation
-    const invalidName = namaList.find((n) => n.length > 100);
-    if (invalidName) {
-      toast({
-        title: 'Validasi Error',
-        description: 'Panjang nama maksimal 100 karakter per baris.',
-        variant: 'destructive',
-      });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await Promise.all(
-        namaList.map((nama) =>
-          addATMConfig({
-            nama,
-            jabatan: formData.jabatan,
-            keterangan: formData.keterangan || undefined,
-            isActive: formData.isActive,
-          }),
-        ),
-      );
+      await addATMConfig({
+        nama: formData.nama.trim(),
+        jabatan: formData.jabatan,
+        keterangan: formData.keterangan || undefined,
+        isActive: formData.isActive,
+      });
 
-      setSuccessMessage(
-        namaList.length === 1
-          ? 'Konfigurasi berhasil ditambahkan!'
-          : `Berhasil menambahkan ${namaList.length} konfigurasi!`,
-      );
+      setSuccessMessage('Konfigurasi berhasil ditambahkan!');
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
@@ -163,58 +132,6 @@ const KonfigurasiATMPage = () => {
     },
   ];
 
-  const FormFields = ({ mode }: { mode: 'add' | 'edit' }) => (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Nama <span className="text-destructive">*</span></Label>
-        {mode === 'add' ? (
-          <div className="space-y-2">
-            <Textarea
-              value={formData.nama}
-              onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-              placeholder={`Satu baris = satu nama\nContoh:\nHaris\nNita\nTri`}
-              rows={5}
-            />
-            <p className="text-xs text-muted-foreground">
-              Tips: isi banyak nama sekaligus (pisah baris) agar tidak ketik satu-satu.
-            </p>
-          </div>
-        ) : (
-          <Input
-            value={formData.nama}
-            onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-            placeholder="Nama lengkap"
-          />
-        )}
-      </div>
-      <div className="space-y-2">
-        <Label>Jabatan <span className="text-destructive">*</span></Label>
-        <Select value={formData.jabatan} onValueChange={(v) => setFormData({...formData, jabatan: v})}>
-          <SelectTrigger><SelectValue placeholder="Pilih jabatan" /></SelectTrigger>
-          <SelectContent>
-            {JABATAN_ATM_LIST.map(j => (
-              <SelectItem key={j} value={j}>{j}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label>Keterangan</Label>
-        <Input 
-          value={formData.keterangan} 
-          onChange={(e) => setFormData({...formData, keterangan: e.target.value})} 
-          placeholder="Keterangan tambahan (opsional)" 
-        />
-      </div>
-      <div className="flex items-center justify-between">
-        <Label>Status Aktif</Label>
-        <Switch 
-          checked={formData.isActive} 
-          onCheckedChange={(checked) => setFormData({...formData, isActive: checked})} 
-        />
-      </div>
-    </div>
-  );
 
   return (
     <MainLayout>
@@ -254,7 +171,42 @@ const KonfigurasiATMPage = () => {
             <DialogTitle className="font-display">Tambah Konfigurasi</DialogTitle>
             <DialogDescription>Tambahkan petugas ATM, teller, atau pemimpin</DialogDescription>
           </DialogHeader>
-          <FormFields mode="add" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nama <span className="text-destructive">*</span></Label>
+              <Input 
+                value={formData.nama} 
+                onChange={(e) => setFormData(prev => ({...prev, nama: e.target.value}))} 
+                placeholder="Nama lengkap" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Jabatan <span className="text-destructive">*</span></Label>
+              <Select value={formData.jabatan} onValueChange={(v) => setFormData(prev => ({...prev, jabatan: v}))}>
+                <SelectTrigger><SelectValue placeholder="Pilih jabatan" /></SelectTrigger>
+                <SelectContent>
+                  {JABATAN_ATM_LIST.map(j => (
+                    <SelectItem key={j} value={j}>{j}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Keterangan</Label>
+              <Input 
+                value={formData.keterangan} 
+                onChange={(e) => setFormData(prev => ({...prev, keterangan: e.target.value}))} 
+                placeholder="Keterangan tambahan (opsional)" 
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Status Aktif</Label>
+              <Switch 
+                checked={formData.isActive} 
+                onCheckedChange={(checked) => setFormData(prev => ({...prev, isActive: checked}))} 
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
             <Button onClick={handleAdd} disabled={isSubmitting}>
@@ -271,7 +223,42 @@ const KonfigurasiATMPage = () => {
             <DialogTitle className="font-display">Edit Konfigurasi</DialogTitle>
             <DialogDescription>Perbarui data konfigurasi</DialogDescription>
           </DialogHeader>
-          <FormFields mode="edit" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nama <span className="text-destructive">*</span></Label>
+              <Input 
+                value={formData.nama} 
+                onChange={(e) => setFormData(prev => ({...prev, nama: e.target.value}))} 
+                placeholder="Nama lengkap" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Jabatan <span className="text-destructive">*</span></Label>
+              <Select value={formData.jabatan} onValueChange={(v) => setFormData(prev => ({...prev, jabatan: v}))}>
+                <SelectTrigger><SelectValue placeholder="Pilih jabatan" /></SelectTrigger>
+                <SelectContent>
+                  {JABATAN_ATM_LIST.map(j => (
+                    <SelectItem key={j} value={j}>{j}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Keterangan</Label>
+              <Input 
+                value={formData.keterangan} 
+                onChange={(e) => setFormData(prev => ({...prev, keterangan: e.target.value}))} 
+                placeholder="Keterangan tambahan (opsional)" 
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Status Aktif</Label>
+              <Switch 
+                checked={formData.isActive} 
+                onCheckedChange={(checked) => setFormData(prev => ({...prev, isActive: checked}))} 
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); }}>Batal</Button>
             <Button onClick={handleEdit} disabled={isSubmitting}>
