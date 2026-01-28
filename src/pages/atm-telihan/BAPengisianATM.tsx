@@ -22,11 +22,29 @@ const BAPengisianATM = () => {
   const [selectedData, setSelectedData] = useState<PengisianATM | null>(null);
   const [kartuTertelan, setKartuTertelan] = useState<KartuTertelan[]>([]);
   const [selisihList, setSelisihList] = useState<SelisihATM[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-    loadConfig();
-  }, []);
+    const initData = async () => {
+      setIsLoading(true);
+      try {
+        const [pengisianResult, configResult] = await Promise.all([
+          getPengisianATM(),
+          getATMConfig()
+        ]);
+        console.log('BA Page - Pengisian data loaded:', pengisianResult.length, 'items');
+        console.log('BA Page - Config loaded:', configResult.length, 'items');
+        setData(pengisianResult);
+        setConfigOptions(configResult.filter(c => c.isActive));
+      } catch (error) {
+        console.error('BA Page - Error loading data:', error);
+        toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initData();
+  }, [toast]);
 
   useEffect(() => {
     if (selectedId) {
@@ -45,20 +63,14 @@ const BAPengisianATM = () => {
   const loadData = async () => {
     try {
       const result = await getPengisianATM();
+      console.log('BA Page - Refresh data:', result.length, 'items');
       setData(result);
     } catch (error) {
       toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
     }
   };
 
-  const loadConfig = async () => {
-    try {
-      const result = await getATMConfig();
-      setConfigOptions(result.filter(c => c.isActive));
-    } catch (error) {
-      console.error('Failed to load config:', error);
-    }
-  };
+  // loadConfig is now part of initData above
 
   const loadDetails = async (atmId: string) => {
     try {
@@ -153,29 +165,40 @@ const BAPengisianATM = () => {
             <CardTitle className="text-lg">Pilih Data Pengisian ATM</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-4">
-              <div className="flex-1 max-w-md">
-                <Label className="mb-2 block">Data Pengisian ATM</Label>
-                <Select value={selectedId} onValueChange={setSelectedId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih data pengisian ATM..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.map(item => (
-                      <SelectItem key={item.id} value={item.id}>
-                        No. {item.nomor} - {format(item.tanggal, 'dd MMM yyyy', { locale: id })} - {formatRupiah(item.saldoBukuBesar)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <span>Memuat data...</span>
               </div>
-              {selectedData && (
-                <Button onClick={handlePrint} className="gap-2">
-                  <Printer className="w-4 h-4" />
-                  Cetak BA
-                </Button>
-              )}
-            </div>
+            ) : data.length === 0 ? (
+              <div className="text-muted-foreground">
+                Belum ada data pengisian ATM. Silakan tambah data di halaman Database Pengisian ATM.
+              </div>
+            ) : (
+              <div className="flex items-end gap-4">
+                <div className="flex-1 max-w-md">
+                  <Label className="mb-2 block">Data Pengisian ATM ({data.length} data)</Label>
+                  <Select value={selectedId} onValueChange={setSelectedId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih data pengisian ATM..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {data.map(item => (
+                        <SelectItem key={item.id} value={item.id}>
+                          No. {item.nomor} - {format(item.tanggal, 'dd MMM yyyy', { locale: id })} - {formatRupiah(item.saldoBukuBesar)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedData && (
+                  <Button onClick={handlePrint} className="gap-2">
+                    <Printer className="w-4 h-4" />
+                    Cetak BA
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
