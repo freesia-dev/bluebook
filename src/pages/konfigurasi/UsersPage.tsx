@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -11,38 +11,33 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Pencil, KeyRound, Check, X, UserPlus } from 'lucide-react';
-import { UserRole } from '@/types';
-import { getUserRoles, addUserRole, updateUserRole, deleteUserRole } from '@/lib/supabase-store';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface Profile {
-  id: string;
-  user_id: string;
-  nama: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-}
-
-interface UserRoleDisplay extends UserRole {
-  email?: string;
-  nama?: string;
-}
-
-interface PendingUser {
-  id: string;
-  userId: string;
-  nama: string;
-  email?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: Date;
-}
+import { 
+  useUsersData, 
+  useAddUserRole, 
+  useUpdateUserRole, 
+  useDeleteUserRole,
+  useApproveUser,
+  useRejectUser,
+  UserRoleDisplay,
+  PendingUser
+} from '@/hooks/use-users-data';
 
 const UsersPage: React.FC = () => {
   const { toast } = useToast();
-  const [data, setData] = useState<UserRoleDisplay[]>([]);
-  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // React Query hooks
+  const { data: usersData, isLoading } = useUsersData();
+  const addRoleMutation = useAddUserRole();
+  const updateRoleMutation = useUpdateUserRole();
+  const deleteRoleMutation = useDeleteUserRole();
+  const approveMutation = useApproveUser();
+  const rejectMutation = useRejectUser();
+
+  const data = usersData?.rolesWithProfile || [];
+  const pendingUsers = usersData?.pendingUsers || [];
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -63,59 +58,6 @@ const UsersPage: React.FC = () => {
     role: 'user' as 'admin' | 'user' | 'demo'
   });
 
-  useEffect(() => { 
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const roles = await getUserRoles();
-      
-      // Fetch profiles to get names
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-      }
-
-      // Fetch current user's email
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUserEmail = sessionData?.session?.user?.email;
-      const currentUserId = sessionData?.session?.user?.id;
-      
-      // Map roles with profile data
-      const rolesWithProfile: UserRoleDisplay[] = roles.map(r => {
-        const profile = profiles?.find(p => p.user_id === r.userId);
-        return {
-          ...r,
-          nama: profile?.nama || '',
-          email: r.userId === currentUserId ? currentUserEmail : undefined
-        };
-      });
-      
-      setData(rolesWithProfile);
-
-      // Load pending users
-      const pendingProfiles = profiles?.filter(p => p.status === 'pending') || [];
-      setPendingUsers(pendingProfiles.map(p => ({
-        id: p.id,
-        userId: p.user_id,
-        nama: p.nama || 'Belum diisi',
-        status: p.status as 'pending' | 'approved' | 'rejected',
-        createdAt: new Date(p.created_at)
-      })));
-
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({ title: 'Error', description: 'Gagal memuat data.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const resetForm = () => setFormData({ userId: '', role: 'user' });
 
   const handleAdd = async () => {
@@ -124,11 +66,10 @@ const UsersPage: React.FC = () => {
       return;
     }
     try {
-      await addUserRole(formData.userId, formData.role);
+      await addRoleMutation.mutateAsync({ userId: formData.userId, role: formData.role });
       toast({ title: 'Berhasil', description: 'Role user berhasil ditambahkan.' });
       setIsAddOpen(false);
       resetForm();
-      loadData();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Gagal menambahkan role user.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -138,10 +79,9 @@ const UsersPage: React.FC = () => {
   const handleEdit = async () => {
     if (!selectedItem) return;
     try {
-      await updateUserRole(selectedItem.id, editFormData.role);
+      await updateRoleMutation.mutateAsync({ id: selectedItem.id, role: editFormData.role });
       toast({ title: 'Berhasil', description: 'Role user berhasil diperbarui.' });
       setIsEditOpen(false);
-      loadData();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Gagal memperbarui role user.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -151,10 +91,9 @@ const UsersPage: React.FC = () => {
   const handleDelete = async () => {
     if (!selectedItem) return;
     try {
-      await deleteUserRole(selectedItem.id);
+      await deleteRoleMutation.mutateAsync(selectedItem.id);
       toast({ title: 'Berhasil', description: 'Role user berhasil dihapus.' });
       setIsDeleteOpen(false);
-      loadData();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Gagal menghapus role user.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -191,18 +130,8 @@ const UsersPage: React.FC = () => {
 
   const handleApproveUser = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'approved' })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      // Add default user role
-      await addUserRole(userId, 'user');
-
+      await approveMutation.mutateAsync(userId);
       toast({ title: 'Berhasil', description: 'User berhasil diapprove.' });
-      loadData();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Gagal approve user.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -211,15 +140,8 @@ const UsersPage: React.FC = () => {
 
   const handleRejectUser = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'rejected' })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
+      await rejectMutation.mutateAsync(userId);
       toast({ title: 'Berhasil', description: 'User berhasil ditolak.' });
-      loadData();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Gagal menolak user.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -249,7 +171,6 @@ const UsersPage: React.FC = () => {
       toast({ title: 'Berhasil', description: 'User berhasil dibuat.' });
       setIsCreateUserOpen(false);
       setCreateUserForm({ email: '', password: '', nama: '', role: 'user' });
-      loadData();
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Gagal membuat user.';
       toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -348,6 +269,7 @@ const UsersPage: React.FC = () => {
             size="sm"
             onClick={() => handleApproveUser(item.userId)}
             className="bg-green-600 hover:bg-green-700"
+            disabled={approveMutation.isPending}
           >
             <Check className="h-4 w-4 mr-1" />
             Approve
@@ -356,6 +278,7 @@ const UsersPage: React.FC = () => {
             variant="destructive"
             size="sm"
             onClick={() => handleRejectUser(item.userId)}
+            disabled={rejectMutation.isPending}
           >
             <X className="h-4 w-4 mr-1" />
             Tolak
@@ -370,7 +293,7 @@ const UsersPage: React.FC = () => {
       <MainLayout>
         <PageHeader title="Pengaturan User" description="Kelola pengguna sistem" />
         <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-muted-foreground">Memuat data...</div>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       </MainLayout>
     );
@@ -449,7 +372,9 @@ const UsersPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>Batal</Button>
-            <Button onClick={handleAdd}>Simpan</Button>
+            <Button onClick={handleAdd} disabled={addRoleMutation.isPending}>
+              {addRoleMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -481,7 +406,9 @@ const UsersPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-            <Button onClick={handleEdit}>Simpan</Button>
+            <Button onClick={handleEdit} disabled={updateRoleMutation.isPending}>
+              {updateRoleMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -489,13 +416,13 @@ const UsersPage: React.FC = () => {
       {/* Reset Password Dialog */}
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Reset Password User</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Reset Password</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>User</Label>
               <div className="p-2 bg-muted rounded-md">
                 <div className="font-medium">{selectedItem?.nama || '-'}</div>
-                {selectedItem?.email && <div className="text-sm text-muted-foreground">{selectedItem.email}</div>}
+                <div className="text-xs text-muted-foreground font-mono">{selectedItem?.userId}</div>
               </div>
             </div>
             <div className="space-y-2">
@@ -511,11 +438,29 @@ const UsersPage: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsResetPasswordOpen(false)}>Batal</Button>
             <Button onClick={handleResetPassword} disabled={isResetting}>
-              {isResetting ? 'Menyimpan...' : 'Reset Password'}
+              {isResetting ? 'Mereset...' : 'Reset Password'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Role User?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus role untuk {selectedItem?.nama || selectedItem?.userId}? User tidak akan bisa mengakses sistem.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create User Dialog */}
       <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
@@ -523,20 +468,20 @@ const UsersPage: React.FC = () => {
           <DialogHeader><DialogTitle>Buat User Baru</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Nama <span className="text-destructive">*</span></Label>
-              <Input 
-                value={createUserForm.nama} 
-                onChange={(e) => setCreateUserForm({...createUserForm, nama: e.target.value})} 
-                placeholder="Nama lengkap"
-              />
-            </div>
-            <div className="space-y-2">
               <Label>Email <span className="text-destructive">*</span></Label>
               <Input 
                 type="email"
                 value={createUserForm.email} 
                 onChange={(e) => setCreateUserForm({...createUserForm, email: e.target.value})} 
                 placeholder="email@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nama Lengkap <span className="text-destructive">*</span></Label>
+              <Input 
+                value={createUserForm.nama} 
+                onChange={(e) => setCreateUserForm({...createUserForm, nama: e.target.value})} 
+                placeholder="Nama lengkap user"
               />
             </div>
             <div className="space-y-2">
@@ -563,26 +508,11 @@ const UsersPage: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateUserOpen(false)}>Batal</Button>
             <Button onClick={handleCreateUser} disabled={isCreatingUser}>
-              {isCreatingUser ? 'Menyimpan...' : 'Buat User'}
+              {isCreatingUser ? 'Membuat...' : 'Buat User'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Role User?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus role user {selectedItem?.nama || selectedItem?.userId}?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </MainLayout>
   );
 };

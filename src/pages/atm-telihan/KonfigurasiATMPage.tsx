@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -7,24 +7,26 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ATMConfig, JABATAN_ATM_LIST } from '@/types';
-import { getATMConfig, addATMConfig, updateATMConfig, deleteATMConfig } from '@/lib/atm-store';
-import { Settings, CheckCircle2 } from 'lucide-react';
+import { useATMConfig, useAddATMConfig, useUpdateATMConfig, useDeleteATMConfig } from '@/hooks/use-atm-data';
+import { CheckCircle2 } from 'lucide-react';
 
 const KonfigurasiATMPage = () => {
   const { toast } = useToast();
   const { userRole } = useAuth();
   const isAdmin = userRole === 'admin';
-  const canEdit = userRole !== 'demo';
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<ATMConfig[]>([]);
+  // React Query hooks
+  const { data = [], isLoading } = useATMConfig();
+  const addMutation = useAddATMConfig();
+  const updateMutation = useUpdateATMConfig();
+  const deleteMutation = useDeleteATMConfig();
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -39,31 +41,16 @@ const KonfigurasiATMPage = () => {
     isActive: true,
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const result = await getATMConfig();
-      setData(result);
-    } catch (error) {
-      toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
-    }
-  };
-
   const resetForm = () => setFormData({ nama: '', jabatan: '', keterangan: '', isActive: true });
 
   const handleAdd = async () => {
-    if (isSubmitting) return;
     if (!formData.nama.trim() || !formData.jabatan) {
       toast({ title: 'Validasi Error', description: 'Nama dan Jabatan wajib diisi.', variant: 'destructive' });
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      await addATMConfig({
+      await addMutation.mutateAsync({
         nama: formData.nama.trim(),
         jabatan: formData.jabatan,
         keterangan: formData.keterangan || undefined,
@@ -74,44 +61,39 @@ const KonfigurasiATMPage = () => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
     } catch (error) {
       toast({ title: 'Error', description: 'Gagal menyimpan data', variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleEdit = async () => {
-    if (isSubmitting || !selectedItem) return;
+    if (!selectedItem) return;
 
-    setIsSubmitting(true);
     try {
-      await updateATMConfig(selectedItem.id, {
-        nama: formData.nama,
-        jabatan: formData.jabatan,
-        keterangan: formData.keterangan || undefined,
-        isActive: formData.isActive,
+      await updateMutation.mutateAsync({
+        id: selectedItem.id,
+        data: {
+          nama: formData.nama,
+          jabatan: formData.jabatan,
+          keterangan: formData.keterangan || undefined,
+          isActive: formData.isActive,
+        }
       });
 
       toast({ title: 'Sukses', description: 'Data berhasil diperbarui' });
       setIsEditOpen(false);
       resetForm();
-      loadData();
     } catch (error) {
       toast({ title: 'Error', description: 'Gagal memperbarui data', variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
     if (!selectedItem) return;
     try {
-      await deleteATMConfig(selectedItem.id);
+      await deleteMutation.mutateAsync(selectedItem.id);
       toast({ title: 'Sukses', description: 'Data berhasil dihapus' });
       setIsDeleteOpen(false);
-      loadData();
     } catch (error) {
       toast({ title: 'Error', description: 'Gagal menghapus data', variant: 'destructive' });
     }
@@ -132,6 +114,18 @@ const KonfigurasiATMPage = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <PageHeader title="Konfigurasi ATM" description="Kelola data petugas ATM, teller, dan pemimpin" />
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -209,8 +203,8 @@ const KonfigurasiATMPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            <Button onClick={handleAdd} disabled={addMutation.isPending}>
+              {addMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -261,8 +255,8 @@ const KonfigurasiATMPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleEdit} disabled={isSubmitting}>
-              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            <Button onClick={handleEdit} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </DialogFooter>
         </DialogContent>
