@@ -265,76 +265,113 @@ export const ATMStatistics: React.FC<ATMStatisticsProps> = ({ data }) => {
           </CardContent>
         </Card>
 
-        {/* Distribution Pie & Bar */}
+        {/* Distribution Pie Chart */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
-              Distribusi Selisih & Transaksi Harian
+              Distribusi Selisih
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-2 h-[180px]">
-              {/* Pie Chart */}
-              <div className="h-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie 
-                      data={stats.pieData} 
-                      cx="50%" 
-                      cy="50%" 
-                      innerRadius={30} 
-                      outerRadius={55} 
-                      paddingAngle={3} 
-                      dataKey="value"
-                    >
-                      {stats.pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))', 
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }} 
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex justify-center gap-3 text-xs -mt-2">
-                  {stats.pieData.map((entry) => (
-                    <div key={entry.name} className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                      <span className="text-muted-foreground">{entry.name}</span>
-                    </div>
-                  ))}
+            <div className="h-[180px] flex items-center">
+              {stats.pieData.length > 0 ? (
+                <div className="w-full flex items-center gap-4">
+                  <div className="flex-1 h-[150px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie 
+                          data={stats.pieData} 
+                          cx="50%" 
+                          cy="50%" 
+                          innerRadius={35} 
+                          outerRadius={60} 
+                          paddingAngle={2} 
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
+                        >
+                          {stats.pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))', 
+                            borderRadius: '8px',
+                            fontSize: '12px'
+                          }} 
+                          formatter={(value: number, name: string) => [`${value} kali`, name]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-2">
+                    {stats.pieData.map((entry) => (
+                      <div key={entry.name} className="flex items-center gap-2 text-sm">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+                        <span className="text-muted-foreground">{entry.name}:</span>
+                        <span className="font-medium">{entry.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              {/* Bar Chart */}
-              <div className="h-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.last7Days}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" className="text-xs" tick={{ fontSize: 8 }} />
-                    <YAxis className="text-xs" tick={{ fontSize: 8 }} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))', 
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }} 
-                    />
-                    <Bar dataKey="transaksi" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              ) : (
+                <div className="w-full flex items-center justify-center text-muted-foreground text-sm">
+                  Belum ada data selisih
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Daily Transaction Bar Chart - Full Width */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            Transaksi Harian (7 Hari Terakhir)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[160px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.last7Days} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 11 }} 
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11 }} 
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))', 
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                  formatter={(value: number) => [`${value} transaksi`, 'Jumlah']}
+                />
+                <Bar 
+                  dataKey="transaksi" 
+                  fill={COLORS.primary} 
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={50}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
