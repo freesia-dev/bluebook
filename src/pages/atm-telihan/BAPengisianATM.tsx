@@ -12,6 +12,8 @@ import { getPengisianATM, getATMConfig, getKartuTertelan, getSelisihATM, angkaTe
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { FileText, Printer, Plus, Trash2 } from 'lucide-react';
+import logoBankaltimtara from '@/assets/logo-bankaltimtara.png';
+import logoBpd from '@/assets/logo-bpd.png';
 
 const BAPengisianATM = () => {
   const { toast } = useToast();
@@ -379,8 +381,8 @@ const BAPengisianATM = () => {
                 <div className="ba-container">
                   {/* Header - matching PDF layout */}
                   <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div className="logo-left" style={{ width: '100px' }}>
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Bank_Pembangunan_Daerah_Kalimantan_Timur.svg/200px-Bank_Pembangunan_Daerah_Kalimantan_Timur.svg.png" alt="Bankaltimtara" style={{ maxWidth: '100%', height: 'auto' }} />
+                    <div className="logo-left" style={{ width: '120px' }}>
+                      <img src={logoBankaltimtara} alt="Bankaltimtara" style={{ maxWidth: '100%', height: 'auto' }} />
                     </div>
                     <div className="header-center" style={{ flex: 1, textAlign: 'center', padding: '0 15px' }}>
                       <div style={{ fontSize: '12pt', fontWeight: 'bold' }}>PT. BPD Kaltim Kaltara</div>
@@ -391,7 +393,7 @@ const BAPengisianATM = () => {
                       <div style={{ fontSize: '9pt' }}>www.bankaltimtara.co.id</div>
                     </div>
                     <div className="logo-right" style={{ width: '100px', textAlign: 'right' }}>
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Logo_BPD.svg/200px-Logo_BPD.svg.png" alt="BPD" style={{ maxWidth: '100%', height: 'auto' }} />
+                      <img src={logoBpd} alt="BPD" style={{ maxWidth: '100%', height: 'auto' }} />
                     </div>
                   </div>
                   <div style={{ borderBottom: '2px solid #000', margin: '8px 0 15px' }}></div>
