@@ -544,15 +544,29 @@ const BAPengisianATM = () => {
                     <div style={{ marginBottom: '15px' }}>Demikian Berita Acara ini dibuat dengan sebenarnya oleh :</div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <div style={{ width: '45%' }}>
-                        <div style={{ marginBottom: '8px' }}>Petugas ATM:</div>
-                        <div style={{ marginBottom: '60px' }}>{getPetugasATM()[0]?.nama || selectedData.yangMenyerahkan || '................................'}</div>
-                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>PETUGAS ATM</div>
+                      <div style={{ width: '30%', textAlign: 'center' }}>
+                        <div style={{ marginBottom: '8px' }}>Staff KCP,</div>
+                        <div style={{ marginBottom: '60px' }}></div>
+                        <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                          {configOptions.find(c => c.jabatan === 'STAFF KCP')?.nama || '................................'}
+                        </div>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>STAFF KCP</div>
                       </div>
-                      <div style={{ width: '45%', textAlign: 'left' }}>
+                      <div style={{ width: '30%', textAlign: 'center' }}>
+                        <div style={{ marginBottom: '8px' }}>Teller,</div>
+                        <div style={{ marginBottom: '60px' }}></div>
+                        <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                          {configOptions.find(c => c.jabatan === 'TELLER')?.nama || '................................'}
+                        </div>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>TELLER</div>
+                      </div>
+                      <div style={{ width: '30%', textAlign: 'center' }}>
                         <div style={{ marginBottom: '8px' }}>Mengetahui,</div>
-                        <div style={{ marginBottom: '60px' }}>{getPemimpinList()[0]?.nama || '................................'}</div>
-                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{getPemimpinList()[0]?.jabatan || 'PEMIMPIN KCP'}</div>
+                        <div style={{ marginBottom: '60px' }}></div>
+                        <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
+                          {getPemimpinList()[0]?.nama || '................................'}
+                        </div>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>PIMPINAN</div>
                       </div>
                     </div>
                   </div>

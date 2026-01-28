@@ -262,7 +262,7 @@ export const HARI_LIST = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT',
 
 // Jabatan options for ATM config
 export const JABATAN_ATM_LIST = [
-  'PETUGAS ATM',
+  'STAFF KCP',
   'TELLER',
   'PEMIMPIN KCP',
   'PGS. PEMIMPIN KCP',
