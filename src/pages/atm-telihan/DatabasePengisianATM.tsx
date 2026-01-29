@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { PengisianATM, ATMConfig } from '@/types';
-import { getPengisianATM, addPengisianATM, updatePengisianATM, deletePengisianATM, getATMConfig, getDayName, angkaTerbilang } from '@/lib/atm-store';
+import { PengisianATM } from '@/types';
+import { getDayName, angkaTerbilang } from '@/lib/atm-store';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import { exportToExcel } from '@/lib/export';
 import { formatCurrencyInput, parseCurrencyValue, formatCurrencyDisplay } from '@/hooks/use-currency-input';
 import { ATMStatistics } from '@/components/atm/ATMStatistics';
@@ -20,6 +20,13 @@ import {
   DatabasePengisianATMFormFields,
   type PengisianATMFormData,
 } from '@/components/atm/DatabasePengisianATMFormFields';
+import { 
+  usePengisianATM, 
+  useATMConfig, 
+  useAddPengisianATM, 
+  useUpdatePengisianATM, 
+  useDeletePengisianATM 
+} from '@/hooks/use-atm-data';
 
 const DENOMINASI = 100000; // Rp 100.000 per lembar
 
@@ -29,9 +36,17 @@ const DatabasePengisianATM = () => {
   const isAdmin = userRole === 'admin';
   const canEdit = userRole !== 'demo';
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<PengisianATM[]>([]);
-  const [configOptions, setConfigOptions] = useState<ATMConfig[]>([]);
+  // React Query hooks for data fetching with caching
+  const { data: pengisianData = [], isLoading: isLoadingData } = usePengisianATM();
+  const { data: configData = [], isLoading: isLoadingConfig } = useATMConfig();
+  
+  // Mutations
+  const addMutation = useAddPengisianATM();
+  const updateMutation = useUpdatePengisianATM();
+  const deleteMutation = useDeletePengisianATM();
+
+  const configOptions = useMemo(() => configData.filter(c => c.isActive), [configData]);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -104,94 +119,68 @@ const DatabasePengisianATM = () => {
     };
   }, [formData.saldoBukuBesar, formData.sisaCartridge1, formData.sisaCartridge2, formData.sisaCartridge3, formData.sisaCartridge4]);
 
-  useEffect(() => {
-    loadData();
-    loadConfig();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const result = await getPengisianATM();
-      setData(result);
-    } catch (error) {
-      toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
-    }
-  };
-
-  const loadConfig = async () => {
-    try {
-      const result = await getATMConfig();
-      setConfigOptions(result.filter(c => c.isActive));
-    } catch (error) {
-      console.error('Failed to load config:', error);
-    }
-  };
-
   const resetForm = () => setFormData(getDefaultForm());
 
   const getPetugasOptions = () => configOptions.filter(c => c.jabatan === 'PETUGAS ATM');
   const getTellerOptions = () => configOptions.filter(c => c.jabatan === 'TELLER');
 
   const handleAdd = async () => {
-    if (isSubmitting) return;
+    if (addMutation.isPending) return;
     if (!formData.saldoBukuBesar) {
       toast({ title: 'Validasi Error', description: 'Harap isi Saldo Buku Besar.', variant: 'destructive' });
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const tanggal = formData.tanggal;
-      const kartuTertelan = parseInt(formData.kartuTertelan) || 0;
-      
-      const newItem = await addPengisianATM({
-        hari: getDayName(tanggal),
-        tanggal,
-        jam: formData.jam,
-        sisaCartridge1: parseInt(formData.sisaCartridge1) || 0,
-        sisaCartridge2: parseInt(formData.sisaCartridge2) || 0,
-        sisaCartridge3: parseInt(formData.sisaCartridge3) || 0,
-        sisaCartridge4: parseInt(formData.sisaCartridge4) || 0,
-        tambahCartridge1: parseInt(formData.tambahCartridge1) || 0,
-        tambahCartridge2: parseInt(formData.tambahCartridge2) || 0,
-        tambahCartridge3: parseInt(formData.tambahCartridge3) || 0,
-        tambahCartridge4: parseInt(formData.tambahCartridge4) || 0,
-        saldoBukuBesar: parseCurrencyValue(formData.saldoBukuBesar),
-        kartuTertelan,
-        terbilang: angkaTerbilang(kartuTertelan),
-        notes: calculations.notes,
-        jumlahSelisih: calculations.selisihAbs,
-        keteranganSelisih: calculations.keteranganSelisih,
-        namaTeller: formData.namaTeller,
-        jumlahDisetor: calculations.jumlahDisetor,
-        setorKeRekTitipan: calculations.setorKeRekTitipan,
-        yangMenyerahkan: formData.yangMenyerahkan,
-        tellerSelisih: formData.tellerSelisih,
-        retracts: calculations.retracts,
-        userInput: userName || 'System',
-      });
-
-      setSuccessMessage(`Data Pengisian ATM No. ${newItem.nomor} berhasil disimpan!`);
-      setIsAddOpen(false);
-      setIsSuccessOpen(true);
-      resetForm();
-      loadData();
-    } catch (error) {
-      toast({ title: 'Error', description: 'Gagal menyimpan data', variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
+    const tanggal = formData.tanggal;
+    const kartuTertelan = parseInt(formData.kartuTertelan) || 0;
+    
+    addMutation.mutate({
+      hari: getDayName(tanggal),
+      tanggal,
+      jam: formData.jam,
+      sisaCartridge1: parseInt(formData.sisaCartridge1) || 0,
+      sisaCartridge2: parseInt(formData.sisaCartridge2) || 0,
+      sisaCartridge3: parseInt(formData.sisaCartridge3) || 0,
+      sisaCartridge4: parseInt(formData.sisaCartridge4) || 0,
+      tambahCartridge1: parseInt(formData.tambahCartridge1) || 0,
+      tambahCartridge2: parseInt(formData.tambahCartridge2) || 0,
+      tambahCartridge3: parseInt(formData.tambahCartridge3) || 0,
+      tambahCartridge4: parseInt(formData.tambahCartridge4) || 0,
+      saldoBukuBesar: parseCurrencyValue(formData.saldoBukuBesar),
+      kartuTertelan,
+      terbilang: angkaTerbilang(kartuTertelan),
+      notes: calculations.notes,
+      jumlahSelisih: calculations.selisihAbs,
+      keteranganSelisih: calculations.keteranganSelisih,
+      namaTeller: formData.namaTeller,
+      jumlahDisetor: calculations.jumlahDisetor,
+      setorKeRekTitipan: calculations.setorKeRekTitipan,
+      yangMenyerahkan: formData.yangMenyerahkan,
+      tellerSelisih: formData.tellerSelisih,
+      retracts: calculations.retracts,
+      userInput: userName || 'System',
+    }, {
+      onSuccess: (newItem) => {
+        setSuccessMessage(`Data Pengisian ATM No. ${newItem.nomor} berhasil disimpan!`);
+        setIsAddOpen(false);
+        setIsSuccessOpen(true);
+        resetForm();
+      },
+      onError: () => {
+        toast({ title: 'Error', description: 'Gagal menyimpan data', variant: 'destructive' });
+      }
+    });
   };
 
   const handleEdit = async () => {
-    if (isSubmitting || !selectedItem) return;
+    if (updateMutation.isPending || !selectedItem) return;
 
-    setIsSubmitting(true);
-    try {
-      const tanggal = formData.tanggal;
-      const kartuTertelan = parseInt(formData.kartuTertelan) || 0;
+    const tanggal = formData.tanggal;
+    const kartuTertelan = parseInt(formData.kartuTertelan) || 0;
 
-      await updatePengisianATM(selectedItem.id, {
+    updateMutation.mutate({
+      id: selectedItem.id,
+      data: {
         hari: getDayName(tanggal),
         tanggal,
         jam: formData.jam,
@@ -215,33 +204,34 @@ const DatabasePengisianATM = () => {
         yangMenyerahkan: formData.yangMenyerahkan,
         tellerSelisih: formData.tellerSelisih,
         retracts: calculations.retracts,
-      });
-
-      toast({ title: 'Sukses', description: 'Data berhasil diperbarui' });
-      setIsEditOpen(false);
-      resetForm();
-      loadData();
-    } catch (error) {
-      toast({ title: 'Error', description: 'Gagal memperbarui data', variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
+      }
+    }, {
+      onSuccess: () => {
+        toast({ title: 'Sukses', description: 'Data berhasil diperbarui' });
+        setIsEditOpen(false);
+        resetForm();
+      },
+      onError: () => {
+        toast({ title: 'Error', description: 'Gagal memperbarui data', variant: 'destructive' });
+      }
+    });
   };
 
   const handleDelete = async () => {
     if (!selectedItem) return;
-    try {
-      await deletePengisianATM(selectedItem.id);
-      toast({ title: 'Sukses', description: 'Data berhasil dihapus' });
-      setIsDeleteOpen(false);
-      loadData();
-    } catch (error) {
-      toast({ title: 'Error', description: 'Gagal menghapus data', variant: 'destructive' });
-    }
+    deleteMutation.mutate(selectedItem.id, {
+      onSuccess: () => {
+        toast({ title: 'Sukses', description: 'Data berhasil dihapus' });
+        setIsDeleteOpen(false);
+      },
+      onError: () => {
+        toast({ title: 'Error', description: 'Gagal menghapus data', variant: 'destructive' });
+      }
+    });
   };
 
   const handleExport = () => {
-    const exportData = data.map(item => ({
+    const exportData = pengisianData.map(item => ({
       'No': item.nomor,
       'Hari': item.hari,
       'Tanggal': format(item.tanggal, 'dd MMMM yyyy', { locale: id }),
@@ -292,6 +282,16 @@ const DatabasePengisianATM = () => {
   const petugasOptions = useMemo(() => getPetugasOptions().map(({ id, nama }) => ({ id, nama })), [configOptions]);
   const tellerOptions = useMemo(() => getTellerOptions().map(({ id, nama }) => ({ id, nama })), [configOptions]);
 
+  if (isLoadingData || isLoadingConfig) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -301,10 +301,10 @@ const DatabasePengisianATM = () => {
         />
 
         {/* Statistics Section */}
-        <ATMStatistics data={data} />
+        <ATMStatistics data={pengisianData} />
 
         <DataTable
-          data={data}
+          data={pengisianData}
           columns={columns}
           onAdd={() => setIsAddOpen(true)}
           onExport={handleExport}
@@ -355,8 +355,8 @@ const DatabasePengisianATM = () => {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+            <Button onClick={handleAdd} disabled={addMutation.isPending}>
+              {addMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -379,8 +379,8 @@ const DatabasePengisianATM = () => {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleEdit} disabled={isSubmitting}>
-              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            <Button onClick={handleEdit} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </DialogFooter>
         </DialogContent>
