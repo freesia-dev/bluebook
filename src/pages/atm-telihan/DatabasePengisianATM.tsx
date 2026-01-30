@@ -121,8 +121,13 @@ const DatabasePengisianATM = () => {
 
   const resetForm = () => setFormData(getDefaultForm());
 
-  const getPetugasOptions = () => configOptions.filter(c => c.jabatan === 'PETUGAS ATM');
-  const getTellerOptions = () => configOptions.filter(c => c.jabatan === 'TELLER');
+  // Petugas ATM = Staff KCP (bukan Teller atau Pemimpin)
+  const getPetugasOptions = () => configOptions.filter(c => 
+    c.jabatan === 'Staff KCP' || 
+    (!c.jabatan.toLowerCase().includes('teller') && 
+     !c.jabatan.toLowerCase().includes('pemimpin'))
+  );
+  const getTellerOptions = () => configOptions.filter(c => c.jabatan.toLowerCase().includes('teller'));
 
   const handleAdd = async () => {
     if (addMutation.isPending) return;
