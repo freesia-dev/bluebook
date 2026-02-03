@@ -1,10 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Play, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock } from "lucide-react";
 import logo from "@/assets/logo_bluebook.png";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+
+  const featureIcons = [
+    { icon: FileText, label: "Surat Digital", color: "from-blue-500 to-cyan-500" },
+    { icon: CalendarCheck, label: "Agenda Kredit", color: "from-brand-secondary to-amber-500" },
+    { icon: ShieldCheck, label: "Akses Berbasis Peran", color: "from-green-500 to-emerald-500" },
+  ];
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
@@ -25,7 +31,7 @@ const HeroSection = () => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10">
               <Sparkles className="w-4 h-4 text-brand-secondary" />
-              <span className="text-sm text-white/80">Digital Logbook System</span>
+              <span className="text-sm text-white/80">Sistem Resmi Internal Bankaltimtara</span>
             </div>
 
             {/* Main heading */}
@@ -37,53 +43,78 @@ const HeroSection = () => {
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl text-blue-100/80 font-medium">
-                Sistem Administrasi Digital Internal
+                Portal Administrasi Digital KCP Telihan
               </p>
             </div>
 
-            {/* Description */}
+            {/* Improved Value Proposition */}
             <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
-              Portal internal untuk pegawai Bankaltimtara KCP Telihan. 
-              Akses mudah untuk mengelola surat-menyurat dan agenda kredit secara digital dan terintegrasi.
+              Satu portal resmi untuk mengelola surat masuk & keluar, agenda kredit, dan arsip internal secara digital — <span className="text-brand-secondary font-medium">tanpa Excel, tanpa kertas, tanpa ribet.</span>
             </p>
+
+            {/* Supporting bullets */}
+            <ul className="space-y-3">
+              {[
+                "Arsip surat digital & mudah dicari",
+                "Agenda kredit terstruktur dan terpantau", 
+                "Hak akses berbasis peran (Admin, User, Demo)"
+              ].map((item, index) => (
+                <li key={index} className="flex items-center gap-3 text-slate-300">
+                  <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  </div>
+                  {item}
+                </li>
+              ))}
+            </ul>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
-                className="px-8 py-6 text-lg font-semibold bg-gradient-to-r from-brand-secondary to-amber-500 hover:from-brand-secondary/90 hover:to-amber-500/90 text-slate-900 shadow-lg shadow-brand-secondary/25 hover:shadow-xl hover:shadow-brand-secondary/30 transition-all duration-300"
-                onClick={() => navigate('/login')}
-              >
-                Mulai Sekarang
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  size="lg" 
+                  className="px-8 py-6 text-lg font-semibold bg-gradient-to-r from-brand-secondary to-amber-500 hover:from-brand-secondary/90 hover:to-amber-500/90 text-slate-900 shadow-lg shadow-brand-secondary/25 hover:shadow-xl hover:shadow-brand-secondary/30 transition-all duration-300"
+                  onClick={() => navigate('/login')}
+                >
+                  Masuk Sistem
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+                {/* CTA Helper text */}
+                <div className="flex items-center gap-2 text-sm text-slate-400 pl-1">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Akses aman — hanya untuk pegawai Bankaltimtara</span>
+                </div>
+              </div>
               <Button 
                 size="lg" 
                 variant="outline"
-                className="px-8 py-6 text-lg font-semibold border-2 border-white/20 text-white hover:bg-white/10 bg-transparent"
+                className="px-8 py-6 text-lg font-semibold border-2 border-white/20 text-white hover:bg-white/10 bg-transparent self-start"
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <Play className="mr-2 w-5 h-5" />
                 Lihat Fitur
               </Button>
             </div>
 
-            {/* Trust badges */}
-            <div className="flex items-center gap-6 pt-4">
-              <div className="flex items-center gap-2">
+            {/* Enhanced Trust badges */}
+            <div className="flex flex-col gap-3 pt-4">
+              <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((i) => (
+                  {['S', 'P', 'IT', 'A'].map((initial, i) => (
                     <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-slate-900 flex items-center justify-center text-xs text-white font-medium">
-                      {String.fromCharCode(64 + i)}
+                      {initial}
                     </div>
                   ))}
                 </div>
-                <span className="text-sm text-slate-400">Dipercaya oleh tim KCP Telihan</span>
+                <span className="text-sm text-slate-400">Digunakan oleh Sekretaris, Penyelia, IT & Admin KCP Telihan</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span>Sistem aktif sejak 2024</span>
               </div>
             </div>
           </div>
 
-          {/* Right content - Logo/Visual */}
+          {/* Right content - Logo/Visual with functional icons */}
           <div className="relative flex justify-center lg:justify-end">
             <div className="relative">
               {/* Glow effect */}
@@ -101,6 +132,18 @@ const HeroSection = () => {
                 <div className="text-center mt-6">
                   <h2 className="text-2xl lg:text-3xl font-bold text-white">Bluebook Telihan</h2>
                   <p className="text-brand-secondary font-medium mt-2">In Bluebook we Trust!</p>
+                </div>
+
+                {/* Functional feature icons */}
+                <div className="flex justify-center gap-4 mt-6">
+                  {featureIcons.map((feature, index) => (
+                    <div key={index} className="flex flex-col items-center gap-2">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg`}>
+                        <feature.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs text-slate-400 text-center max-w-[80px]">{feature.label}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Floating elements */}
