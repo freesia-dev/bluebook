@@ -115,7 +115,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'KK & MPAK Telihan', href: '/agenda-kredit/kk-mpak-telihan' },
     { label: 'Agenda & MPAK Meranti', href: '/agenda-kredit/agenda-mpak-meranti' },
     { label: 'Nomor Loan', href: '/agenda-kredit/nomor-loan' },
-    ...(isAdmin ? [{ label: 'Recycle Bin', href: '/agenda-kredit/recycle-bin' }] : []),
   ];
 
   const atmTelihanItems = [
@@ -213,6 +212,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               children={atmTelihanItems}
               onNavigate={onClose}
             />
+            {isAdmin && (
+              <NavItem 
+                icon={Trash2} 
+                label="Recycle Bin" 
+                href="/recycle-bin" 
+                isActive={location.pathname === '/recycle-bin'} 
+                onNavigate={onClose}
+              />
+            )}
             {isAdmin && (
               <NavItem 
                 icon={Settings} 
