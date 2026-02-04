@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -53,8 +54,14 @@ const AgendaKreditPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<AgendaKreditEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const agendaQuery = useQuery({
+    queryKey: ['agenda-kredit-entry'],
+    queryFn: getAgendaKreditEntry,
+    staleTime: 1000 * 60 * 5,
+  });
+  const data = agendaQuery.data || [];
+  const isLoading = agendaQuery.isLoading;
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -74,22 +81,7 @@ const AgendaKreditPage: React.FC = () => {
     tanggalMasuk: new Date(),
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const items = await getAgendaKreditEntry();
-      setData(items);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({ title: 'Error', description: 'Gagal memuat data.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const refreshData = () => queryClient.invalidateQueries({ queryKey: ['agenda-kredit-entry'] });
 
   const resetForm = () => {
     setFormData({
@@ -132,7 +124,7 @@ const AgendaKreditPage: React.FC = () => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
+      refreshData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
     } finally {
@@ -159,7 +151,7 @@ const AgendaKreditPage: React.FC = () => {
         description: 'Data agenda kredit berhasil diperbarui.',
       });
       setIsEditOpen(false);
-      loadData();
+      refreshData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui data.', variant: 'destructive' });
     }
@@ -176,7 +168,7 @@ const AgendaKreditPage: React.FC = () => {
       });
       setIsDeleteOpen(false);
       setSelectedItem(null);
-      loadData();
+      refreshData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menghapus data.', variant: 'destructive' });
     }
@@ -190,7 +182,7 @@ const AgendaKreditPage: React.FC = () => {
         title: 'Status Diperbarui',
         description: `Status diubah menjadi ${newStatus}.`,
       });
-      loadData();
+      refreshData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui status.', variant: 'destructive' });
     }
