@@ -272,7 +272,7 @@ export const JABATAN_ATM_LIST = [
 export interface RecycleBinItem {
   id: string;
   originalId: string;
-  tableName: 'sppk' | 'pk' | 'kkmpak' | 'nomor_loan' | 'surat_masuk' | 'surat_keluar' | 'pengisian_atm';
+  tableName: 'agenda_kredit_entry' | 'sppk' | 'pk' | 'kkmpak' | 'nomor_loan' | 'surat_masuk' | 'surat_keluar' | 'pengisian_atm';
   tableType?: 'telihan' | 'meranti';
   data: Record<string, unknown>;
   deletedAt: Date;
@@ -280,6 +280,7 @@ export interface RecycleBinItem {
 }
 
 export const TABLE_NAME_LABELS: Record<string, string> = {
+  agenda_kredit_entry: 'Agenda Kredit',
   sppk: 'SPPK',
   pk: 'PK',
   kkmpak: 'KK & MPAK',
