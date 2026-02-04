@@ -13,9 +13,10 @@ const STALE_TIME = 1000 * 60 * 5; // 5 minutes cache
 // ============= SPPK HOOK =============
 export const useSPPKData = (type: 'telihan' | 'meranti') => {
   const queryClient = useQueryClient();
+  const queryKey = ['sppk', type];
 
   const query = useQuery({
-    queryKey: ['sppk', type],
+    queryKey,
     queryFn: async () => {
       const allData = await getSPPK();
       return allData.filter(s => s.type === type);
@@ -23,21 +24,37 @@ export const useSPPKData = (type: 'telihan' | 'meranti') => {
     staleTime: STALE_TIME,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['sppk'] });
-
   const addMutation = useMutation({
     mutationFn: addSPPK,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sppk'] }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<SPPK> }) => updateSPPK(id, data),
-    onSuccess: invalidate,
+    // Optimistic update for instant UI
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<SPPK[]>(queryKey);
+      
+      queryClient.setQueryData<SPPK[]>(queryKey, (old) => 
+        old?.map(item => item.id === id ? { ...item, ...data } : item) || []
+      );
+      
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['sppk'] });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteSPPK,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sppk'] }),
   });
 
   return {
@@ -53,9 +70,10 @@ export const useSPPKData = (type: 'telihan' | 'meranti') => {
 // ============= PK HOOK =============
 export const usePKData = (type: 'telihan' | 'meranti') => {
   const queryClient = useQueryClient();
+  const queryKey = ['pk', type];
 
   const query = useQuery({
-    queryKey: ['pk', type],
+    queryKey,
     queryFn: async () => {
       const allData = await getPK();
       return allData.filter(s => s.type === type);
@@ -63,21 +81,36 @@ export const usePKData = (type: 'telihan' | 'meranti') => {
     staleTime: STALE_TIME,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['pk'] });
-
   const addMutation = useMutation({
     mutationFn: addPK,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pk'] }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<PK> }) => updatePK(id, data),
-    onSuccess: invalidate,
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<PK[]>(queryKey);
+      
+      queryClient.setQueryData<PK[]>(queryKey, (old) => 
+        old?.map(item => item.id === id ? { ...item, ...data } : item) || []
+      );
+      
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['pk'] });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deletePK,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pk'] }),
   });
 
   return {
@@ -93,9 +126,10 @@ export const usePKData = (type: 'telihan' | 'meranti') => {
 // ============= KKMPAK HOOK =============
 export const useKKMPAKData = (type: 'telihan' | 'meranti') => {
   const queryClient = useQueryClient();
+  const queryKey = ['kkmpak', type];
 
   const query = useQuery({
-    queryKey: ['kkmpak', type],
+    queryKey,
     queryFn: async () => {
       const allData = await getKKMPAK();
       return allData.filter(s => s.type === type);
@@ -103,21 +137,36 @@ export const useKKMPAKData = (type: 'telihan' | 'meranti') => {
     staleTime: STALE_TIME,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['kkmpak'] });
-
   const addMutation = useMutation({
     mutationFn: addKKMPAK,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kkmpak'] }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<KKMPAK> }) => updateKKMPAK(id, data),
-    onSuccess: invalidate,
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<KKMPAK[]>(queryKey);
+      
+      queryClient.setQueryData<KKMPAK[]>(queryKey, (old) => 
+        old?.map(item => item.id === id ? { ...item, ...data } : item) || []
+      );
+      
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['kkmpak'] });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteKKMPAK,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kkmpak'] }),
   });
 
   return {
@@ -133,9 +182,10 @@ export const useKKMPAKData = (type: 'telihan' | 'meranti') => {
 // ============= NOMOR LOAN HOOK =============
 export const useNomorLoanData = () => {
   const queryClient = useQueryClient();
+  const queryKey = ['nomor-loan'];
 
   const loanQuery = useQuery({
-    queryKey: ['nomor-loan'],
+    queryKey,
     queryFn: getNomorLoan,
     staleTime: STALE_TIME,
   });
@@ -146,21 +196,36 @@ export const useNomorLoanData = () => {
     staleTime: STALE_TIME,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['nomor-loan'] });
-
   const addMutation = useMutation({
     mutationFn: addNomorLoan,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<NomorLoan> }) => updateNomorLoan(id, data),
-    onSuccess: invalidate,
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<NomorLoan[]>(queryKey);
+      
+      queryClient.setQueryData<NomorLoan[]>(queryKey, (old) => 
+        old?.map(item => item.id === id ? { ...item, ...data } : item) || []
+      );
+      
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteNomorLoan,
-    onSuccess: invalidate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   return {
