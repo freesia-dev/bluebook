@@ -356,7 +356,12 @@ export const updateAgendaKreditEntry = async (id: string, data: Partial<AgendaKr
   if (data.status !== undefined) updateData.status = data.status;
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
-  if (data.tanggalMasuk !== undefined) updateData.tanggal_masuk = data.tanggalMasuk.toISOString();
+  if (data.tanggalMasuk !== undefined) {
+    const tanggalDate = data.tanggalMasuk instanceof Date ? data.tanggalMasuk : new Date(data.tanggalMasuk);
+    updateData.tanggal_masuk = tanggalDate.toISOString();
+  }
+  
+  if (Object.keys(updateData).length === 0) return;
   
   const { error } = await supabase
     .from('agenda_kredit_entry')
@@ -452,7 +457,12 @@ export const updateSPPK = async (id: string, data: Partial<SPPK>): Promise<void>
   if (data.plafon !== undefined) updateData.plafon = data.plafon;
   if (data.jangkaWaktu !== undefined) updateData.jangka_waktu = data.jangkaWaktu;
   if (data.marketing !== undefined) updateData.marketing = data.marketing;
-  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
+  if (data.tanggal !== undefined) {
+    const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
+    updateData.tanggal = tanggalDate.toISOString();
+  }
+  
+  if (Object.keys(updateData).length === 0) return;
   
   const { error } = await supabase
     .from('sppk')
@@ -586,7 +596,12 @@ export const updatePK = async (id: string, data: Partial<PK>): Promise<void> => 
   if (data.jenisDebitur !== undefined) updateData.jenis_debitur = data.jenisDebitur;
   if (data.jenisPenggunaan !== undefined) updateData.jenis_penggunaan = data.jenisPenggunaan;
   if (data.sektorEkonomi !== undefined) updateData.sektor_ekonomi = data.sektorEkonomi;
-  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
+  if (data.tanggal !== undefined) {
+    const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
+    updateData.tanggal = tanggalDate.toISOString();
+  }
+  
+  if (Object.keys(updateData).length === 0) return;
   
   const { error } = await supabase
     .from('pk')
@@ -719,7 +734,12 @@ export const updateKKMPAK = async (id: string, data: Partial<KKMPAK>): Promise<v
   if (data.jenisDebitur !== undefined) updateData.jenis_debitur = data.jenisDebitur;
   if (data.kodeFasilitas !== undefined) updateData.kode_fasilitas = data.kodeFasilitas;
   if (data.sektorEkonomi !== undefined) updateData.sektor_ekonomi = data.sektorEkonomi;
-  if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
+  if (data.tanggal !== undefined) {
+    const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
+    updateData.tanggal = tanggalDate.toISOString();
+  }
+  
+  if (Object.keys(updateData).length === 0) return;
   
   const { error } = await supabase
     .from('kkmpak')
