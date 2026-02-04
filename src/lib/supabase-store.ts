@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   UserRole, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
-  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan, JenisPenggunaan
+  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan, JenisPenggunaan,
+  RecycleBinItem
 } from '@/types';
 import { toRomanMonth } from './store';
 
@@ -1053,6 +1054,86 @@ export const deleteNomorLoan = async (id: string): Promise<void> => {
     .from('nomor_loan')
     .delete()
     .eq('id', id);
+  
+  if (error) throw error;
+};
+
+// ============= RECYCLE BIN FUNCTIONS =============
+export const getRecycleBin = async (): Promise<RecycleBinItem[]> => {
+  const { data, error } = await supabase
+    .from('recycle_bin')
+    .select('*')
+    .order('deleted_at', { ascending: false });
+  
+  if (error) throw error;
+  
+  return (data || []).map(item => ({
+    id: item.id,
+    originalId: item.original_id,
+    tableName: item.table_name as RecycleBinItem['tableName'],
+    tableType: item.table_type as 'telihan' | 'meranti' | undefined,
+    data: item.data as Record<string, unknown>,
+    deletedAt: new Date(item.deleted_at),
+    deletedBy: item.deleted_by || undefined,
+  }));
+};
+
+export const restoreFromRecycleBin = async (item: RecycleBinItem): Promise<void> => {
+  // Get max nomor for the table to assign new sequential number
+  let newNomor = 1;
+  
+  if (item.tableName === 'sppk' || item.tableName === 'pk' || item.tableName === 'kkmpak') {
+    const { data: existing } = await supabase
+      .from(item.tableName)
+      .select('nomor')
+      .eq('type', item.tableType || '')
+      .order('nomor', { ascending: false })
+      .limit(1);
+    newNomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
+  } else {
+    const { data: existing } = await supabase
+      .from(item.tableName)
+      .select('nomor')
+      .order('nomor', { ascending: false })
+      .limit(1);
+    newNomor = (existing && existing.length > 0 ? (existing[0] as { nomor: number }).nomor : 0) + 1;
+  }
+
+  // Prepare data for reinsertion - remove id and update nomor
+  const restoreData = { ...item.data };
+  delete restoreData.id;
+  restoreData.nomor = newNomor;
+
+  // Insert back to original table using raw query approach
+  const { error: insertError } = await supabase
+    .from(item.tableName)
+    .insert([restoreData] as never);
+  
+  if (insertError) throw insertError;
+  
+  // Delete from recycle bin
+  const { error: deleteError } = await supabase
+    .from('recycle_bin')
+    .delete()
+    .eq('id', item.id);
+  
+  if (deleteError) throw deleteError;
+};
+
+export const permanentlyDeleteFromRecycleBin = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('recycle_bin')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+};
+
+export const emptyRecycleBin = async (): Promise<void> => {
+  const { error } = await supabase
+    .from('recycle_bin')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
   
   if (error) throw error;
 };

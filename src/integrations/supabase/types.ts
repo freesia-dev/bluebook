@@ -474,6 +474,36 @@ export type Database = {
         }
         Relationships: []
       }
+      recycle_bin: {
+        Row: {
+          data: Json
+          deleted_at: string
+          deleted_by: string | null
+          id: string
+          original_id: string
+          table_name: string
+          table_type: string | null
+        }
+        Insert: {
+          data: Json
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          original_id: string
+          table_name: string
+          table_type?: string | null
+        }
+        Update: {
+          data?: Json
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          original_id?: string
+          table_name?: string
+          table_type?: string | null
+        }
+        Relationships: []
+      }
       sektor_ekonomi: {
         Row: {
           id: string

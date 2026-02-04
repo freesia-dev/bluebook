@@ -267,3 +267,24 @@ export const JABATAN_ATM_LIST = [
   'PEMIMPIN KCP',
   'PGS. PEMIMPIN KCP',
 ];
+
+// ============= RECYCLE BIN TYPES =============
+export interface RecycleBinItem {
+  id: string;
+  originalId: string;
+  tableName: 'sppk' | 'pk' | 'kkmpak' | 'nomor_loan' | 'surat_masuk' | 'surat_keluar' | 'pengisian_atm';
+  tableType?: 'telihan' | 'meranti';
+  data: Record<string, unknown>;
+  deletedAt: Date;
+  deletedBy?: string;
+}
+
+export const TABLE_NAME_LABELS: Record<string, string> = {
+  sppk: 'SPPK',
+  pk: 'PK',
+  kkmpak: 'KK & MPAK',
+  nomor_loan: 'Nomor Loan',
+  surat_masuk: 'Surat Masuk',
+  surat_keluar: 'Surat Keluar',
+  pengisian_atm: 'Pengisian ATM',
+};
