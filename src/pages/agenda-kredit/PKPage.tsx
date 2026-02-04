@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -37,11 +37,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { PK, JenisKredit } from '@/types';
-import { 
-  getPK, addPK, updatePK, deletePK, 
-  getJenisKredit, getJenisDebitur, getJenisPenggunaan, getSektorEkonomi 
-} from '@/lib/supabase-store';
+import { PK } from '@/types';
+import { usePKData, useKreditOptions } from '@/hooks/use-agenda-kredit-data';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +47,7 @@ import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { TablePageSkeleton } from '@/components/ui/page-skeleton';
 
 interface PKPageProps {
   type: 'telihan' | 'meranti';
@@ -60,11 +58,10 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
   const { isAdmin, canEdit } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<PK[]>([]);
-  const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
-  const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
-  const [jenisPenggunaanOptions, setJenisPenggunaanOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
-  const [sektorEkonomiOptions, setSektorEkonomiOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
+  
+  // Use React Query hooks for caching
+  const { data, isLoading, add, update, remove } = usePKData(type);
+  const { jenisKredit: jenisKreditOptions, jenisDebitur: jenisDebiturOptions, jenisPenggunaan: jenisPenggunaanOptions, sektorEkonomi: sektorEkonomiOptions } = useKreditOptions();
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -86,41 +83,6 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     tanggal: new Date(),
   });
 
-  // Reset all state when type changes to prevent stale data
-  useEffect(() => {
-    // Reset state immediately
-    setData([]);
-    setSelectedItem(null);
-    setIsAddOpen(false);
-    setIsViewOpen(false);
-    setIsEditOpen(false);
-    setIsDeleteOpen(false);
-    setIsSuccessOpen(false);
-    resetForm();
-    
-    // Then load fresh data
-    loadData();
-    loadOptions();
-  }, [type]);
-
-  const loadData = async () => {
-    const allData = await getPK();
-    setData(allData.filter(s => s.type === type));
-  };
-
-  const loadOptions = async () => {
-    const [jk, jd, jp, se] = await Promise.all([
-      getJenisKredit(),
-      getJenisDebitur(),
-      getJenisPenggunaan(),
-      getSektorEkonomi()
-    ]);
-    setJenisKreditOptions(jk);
-    setJenisDebiturOptions(jd);
-    setJenisPenggunaanOptions(jp);
-    setSektorEkonomiOptions(se);
-  };
-
   const resetForm = () => {
     setFormData({
       namaDebitur: '',
@@ -134,6 +96,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       tanggal: new Date(),
     });
   };
+
 
   const handlePlafonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCurrencyInput(e.target.value);
@@ -153,7 +116,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
 
     setIsSubmitting(true);
     try {
-      const newItem = await addPK({
+      const newItem = await add({
         namaDebitur: formData.namaDebitur,
         jenisKredit: formData.jenisKredit,
         plafon: parseCurrencyValue(formData.plafon),
@@ -170,7 +133,6 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
     } finally {
       setIsSubmitting(false);
     }
@@ -179,29 +141,30 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const handleEdit = async () => {
     if (!selectedItem) return;
     
-    await updatePK(selectedItem.id, {
-      namaDebitur: formData.namaDebitur,
-      jenisKredit: formData.jenisKredit,
-      plafon: parseCurrencyValue(formData.plafon),
-      jangkaWaktu: formData.jangkaWaktu,
-      jenisDebitur: formData.jenisDebitur,
-      jenisPenggunaan: formData.jenisPenggunaan,
-      sektorEkonomi: formData.sektorEkonomi,
-      tanggal: formData.tanggal,
+    await update({
+      id: selectedItem.id,
+      data: {
+        namaDebitur: formData.namaDebitur,
+        jenisKredit: formData.jenisKredit,
+        plafon: parseCurrencyValue(formData.plafon),
+        jangkaWaktu: formData.jangkaWaktu,
+        jenisDebitur: formData.jenisDebitur,
+        jenisPenggunaan: formData.jenisPenggunaan,
+        sektorEkonomi: formData.sektorEkonomi,
+        tanggal: formData.tanggal,
+      },
     });
 
     toast({ title: 'Berhasil', description: 'Data PK berhasil diperbarui.' });
     setIsEditOpen(false);
-    loadData();
   };
 
   const handleDelete = async () => {
     if (!selectedItem) return;
-    await deletePK(selectedItem.id);
+    await remove(selectedItem.id);
     toast({ title: 'Berhasil', description: 'Data PK berhasil dihapus.' });
     setIsDeleteOpen(false);
     setSelectedItem(null);
-    loadData();
   };
 
   const handleExport = () => {
@@ -257,6 +220,11 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     },
     { key: 'jenisDebitur', header: 'Jenis Debitur' },
   ];
+
+  if (isLoading) {
+    return <TablePageSkeleton />;
+  }
+
 
   return (
     <MainLayout>
