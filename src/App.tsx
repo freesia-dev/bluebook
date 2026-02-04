@@ -109,7 +109,7 @@ const App = () => (
             <Route path="/agenda-kredit/nomor-loan" element={
               <Suspense fallback={<TablePageSkeleton />}><NomorLoanPage /></Suspense>
             } />
-            <Route path="/agenda-kredit/recycle-bin" element={
+            <Route path="/recycle-bin" element={
               <Suspense fallback={<TablePageSkeleton />}><RecycleBinPage /></Suspense>
             } />
             <Route path="/konfigurasi/users" element={
