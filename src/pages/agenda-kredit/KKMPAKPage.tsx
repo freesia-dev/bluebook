@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -36,11 +36,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { KKMPAK, JenisKredit } from '@/types';
-import { 
-  getKKMPAK, addKKMPAK, updateKKMPAK, deleteKKMPAK, 
-  getJenisKredit, getJenisDebitur, getJenisPenggunaan, getSektorEkonomi 
-} from '@/lib/supabase-store';
+import { KKMPAK } from '@/types';
+import { useKKMPAKData, useKreditOptions } from '@/hooks/use-agenda-kredit-data';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,6 +46,7 @@ import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { TablePageSkeleton } from '@/components/ui/page-skeleton';
 
 interface KKMPAKPageProps {
   type: 'telihan' | 'meranti';
@@ -59,11 +57,9 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
   const { isAdmin, canEdit } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<KKMPAK[]>([]);
-  const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
-  const [jenisDebiturOptions, setJenisDebiturOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
-  const [kodeFasilitasOptions, setKodeFasilitasOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
-  const [sektorEkonomiOptions, setSektorEkonomiOptions] = useState<{id: string; kode: string; keterangan: string}[]>([]);
+  
+  const { data, isLoading, add, update, remove } = useKKMPAKData(type);
+  const { jenisKredit: jenisKreditOptions, jenisDebitur: jenisDebiturOptions, kodeFasilitas: kodeFasilitasOptions, sektorEkonomi: sektorEkonomiOptions } = useKreditOptions();
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -83,41 +79,6 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     sektorEkonomi: '',
     tanggal: new Date(),
   });
-
-  // Reset all state when type changes to prevent stale data
-  useEffect(() => {
-    // Reset state immediately
-    setData([]);
-    setSelectedItem(null);
-    setIsAddOpen(false);
-    setIsViewOpen(false);
-    setIsEditOpen(false);
-    setIsDeleteOpen(false);
-    setIsSuccessOpen(false);
-    resetForm();
-    
-    // Then load fresh data
-    loadData();
-    loadOptions();
-  }, [type]);
-
-  const loadData = async () => {
-    const allData = await getKKMPAK();
-    setData(allData.filter(s => s.type === type));
-  };
-
-  const loadOptions = async () => {
-    const [jk, jd, jp, se] = await Promise.all([
-      getJenisKredit(),
-      getJenisDebitur(),
-      getJenisPenggunaan(),
-      getSektorEkonomi()
-    ]);
-    setJenisKreditOptions(jk);
-    setJenisDebiturOptions(jd);
-    setKodeFasilitasOptions(jp);
-    setSektorEkonomiOptions(se);
-  };
 
   const resetForm = () => {
     setFormData({
@@ -146,7 +107,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
 
     setIsSubmitting(true);
     try {
-      const newItem = await addKKMPAK({
+      const newItem = await add({
         namaDebitur: formData.namaDebitur,
         jenisKredit: formData.jenisKredit,
         plafon: parseCurrencyValue(formData.plafon),
@@ -166,7 +127,6 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
     } finally {
       setIsSubmitting(false);
     }
@@ -175,29 +135,30 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   const handleEdit = async () => {
     if (!selectedItem) return;
     
-    await updateKKMPAK(selectedItem.id, {
-      namaDebitur: formData.namaDebitur,
-      jenisKredit: formData.jenisKredit,
-      plafon: parseCurrencyValue(formData.plafon),
-      jangkaWaktu: formData.jangkaWaktu,
-      jenisDebitur: formData.jenisDebitur,
-      kodeFasilitas: formData.kodeFasilitas,
-      sektorEkonomi: formData.sektorEkonomi,
-      tanggal: formData.tanggal,
+    await update({
+      id: selectedItem.id,
+      data: {
+        namaDebitur: formData.namaDebitur,
+        jenisKredit: formData.jenisKredit,
+        plafon: parseCurrencyValue(formData.plafon),
+        jangkaWaktu: formData.jangkaWaktu,
+        jenisDebitur: formData.jenisDebitur,
+        kodeFasilitas: formData.kodeFasilitas,
+        sektorEkonomi: formData.sektorEkonomi,
+        tanggal: formData.tanggal,
+      },
     });
 
     toast({ title: 'Berhasil', description: 'Data berhasil diperbarui.' });
     setIsEditOpen(false);
-    loadData();
   };
 
   const handleDelete = async () => {
     if (!selectedItem) return;
-    await deleteKKMPAK(selectedItem.id);
+    await remove(selectedItem.id);
     toast({ title: 'Berhasil', description: 'Data berhasil dihapus.' });
     setIsDeleteOpen(false);
     setSelectedItem(null);
-    loadData();
   };
 
   const handleExport = () => {
@@ -248,13 +209,13 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     { key: 'namaDebitur', header: 'Nama Debitur' },
     { key: 'jenisKredit', header: 'Jenis Kredit', render: (item: KKMPAK) => getJenisKreditLabel(item.jenisKredit) },
     { key: 'plafon', header: 'Plafon', render: (item: KKMPAK) => formatCurrencyDisplay(item.plafon) },
-    { 
-      key: 'tanggal', 
-      header: 'Tanggal',
-      render: (item: KKMPAK) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-'
-    },
+    { key: 'tanggal', header: 'Tanggal', render: (item: KKMPAK) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-' },
     { key: 'jangkaWaktu', header: 'Jangka Waktu' },
   ];
+
+  if (isLoading) {
+    return <TablePageSkeleton />;
+  }
 
   return (
     <MainLayout>
@@ -326,9 +287,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
-            <Button onClick={handleAdd} disabled={isSubmitting}>
-              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
-            </Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : 'Simpan'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -419,7 +378,9 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
             </div>
             <p className="text-lg font-medium text-foreground whitespace-pre-line">{successMessage}</p>
           </div>
-          <DialogFooter className="justify-center"><Button onClick={() => setIsSuccessOpen(false)}>OK</Button></DialogFooter>
+          <DialogFooter className="justify-center">
+            <Button onClick={() => setIsSuccessOpen(false)}>OK</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </MainLayout>

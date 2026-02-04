@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -36,8 +36,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { SPPK, JenisKredit } from '@/types';
-import { getSPPK, addSPPK, updateSPPK, deleteSPPK, getJenisKredit } from '@/lib/supabase-store';
+import { SPPK } from '@/types';
+import { useSPPKData, useKreditOptions } from '@/hooks/use-agenda-kredit-data';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,6 +46,7 @@ import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { TablePageSkeleton } from '@/components/ui/page-skeleton';
 
 interface SPPKPageProps {
   type: 'telihan' | 'meranti';
@@ -56,8 +57,11 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   const { toast } = useToast();
   const { isAdmin, canEdit } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<SPPK[]>([]);
-  const [jenisKreditOptions, setJenisKreditOptions] = useState<JenisKredit[]>([]);
+  
+  // Use React Query hooks for caching
+  const { data, isLoading, add, update, remove } = useSPPKData(type);
+  const { jenisKredit: jenisKreditOptions } = useKreditOptions();
+  
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -74,33 +78,6 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     marketing: type === 'telihan' ? 'BAP' : '',
     tanggal: new Date(),
   });
-
-  // Reset all state when type changes to prevent stale data
-  useEffect(() => {
-    // Reset state immediately
-    setData([]);
-    setSelectedItem(null);
-    setIsAddOpen(false);
-    setIsViewOpen(false);
-    setIsEditOpen(false);
-    setIsDeleteOpen(false);
-    setIsSuccessOpen(false);
-    resetForm();
-    
-    // Then load fresh data
-    loadData();
-    loadOptions();
-  }, [type]);
-
-  const loadData = async () => {
-    const allData = await getSPPK();
-    setData(allData.filter(s => s.type === type));
-  };
-
-  const loadOptions = async () => {
-    const jk = await getJenisKredit();
-    setJenisKreditOptions(jk);
-  };
 
   const resetForm = () => {
     setFormData({
@@ -131,7 +108,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
 
     setIsSubmitting(true);
     try {
-      const newItem = await addSPPK({
+      const newItem = await add({
         namaDebitur: formData.namaDebitur,
         jenisKredit: formData.jenisKredit,
         plafon: parseCurrencyValue(formData.plafon),
@@ -145,7 +122,6 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
     } finally {
       setIsSubmitting(false);
     }
@@ -154,13 +130,16 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   const handleEdit = async () => {
     if (!selectedItem) return;
     
-    await updateSPPK(selectedItem.id, {
-      namaDebitur: formData.namaDebitur,
-      jenisKredit: formData.jenisKredit,
-      plafon: parseCurrencyValue(formData.plafon),
-      jangkaWaktu: formData.jangkaWaktu,
-      marketing: formData.marketing,
-      tanggal: formData.tanggal,
+    await update({
+      id: selectedItem.id,
+      data: {
+        namaDebitur: formData.namaDebitur,
+        jenisKredit: formData.jenisKredit,
+        plafon: parseCurrencyValue(formData.plafon),
+        jangkaWaktu: formData.jangkaWaktu,
+        marketing: formData.marketing,
+        tanggal: formData.tanggal,
+      },
     });
 
     toast({
@@ -168,20 +147,18 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       description: 'Data SPPK berhasil diperbarui.',
     });
     setIsEditOpen(false);
-    loadData();
   };
 
   const handleDelete = async () => {
     if (!selectedItem) return;
     
-    await deleteSPPK(selectedItem.id);
+    await remove(selectedItem.id);
     toast({
       title: 'Berhasil',
       description: 'Data SPPK berhasil dihapus.',
     });
     setIsDeleteOpen(false);
     setSelectedItem(null);
-    loadData();
   };
 
   const handleExport = () => {
@@ -242,6 +219,10 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     },
     { key: 'marketing', header: 'Marketing' },
   ];
+
+  if (isLoading) {
+    return <TablePageSkeleton />;
+  }
 
   return (
     <MainLayout>
