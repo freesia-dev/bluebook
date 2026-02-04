@@ -12,7 +12,8 @@ import {
   LogOut,
   User,
   X,
-  Banknote
+  Banknote,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,6 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'KK & MPAK Telihan', href: '/agenda-kredit/kk-mpak-telihan' },
     { label: 'Agenda & MPAK Meranti', href: '/agenda-kredit/agenda-mpak-meranti' },
     { label: 'Nomor Loan', href: '/agenda-kredit/nomor-loan' },
+    ...(isAdmin ? [{ label: 'Recycle Bin', href: '/agenda-kredit/recycle-bin' }] : []),
   ];
 
   const atmTelihanItems = [
