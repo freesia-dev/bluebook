@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -39,12 +39,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { SuratKeluar, KODE_SURAT_LIST } from '@/types';
-import { 
-  getSuratKeluar, 
-  addSuratKeluar, 
-  updateSuratKeluar, 
-  deleteSuratKeluar 
-} from '@/lib/supabase-store';
+import { useSuratKeluarData } from '@/hooks/use-surat-data';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,9 +51,9 @@ import { cn } from '@/lib/utils';
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
+  const { data, isLoading, add, update, remove, isAdding } = useSuratKeluarData();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<SuratKeluar[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -76,23 +71,6 @@ const SuratKeluarPage: React.FC = () => {
     tanggal: new Date(),
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const items = await getSuratKeluar();
-      setData(items);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({ title: 'Error', description: 'Gagal memuat data.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const resetForm = () => {
     setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date() });
   };
@@ -106,7 +84,7 @@ const SuratKeluarPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const newItem = await addSuratKeluar({
+      const newItem = await add({
         kodeSurat: formData.kodeSurat,
         namaPenerima: formData.namaPenerima,
         perihal: formData.perihal,
@@ -121,7 +99,6 @@ const SuratKeluarPage: React.FC = () => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
     } finally {
@@ -130,18 +107,20 @@ const SuratKeluarPage: React.FC = () => {
   };
 
   const handleEdit = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || isSubmitting) return;
     
+    setIsSubmitting(true);
     try {
-      await updateSuratKeluar(selectedItem.id, {
+      await update({ id: selectedItem.id, data: {
         ...formData,
         tanggal: formData.tanggal,
-      });
+      }});
       toast({ title: 'Berhasil', description: 'Data surat keluar berhasil diperbarui.' });
       setIsEditOpen(false);
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui data.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -149,11 +128,10 @@ const SuratKeluarPage: React.FC = () => {
     if (!selectedItem) return;
     
     try {
-      await deleteSuratKeluar(selectedItem.id);
+      await remove(selectedItem.id);
       toast({ title: 'Berhasil', description: 'Data surat keluar berhasil dihapus.' });
       setIsDeleteOpen(false);
       setSelectedItem(null);
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menghapus data.', variant: 'destructive' });
     }
@@ -162,9 +140,8 @@ const SuratKeluarPage: React.FC = () => {
   const handleUpdateStatus = async (item: SuratKeluar) => {
     const newStatus = item.status === 'Belum Dikirim' ? 'Sudah Dikirim' : 'Belum Dikirim';
     try {
-      await updateSuratKeluar(item.id, { status: newStatus });
+      await update({ id: item.id, data: { status: newStatus } });
       toast({ title: 'Status Diperbarui', description: `Status diubah menjadi ${newStatus}.` });
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui status.', variant: 'destructive' });
     }

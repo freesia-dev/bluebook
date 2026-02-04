@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePrefetchData } from '@/hooks/use-prefetch-data';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -182,6 +183,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Demo users can only view, not edit
   const userRole: 'admin' | 'user' | 'demo' = isAdmin ? 'admin' : isDemo ? 'demo' : 'user';
   const canEdit = !isDemo; // Demo users cannot edit
+
+  // Prefetch common data after authentication
+  usePrefetchData(!!session && isApproved);
 
   return (
     <AuthContext.Provider value={{

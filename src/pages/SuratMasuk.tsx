@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -39,12 +39,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { SuratMasuk, KODE_SURAT_LIST } from '@/types';
-import { 
-  getSuratMasuk, 
-  addSuratMasuk, 
-  updateSuratMasuk, 
-  deleteSuratMasuk 
-} from '@/lib/supabase-store';
+import { useSuratMasukData } from '@/hooks/use-surat-data';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,9 +47,8 @@ import { useAuth } from '@/contexts/AuthContext';
 const SuratMasukPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [data, setData] = useState<SuratMasuk[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, add, update, remove, isAdding } = useSuratMasukData();
+  
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -62,6 +56,7 @@ const SuratMasukPage: React.FC = () => {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedItem, setSelectedItem] = useState<SuratMasuk | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     kodeSurat: '',
@@ -72,23 +67,6 @@ const SuratMasukPage: React.FC = () => {
     keterangan: '',
     tanggalMasuk: new Date(),
   });
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const items = await getSuratMasuk();
-      setData(items);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({ title: 'Error', description: 'Gagal memuat data.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -111,7 +89,7 @@ const SuratMasukPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const newItem = await addSuratMasuk({
+      const newItem = await add({
         kodeSurat: formData.kodeSurat,
         nomorSuratMasuk: formData.nomorSuratMasuk,
         namaPengirim: formData.namaPengirim,
@@ -127,7 +105,6 @@ const SuratMasukPage: React.FC = () => {
       setIsAddOpen(false);
       setIsSuccessOpen(true);
       resetForm();
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menyimpan data.', variant: 'destructive' });
     } finally {
@@ -136,10 +113,11 @@ const SuratMasukPage: React.FC = () => {
   };
 
   const handleEdit = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || isSubmitting) return;
     
+    setIsSubmitting(true);
     try {
-      await updateSuratMasuk(selectedItem.id, {
+      await update({ id: selectedItem.id, data: {
         kodeSurat: formData.kodeSurat,
         nomorSuratMasuk: formData.nomorSuratMasuk,
         namaPengirim: formData.namaPengirim,
@@ -147,13 +125,14 @@ const SuratMasukPage: React.FC = () => {
         tujuanDisposisi: formData.tujuanDisposisi,
         keterangan: formData.keterangan,
         tanggalMasuk: formData.tanggalMasuk,
-      });
+      }});
 
       toast({ title: 'Berhasil', description: 'Data surat masuk berhasil diperbarui.' });
       setIsEditOpen(false);
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui data.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -161,11 +140,10 @@ const SuratMasukPage: React.FC = () => {
     if (!selectedItem) return;
     
     try {
-      await deleteSuratMasuk(selectedItem.id);
+      await remove(selectedItem.id);
       toast({ title: 'Berhasil', description: 'Data surat masuk berhasil dihapus.' });
       setIsDeleteOpen(false);
       setSelectedItem(null);
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal menghapus data.', variant: 'destructive' });
     }
@@ -174,9 +152,8 @@ const SuratMasukPage: React.FC = () => {
   const handleUpdateStatus = async (item: SuratMasuk) => {
     const newStatus = item.status === 'Belum Disposisi' ? 'Sudah Disposisi' : 'Belum Disposisi';
     try {
-      await updateSuratMasuk(item.id, { status: newStatus });
+      await update({ id: item.id, data: { status: newStatus } });
       toast({ title: 'Status Diperbarui', description: `Status diubah menjadi ${newStatus}.` });
-      loadData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui status.', variant: 'destructive' });
     }
