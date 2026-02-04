@@ -133,24 +133,36 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   };
 
   const handleEdit = async () => {
+    if (isSubmitting) return;
     if (!selectedItem) return;
-    
-    await update({
-      id: selectedItem.id,
-      data: {
-        namaDebitur: formData.namaDebitur,
-        jenisKredit: formData.jenisKredit,
-        plafon: parseCurrencyValue(formData.plafon),
-        jangkaWaktu: formData.jangkaWaktu,
-        jenisDebitur: formData.jenisDebitur,
-        kodeFasilitas: formData.kodeFasilitas,
-        sektorEkonomi: formData.sektorEkonomi,
-        tanggal: formData.tanggal,
-      },
-    });
 
-    toast({ title: 'Berhasil', description: 'Data berhasil diperbarui.' });
-    setIsEditOpen(false);
+    setIsSubmitting(true);
+    try {
+      await update({
+        id: selectedItem.id,
+        data: {
+          namaDebitur: formData.namaDebitur,
+          jenisKredit: formData.jenisKredit,
+          plafon: parseCurrencyValue(formData.plafon),
+          jangkaWaktu: formData.jangkaWaktu,
+          jenisDebitur: formData.jenisDebitur,
+          kodeFasilitas: formData.kodeFasilitas,
+          sektorEkonomi: formData.sektorEkonomi,
+          tanggal: formData.tanggal,
+        },
+      });
+
+      toast({ title: 'Berhasil', description: 'Data berhasil diperbarui.' });
+      setIsEditOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Gagal memperbarui data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -350,7 +362,9 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-            <Button onClick={handleEdit}>Simpan Perubahan</Button>
+            <Button onClick={handleEdit} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

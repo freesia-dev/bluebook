@@ -133,8 +133,10 @@ const AgendaKreditPage: React.FC = () => {
   };
 
   const handleEdit = async () => {
+    if (isSubmitting) return;
     if (!selectedItem) return;
-    
+
+    setIsSubmitting(true);
     try {
       await updateAgendaKreditEntry(selectedItem.id, {
         kodeSurat: formData.kodeSurat,
@@ -154,6 +156,8 @@ const AgendaKreditPage: React.FC = () => {
       refreshData();
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui data.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -528,7 +532,9 @@ const AgendaKreditPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-            <Button onClick={handleEdit}>Simpan Perubahan</Button>
+            <Button onClick={handleEdit} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

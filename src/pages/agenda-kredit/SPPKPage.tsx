@@ -128,25 +128,37 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   };
 
   const handleEdit = async () => {
+    if (isSubmitting) return;
     if (!selectedItem) return;
-    
-    await update({
-      id: selectedItem.id,
-      data: {
-        namaDebitur: formData.namaDebitur,
-        jenisKredit: formData.jenisKredit,
-        plafon: parseCurrencyValue(formData.plafon),
-        jangkaWaktu: formData.jangkaWaktu,
-        marketing: formData.marketing,
-        tanggal: formData.tanggal,
-      },
-    });
 
-    toast({
-      title: 'Berhasil',
-      description: 'Data SPPK berhasil diperbarui.',
-    });
-    setIsEditOpen(false);
+    setIsSubmitting(true);
+    try {
+      await update({
+        id: selectedItem.id,
+        data: {
+          namaDebitur: formData.namaDebitur,
+          jenisKredit: formData.jenisKredit,
+          plafon: parseCurrencyValue(formData.plafon),
+          jangkaWaktu: formData.jangkaWaktu,
+          marketing: formData.marketing,
+          tanggal: formData.tanggal,
+        },
+      });
+
+      toast({
+        title: 'Berhasil',
+        description: 'Data SPPK berhasil diperbarui.',
+      });
+      setIsEditOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Gagal memperbarui data SPPK.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -446,7 +458,9 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-            <Button onClick={handleEdit}>Simpan Perubahan</Button>
+            <Button onClick={handleEdit} disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
