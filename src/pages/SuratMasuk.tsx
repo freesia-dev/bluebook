@@ -195,9 +195,12 @@ const SuratMasukPage: React.FC = () => {
       header: 'Status',
       render: (item: SuratMasuk) => (
         <Badge 
-          variant={item.status === 'Sudah Disposisi' ? 'default' : 'secondary'}
-          className="cursor-pointer"
-          onClick={() => handleUpdateStatus(item)}
+          variant={item.status === 'Sudah Disposisi' ? 'success' : 'warning'}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleUpdateStatus(item);
+          }}
         >
           {item.status}
         </Badge>
