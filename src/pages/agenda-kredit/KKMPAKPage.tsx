@@ -84,7 +84,19 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
     tanggal: new Date(),
   });
 
+  // Reset all state when type changes to prevent stale data
   useEffect(() => {
+    // Reset state immediately
+    setData([]);
+    setSelectedItem(null);
+    setIsAddOpen(false);
+    setIsViewOpen(false);
+    setIsEditOpen(false);
+    setIsDeleteOpen(false);
+    setIsSuccessOpen(false);
+    resetForm();
+    
+    // Then load fresh data
     loadData();
     loadOptions();
   }, [type]);
