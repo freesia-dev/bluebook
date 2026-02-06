@@ -173,7 +173,7 @@ export const GlobalSearch: React.FC = () => {
       </div>
 
       {showDropdown && (
-        <div className="absolute top-full mt-1.5 right-0 w-[360px] md:w-[420px] rounded-lg border bg-popover text-popover-foreground shadow-lg z-50 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-150">
+        <div className="fixed md:absolute left-2 right-2 md:left-auto md:right-0 top-14 md:top-full md:mt-1.5 md:w-[420px] rounded-lg border bg-popover text-popover-foreground shadow-lg z-50 overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-150">
           {query.length < 2 ? (
             <div className="px-4 py-6 text-center text-sm text-muted-foreground">
               Ketik minimal 2 karakter untuk mencari...
