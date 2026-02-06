@@ -438,6 +438,45 @@ export type Database = {
         }
         Relationships: []
       }
+      penyelesaian_selisih: {
+        Row: {
+          catatan: string | null
+          created_at: string
+          id: string
+          nomor: number
+          pemimpin: string | null
+          petugas: string
+          status: string
+          tanggal_pengaduan: string
+          tanggal_penyelesaian: string | null
+          teller: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          nomor: number
+          pemimpin?: string | null
+          petugas: string
+          status?: string
+          tanggal_pengaduan: string
+          tanggal_penyelesaian?: string | null
+          teller?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          nomor?: number
+          pemimpin?: string | null
+          petugas?: string
+          status?: string
+          tanggal_pengaduan?: string
+          tanggal_penyelesaian?: string | null
+          teller?: string | null
+        }
+        Relationships: []
+      }
       pk: {
         Row: {
           created_at: string
@@ -569,6 +608,8 @@ export type Database = {
           no_reff: string | null
           nominal: number
           pengisian_atm_id: string | null
+          penyelesaian_id: string | null
+          status: string
           tanggal: string
         }
         Insert: {
@@ -578,6 +619,8 @@ export type Database = {
           no_reff?: string | null
           nominal?: number
           pengisian_atm_id?: string | null
+          penyelesaian_id?: string | null
+          status?: string
           tanggal: string
         }
         Update: {
@@ -587,6 +630,8 @@ export type Database = {
           no_reff?: string | null
           nominal?: number
           pengisian_atm_id?: string | null
+          penyelesaian_id?: string | null
+          status?: string
           tanggal?: string
         }
         Relationships: [
@@ -595,6 +640,13 @@ export type Database = {
             columns: ["pengisian_atm_id"]
             isOneToOne: false
             referencedRelation: "pengisian_atm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "selisih_atm_penyelesaian_id_fkey"
+            columns: ["penyelesaian_id"]
+            isOneToOne: false
+            referencedRelation: "penyelesaian_selisih"
             referencedColumns: ["id"]
           },
         ]
