@@ -183,7 +183,7 @@ export const GlobalSearch: React.FC = () => {
               Tidak ada hasil ditemukan.
             </div>
           ) : (
-            <ScrollArea className="max-h-[60vh]">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain">
               <div className="p-1.5">
                 {Object.entries(groupedResults).map(([module, items]) => (
                   <div key={module}>
@@ -218,7 +218,7 @@ export const GlobalSearch: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </div>
       )}
