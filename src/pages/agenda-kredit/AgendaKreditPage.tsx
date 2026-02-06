@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
@@ -44,8 +44,10 @@ import {
   getAgendaKreditEntry, 
   addAgendaKreditEntry, 
   updateAgendaKreditEntry, 
-  deleteAgendaKreditEntry 
+  deleteAgendaKreditEntry,
+  bulkUpdateAgendaKreditStatus 
 } from '@/lib/supabase-store';
+import BulkStatusAction from '@/components/BulkStatusAction';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -247,6 +249,19 @@ const AgendaKreditPage: React.FC = () => {
     return acc;
   }, {} as Record<string, typeof KODE_SURAT_LIST>);
 
+  const bulkStatusOptions = useMemo(() => [
+    {
+      from: 'Belum Disposisi',
+      to: 'Sudah Disposisi',
+      count: data.filter(d => d.status === 'Belum Disposisi').length,
+    },
+    {
+      from: 'Sudah Disposisi',
+      to: 'Belum Disposisi',
+      count: data.filter(d => d.status === 'Sudah Disposisi').length,
+    },
+  ], [data]);
+
   const DatePickerField = ({ label, value, onChange, required = false }: { label: string; value: Date; onChange: (date: Date) => void; required?: boolean }) => (
     <div className="space-y-2">
       <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
@@ -318,6 +333,15 @@ const AgendaKreditPage: React.FC = () => {
         canEdit={canEdit}
         searchPlaceholder="Cari agenda kredit..."
         addLabel="Tambah Agenda Kredit"
+        toolbarActions={
+          canEdit ? (
+            <BulkStatusAction
+              statusOptions={bulkStatusOptions}
+              onBulkUpdate={bulkUpdateAgendaKreditStatus}
+              onSuccess={refreshData}
+            />
+          ) : undefined
+        }
       />
 
       {/* Add Dialog */}

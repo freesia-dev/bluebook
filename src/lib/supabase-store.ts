@@ -424,6 +424,40 @@ export const deleteAgendaKreditEntry = async (id: string): Promise<void> => {
   if (error) throw error;
 };
 
+// ============= BULK STATUS UPDATE FUNCTIONS =============
+export const bulkUpdateSuratMasukStatus = async (fromStatus: string, toStatus: string): Promise<number> => {
+  const { data, error } = await supabase
+    .from('surat_masuk')
+    .update({ status: toStatus })
+    .eq('status', fromStatus)
+    .select('id');
+  
+  if (error) throw error;
+  return data?.length || 0;
+};
+
+export const bulkUpdateSuratKeluarStatus = async (fromStatus: string, toStatus: string): Promise<number> => {
+  const { data, error } = await supabase
+    .from('surat_keluar')
+    .update({ status: toStatus })
+    .eq('status', fromStatus)
+    .select('id');
+  
+  if (error) throw error;
+  return data?.length || 0;
+};
+
+export const bulkUpdateAgendaKreditStatus = async (fromStatus: string, toStatus: string): Promise<number> => {
+  const { data, error } = await supabase
+    .from('agenda_kredit_entry')
+    .update({ status: toStatus })
+    .eq('status', fromStatus)
+    .select('id');
+  
+  if (error) throw error;
+  return data?.length || 0;
+};
+
 // ============= SPPK FUNCTIONS =============
 export const getSPPK = async (): Promise<SPPK[]> => {
   const { data, error } = await supabase
