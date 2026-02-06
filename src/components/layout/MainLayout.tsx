@@ -7,6 +7,7 @@ import { Menu, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -54,9 +55,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           >
             <Menu className="w-5 h-5" />
           </Button>
-          <h1 className="font-display font-bold text-lg">Bluebook Telihan</h1>
+          <h1 className="font-display font-bold text-lg hidden sm:block">Bluebook Telihan</h1>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <GlobalSearch />
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Main Content - shifts when sidebar is open on desktop */}

@@ -35,6 +35,7 @@ const InstallApp = lazy(() => import("./pages/InstallApp"));
 const DatabasePengisianATM = lazy(() => import("./pages/atm-telihan/DatabasePengisianATM"));
 const BAPengisianATM = lazy(() => import("./pages/atm-telihan/BAPengisianATM"));
 const KonfigurasiATMPage = lazy(() => import("./pages/atm-telihan/KonfigurasiATMPage"));
+const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -112,6 +113,9 @@ const App = () => (
             } />
             <Route path="/recycle-bin" element={
               <Suspense fallback={<TablePageSkeleton />}><RecycleBinPage /></Suspense>
+            } />
+            <Route path="/activity-log" element={
+              <Suspense fallback={<TablePageSkeleton />}><ActivityLogPage /></Suspense>
             } />
             <Route path="/konfigurasi/users" element={
               <Suspense fallback={<TablePageSkeleton />}><UsersPage /></Suspense>
