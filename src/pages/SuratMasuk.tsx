@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
+import BulkStatusAction from '@/components/BulkStatusAction';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +41,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { SuratMasuk, KODE_SURAT_LIST } from '@/types';
 import { useSuratMasukData } from '@/hooks/use-surat-data';
+import { bulkUpdateSuratMasukStatus } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,7 +49,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const SuratMasukPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
-  const { data, isLoading, add, update, remove, isAdding } = useSuratMasukData();
+  const { data, isLoading, add, update, remove, isAdding, refetch } = useSuratMasukData();
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -216,6 +218,19 @@ const SuratMasukPage: React.FC = () => {
     return acc;
   }, {} as Record<string, typeof KODE_SURAT_LIST>);
 
+  const bulkStatusOptions = useMemo(() => [
+    {
+      from: 'Belum Disposisi',
+      to: 'Sudah Disposisi',
+      count: data.filter(d => d.status === 'Belum Disposisi').length,
+    },
+    {
+      from: 'Sudah Disposisi',
+      to: 'Belum Disposisi',
+      count: data.filter(d => d.status === 'Sudah Disposisi').length,
+    },
+  ], [data]);
+
   const DatePickerField = ({ label, value, onChange, required = false }: { label: string; value: Date; onChange: (date: Date) => void; required?: boolean }) => (
     <div className="space-y-2">
       <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
@@ -284,6 +299,15 @@ const SuratMasukPage: React.FC = () => {
         canEdit={canEdit}
         searchPlaceholder="Cari surat masuk..."
         addLabel="Tambah Surat Masuk"
+        toolbarActions={
+          canEdit ? (
+            <BulkStatusAction
+              statusOptions={bulkStatusOptions}
+              onBulkUpdate={bulkUpdateSuratMasukStatus}
+              onSuccess={() => refetch()}
+            />
+          ) : undefined
+        }
       />
 
       {/* Add Dialog */}

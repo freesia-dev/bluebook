@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
+import BulkStatusAction from '@/components/BulkStatusAction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { SuratKeluar, KODE_SURAT_LIST } from '@/types';
 import { useSuratKeluarData } from '@/hooks/use-surat-data';
+import { bulkUpdateSuratKeluarStatus } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,7 +53,7 @@ import { cn } from '@/lib/utils';
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
-  const { data, isLoading, add, update, remove, isAdding } = useSuratKeluarData();
+  const { data, isLoading, add, update, remove, isAdding, refetch } = useSuratKeluarData();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -198,6 +200,19 @@ const SuratKeluarPage: React.FC = () => {
     return acc;
   }, {} as Record<string, typeof KODE_SURAT_LIST>);
 
+  const bulkStatusOptions = useMemo(() => [
+    {
+      from: 'Belum Dikirim',
+      to: 'Sudah Dikirim',
+      count: data.filter(d => d.status === 'Belum Dikirim').length,
+    },
+    {
+      from: 'Sudah Dikirim',
+      to: 'Belum Dikirim',
+      count: data.filter(d => d.status === 'Sudah Dikirim').length,
+    },
+  ], [data]);
+
   const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -253,6 +268,15 @@ const SuratKeluarPage: React.FC = () => {
         canEdit={canEdit}
         searchPlaceholder="Cari surat keluar..."
         addLabel="Tambah Surat Keluar"
+        toolbarActions={
+          canEdit ? (
+            <BulkStatusAction
+              statusOptions={bulkStatusOptions}
+              onBulkUpdate={bulkUpdateSuratKeluarStatus}
+              onSuccess={() => refetch()}
+            />
+          ) : undefined
+        }
       />
 
       {/* Add Dialog */}

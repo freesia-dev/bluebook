@@ -48,6 +48,7 @@ interface DataTableProps<T> {
   showActions?: boolean;
   canDelete?: boolean;
   canEdit?: boolean;
+  toolbarActions?: React.ReactNode;
 }
 
 type SortOrder = 'asc' | 'desc' | null;
@@ -65,6 +66,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
   showActions = true,
   canDelete = true,
   canEdit = true,
+  toolbarActions,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [filterColumn, setFilterColumn] = useState<string>('');
@@ -273,6 +275,8 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
             Hapus Filter
           </Button>
         )}
+
+        {toolbarActions}
 
         <div className="flex-1" />
 
