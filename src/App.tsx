@@ -35,6 +35,8 @@ const InstallApp = lazy(() => import("./pages/InstallApp"));
 const DatabasePengisianATM = lazy(() => import("./pages/atm-telihan/DatabasePengisianATM"));
 const BAPengisianATM = lazy(() => import("./pages/atm-telihan/BAPengisianATM"));
 const KonfigurasiATMPage = lazy(() => import("./pages/atm-telihan/KonfigurasiATMPage"));
+const PenyelesaianSelisihPage = lazy(() => import("./pages/atm-telihan/PenyelesaianSelisihPage"));
+const BAPenyelesaianSelisih = lazy(() => import("./pages/atm-telihan/BAPenyelesaianSelisih"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 
 // Minimal login loader (no layout needed)
@@ -147,6 +149,12 @@ const App = () => (
             } />
             <Route path="/atm-telihan/konfigurasi" element={
               <Suspense fallback={<TablePageSkeleton />}><KonfigurasiATMPage /></Suspense>
+            } />
+            <Route path="/atm-telihan/penyelesaian-selisih" element={
+              <Suspense fallback={<TablePageSkeleton />}><PenyelesaianSelisihPage /></Suspense>
+            } />
+            <Route path="/atm-telihan/ba-penyelesaian" element={
+              <Suspense fallback={<GenericPageSkeleton />}><BAPenyelesaianSelisih /></Suspense>
             } />
             {/* Install PWA */}
             <Route path="/install" element={

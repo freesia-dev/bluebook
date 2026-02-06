@@ -254,6 +254,21 @@ export interface SelisihATM {
   noReff?: string;
   nominal: number;
   keterangan?: string;
+  status: string;
+  penyelesaianId?: string;
+  createdAt: Date;
+}
+
+export interface PenyelesaianSelisih {
+  id: string;
+  nomor: number;
+  tanggalPengaduan: Date;
+  tanggalPenyelesaian?: Date;
+  petugas: string;
+  teller?: string;
+  pemimpin?: string;
+  catatan?: string;
+  status: 'Dalam Proses' | 'Sudah Diselesaikan';
   createdAt: Date;
 }
 
@@ -272,7 +287,7 @@ export const JABATAN_ATM_LIST = [
 export interface RecycleBinItem {
   id: string;
   originalId: string;
-  tableName: 'agenda_kredit_entry' | 'sppk' | 'pk' | 'kkmpak' | 'nomor_loan' | 'surat_masuk' | 'surat_keluar' | 'pengisian_atm';
+  tableName: 'agenda_kredit_entry' | 'sppk' | 'pk' | 'kkmpak' | 'nomor_loan' | 'surat_masuk' | 'surat_keluar' | 'pengisian_atm' | 'penyelesaian_selisih';
   tableType?: 'telihan' | 'meranti';
   data: Record<string, unknown>;
   deletedAt: Date;
@@ -288,4 +303,5 @@ export const TABLE_NAME_LABELS: Record<string, string> = {
   surat_masuk: 'Surat Masuk',
   surat_keluar: 'Surat Keluar',
   pengisian_atm: 'Pengisian ATM',
+  penyelesaian_selisih: 'Penyelesaian Selisih ATM',
 };

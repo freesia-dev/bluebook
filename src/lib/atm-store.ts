@@ -333,6 +333,8 @@ export const getSelisihATM = async (pengisianAtmId?: string): Promise<SelisihATM
     noReff: s.no_reff || undefined,
     nominal: Number(s.nominal),
     keterangan: s.keterangan || undefined,
+    status: s.status || 'Belum Diselesaikan',
+    penyelesaianId: s.penyelesaian_id || undefined,
     createdAt: new Date(s.created_at)
   }));
 };
@@ -359,6 +361,8 @@ export const addSelisihATM = async (data: Omit<SelisihATM, 'id' | 'createdAt'>):
     noReff: result.no_reff || undefined,
     nominal: Number(result.nominal),
     keterangan: result.keterangan || undefined,
+    status: result.status || 'Belum Diselesaikan',
+    penyelesaianId: result.penyelesaian_id || undefined,
     createdAt: new Date(result.created_at)
   };
 };
