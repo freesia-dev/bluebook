@@ -548,7 +548,7 @@ const BAPengisianATM = () => {
                         <div style={{ marginBottom: '8px' }}>Staff KCP,</div>
                         <div style={{ marginBottom: '60px' }}></div>
                         <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
-                          {configOptions.find(c => c.jabatan === 'STAFF KCP')?.nama || '................................'}
+                          {selectedData.yangMenyerahkan || configOptions.find(c => c.jabatan === 'STAFF KCP')?.nama || '................................'}
                         </div>
                         <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>STAFF KCP</div>
                       </div>
@@ -556,7 +556,7 @@ const BAPengisianATM = () => {
                         <div style={{ marginBottom: '8px' }}>Teller,</div>
                         <div style={{ marginBottom: '60px' }}></div>
                         <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
-                          {configOptions.find(c => c.jabatan === 'TELLER')?.nama || '................................'}
+                          {selectedData.namaTeller || configOptions.find(c => c.jabatan === 'TELLER')?.nama || '................................'}
                         </div>
                         <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>TELLER</div>
                       </div>
