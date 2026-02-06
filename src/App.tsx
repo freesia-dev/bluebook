@@ -31,6 +31,7 @@ const About = lazy(() => import("./pages/About"));
 const Panduan = lazy(() => import("./pages/Panduan"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UnderConstruction = lazy(() => import("./pages/UnderConstruction"));
+const InstallApp = lazy(() => import("./pages/InstallApp"));
 const DatabasePengisianATM = lazy(() => import("./pages/atm-telihan/DatabasePengisianATM"));
 const BAPengisianATM = lazy(() => import("./pages/atm-telihan/BAPengisianATM"));
 const KonfigurasiATMPage = lazy(() => import("./pages/atm-telihan/KonfigurasiATMPage"));
@@ -142,6 +143,10 @@ const App = () => (
             } />
             <Route path="/atm-telihan/konfigurasi" element={
               <Suspense fallback={<TablePageSkeleton />}><KonfigurasiATMPage /></Suspense>
+            } />
+            {/* Install PWA */}
+            <Route path="/install" element={
+              <Suspense fallback={<LoginLoader />}><InstallApp /></Suspense>
             } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>

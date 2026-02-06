@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock } from "lucide-react";
+import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock, Download } from "lucide-react";
 import logo from "@/assets/logo_bluebook.png";
 
 const HeroSection = () => {
@@ -92,6 +92,15 @@ const HeroSection = () => {
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Lihat Fitur
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="px-8 py-6 text-lg font-semibold border-2 border-brand-secondary/30 text-brand-secondary hover:bg-brand-secondary/10 bg-transparent self-start"
+                onClick={() => navigate('/install')}
+              >
+                <Download className="mr-2 w-5 h-5" />
+                Install App
               </Button>
             </div>
 
