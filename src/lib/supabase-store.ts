@@ -139,6 +139,19 @@ export const addSuratMasuk = async (data: Omit<SuratMasuk, 'id' | 'nomor' | 'nom
 };
 
 export const updateSuratMasuk = async (id: string, data: Partial<SuratMasuk>): Promise<void> => {
+  // If fields affecting nomor_agenda change, we need to recalculate it
+  const needsRecalc = data.kodeSurat !== undefined || data.tanggalMasuk !== undefined;
+  
+  let currentRecord: Record<string, unknown> | null = null;
+  if (needsRecalc) {
+    const { data: existing } = await supabase
+      .from('surat_masuk')
+      .select('*')
+      .eq('id', id)
+      .single();
+    currentRecord = existing;
+  }
+
   const updateData: Record<string, unknown> = {};
   if (data.kodeSurat !== undefined) updateData.kode_surat = data.kodeSurat;
   if (data.nomorSuratMasuk !== undefined) updateData.nomor_surat_masuk = data.nomorSuratMasuk;
@@ -149,6 +162,16 @@ export const updateSuratMasuk = async (id: string, data: Partial<SuratMasuk>): P
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
   if (data.tanggalMasuk !== undefined) updateData.tanggal_masuk = data.tanggalMasuk.toISOString();
+  
+  // Recalculate nomor_agenda if needed
+  if (needsRecalc && currentRecord) {
+    const kodeSurat = data.kodeSurat || (currentRecord.kode_surat as string);
+    const tanggalMasuk = data.tanggalMasuk 
+      ? (data.tanggalMasuk instanceof Date ? data.tanggalMasuk : new Date(data.tanggalMasuk))
+      : new Date((currentRecord.tanggal_masuk as string) || (currentRecord.created_at as string));
+    const nomor = currentRecord.nomor as number;
+    updateData.nomor_agenda = `${String(nomor).padStart(3, '0')}/${kodeSurat}/BPD-TLH/${toRomanMonth(tanggalMasuk.getMonth())}/${tanggalMasuk.getFullYear()}`;
+  }
   
   const { error } = await supabase
     .from('surat_masuk')
@@ -242,6 +265,18 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
 };
 
 export const updateSuratKeluar = async (id: string, data: Partial<SuratKeluar>): Promise<void> => {
+  const needsRecalc = data.kodeSurat !== undefined || data.tanggal !== undefined;
+  
+  let currentRecord: Record<string, unknown> | null = null;
+  if (needsRecalc) {
+    const { data: existing } = await supabase
+      .from('surat_keluar')
+      .select('*')
+      .eq('id', id)
+      .single();
+    currentRecord = existing;
+  }
+
   const updateData: Record<string, unknown> = {};
   if (data.kodeSurat !== undefined) updateData.kode_surat = data.kodeSurat;
   if (data.namaPenerima !== undefined) updateData.nama_penerima = data.namaPenerima;
@@ -251,6 +286,15 @@ export const updateSuratKeluar = async (id: string, data: Partial<SuratKeluar>):
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
   if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
+  
+  if (needsRecalc && currentRecord) {
+    const kodeSurat = data.kodeSurat || (currentRecord.kode_surat as string);
+    const tanggal = data.tanggal 
+      ? (data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal as string))
+      : new Date((currentRecord.tanggal as string) || (currentRecord.created_at as string));
+    const nomor = currentRecord.nomor as number;
+    updateData.nomor_agenda = `${String(nomor).padStart(3, '0')}/${kodeSurat}/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
+  }
   
   const { error } = await supabase
     .from('surat_keluar')
@@ -451,6 +495,18 @@ export const addSPPK = async (data: Omit<SPPK, 'id' | 'nomor' | 'nomorSPPK' | 'c
 };
 
 export const updateSPPK = async (id: string, data: Partial<SPPK>): Promise<void> => {
+  const needsRecalc = data.tanggal !== undefined;
+  
+  let currentRecord: Record<string, unknown> | null = null;
+  if (needsRecalc) {
+    const { data: existing } = await supabase
+      .from('sppk')
+      .select('*')
+      .eq('id', id)
+      .single();
+    currentRecord = existing;
+  }
+
   const updateData: Record<string, unknown> = {};
   if (data.namaDebitur !== undefined) updateData.nama_debitur = data.namaDebitur;
   if (data.jenisKredit !== undefined) updateData.jenis_kredit = data.jenisKredit;
@@ -460,6 +516,16 @@ export const updateSPPK = async (id: string, data: Partial<SPPK>): Promise<void>
   if (data.tanggal !== undefined) {
     const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
     updateData.tanggal = tanggalDate.toISOString();
+  }
+  
+  if (needsRecalc && currentRecord) {
+    const tanggal = data.tanggal 
+      ? (data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal as string))
+      : new Date((currentRecord.tanggal as string) || (currentRecord.created_at as string));
+    const nomor = currentRecord.nomor as number;
+    const type = currentRecord.type as string;
+    const prefix = type === 'telihan' ? 'D-1/BPD-TLH' : 'SPPK/ULM-TLH';
+    updateData.nomor_sppk = `${String(nomor).padStart(3, '0')}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   }
   
   if (Object.keys(updateData).length === 0) return;
@@ -587,7 +653,20 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
   };
 };
 
-export const updatePK = async (id: string, data: Partial<PK>): Promise<void> => {
+export const updatePK = async (id: string, data: Partial<PK> & { isKBK?: boolean }): Promise<void> => {
+  const needsRecalc = data.jenisDebitur !== undefined || data.jenisPenggunaan !== undefined || 
+    data.sektorEkonomi !== undefined || data.jenisKredit !== undefined || data.tanggal !== undefined;
+  
+  let currentRecord: Record<string, unknown> | null = null;
+  if (needsRecalc) {
+    const { data: existing } = await supabase
+      .from('pk')
+      .select('*')
+      .eq('id', id)
+      .single();
+    currentRecord = existing;
+  }
+
   const updateData: Record<string, unknown> = {};
   if (data.namaDebitur !== undefined) updateData.nama_debitur = data.namaDebitur;
   if (data.jenisKredit !== undefined) updateData.jenis_kredit = data.jenisKredit;
@@ -599,6 +678,37 @@ export const updatePK = async (id: string, data: Partial<PK>): Promise<void> => 
   if (data.tanggal !== undefined) {
     const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
     updateData.tanggal = tanggalDate.toISOString();
+  }
+  
+  if (needsRecalc && currentRecord) {
+    const nomor = currentRecord.nomor as number;
+    const type = currentRecord.type as string;
+    const jenisKredit = (data.jenisKredit || currentRecord.jenis_kredit) as string;
+    const jenisDebitur = (data.jenisDebitur || currentRecord.jenis_debitur) as string;
+    const jenisPenggunaan = (data.jenisPenggunaan || currentRecord.jenis_penggunaan) as string;
+    const sektorEkonomi = (data.sektorEkonomi || currentRecord.sektor_ekonomi) as string;
+    const tanggal = data.tanggal 
+      ? (data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal as string))
+      : new Date((currentRecord.tanggal as string) || (currentRecord.created_at as string));
+    
+    const nomorPadded = String(nomor).padStart(3, '0');
+    const prefix = type === 'telihan' ? 'BPD-TLH' : 'ULM-TLH';
+    const produkKredit = getProdukKreditFromValue(jenisKredit);
+    
+    let nomorPK: string;
+    
+    if (type === 'telihan' && data.isKBK) {
+      nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
+    } else if (type === 'meranti' && isSpecialKreditType(jenisKredit)) {
+      nomorPK = `${nomorPadded}/${produkKredit}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
+    } else {
+      const jenisDebiturPadded = String(jenisDebitur).padStart(3, '0');
+      const jenisPenggunaanPadded = String(jenisPenggunaan).padStart(2, '0');
+      const sektorEkonomiPadded = String(sektorEkonomi).padStart(4, '0');
+      nomorPK = `${nomorPadded}/${jenisDebiturPadded}/${jenisPenggunaanPadded}/${sektorEkonomiPadded}/${prefix}/${tanggal.getFullYear()}`;
+    }
+    
+    updateData.nomor_pk = nomorPK;
   }
   
   if (Object.keys(updateData).length === 0) return;
@@ -726,6 +836,18 @@ export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 
 };
 
 export const updateKKMPAK = async (id: string, data: Partial<KKMPAK>): Promise<void> => {
+  const needsRecalc = data.sektorEkonomi !== undefined || data.jenisKredit !== undefined || data.tanggal !== undefined;
+  
+  let currentRecord: Record<string, unknown> | null = null;
+  if (needsRecalc) {
+    const { data: existing } = await supabase
+      .from('kkmpak')
+      .select('*')
+      .eq('id', id)
+      .single();
+    currentRecord = existing;
+  }
+
   const updateData: Record<string, unknown> = {};
   if (data.namaDebitur !== undefined) updateData.nama_debitur = data.namaDebitur;
   if (data.jenisKredit !== undefined) updateData.jenis_kredit = data.jenisKredit;
@@ -737,6 +859,43 @@ export const updateKKMPAK = async (id: string, data: Partial<KKMPAK>): Promise<v
   if (data.tanggal !== undefined) {
     const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
     updateData.tanggal = tanggalDate.toISOString();
+  }
+  
+  if (needsRecalc && currentRecord) {
+    const nomor = currentRecord.nomor as number;
+    const type = currentRecord.type as string;
+    const tanggal = data.tanggal 
+      ? (data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal as string))
+      : new Date((currentRecord.tanggal as string) || (currentRecord.created_at as string));
+    const nomorPadded = String(nomor).padStart(3, '0');
+    
+    if (type === 'telihan') {
+      updateData.nomor_kk = `${nomorPadded}/KK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
+      updateData.nomor_mpak = `${nomorPadded}/MPAK/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
+    } else {
+      // Meranti format: [nomor]/UM-143/[bulan romawi]/[sektor ekonomi]/[produk kredit]/[tahun]
+      const sektorEkonomi = (data.sektorEkonomi || currentRecord.sektor_ekonomi) as string;
+      const jenisKredit = (data.jenisKredit || currentRecord.jenis_kredit) as string;
+      const sektorEkonomiPadded = String(sektorEkonomi).padStart(4, '0');
+      const bulanRomawi = toRomanMonth(tanggal.getMonth());
+      
+      // Get produk kredit from jenis_kredit table
+      let produkKredit = '';
+      if (jenisKredit) {
+        const { data: jenisKreditData } = await supabase
+          .from('jenis_kredit')
+          .select('produk_kredit')
+          .eq('id', jenisKredit)
+          .single();
+        if (jenisKreditData) {
+          produkKredit = jenisKreditData.produk_kredit;
+        }
+      }
+      
+      const nomorKK = `${nomorPadded}/UM-143/${bulanRomawi}/${sektorEkonomiPadded}/${produkKredit}/${tanggal.getFullYear()}`;
+      updateData.nomor_kk = nomorKK;
+      updateData.nomor_mpak = nomorKK;
+    }
   }
   
   if (Object.keys(updateData).length === 0) return;
