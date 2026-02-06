@@ -1,11 +1,36 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PengisianATM, ATMConfig, KartuTertelan, SelisihATM, HARI_LIST } from '@/types';
 
+// Renumber all pengisian ATM records by tanggal order (for backdate support)
+const renumberPengisianATM = async (): Promise<void> => {
+  // Fetch all records ordered by tanggal, then created_at
+  const { data: allRecords, error: fetchError } = await supabase
+    .from('pengisian_atm')
+    .select('id, nomor')
+    .order('tanggal', { ascending: true })
+    .order('created_at', { ascending: true });
+  
+  if (fetchError || !allRecords) return;
+  
+  // Update records whose nomor doesn't match their position
+  const updates = allRecords
+    .map((record, index) => ({ id: record.id, expectedNomor: index + 1, currentNomor: record.nomor }))
+    .filter(r => r.currentNomor !== r.expectedNomor);
+  
+  for (const update of updates) {
+    await supabase
+      .from('pengisian_atm')
+      .update({ nomor: update.expectedNomor })
+      .eq('id', update.id);
+  }
+};
+
 // ============= PENGISIAN ATM FUNCTIONS =============
 export const getPengisianATM = async (): Promise<PengisianATM[]> => {
   const { data, error } = await supabase
     .from('pengisian_atm')
     .select('*')
+    .order('tanggal', { ascending: true })
     .order('created_at', { ascending: true });
   
   if (error) throw error;
@@ -42,18 +67,19 @@ export const getPengisianATM = async (): Promise<PengisianATM[]> => {
 };
 
 export const addPengisianATM = async (data: Omit<PengisianATM, 'id' | 'nomor' | 'createdAt'>): Promise<PengisianATM> => {
+  // Use a temporary nomor, will be corrected after insert
   const { data: existing } = await supabase
     .from('pengisian_atm')
     .select('nomor')
     .order('nomor', { ascending: false })
     .limit(1);
   
-  const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
+  const tempNomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
   
   const { data: result, error } = await supabase
     .from('pengisian_atm')
     .insert({
-      nomor,
+      nomor: tempNomor,
       hari: data.hari,
       tanggal: data.tanggal.toISOString().split('T')[0],
       jam: data.jam,
@@ -83,35 +109,47 @@ export const addPengisianATM = async (data: Omit<PengisianATM, 'id' | 'nomor' | 
     .single();
   
   if (error) throw error;
+
+  // Renumber all records by tanggal order to handle backdate entries
+  await renumberPengisianATM();
   
+  // Re-fetch the inserted record to get updated nomor
+  const { data: updated } = await supabase
+    .from('pengisian_atm')
+    .select('*')
+    .eq('id', result.id)
+    .single();
+
+  const final = updated || result;
+
   return {
-    id: result.id,
-    nomor: result.nomor,
-    hari: result.hari,
-    tanggal: new Date(result.tanggal),
-    jam: result.jam,
-    sisaCartridge1: result.sisa_cartridge_1,
-    sisaCartridge2: result.sisa_cartridge_2,
-    sisaCartridge3: result.sisa_cartridge_3,
-    sisaCartridge4: result.sisa_cartridge_4,
-    tambahCartridge1: result.tambah_cartridge_1,
-    tambahCartridge2: result.tambah_cartridge_2,
-    tambahCartridge3: result.tambah_cartridge_3,
-    tambahCartridge4: result.tambah_cartridge_4,
-    saldoBukuBesar: Number(result.saldo_buku_besar),
-    kartuTertelan: result.kartu_tertelan,
-    terbilang: result.terbilang || '',
-    notes: result.notes || '',
-    jumlahSelisih: Number(result.jumlah_selisih),
-    keteranganSelisih: result.keterangan_selisih || '',
-    namaTeller: result.nama_teller || '',
-    jumlahDisetor: Number(result.jumlah_disetor),
-    setorKeRekTitipan: Number(result.setor_ke_rek_titipan),
-    yangMenyerahkan: result.yang_menyerahkan || '',
-    tellerSelisih: result.teller_selisih || '',
-    retracts: result.retracts,
-    userInput: result.user_input,
-    createdAt: new Date(result.created_at)
+    id: final.id,
+    nomor: final.nomor,
+    hari: final.hari,
+    tanggal: new Date(final.tanggal),
+    jam: final.jam,
+    sisaCartridge1: final.sisa_cartridge_1,
+    sisaCartridge2: final.sisa_cartridge_2,
+    sisaCartridge3: final.sisa_cartridge_3,
+    sisaCartridge4: final.sisa_cartridge_4,
+    tambahCartridge1: final.tambah_cartridge_1,
+    tambahCartridge2: final.tambah_cartridge_2,
+    tambahCartridge3: final.tambah_cartridge_3,
+    tambahCartridge4: final.tambah_cartridge_4,
+    saldoBukuBesar: Number(final.saldo_buku_besar),
+    kartuTertelan: final.kartu_tertelan,
+    terbilang: final.terbilang || '',
+    notes: final.notes || '',
+    jumlahSelisih: Number(final.jumlah_selisih),
+    keteranganSelisih: final.keterangan_selisih || '',
+    namaTeller: final.nama_teller || '',
+    jumlahDisetor: Number(final.jumlah_disetor),
+    setorKeRekTitipan: Number(final.setor_ke_rek_titipan),
+    yangMenyerahkan: final.yang_menyerahkan || '',
+    tellerSelisih: final.teller_selisih || '',
+    retracts: final.retracts,
+    userInput: final.user_input,
+    createdAt: new Date(final.created_at)
   };
 };
 
