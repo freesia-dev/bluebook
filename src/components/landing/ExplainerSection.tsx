@@ -11,8 +11,8 @@ const ExplainerSection = () => {
     {
       number: "02",
       title: "Kelola Data",
-      description: "Input surat masuk/keluar, kelola agenda kredit (SPPK, PK, KK/MPAK, Nomor Loan) dengan mudah.",
-      highlights: ["Form intuitif", "Auto-numbering", "File upload"]
+      description: "Input surat masuk/keluar, kelola agenda kredit (SPPK, PK, KK/MPAK, Nomor Loan), dan catat pengisian ATM dengan mudah.",
+      highlights: ["Form intuitif", "Auto-numbering", "Cetak Berita Acara"]
     },
     {
       number: "03",

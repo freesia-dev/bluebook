@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Instagram, Linkedin, FileText, CreditCard, Users, Shield, Sparkles } from 'lucide-react';
+import { Heart, Instagram, Linkedin, FileText, CreditCard, Users, Shield, Sparkles, Banknote } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
 
 const features = [
@@ -14,6 +14,11 @@ const features = [
     icon: CreditCard,
     title: 'Agenda Kredit',
     description: 'Pantau SPPK, PK, KK/MPAK, dan Nomor Loan dalam satu platform'
+  },
+  {
+    icon: Sparkles,
+    title: 'Pengisian ATM',
+    description: 'Catat pengisian cartridge, pantau selisih, kartu tertelan, dan cetak Berita Acara otomatis'
   },
   {
     icon: Users,
@@ -51,7 +56,7 @@ const About: React.FC = () => {
             <p className="text-muted-foreground leading-relaxed">
               Bluebook adalah sistem <strong className="text-foreground">Digital Logbook</strong> yang dirancang khusus untuk 
               <strong className="text-foreground"> Bank Kaltimtara KCP Telihan</strong>. Aplikasi ini membantu mengelola 
-              administrasi surat-menyurat dan agenda kredit secara digital, efisien, dan terintegrasi.
+              administrasi surat-menyurat, agenda kredit, dan pencatatan pengisian ATM secara digital, efisien, dan terintegrasi.
             </p>
           </div>
         </div>
