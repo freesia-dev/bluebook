@@ -13,7 +13,8 @@ import {
   User,
   X,
   Banknote,
-  Trash2
+  Trash2,
+  History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -218,6 +219,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 label="Recycle Bin" 
                 href="/recycle-bin" 
                 isActive={location.pathname === '/recycle-bin'} 
+                onNavigate={onClose}
+              />
+            )}
+            {isAdmin && (
+              <NavItem 
+                icon={History} 
+                label="Activity Log" 
+                href="/activity-log" 
+                isActive={location.pathname === '/activity-log'} 
                 onNavigate={onClose}
               />
             )}

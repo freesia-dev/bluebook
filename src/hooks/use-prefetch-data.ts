@@ -6,6 +6,7 @@ import {
   getSPPK, 
   getPK, 
   getKKMPAK,
+  getAgendaKreditEntry,
   getJenisKredit,
   getJenisDebitur,
   getJenisPenggunaan,
@@ -51,6 +52,11 @@ export const usePrefetchData = (isAuthenticated: boolean) => {
         queryClient.prefetchQuery({
           queryKey: ['kkmpak'],
           queryFn: getKKMPAK,
+          staleTime: STALE_TIME,
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ['agenda-kredit-entry'],
+          queryFn: getAgendaKreditEntry,
           staleTime: STALE_TIME,
         }),
       ]);
