@@ -5,7 +5,8 @@ import {
   Users, 
   Shield,
   Zap,
-  BarChart3
+  BarChart3,
+  Banknote
 } from "lucide-react";
 
 const FeaturesSection = () => {
@@ -21,6 +22,12 @@ const FeaturesSection = () => {
       title: "Agenda Kredit",
       description: "Pantau SPPK, PK, KK/MPAK, dan Nomor Loan dalam satu platform terintegrasi.",
       gradient: "from-brand-secondary to-amber-500"
+    },
+    {
+      icon: Banknote,
+      title: "Pengisian ATM",
+      description: "Catat pengisian cartridge, pantau selisih & kartu tertelan, serta cetak Berita Acara secara otomatis.",
+      gradient: "from-teal-500 to-emerald-500"
     },
     {
       icon: Users,
