@@ -58,7 +58,9 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
 
   const totalDetail = selisihList.reduce((sum, s) => sum + s.nominal, 0);
   const resolvedAmount = selisihList.filter(s => s.status === 'Sudah Diselesaikan').reduce((sum, s) => sum + s.nominal, 0);
-  const progressPercent = totalDetail > 0 ? Math.round((resolvedAmount / totalDetail) * 100) : 0;
+  const originalTotal = pengisian.jumlahSelisih; // Total selisih asli dari pengisian ATM
+  const remainingToBreakdown = originalTotal - totalDetail; // Sisa yang belum dipecah
+  const progressPercent = originalTotal > 0 ? Math.round((resolvedAmount / originalTotal) * 100) : 0;
 
   const resetForm = () => {
     setFormNamaNasabah('');
@@ -85,8 +87,22 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
   };
 
   const handleSave = async () => {
-    if (parseCurrencyValue(formNominal) <= 0) {
+    const nominalValue = parseCurrencyValue(formNominal);
+    if (nominalValue <= 0) {
       toast({ title: 'Error', description: 'Nominal harus lebih dari 0', variant: 'destructive' });
+      return;
+    }
+
+    // Validate: total detail tidak boleh melebihi total selisih asli
+    const currentTotal = editingItem 
+      ? totalDetail - editingItem.nominal + nominalValue 
+      : totalDetail + nominalValue;
+    if (currentTotal > originalTotal) {
+      toast({ 
+        title: 'Error', 
+        description: `Total detail (${formatRupiah(currentTotal)}) melebihi total selisih (${formatRupiah(originalTotal)}). Sisa yang bisa dipecah: ${formatRupiah(remainingToBreakdown + (editingItem?.nominal || 0))}`, 
+        variant: 'destructive' 
+      });
       return;
     }
 
@@ -176,10 +192,15 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Progress Penyelesaian</span>
               <span>
-                {formatRupiah(resolvedAmount)} / {formatRupiah(totalDetail)} ({progressPercent}%)
+                {formatRupiah(resolvedAmount)} / {formatRupiah(originalTotal)} ({progressPercent}%)
               </span>
             </div>
             <Progress value={progressPercent} className="h-2" />
+            {remainingToBreakdown > 0 && selisihList.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                Sudah dipecah: {formatRupiah(totalDetail)} — Sisa belum dipecah: {formatRupiah(remainingToBreakdown)}
+              </div>
+            )}
           </div>
         </CardHeader>
 
@@ -191,7 +212,7 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
             </div>
           ) : selisihList.length === 0 ? (
             <div className="text-center py-4 text-sm text-muted-foreground">
-              Belum ada detail selisih. Klik "Tambah Detail" untuk memecah selisih menjadi beberapa transaksi.
+              Belum ada detail selisih. Klik "Tambah Detail" untuk memecah total selisih {formatRupiah(originalTotal)} menjadi beberapa transaksi.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -257,8 +278,8 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
                   ))}
                   {selisihList.length > 1 && (
                     <TableRow className="font-bold">
-                      <TableCell colSpan={4}>Total Detail</TableCell>
-                      <TableCell className="text-right">{formatRupiah(totalDetail)}</TableCell>
+                      <TableCell colSpan={4}>Total Dipecah</TableCell>
+                      <TableCell className="text-right">{formatRupiah(totalDetail)} / {formatRupiah(originalTotal)}</TableCell>
                       <TableCell colSpan={3}></TableCell>
                     </TableRow>
                   )}
