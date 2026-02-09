@@ -120,8 +120,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const atmTelihanItems = [
     { label: 'Database Pengisian ATM', href: '/atm-telihan/database-pengisian' },
-    { label: 'Berita Acara ATM', href: '/atm-telihan/ba-pengisian' },
     { label: 'Penyelesaian Selisih', href: '/atm-telihan/penyelesaian-selisih' },
+    { label: 'Berita Acara ATM', href: '/atm-telihan/ba-pengisian' },
     { label: 'Konfigurasi ATM', href: '/atm-telihan/konfigurasi' },
   ];
 
