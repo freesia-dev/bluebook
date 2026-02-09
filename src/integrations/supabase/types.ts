@@ -605,8 +605,10 @@ export type Database = {
           created_at: string
           id: string
           keterangan: string | null
+          nama_nasabah: string | null
           no_reff: string | null
           nominal: number
+          nomor_kartu: string | null
           pengisian_atm_id: string | null
           penyelesaian_id: string | null
           status: string
@@ -616,8 +618,10 @@ export type Database = {
           created_at?: string
           id?: string
           keterangan?: string | null
+          nama_nasabah?: string | null
           no_reff?: string | null
           nominal?: number
+          nomor_kartu?: string | null
           pengisian_atm_id?: string | null
           penyelesaian_id?: string | null
           status?: string
@@ -627,8 +631,10 @@ export type Database = {
           created_at?: string
           id?: string
           keterangan?: string | null
+          nama_nasabah?: string | null
           no_reff?: string | null
           nominal?: number
+          nomor_kartu?: string | null
           pengisian_atm_id?: string | null
           penyelesaian_id?: string | null
           status?: string

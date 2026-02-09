@@ -33,10 +33,9 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const UnderConstruction = lazy(() => import("./pages/UnderConstruction"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 const DatabasePengisianATM = lazy(() => import("./pages/atm-telihan/DatabasePengisianATM"));
-const BAPengisianATM = lazy(() => import("./pages/atm-telihan/BAPengisianATM"));
+const BeritaAcaraATM = lazy(() => import("./pages/atm-telihan/BeritaAcaraATM"));
 const KonfigurasiATMPage = lazy(() => import("./pages/atm-telihan/KonfigurasiATMPage"));
 const PenyelesaianSelisihPage = lazy(() => import("./pages/atm-telihan/PenyelesaianSelisihPage"));
-const BAPenyelesaianSelisih = lazy(() => import("./pages/atm-telihan/BAPenyelesaianSelisih"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 
 // Minimal login loader (no layout needed)
@@ -145,16 +144,13 @@ const App = () => (
               <Suspense fallback={<TablePageSkeleton />}><DatabasePengisianATM /></Suspense>
             } />
             <Route path="/atm-telihan/ba-pengisian" element={
-              <Suspense fallback={<GenericPageSkeleton />}><BAPengisianATM /></Suspense>
+              <Suspense fallback={<GenericPageSkeleton />}><BeritaAcaraATM /></Suspense>
             } />
             <Route path="/atm-telihan/konfigurasi" element={
               <Suspense fallback={<TablePageSkeleton />}><KonfigurasiATMPage /></Suspense>
             } />
             <Route path="/atm-telihan/penyelesaian-selisih" element={
               <Suspense fallback={<TablePageSkeleton />}><PenyelesaianSelisihPage /></Suspense>
-            } />
-            <Route path="/atm-telihan/ba-penyelesaian" element={
-              <Suspense fallback={<GenericPageSkeleton />}><BAPenyelesaianSelisih /></Suspense>
             } />
             {/* Install PWA */}
             <Route path="/install" element={

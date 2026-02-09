@@ -110,6 +110,18 @@ export const addPengisianATM = async (data: Omit<PengisianATM, 'id' | 'nomor' | 
   
   if (error) throw error;
 
+  // Auto-create selisih_atm record if there's a discrepancy
+  if (data.jumlahSelisih > 0) {
+    await supabase
+      .from('selisih_atm')
+      .insert({
+        pengisian_atm_id: result.id,
+        tanggal: data.tanggal.toISOString().split('T')[0],
+        nominal: data.jumlahSelisih,
+        keterangan: `Selisih ${data.keteranganSelisih || ''} - Pengisian ATM tanggal ${data.tanggal.toISOString().split('T')[0]}`
+      });
+  }
+
   // Renumber all records by tanggal order to handle backdate entries
   await renumberPengisianATM();
   
@@ -332,6 +344,8 @@ export const getSelisihATM = async (pengisianAtmId?: string): Promise<SelisihATM
     tanggal: new Date(s.tanggal),
     noReff: s.no_reff || undefined,
     nominal: Number(s.nominal),
+    namaNasabah: s.nama_nasabah || undefined,
+    nomorKartu: s.nomor_kartu || undefined,
     keterangan: s.keterangan || undefined,
     status: s.status || 'Belum Diselesaikan',
     penyelesaianId: s.penyelesaian_id || undefined,
@@ -347,6 +361,8 @@ export const addSelisihATM = async (data: Omit<SelisihATM, 'id' | 'createdAt'>):
       tanggal: data.tanggal.toISOString().split('T')[0],
       no_reff: data.noReff,
       nominal: data.nominal,
+      nama_nasabah: data.namaNasabah,
+      nomor_kartu: data.nomorKartu,
       keterangan: data.keterangan
     })
     .select()
@@ -360,6 +376,8 @@ export const addSelisihATM = async (data: Omit<SelisihATM, 'id' | 'createdAt'>):
     tanggal: new Date(result.tanggal),
     noReff: result.no_reff || undefined,
     nominal: Number(result.nominal),
+    namaNasabah: result.nama_nasabah || undefined,
+    nomorKartu: result.nomor_kartu || undefined,
     keterangan: result.keterangan || undefined,
     status: result.status || 'Belum Diselesaikan',
     penyelesaianId: result.penyelesaian_id || undefined,

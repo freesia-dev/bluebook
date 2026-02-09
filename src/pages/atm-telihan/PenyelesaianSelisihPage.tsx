@@ -254,7 +254,7 @@ const PenyelesaianSelisihPage = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/atm-telihan/ba-penyelesaian?id=${item.id}`)}
+                              onClick={() => navigate(`/atm-telihan/ba-pengisian?tab=penyelesaian&id=${item.id}`)}
                             >
                               <FileText className="w-4 h-4" />
                             </Button>
@@ -386,6 +386,8 @@ const PenyelesaianSelisihPage = () => {
                       <TableRow>
                         <TableHead className="w-10"></TableHead>
                         <TableHead>Tanggal</TableHead>
+                        <TableHead>Nama Nasabah</TableHead>
+                        <TableHead>No. Kartu</TableHead>
                         <TableHead className="text-right">Nominal</TableHead>
                         <TableHead>Keterangan</TableHead>
                       </TableRow>
@@ -406,6 +408,8 @@ const PenyelesaianSelisihPage = () => {
                             />
                           </TableCell>
                           <TableCell>{format(s.tanggal, 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>{s.namaNasabah || '-'}</TableCell>
+                          <TableCell className="text-sm font-mono">{s.nomorKartu || '-'}</TableCell>
                           <TableCell className="text-right">{formatRupiah(s.nominal)}</TableCell>
                           <TableCell className="text-sm">{s.keterangan || '-'}</TableCell>
                         </TableRow>
@@ -513,6 +517,8 @@ const DetailDialog = ({ item, open, onOpenChange }: {
                     <TableRow>
                       <TableHead className="w-10">No</TableHead>
                       <TableHead>Tanggal</TableHead>
+                      <TableHead>Nama Nasabah</TableHead>
+                      <TableHead>No. Kartu</TableHead>
                       <TableHead className="text-right">Nominal</TableHead>
                       <TableHead>Keterangan</TableHead>
                     </TableRow>
@@ -522,13 +528,15 @@ const DetailDialog = ({ item, open, onOpenChange }: {
                       <TableRow key={s.id}>
                         <TableCell>{idx + 1}</TableCell>
                         <TableCell>{format(s.tanggal, 'dd/MM/yyyy')}</TableCell>
+                        <TableCell>{s.namaNasabah || '-'}</TableCell>
+                        <TableCell className="font-mono text-sm">{s.nomorKartu || '-'}</TableCell>
                         <TableCell className="text-right">{formatRupiah(s.nominal)}</TableCell>
                         <TableCell className="text-sm">{s.keterangan || '-'}</TableCell>
                       </TableRow>
                     ))}
                     {linkedSelisih.length > 0 && (
                       <TableRow className="font-bold">
-                        <TableCell colSpan={2}>Total</TableCell>
+                        <TableCell colSpan={4}>Total</TableCell>
                         <TableCell className="text-right">{formatRupiah(totalNominal)}</TableCell>
                         <TableCell></TableCell>
                       </TableRow>
