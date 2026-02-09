@@ -4,14 +4,13 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
@@ -23,10 +22,12 @@ import {
   useUpdatePenyelesaianSelisih, 
   useDeletePenyelesaianSelisih,
   useUnresolvedSelisih,
-  useSelisihByPenyelesaian
+  useSelisihByPenyelesaian,
+  useAllSelisih,
+  usePengisianWithSelisih,
 } from '@/hooks/use-penyelesaian-data';
 import { useATMConfig } from '@/hooks/use-atm-data';
-import { generateBANumber } from '@/lib/penyelesaian-store';
+import { generateBANumber, } from '@/lib/penyelesaian-store';
 import { formatRupiah } from '@/lib/atm-store';
 import { format, differenceInDays } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -34,14 +35,18 @@ import { Plus, Trash2, CheckCircle, Clock, AlertTriangle, CalendarIcon, FileText
 import { PenyelesaianSelisih, SelisihATM } from '@/types';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import SelisihDetailTable from '@/components/atm/SelisihDetailTable';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const PenyelesaianSelisihPage = () => {
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   
-  const { data: penyelesaianList = [], isLoading } = usePenyelesaianSelisih();
+  const { data: penyelesaianList = [], isLoading: isLoadingPenyelesaian } = usePenyelesaianSelisih();
   const { data: unresolvedSelisih = [] } = useUnresolvedSelisih();
+  const { data: allSelisih = [] } = useAllSelisih();
+  const { data: pengisianWithSelisih = [], isLoading: isLoadingPengisian } = usePengisianWithSelisih();
   const { data: configOptions = [] } = useATMConfig();
   const addMutation = useAddPenyelesaianSelisih();
   const updateMutation = useUpdatePenyelesaianSelisih();
@@ -51,7 +56,7 @@ const PenyelesaianSelisihPage = () => {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [selectedPenyelesaian, setSelectedPenyelesaian] = useState<PenyelesaianSelisih | null>(null);
   
-  // Form state
+  // Form state for BA creation
   const [formTanggalPengaduan, setFormTanggalPengaduan] = useState<Date>(new Date());
   const [formPetugas, setFormPetugas] = useState('');
   const [formTeller, setFormTeller] = useState('');
@@ -63,6 +68,11 @@ const PenyelesaianSelisihPage = () => {
   const petugasList = activeConfig.filter(c => !c.jabatan.includes('TELLER') && !c.jabatan.includes('PEMIMPIN'));
   const tellerList = activeConfig.filter(c => c.jabatan.includes('TELLER'));
   const pemimpinList = activeConfig.filter(c => c.jabatan.includes('PEMIMPIN'));
+
+  // Calculate stats from allSelisih
+  const totalUnresolved = allSelisih.filter(s => s.status === 'Belum Diselesaikan').length;
+  const totalInProcess = allSelisih.filter(s => s.status === 'Dalam Proses').length;
+  const totalResolved = allSelisih.filter(s => s.status === 'Sudah Diselesaikan').length;
 
   const resetForm = () => {
     setFormTanggalPengaduan(new Date());
@@ -94,7 +104,7 @@ const PenyelesaianSelisihPage = () => {
       toast({ title: 'Sukses', description: 'Penyelesaian selisih berhasil dibuat' });
       setShowAddDialog(false);
       resetForm();
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Gagal membuat penyelesaian selisih', variant: 'destructive' });
     }
   };
@@ -109,7 +119,7 @@ const PenyelesaianSelisihPage = () => {
         },
       });
       toast({ title: 'Sukses', description: 'Selisih berhasil diselesaikan' });
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Gagal mengupdate status', variant: 'destructive' });
     }
   };
@@ -119,7 +129,7 @@ const PenyelesaianSelisihPage = () => {
     try {
       await deleteMutation.mutateAsync(id);
       toast({ title: 'Sukses', description: 'Penyelesaian selisih berhasil dihapus' });
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Gagal menghapus penyelesaian', variant: 'destructive' });
     }
   };
@@ -138,16 +148,12 @@ const PenyelesaianSelisihPage = () => {
     return <Badge className="bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30">Dalam Proses ({daysSince} hari)</Badge>;
   };
 
-  const totalUnresolved = unresolvedSelisih.length;
-  const totalInProcess = penyelesaianList.filter(p => p.status === 'Dalam Proses').length;
-  const totalOverdue = penyelesaianList.filter(p => p.status === 'Dalam Proses' && differenceInDays(new Date(), p.tanggalPengaduan) > 30).length;
-
   return (
     <MainLayout>
       <div className="space-y-6">
         <PageHeader
           title="Penyelesaian Selisih ATM"
-          description="Kelola proses penyelesaian selisih ATM"
+          description="Kelola proses penyelesaian selisih ATM per transaksi"
         />
 
         {/* Statistics Cards */}
@@ -181,124 +187,137 @@ const PenyelesaianSelisihPage = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-destructive/10">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                <div className="p-2 rounded-lg bg-emerald-500/10">
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{totalOverdue}</p>
-                  <p className="text-sm text-muted-foreground">Melebihi 30 Hari</p>
+                  <p className="text-2xl font-bold">{totalResolved}</p>
+                  <p className="text-sm text-muted-foreground">Sudah Diselesaikan</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Daftar Penyelesaian</CardTitle>
-            <Button onClick={() => { resetForm(); setShowAddDialog(true); }} className="gap-2" disabled={unresolvedSelisih.length === 0}>
-              <Plus className="w-4 h-4" />
-              Buat Penyelesaian
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
+        {/* Tabs: Detail Selisih & Berita Acara */}
+        <Tabs defaultValue="selisih" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="selisih">Detail Selisih per Pengisian</TabsTrigger>
+            <TabsTrigger value="penyelesaian">Berita Acara Penyelesaian</TabsTrigger>
+          </TabsList>
+
+          {/* Tab 1: Selisih per Pengisian */}
+          <TabsContent value="selisih" className="space-y-4">
+            {isLoadingPengisian ? (
               <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
                 <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 <span>Memuat data...</span>
               </div>
-            ) : penyelesaianList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Belum ada data penyelesaian selisih.
-              </div>
+            ) : pengisianWithSelisih.length === 0 ? (
+              <Card>
+                <CardContent className="py-8">
+                  <div className="text-center text-muted-foreground">
+                    Belum ada pengisian ATM dengan selisih.
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">No.</TableHead>
-                      <TableHead>No. BA</TableHead>
-                      <TableHead>Tgl Pengaduan</TableHead>
-                      <TableHead>Tgl Penyelesaian</TableHead>
-                      <TableHead>Petugas</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {penyelesaianList.map((item) => (
-                      <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell>{item.nomor}</TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {generateBANumber(item.nomor, item.tanggalPengaduan)}
-                        </TableCell>
-                        <TableCell>{format(item.tanggalPengaduan, 'dd/MM/yyyy')}</TableCell>
-                        <TableCell>
-                          {item.tanggalPenyelesaian 
-                            ? format(item.tanggalPenyelesaian, 'dd/MM/yyyy') 
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell>{item.petugas}</TableCell>
-                        <TableCell>{getStatusBadge(item)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => { setSelectedPenyelesaian(item); setShowDetailDialog(true); }}
-                            >
-                              Detail
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/atm-telihan/ba-pengisian?tab=penyelesaian&id=${item.id}`)}
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Button>
-                            {item.status === 'Dalam Proses' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-emerald-600"
-                                onClick={() => handleMarkComplete(item)}
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              pengisianWithSelisih.map(p => (
+                <SelisihDetailTable key={p.id} pengisian={p} />
+              ))
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+
+          {/* Tab 2: BA Penyelesaian */}
+          <TabsContent value="penyelesaian">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">Daftar Berita Acara Penyelesaian</CardTitle>
+                <Button onClick={() => { resetForm(); setShowAddDialog(true); }} className="gap-2" disabled={unresolvedSelisih.length === 0}>
+                  <Plus className="w-4 h-4" />
+                  Buat BA Penyelesaian
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPenyelesaian ? (
+                  <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span>Memuat data...</span>
+                  </div>
+                ) : penyelesaianList.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Belum ada berita acara penyelesaian.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">No.</TableHead>
+                          <TableHead>No. BA</TableHead>
+                          <TableHead>Tgl Pengaduan</TableHead>
+                          <TableHead>Tgl Penyelesaian</TableHead>
+                          <TableHead>Petugas</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {penyelesaianList.map((item) => (
+                          <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50">
+                            <TableCell>{item.nomor}</TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {generateBANumber(item.nomor, item.tanggalPengaduan)}
+                            </TableCell>
+                            <TableCell>{format(item.tanggalPengaduan, 'dd/MM/yyyy')}</TableCell>
+                            <TableCell>
+                              {item.tanggalPenyelesaian 
+                                ? format(item.tanggalPenyelesaian, 'dd/MM/yyyy') 
+                                : '-'
+                              }
+                            </TableCell>
+                            <TableCell>{item.petugas}</TableCell>
+                            <TableCell>{getStatusBadge(item)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 justify-end">
+                                <Button variant="ghost" size="sm" onClick={() => { setSelectedPenyelesaian(item); setShowDetailDialog(true); }}>
+                                  Detail
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/atm-telihan/ba-pengisian?tab=penyelesaian&id=${item.id}`)}>
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                                {item.status === 'Dalam Proses' && (
+                                  <Button variant="ghost" size="sm" className="text-emerald-600" onClick={() => handleMarkComplete(item)}>
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {isAdmin && (
+                                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(item.id)}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Add Dialog */}
+      {/* Add BA Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Buat Penyelesaian Selisih</DialogTitle>
+            <DialogTitle>Buat Berita Acara Penyelesaian</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* Tanggal Pengaduan */}
             <div className="space-y-2">
               <Label>Tanggal Pengaduan</Label>
               <Popover>
@@ -309,22 +328,15 @@ const PenyelesaianSelisihPage = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formTanggalPengaduan}
-                    onSelect={(date) => date && setFormTanggalPengaduan(date)}
-                  />
+                  <Calendar mode="single" selected={formTanggalPengaduan} onSelect={(date) => date && setFormTanggalPengaduan(date)} />
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* Petugas */}
             <div className="space-y-2">
               <Label>Petugas ATM *</Label>
               <Select value={formPetugas} onValueChange={setFormPetugas}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih petugas..." />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih petugas..." /></SelectTrigger>
                 <SelectContent>
                   {petugasList.map(p => (
                     <SelectItem key={p.id} value={p.nama}>{p.nama} - {p.jabatan}</SelectItem>
@@ -333,13 +345,10 @@ const PenyelesaianSelisihPage = () => {
               </Select>
             </div>
 
-            {/* Teller */}
             <div className="space-y-2">
               <Label>Teller</Label>
               <Select value={formTeller} onValueChange={setFormTeller}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih teller..." />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih teller..." /></SelectTrigger>
                 <SelectContent>
                   {tellerList.map(p => (
                     <SelectItem key={p.id} value={p.nama}>{p.nama}</SelectItem>
@@ -348,13 +357,10 @@ const PenyelesaianSelisihPage = () => {
               </Select>
             </div>
 
-            {/* Pemimpin */}
             <div className="space-y-2">
               <Label>Pemimpin KCP</Label>
               <Select value={formPemimpin} onValueChange={setFormPemimpin}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih pemimpin..." />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih pemimpin..." /></SelectTrigger>
                 <SelectContent>
                   {pemimpinList.map(p => (
                     <SelectItem key={p.id} value={p.nama}>{p.nama} - {p.jabatan}</SelectItem>
@@ -363,7 +369,6 @@ const PenyelesaianSelisihPage = () => {
               </Select>
             </div>
 
-            {/* Catatan */}
             <div className="space-y-2">
               <Label>Catatan / Kronologi</Label>
               <Textarea 
@@ -374,9 +379,8 @@ const PenyelesaianSelisihPage = () => {
               />
             </div>
 
-            {/* Select Selisih */}
             <div className="space-y-2">
-              <Label>Pilih Selisih yang Akan Diselesaikan * ({selectedSelisihIds.length} dipilih)</Label>
+              <Label>Pilih Selisih untuk BA * ({selectedSelisihIds.length} dipilih)</Label>
               {unresolvedSelisih.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Tidak ada selisih yang belum diselesaikan.</p>
               ) : (
@@ -504,7 +508,9 @@ const DetailDialog = ({ item, open, onOpenChange }: {
           )}
 
           <div>
-            <span className="text-sm text-muted-foreground font-medium">Daftar Selisih ({linkedSelisih.length} item, Total: {formatRupiah(totalNominal)})</span>
+            <span className="text-sm text-muted-foreground font-medium">
+              Daftar Selisih ({linkedSelisih.length} item, Total: {formatRupiah(totalNominal)})
+            </span>
             {isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground py-4">
                 <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
