@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -15,7 +13,7 @@ import { FileText, Printer, Plus, Trash2 } from 'lucide-react';
 import logoBankaltimtara from '@/assets/logo-bankaltimtara.png';
 import logoBpd from '@/assets/logo-bpd.png';
 
-const BAPengisianATM = () => {
+const BAPengisianContent = () => {
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
   
@@ -27,7 +25,6 @@ const BAPengisianATM = () => {
   const [selisihList, setSelisihList] = useState<SelisihATM[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // New kartu tertelan form
   const [newKartuNomor, setNewKartuNomor] = useState('');
   const [newKartuNama, setNewKartuNama] = useState('');
   const [newKartuBank, setNewKartuBank] = useState('BANKALTIMTARA');
@@ -41,12 +38,9 @@ const BAPengisianATM = () => {
           getPengisianATM(),
           getATMConfig()
         ]);
-        console.log('BA Page - Pengisian data loaded:', pengisianResult.length, 'items');
-        console.log('BA Page - Config loaded:', configResult.length, 'items');
         setData(pengisianResult);
         setConfigOptions(configResult.filter(c => c.isActive));
       } catch (error) {
-        console.error('BA Page - Error loading data:', error);
         toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
       } finally {
         setIsLoading(false);
@@ -59,27 +53,13 @@ const BAPengisianATM = () => {
     if (selectedId) {
       const item = data.find(d => d.id === selectedId);
       setSelectedData(item || null);
-      if (item) {
-        loadDetails(item.id);
-      }
+      if (item) loadDetails(item.id);
     } else {
       setSelectedData(null);
       setKartuTertelan([]);
       setSelisihList([]);
     }
   }, [selectedId, data]);
-
-  const loadData = async () => {
-    try {
-      const result = await getPengisianATM();
-      console.log('BA Page - Refresh data:', result.length, 'items');
-      setData(result);
-    } catch (error) {
-      toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
-    }
-  };
-
-  // loadConfig is now part of initData above
 
   const loadDetails = async (atmId: string) => {
     try {
@@ -99,7 +79,6 @@ const BAPengisianATM = () => {
       toast({ title: 'Error', description: 'Nomor kartu wajib diisi', variant: 'destructive' });
       return;
     }
-    
     setIsAddingKartu(true);
     try {
       await addKartuTertelan({
@@ -108,195 +87,63 @@ const BAPengisianATM = () => {
         namaNasabah: newKartuNama.trim() || undefined,
         bank: newKartuBank
       });
-      
-      // Refresh kartu tertelan list
       await loadDetails(selectedData.id);
-      
-      // Reset form
       setNewKartuNomor('');
       setNewKartuNama('');
       setNewKartuBank('BANKALTIMTARA');
-      
       toast({ title: 'Sukses', description: 'Kartu tertelan berhasil ditambahkan' });
     } catch (error) {
-      console.error('Failed to add kartu tertelan:', error);
       toast({ title: 'Error', description: 'Gagal menambahkan kartu tertelan', variant: 'destructive' });
     } finally {
       setIsAddingKartu(false);
     }
   };
 
-  const handleDeleteKartuTertelan = async (id: string) => {
+  const handleDeleteKartuTertelan = async (ktId: string) => {
     if (!selectedData) return;
-    
     try {
-      await deleteKartuTertelan(id);
+      await deleteKartuTertelan(ktId);
       await loadDetails(selectedData.id);
       toast({ title: 'Sukses', description: 'Kartu tertelan berhasil dihapus' });
     } catch (error) {
-      console.error('Failed to delete kartu tertelan:', error);
       toast({ title: 'Error', description: 'Gagal menghapus kartu tertelan', variant: 'destructive' });
     }
   };
 
   const getPemimpinList = () => configOptions.filter(c => c.jabatan.includes('PEMIMPIN'));
-  const getPetugasATM = () => configOptions.filter(c => c.jabatan === 'PETUGAS ATM');
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast({ title: 'Error', description: 'Popup blocker aktif. Izinkan popup untuk mencetak.', variant: 'destructive' });
       return;
     }
-
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
         <title>BA Pengisian ATM - ATM-143-01</title>
         <style>
-          @page { 
-            size: A4; 
-            margin: 15mm 20mm; 
-          }
-          * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-          }
-          body { 
-            font-family: 'Times New Roman', Times, serif; 
-            font-size: 11pt; 
-            line-height: 1.3;
-            color: #000;
-          }
-          .ba-container {
-            max-width: 210mm;
-            margin: 0 auto;
-          }
-          .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-          }
-          .logo-left, .logo-right {
-            width: 100px;
-          }
-          .logo-left img, .logo-right img {
-            max-width: 100%;
-            height: auto;
-          }
-          .header-center {
-            flex: 1;
-            text-align: center;
-            padding: 0 15px;
-          }
-          .header-center .company {
-            font-size: 12pt;
-            font-weight: bold;
-          }
-          .header-center .branch {
-            font-size: 10pt;
-            font-weight: bold;
-            color: #0066cc;
-            text-decoration: underline;
-          }
-          .header-center .address {
-            font-size: 9pt;
-          }
-          .header-divider {
-            border-bottom: 2px solid #000;
-            margin: 8px 0 15px;
-          }
-          .doc-code {
-            font-size: 10pt;
-            margin-bottom: 10px;
-          }
-          .doc-title {
-            font-size: 13pt;
-            font-weight: bold;
-            text-align: left;
-            margin-bottom: 15px;
-          }
-          .section-label {
-            font-weight: bold;
-            margin: 12px 0 6px;
-          }
-          .section-text {
-            text-align: justify;
-            margin-bottom: 8px;
-          }
-          table.data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 8px 0 12px;
-            font-size: 10pt;
-          }
-          table.data-table th,
-          table.data-table td {
-            border: 1px solid #000;
-            padding: 4px 6px;
-            vertical-align: top;
-          }
-          table.data-table th {
-            background: #f5f5f5;
-            font-weight: bold;
-            text-align: center;
-          }
-          table.data-table td.text-right {
-            text-align: right;
-          }
-          table.data-table td.text-center {
-            text-align: center;
-          }
-          .no-selisih {
-            font-style: normal;
-          }
-          .signature-section {
-            margin-top: 25px;
-          }
-          .signature-text {
-            margin-bottom: 15px;
-          }
-          .signature-grid {
-            display: flex;
-            justify-content: space-between;
-          }
-          .signature-box {
-            width: 45%;
-          }
-          .signature-box .label {
-            margin-bottom: 60px;
-          }
-          .signature-box .name {
-            font-weight: bold;
-            text-transform: uppercase;
-          }
-          .signature-box .position {
-            font-size: 10pt;
-            text-transform: uppercase;
-          }
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          }
+          @page { size: A4; margin: 15mm 20mm; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.3; color: #000; }
+          .ba-container { max-width: 210mm; margin: 0 auto; }
+          table.data-table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 10pt; }
+          table.data-table th, table.data-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
+          table.data-table th { background: #f5f5f5; font-weight: bold; text-align: center; }
+          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         </style>
       </head>
-      <body>
-        ${printRef.current.innerHTML}
-      </body>
+      <body>${printRef.current.innerHTML}</body>
       </html>
     `);
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 250);
   };
 
-  // Calculate values
   const calculateValues = () => {
     if (!selectedData) return null;
-    
     const sisaTotal = selectedData.sisaCartridge1 + selectedData.sisaCartridge2 + 
                       selectedData.sisaCartridge3 + selectedData.sisaCartridge4;
     const tambahTotal = selectedData.tambahCartridge1 + selectedData.tambahCartridge2 + 
@@ -304,87 +151,70 @@ const BAPengisianATM = () => {
     const saldoLembar = Math.floor(selectedData.saldoBukuBesar / 100000);
     const sisaNominal = sisaTotal * 100000;
     const tambahNominal = tambahTotal * 100000;
-    const posisiAkhir = tambahNominal; // Assuming 1B refill
-    
-    return {
-      sisaTotal,
-      tambahTotal,
-      saldoLembar,
-      sisaNominal,
-      tambahNominal,
-      posisiAkhir: 1000000000, // Default 1 Milyar
-    };
+    return { sisaTotal, tambahTotal, saldoLembar, sisaNominal, tambahNominal };
   };
 
   const values = calculateValues();
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        <PageHeader
-          title="BA Pengisian ATM"
-          description="Generate Berita Acara Pengisian ATM"
-        />
+    <>
+      {/* Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Pilih Data Pengisian ATM</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span>Memuat data...</span>
+            </div>
+          ) : data.length === 0 ? (
+            <div className="text-muted-foreground">Belum ada data pengisian ATM.</div>
+          ) : (
+            <div className="flex items-end gap-4">
+              <div className="flex-1 max-w-md">
+                <Label className="mb-2 block">Data Pengisian ATM ({data.length} data)</Label>
+                <Select value={selectedId} onValueChange={setSelectedId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih data pengisian ATM..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.map(item => (
+                      <SelectItem key={item.id} value={item.id}>
+                        No. {item.nomor} - {format(item.tanggal, 'dd MMM yyyy', { locale: id })} - {formatRupiah(item.saldoBukuBesar)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedData && (
+                <Button onClick={handlePrint} className="gap-2">
+                  <Printer className="w-4 h-4" />
+                  Cetak BA
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Pilih Data Pengisian ATM</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <span>Memuat data...</span>
-              </div>
-            ) : data.length === 0 ? (
-              <div className="text-muted-foreground">
-                Belum ada data pengisian ATM. Silakan tambah data di halaman Database Pengisian ATM.
-              </div>
-            ) : (
-              <div className="flex items-end gap-4">
-                <div className="flex-1 max-w-md">
-                  <Label className="mb-2 block">Data Pengisian ATM ({data.length} data)</Label>
-                  <Select value={selectedId} onValueChange={setSelectedId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih data pengisian ATM..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.map(item => (
-                        <SelectItem key={item.id} value={item.id}>
-                          No. {item.nomor} - {format(item.tanggal, 'dd MMM yyyy', { locale: id })} - {formatRupiah(item.saldoBukuBesar)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {selectedData && (
-                  <Button onClick={handlePrint} className="gap-2">
-                    <Printer className="w-4 h-4" />
-                    Cetak BA
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Preview */}
-        {selectedData && values && (
-          <>
+      {/* Preview */}
+      {selectedData && values && (
+        <>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle className="text-lg">Preview Berita Acara</CardTitle>
             </CardHeader>
             <CardContent>
               <div ref={printRef} className="bg-white p-6 text-black" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11pt', lineHeight: '1.3' }}>
                 <div className="ba-container">
-                  {/* Header - matching PDF layout */}
-                  <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div className="logo-left" style={{ width: '120px' }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div style={{ width: '120px' }}>
                       <img src={logoBankaltimtara} alt="Bankaltimtara" style={{ maxWidth: '100%', height: 'auto' }} />
                     </div>
-                    <div className="header-center" style={{ flex: 1, textAlign: 'center', padding: '0 15px' }}>
+                    <div style={{ flex: 1, textAlign: 'center', padding: '0 15px' }}>
                       <div style={{ fontSize: '12pt', fontWeight: 'bold' }}>PT. BPD Kaltim Kaltara</div>
                       <div style={{ fontSize: '10pt', fontWeight: 'bold', color: '#0066cc', textDecoration: 'underline' }}>KANTOR CABANG PEMBANTU TELIHAN</div>
                       <div style={{ fontSize: '9pt' }}>Jl.Letjend S.Parman No.14-15 – Kota Bontang 75383</div>
@@ -392,13 +222,12 @@ const BAPengisianATM = () => {
                       <div style={{ fontSize: '9pt' }}>Email:<span style={{ color: '#0066cc', textDecoration: 'underline' }}>kcp.telihan@bankaltimtara.co.id</span></div>
                       <div style={{ fontSize: '9pt' }}>www.bankaltimtara.co.id</div>
                     </div>
-                    <div className="logo-right" style={{ width: '100px', textAlign: 'right' }}>
+                    <div style={{ width: '100px', textAlign: 'right' }}>
                       <img src={logoBpd} alt="BPD" style={{ maxWidth: '100%', height: 'auto' }} />
                     </div>
                   </div>
                   <div style={{ borderBottom: '2px solid #000', margin: '8px 0 15px' }}></div>
 
-                  {/* Document Code and Title */}
                   <div style={{ fontSize: '10pt', marginBottom: '10px' }}>ATM-143-01</div>
                   <div style={{ fontSize: '13pt', fontWeight: 'bold', textAlign: 'left', marginBottom: '15px' }}>
                     BERITA ACARA KAS ATM, DISKET MUTASI TRANSAKSI ATM,<br />
@@ -414,7 +243,6 @@ const BAPengisianATM = () => {
                     Sisa uang pada saat dilakukan cash opname, jumlah uang yang ditambahkan dan sisa terakhir saat selesai dilakukan cash opname adalah sebagai berikut:
                   </div>
 
-                  {/* Data Table - Section A */}
                   <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0 12px', fontSize: '10pt' }}>
                     <thead>
                       <tr>
@@ -478,16 +306,14 @@ const BAPengisianATM = () => {
                     </tbody>
                   </table>
 
-                  {/* Section B: DISKET */}
                   <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>B. DISKET MUTASI TRANSAKSI ATM DAN STRUK ATM (Terlampir)</div>
 
-                  {/* Section C: KARTU TERTELAN */}
                   <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>C. KARTU TERTELAN</div>
                   <div style={{ marginBottom: '8px' }}>
                     Disamping itu pada kotak kartu tertelan ditemukan {kartuTertelan.length} ( {kartuTertelan.length === 0 ? 'Nol' : angkaTerbilang(kartuTertelan.length)} ) Buah Kartu sebagai berikut:
                   </div>
 
-                  {kartuTertelan.length > 0 ? (
+                  {kartuTertelan.length > 0 && (
                     <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0 12px', fontSize: '10pt' }}>
                       <thead>
                         <tr>
@@ -508,9 +334,8 @@ const BAPengisianATM = () => {
                         ))}
                       </tbody>
                     </table>
-                  ) : null}
+                  )}
 
-                  {/* Section D: SELISIH */}
                   <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>D. SELISIH</div>
                   {selisihList.length > 0 ? (
                     <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0 12px', fontSize: '10pt' }}>
@@ -518,7 +343,6 @@ const BAPengisianATM = () => {
                         <tr>
                           <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center', width: '40px' }}>NO.</th>
                           <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>TANGGAL</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>NO REFF</th>
                           <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>NOMINAL</th>
                           <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>KETERANGAN</th>
                         </tr>
@@ -528,7 +352,6 @@ const BAPengisianATM = () => {
                           <tr key={sl.id}>
                             <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>{idx + 1}</td>
                             <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{format(sl.tanggal, 'dd MMMM yyyy', { locale: id })}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{sl.noReff || '-'}</td>
                             <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {sl.nominal.toLocaleString('id-ID')}</td>
                             <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{sl.keterangan || '-'}</td>
                           </tr>
@@ -539,10 +362,9 @@ const BAPengisianATM = () => {
                     <div style={{ marginBottom: '8px' }}>Tidak ada selisih.</div>
                   )}
 
-                  {/* Signature Section */}
+                  {/* Signature */}
                   <div style={{ marginTop: '25px' }}>
                     <div style={{ marginBottom: '15px' }}>Demikian Berita Acara ini dibuat dengan sebenarnya oleh :</div>
-                    
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <div style={{ width: '30%', textAlign: 'center' }}>
                         <div style={{ marginBottom: '8px' }}>Staff KCP,</div>
@@ -581,7 +403,6 @@ const BAPengisianATM = () => {
               <CardTitle className="text-lg">Edit Data Kartu Tertelan</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Current Cards */}
               {kartuTertelan.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Kartu Tertelan Saat Ini</Label>
@@ -595,8 +416,7 @@ const BAPengisianATM = () => {
                           <span>{kt.bank}</span>
                         </div>
                         <Button 
-                          variant="ghost" 
-                          size="icon" 
+                          variant="ghost" size="icon" 
                           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleDeleteKartuTertelan(kt.id)}
                         >
@@ -607,33 +427,21 @@ const BAPengisianATM = () => {
                   </div>
                 </div>
               )}
-
-              {/* Add New Card Form */}
               <div className="space-y-3 pt-4 border-t">
                 <Label className="text-sm font-medium">Tambah Kartu Tertelan Baru</Label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <Label className="text-xs text-muted-foreground">Nomor Kartu *</Label>
-                    <Input
-                      placeholder="Nomor kartu..."
-                      value={newKartuNomor}
-                      onChange={(e) => setNewKartuNomor(e.target.value)}
-                    />
+                    <Input placeholder="Nomor kartu..." value={newKartuNomor} onChange={(e) => setNewKartuNomor(e.target.value)} />
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Nama Nasabah</Label>
-                    <Input
-                      placeholder="Nama nasabah (opsional)..."
-                      value={newKartuNama}
-                      onChange={(e) => setNewKartuNama(e.target.value)}
-                    />
+                    <Input placeholder="Nama nasabah (opsional)..." value={newKartuNama} onChange={(e) => setNewKartuNama(e.target.value)} />
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Bank</Label>
                     <Select value={newKartuBank} onValueChange={setNewKartuBank}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="BANKALTIMTARA">BANKALTIMTARA</SelectItem>
                         <SelectItem value="BRI">BRI</SelectItem>
@@ -645,31 +453,26 @@ const BAPengisianATM = () => {
                     </Select>
                   </div>
                 </div>
-                <Button 
-                  onClick={handleAddKartuTertelan} 
-                  disabled={isAddingKartu || !newKartuNomor.trim()}
-                  className="gap-2"
-                >
+                <Button onClick={handleAddKartuTertelan} disabled={isAddingKartu || !newKartuNomor.trim()} className="gap-2">
                   <Plus className="w-4 h-4" />
                   {isAddingKartu ? 'Menyimpan...' : 'Tambah Kartu'}
                 </Button>
               </div>
             </CardContent>
           </Card>
-          </>
-        )}
+        </>
+      )}
 
-        {!selectedData && (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Pilih data pengisian ATM untuk melihat preview Berita Acara</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </MainLayout>
+      {!selectedData && (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Pilih data pengisian ATM untuk melihat preview Berita Acara</p>
+          </CardContent>
+        </Card>
+      )}
+    </>
   );
 };
 
-export default BAPengisianATM;
+export default BAPengisianContent;

@@ -253,6 +253,8 @@ export interface SelisihATM {
   tanggal: Date;
   noReff?: string;
   nominal: number;
+  namaNasabah?: string;
+  nomorKartu?: string;
   keterangan?: string;
   status: string;
   penyelesaianId?: string;
