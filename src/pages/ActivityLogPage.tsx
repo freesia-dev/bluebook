@@ -9,13 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { 
   Plus, Pencil, Trash2, Clock, User, Filter, Search, 
-  ChevronDown, ChevronUp, RefreshCw 
+  ChevronDown, ChevronUp, RefreshCw, Database 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   create: Plus,
@@ -91,6 +93,25 @@ const ActivityLogPage: React.FC = () => {
   const [filterTable, setFilterTable] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const { data: storageCounts } = useQuery({
+    queryKey: ['storage-counts'],
+    queryFn: async () => {
+      const tables = ['surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan', 'pengisian_atm', 'activity_log', 'recycle_bin', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan', 'agenda_kredit_entry'] as const;
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (const table of tables) {
+        const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        counts[table] = count || 0;
+        total += count || 0;
+      }
+      return { counts, total };
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const maxRows = 100000; // Lovable Cloud free tier approximate limit
+  const usedPercent = storageCounts ? Math.min(Math.round((storageCounts.total / maxRows) * 100), 100) : 0;
+
   const filteredLogs = useMemo(() => {
     if (!logs) return [];
     return logs.filter(log => {
@@ -126,6 +147,37 @@ const ActivityLogPage: React.FC = () => {
           </Button>
         }
       />
+
+      {/* Storage Usage Bar */}
+      {storageCounts && (
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Database className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Penggunaan Database</span>
+                  <span className="text-sm text-muted-foreground">
+                    {storageCounts.total.toLocaleString('id-ID')} rows
+                  </span>
+                </div>
+                <Progress value={usedPercent} className="h-2" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
+              {Object.entries(storageCounts.counts)
+                .filter(([, count]) => count > 0)
+                .sort(([, a], [, b]) => b - a)
+                .map(([table, count]) => (
+                  <div key={table} className="flex justify-between gap-1 px-2 py-1 rounded bg-muted/50">
+                    <span className="truncate">{getTableLabel(table) || table}</span>
+                    <span className="font-medium text-foreground">{count}</span>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

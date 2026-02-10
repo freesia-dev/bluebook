@@ -29,6 +29,11 @@ const features = [
     icon: Shield,
     title: 'Aman & Terpercaya',
     description: 'Data tersimpan dengan aman di cloud dengan backup otomatis'
+  },
+  {
+    icon: Banknote,
+    title: 'Audit & Riwayat',
+    description: 'Lacak setiap perubahan data dengan activity log dan recycle bin untuk pemulihan data'
   }
 ];
 
@@ -55,7 +60,7 @@ const About: React.FC = () => {
           <div className="max-w-2xl mx-auto">
             <p className="text-muted-foreground leading-relaxed">
               Bluebook adalah sistem <strong className="text-foreground">Digital Logbook</strong> yang dirancang khusus untuk 
-              <strong className="text-foreground"> Bank Kaltimtara KCP Telihan</strong>. Aplikasi ini membantu mengelola 
+              <strong className="text-foreground"> Bankaltimtara KCP Telihan</strong>. Aplikasi ini membantu mengelola 
               administrasi surat-menyurat, agenda kredit, dan pencatatan pengisian ATM secara digital, efisien, dan terintegrasi.
             </p>
           </div>

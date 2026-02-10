@@ -132,6 +132,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
         { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
+        { label: 'Activity Log', href: '/activity-log' },
+        { label: 'Recycle Bin', href: '/recycle-bin' },
       ]
     : [
         { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
@@ -214,24 +216,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               children={atmTelihanItems}
               onNavigate={onClose}
             />
-            {isAdmin && (
-              <NavItem 
-                icon={Trash2} 
-                label="Recycle Bin" 
-                href="/recycle-bin" 
-                isActive={location.pathname === '/recycle-bin'} 
-                onNavigate={onClose}
-              />
-            )}
-            {isAdmin && (
-              <NavItem 
-                icon={History} 
-                label="Activity Log" 
-                href="/activity-log" 
-                isActive={location.pathname === '/activity-log'} 
-                onNavigate={onClose}
-              />
-            )}
             {isAdmin && (
               <NavItem 
                 icon={Settings} 
