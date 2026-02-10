@@ -23,6 +23,11 @@ const TABLE_LABELS: Record<string, string> = {
   nomor_loan: 'Nomor Loan',
   pengisian_atm: 'Pengisian ATM',
   agenda_kredit_entry: 'Agenda Kredit',
+  activity_log: 'Activity Log',
+  recycle_bin: 'Recycle Bin',
+  penyelesaian_selisih: 'Penyelesaian Selisih',
+  selisih_atm: 'Selisih ATM',
+  kartu_tertelan: 'Kartu Tertelan',
 };
 
 const ACTION_LABELS: Record<string, string> = {
