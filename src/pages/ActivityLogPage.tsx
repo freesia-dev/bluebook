@@ -158,10 +158,26 @@ const ActivityLogPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium">Penggunaan Database</span>
                   <span className="text-sm text-muted-foreground">
-                    {storageCounts.total.toLocaleString('id-ID')} rows
+                    {storageCounts.total.toLocaleString('id-ID')} / {maxRows.toLocaleString('id-ID')} rows
                   </span>
                 </div>
-                <Progress value={usedPercent} className="h-2" />
+                {/* Stacked bar: used + remaining */}
+                <div className="relative h-4 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-primary rounded-l-full transition-all"
+                    style={{ width: `${usedPercent}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-1.5 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{storageCounts.total.toLocaleString('id-ID')} rows ({usedPercent}%)</span></span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-sm bg-secondary border border-border" />
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{(maxRows - storageCounts.total).toLocaleString('id-ID')} rows ({100 - usedPercent}%)</span></span>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
