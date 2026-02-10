@@ -163,15 +163,37 @@ const Dashboard: React.FC = () => {
               Quick Actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/surat-masuk')}>
-              <Mail className="w-4 h-4" />
-              <span className="hidden sm:inline">Input</span> Surat Masuk
-            </Button>
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/surat-keluar')}>
-              <Send className="w-4 h-4" />
-              <span className="hidden sm:inline">Input</span> Surat Keluar
-            </Button>
+          <CardContent className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => navigate('/surat-masuk')}
+              className="relative group flex flex-col items-center justify-center gap-3 p-6 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/20 hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md overflow-hidden"
+            >
+              <div className="absolute top-2 right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
+                <Mail className="w-20 h-20 -rotate-12" />
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <Mail className="w-6 h-6 text-primary" />
+              </div>
+              <div className="text-center z-10">
+                <p className="font-semibold text-sm text-foreground">Input Surat Masuk</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Tambah surat baru</p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/surat-keluar')}
+              className="relative group flex flex-col items-center justify-center gap-3 p-6 rounded-xl border border-border bg-gradient-to-br from-secondary/5 to-secondary/10 hover:from-secondary/10 hover:to-secondary/20 hover:border-secondary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md overflow-hidden"
+            >
+              <div className="absolute top-2 right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
+                <Send className="w-20 h-20 -rotate-12" />
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                <Send className="w-6 h-6 text-secondary" />
+              </div>
+              <div className="text-center z-10">
+                <p className="font-semibold text-sm text-foreground">Input Surat Keluar</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Kirim surat baru</p>
+              </div>
+            </button>
           </CardContent>
         </Card>
 
