@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export const useInactivityLogout = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -12,7 +12,7 @@ export const useInactivityLogout = () => {
   const handleLogout = useCallback(async () => {
     toast({
       title: 'Sesi Berakhir',
-      description: 'Anda telah logout karena tidak ada aktivitas selama 15 menit.',
+      description: 'Anda telah logout karena tidak ada aktivitas selama 1 jam.',
       variant: 'destructive',
     });
     await logout();
