@@ -31,7 +31,8 @@ const BAPenyelesaianContent: React.FC<BAPenyelesaianContentProps> = ({ initialId
       setIsLoading(true);
       try {
         const result = await getPenyelesaianSelisih();
-        setData(result);
+        // Filter out fully resolved items
+        setData(result.filter(item => item.status !== 'Sudah Diselesaikan'));
       } catch (error) {
         toast({ title: 'Error', description: 'Gagal memuat data', variant: 'destructive' });
       } finally {
