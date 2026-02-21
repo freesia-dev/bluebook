@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Instagram, Linkedin, FileText, CreditCard, Users, Shield, Sparkles, Banknote } from 'lucide-react';
+import { Flame, Instagram, Linkedin, FileText, CreditCard, Users, Shield, Sparkles, Banknote } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
 
 const features = [
@@ -88,7 +88,7 @@ const About: React.FC = () => {
           <div className="h-2 bg-gradient-to-r from-primary via-secondary to-primary" />
           <CardContent className="py-8 px-6">
             <p className="text-muted-foreground flex items-center justify-center gap-2 mb-2">
-              Dibuat dengan <Heart className="w-4 h-4 text-destructive fill-destructive animate-pulse" /> oleh
+              Dibuat dengan <Flame className="w-4 h-4 text-orange-500 fill-orange-500 animate-pulse" /> oleh
             </p>
             <p className="font-display text-2xl font-bold text-foreground mb-4">Haris Fadilah</p>
             <div className="flex items-center justify-center gap-4 mb-6">
