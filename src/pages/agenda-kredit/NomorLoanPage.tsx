@@ -275,11 +275,11 @@ export default function NomorLoanPage() {
     { key: 'namaDebitur', header: 'Nama Debitur' },
     { key: 'nomorPK', header: 'No. PK' },
     { key: 'nomorLoan', header: 'No. Loan' },
-    { key: 'jenisKredit', header: 'Jenis Kredit' },
+    { key: 'unitKerja', header: 'Unit Kerja' },
     { key: 'plafon', header: 'Plafon Kredit', render: (item) => formatCurrency(item.plafon) },
     { key: 'tanggal', header: 'Tanggal', render: (item) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-' },
     { key: 'skema', header: 'Skema' },
-    { key: 'unitKerja', header: 'Unit Kerja' },
+    { key: 'produkKredit', header: 'Produk Kredit' },
   ];
 
   if (isLoading) {
