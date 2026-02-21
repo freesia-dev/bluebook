@@ -279,7 +279,6 @@ export default function NomorLoanPage() {
     { key: 'plafon', header: 'Plafon Kredit', render: (item) => formatCurrency(item.plafon) },
     { key: 'tanggal', header: 'Tanggal', render: (item) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-' },
     { key: 'skema', header: 'Skema' },
-    { key: 'produkKredit', header: 'Produk Kredit' },
   ];
 
   if (isLoading) {
