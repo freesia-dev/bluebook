@@ -15,15 +15,14 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isAuthenticated, isDemo } = useAuth();
-  // Default open on desktop (lg+), closed on mobile
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 1024;
     }
     return false;
   });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Update sidebar state on window resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -38,15 +37,21 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
+  const sidebarWidth = sidebarCollapsed ? 68 : 256; // w-[68px] or w-64
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
       
-      {/* Header with menu button */}
       <header className={cn(
         "fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300",
-        sidebarOpen ? "left-64" : "left-0"
-      )}>
+        sidebarOpen ? `left-[${sidebarWidth}px]` : "left-0"
+      )} style={sidebarOpen ? { left: sidebarWidth } : undefined}>
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
@@ -63,11 +68,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      {/* Main Content - shifts when sidebar is open on desktop */}
       <main className={cn(
-        "min-h-screen pt-16 transition-all duration-300",
-        sidebarOpen ? "lg:ml-64" : "ml-0"
-      )}>
+        "min-h-screen pt-16 transition-all duration-300"
+      )} style={sidebarOpen ? { marginLeft: sidebarWidth } : undefined}>
         <div className="p-4 md:p-6">
           {isDemo && (
             <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
