@@ -19,6 +19,8 @@ import { exportAllTables } from '@/lib/export';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
+import { useAuth } from '@/contexts/AuthContext';
+import dashboardCharacter from '@/assets/dashboard-character.png';
 import {
   BarChart,
   Bar,
@@ -37,6 +39,7 @@ const COLORS = ['hsl(217, 91%, 45%)', 'hsl(45, 93%, 47%)', 'hsl(142, 76%, 36%)']
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userName } = useAuth();
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
 
   useEffect(() => {
@@ -145,6 +148,31 @@ const Dashboard: React.FC = () => {
           </Button>
         }
       />
+
+      {/* Greeting Banner */}
+      <Card className="shadow-card mb-6 overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between">
+            <div className="p-6 space-y-2">
+              <h2 className="text-2xl font-display font-bold text-foreground">
+                Halo, {userName}! 👋
+              </h2>
+              <p className="text-muted-foreground text-sm max-w-md">
+                Selamat datang kembali di Bluebook Telihan. Kamu punya{' '}
+                <span className="font-semibold text-primary">{suratMasuk.length + suratKeluar.length + totalAgendaKredit}</span>{' '}
+                total dokumen yang tercatat. Yuk kelola arsipmu hari ini!
+              </p>
+            </div>
+            <div className="hidden sm:block pr-4">
+              <img 
+                src={dashboardCharacter} 
+                alt="Dashboard character" 
+                className="w-36 h-36 object-contain animate-[fade-in_0.5s_ease-out] drop-shadow-lg" 
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
