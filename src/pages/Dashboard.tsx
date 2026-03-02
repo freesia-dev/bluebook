@@ -150,7 +150,7 @@ const Dashboard: React.FC = () => {
       />
 
       {/* Greeting Banner */}
-      <Card className="shadow-card mb-6 overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
+      <Card className="shadow-card mb-6 relative overflow-visible bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
         <CardContent className="p-0">
           <div className="flex items-center justify-between">
             <div className="p-6 space-y-2">
@@ -163,11 +163,11 @@ const Dashboard: React.FC = () => {
                 total dokumen yang tercatat. Yuk kelola arsipmu hari ini!
               </p>
             </div>
-            <div className="hidden sm:block pr-4">
+            <div className="hidden sm:block relative pr-6">
               <img 
                 src={dashboardCharacter} 
                 alt="Dashboard character" 
-                className="w-36 h-36 object-contain animate-[fade-in_0.5s_ease-out] drop-shadow-lg" 
+                className="w-44 h-44 object-contain -mt-10 -mb-4 drop-shadow-xl animate-[fade-in_0.5s_ease-out]" 
               />
             </div>
           </div>
