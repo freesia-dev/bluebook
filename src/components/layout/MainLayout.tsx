@@ -13,21 +13,21 @@ interface MainLayoutProps {
   children: ReactNode;
 }
 
+const SIDEBAR_FULL = 256;
+const SIDEBAR_COLLAPSED = 68;
+
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isAuthenticated, isDemo } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 1024;
-    }
-    return false;
-  });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Mobile: controls overlay sidebar visibility
+  const [mobileOpen, setMobileOpen] = useState(false);
+  // Desktop: controls expanded vs collapsed (icon-only rail)
+  const [desktopExpanded, setDesktopExpanded] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1024 : true);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      }
+      setIsMobile(window.innerWidth < 1024);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -37,29 +37,33 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const sidebarWidth = sidebarCollapsed ? 68 : 256; // w-[68px] or w-64
+  // On desktop sidebar is always visible (full or collapsed rail)
+  // On mobile sidebar is an overlay
+  const sidebarWidth = isMobile ? 0 : (desktopExpanded ? SIDEBAR_FULL : SIDEBAR_COLLAPSED);
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isOpen={isMobile ? mobileOpen : true}
+        onClose={() => setMobileOpen(false)} 
+        collapsed={isMobile ? false : !desktopExpanded}
+        onToggleCollapse={() => setDesktopExpanded(!desktopExpanded)}
       />
       
-      <header className={cn(
-        "fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300",
-        sidebarOpen ? `left-[${sidebarWidth}px]` : "left-0"
-      )} style={sidebarOpen ? { left: sidebarWidth } : undefined}>
+      <header 
+        className="fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300"
+        style={{ left: sidebarWidth }}
+      >
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          {isMobile && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
           <h1 className="font-display font-bold text-lg hidden sm:block">Bluebook Telihan</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -68,9 +72,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <main className={cn(
-        "min-h-screen pt-16 transition-all duration-300"
-      )} style={sidebarOpen ? { marginLeft: sidebarWidth } : undefined}>
+      <main 
+        className="min-h-screen pt-16 transition-all duration-300"
+        style={{ marginLeft: sidebarWidth }}
+      >
         <div className="p-4 md:p-6">
           {isDemo && (
             <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
