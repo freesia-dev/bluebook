@@ -131,6 +131,7 @@ const SuratMasukPage: React.FC = () => {
         tujuanDisposisi: formData.tujuanDisposisi,
         keterangan: formData.keterangan,
         tanggalMasuk: formData.tanggalMasuk,
+        fileUrl: formData.fileUrl,
       }});
 
       toast({ title: 'Berhasil', description: 'Data surat masuk berhasil diperbarui.' });
