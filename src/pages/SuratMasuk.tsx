@@ -69,6 +69,7 @@ const SuratMasukPage: React.FC = () => {
     tujuanDisposisi: '',
     keterangan: '',
     tanggalMasuk: new Date(),
+    fileUrl: null as string | null,
   });
 
   const resetForm = () => {
