@@ -13,7 +13,9 @@ import {
   Download, 
   Plus,
   TrendingUp,
-  Clock
+  Clock,
+  HardDrive,
+  Database
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
