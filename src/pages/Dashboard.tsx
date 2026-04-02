@@ -43,6 +43,68 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
+  const { isAdmin } = useAuth();
+
+  // Storage usage query (admin only)
+  const { data: storageCounts } = useQuery({
+    queryKey: ['storage-counts-dashboard'],
+    queryFn: async () => {
+      const tables = ['surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan', 'pengisian_atm', 'activity_log', 'recycle_bin', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan', 'agenda_kredit_entry'] as const;
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (const table of tables) {
+        const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        counts[table] = count || 0;
+        total += count || 0;
+      }
+      return { counts, total };
+    },
+    enabled: isAdmin,
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 2,
+  });
+
+  // File storage usage query (admin only)
+  const { data: fileStorageData } = useQuery({
+    queryKey: ['file-storage-usage'],
+    queryFn: async () => {
+      const { data: files, error } = await supabase.storage.from('documents').list('', { limit: 1000 });
+      if (error) return { usedBytes: 0, fileCount: 0 };
+      
+      // List all subfolders and files
+      let totalBytes = 0;
+      let fileCount = 0;
+      const folders = ['surat-masuk', 'surat-keluar'];
+      for (const folder of folders) {
+        const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
+        if (folderFiles) {
+          for (const f of folderFiles) {
+            if (f.metadata?.size) {
+              totalBytes += f.metadata.size;
+              fileCount++;
+            }
+          }
+        }
+      }
+      return { usedBytes: totalBytes, fileCount };
+    },
+    enabled: isAdmin,
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 2,
+  });
+
+  const maxRows = 100000;
+  const dbUsedPercent = storageCounts ? Math.min(Math.round((storageCounts.total / maxRows) * 100), 100) : 0;
+  const maxStorageBytes = 1024 * 1024 * 1024; // 1GB
+  const fileUsedPercent = fileStorageData ? Math.min(Math.round((fileStorageData.usedBytes / maxStorageBytes) * 100), 100) : 0;
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
 
   useEffect(() => {
     // Set up realtime subscriptions for live updates
