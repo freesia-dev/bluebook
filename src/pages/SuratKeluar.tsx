@@ -311,6 +311,11 @@ const SuratKeluarPage: React.FC = () => {
             <div className="space-y-2"><Label>Perihal <span className="text-destructive">*</span></Label><Input placeholder="Perihal surat" value={formData.perihal} onChange={(e) => setFormData({...formData, perihal: e.target.value})} /></div>
             <div className="space-y-2"><Label>Tujuan Surat (Instansi/Alamat)</Label><Input placeholder="Alamat tujuan surat" value={formData.tujuanSurat} onChange={(e) => setFormData({...formData, tujuanSurat: e.target.value})} /></div>
             <div className="space-y-2"><Label>Keterangan Lainnya</Label><Textarea placeholder="Keterangan tambahan (opsional)" value={formData.keterangan} onChange={(e) => setFormData({...formData, keterangan: e.target.value})} /></div>
+            <FileUpload
+              value={formData.fileUrl}
+              onChange={(url) => setFormData({...formData, fileUrl: url})}
+              folder="surat-keluar"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
