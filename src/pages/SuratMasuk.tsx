@@ -396,6 +396,9 @@ const SuratMasukPage: React.FC = () => {
                 <div><p className="text-sm text-muted-foreground">Tujuan Disposisi</p><p className="font-medium">{selectedItem.tujuanDisposisi || '-'}</p></div>
                 <div><p className="text-sm text-muted-foreground">Status</p><Badge variant={selectedItem.status === 'Sudah Disposisi' ? 'default' : 'secondary'}>{selectedItem.status}</Badge></div>
                 <div className="col-span-2"><p className="text-sm text-muted-foreground">Keterangan</p><p className="font-medium">{selectedItem.keterangan}</p></div>
+                <div className="col-span-2">
+                  <FileUpload value={selectedItem.fileUrl} onChange={() => {}} readOnly />
+                </div>
                 <div><p className="text-sm text-muted-foreground">User Input</p><p className="font-medium">{selectedItem.userInput}</p></div>
                 <div><p className="text-sm text-muted-foreground">Tanggal Masuk</p><p className="font-medium">{new Date(selectedItem.tanggalMasuk).toLocaleDateString('id-ID')}</p></div>
                 <div><p className="text-sm text-muted-foreground">Tanggal Input</p><p className="font-medium">{new Date(selectedItem.createdAt).toLocaleDateString('id-ID')}</p></div>
