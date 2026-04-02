@@ -296,6 +296,7 @@ const SuratMasukPage: React.FC = () => {
             tujuanDisposisi: item.tujuanDisposisi,
             keterangan: item.keterangan,
             tanggalMasuk: new Date(item.tanggalMasuk),
+            fileUrl: item.fileUrl || null,
           });
           setIsEditOpen(true); 
         }}
