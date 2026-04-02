@@ -49,6 +49,7 @@ import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { FileUpload } from '@/components/FileUpload';
 
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
@@ -71,10 +72,11 @@ const SuratKeluarPage: React.FC = () => {
     tujuanSurat: '',
     keterangan: '',
     tanggal: new Date(),
+    fileUrl: null as string | null,
   });
 
   const resetForm = () => {
-    setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date() });
+    setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date(), fileUrl: null });
   };
 
   const handleAdd = async () => {
@@ -95,6 +97,7 @@ const SuratKeluarPage: React.FC = () => {
         keterangan: formData.keterangan || '-',
         userInput: userName || 'Unknown',
         tanggal: formData.tanggal,
+        fileUrl: formData.fileUrl,
       });
 
       setSuccessMessage(`Surat Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);
@@ -116,6 +119,7 @@ const SuratKeluarPage: React.FC = () => {
       await update({ id: selectedItem.id, data: {
         ...formData,
         tanggal: formData.tanggal,
+        fileUrl: formData.fileUrl,
       }});
       toast({ title: 'Berhasil', description: 'Data surat keluar berhasil diperbarui.' });
       setIsEditOpen(false);
@@ -260,6 +264,7 @@ const SuratKeluarPage: React.FC = () => {
             tujuanSurat: item.tujuanSurat,
             keterangan: item.keterangan,
             tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
+            fileUrl: item.fileUrl || null,
           });
           setIsEditOpen(true); 
         }}
@@ -306,6 +311,11 @@ const SuratKeluarPage: React.FC = () => {
             <div className="space-y-2"><Label>Perihal <span className="text-destructive">*</span></Label><Input placeholder="Perihal surat" value={formData.perihal} onChange={(e) => setFormData({...formData, perihal: e.target.value})} /></div>
             <div className="space-y-2"><Label>Tujuan Surat (Instansi/Alamat)</Label><Input placeholder="Alamat tujuan surat" value={formData.tujuanSurat} onChange={(e) => setFormData({...formData, tujuanSurat: e.target.value})} /></div>
             <div className="space-y-2"><Label>Keterangan Lainnya</Label><Textarea placeholder="Keterangan tambahan (opsional)" value={formData.keterangan} onChange={(e) => setFormData({...formData, keterangan: e.target.value})} /></div>
+            <FileUpload
+              value={formData.fileUrl}
+              onChange={(url) => setFormData({...formData, fileUrl: url})}
+              folder="surat-keluar"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
@@ -332,6 +342,9 @@ const SuratKeluarPage: React.FC = () => {
                 <div><p className="text-sm text-muted-foreground">Tanggal</p><p className="font-medium">{selectedItem.tanggal ? format(new Date(selectedItem.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}</p></div>
                 <div><p className="text-sm text-muted-foreground">Keterangan</p><p className="font-medium">{selectedItem.keterangan}</p></div>
                 <div><p className="text-sm text-muted-foreground">User Input</p><p className="font-medium">{selectedItem.userInput}</p></div>
+                <div className="col-span-2">
+                  <FileUpload value={selectedItem.fileUrl} onChange={() => {}} readOnly />
+                </div>
               </div>
             </div>
           )}
@@ -363,6 +376,11 @@ const SuratKeluarPage: React.FC = () => {
             <div className="space-y-2"><Label>Perihal</Label><Input value={formData.perihal} onChange={(e) => setFormData({...formData, perihal: e.target.value})} /></div>
             <div className="space-y-2"><Label>Tujuan Surat</Label><Input value={formData.tujuanSurat} onChange={(e) => setFormData({...formData, tujuanSurat: e.target.value})} /></div>
             <div className="space-y-2"><Label>Keterangan</Label><Textarea value={formData.keterangan} onChange={(e) => setFormData({...formData, keterangan: e.target.value})} /></div>
+            <FileUpload
+              value={formData.fileUrl}
+              onChange={(url) => setFormData({...formData, fileUrl: url})}
+              folder="surat-keluar"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>

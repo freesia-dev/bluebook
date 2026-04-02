@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -12,13 +13,17 @@ import {
   Download, 
   Plus,
   TrendingUp,
-  Clock
+  Clock,
+  HardDrive,
+  Database
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import {
   BarChart,
   Bar,
@@ -38,6 +43,68 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
+  const { isAdmin } = useAuth();
+
+  // Storage usage query (admin only)
+  const { data: storageCounts } = useQuery({
+    queryKey: ['storage-counts-dashboard'],
+    queryFn: async () => {
+      const tables = ['surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan', 'pengisian_atm', 'activity_log', 'recycle_bin', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan', 'agenda_kredit_entry'] as const;
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (const table of tables) {
+        const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        counts[table] = count || 0;
+        total += count || 0;
+      }
+      return { counts, total };
+    },
+    enabled: isAdmin,
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 2,
+  });
+
+  // File storage usage query (admin only)
+  const { data: fileStorageData } = useQuery({
+    queryKey: ['file-storage-usage'],
+    queryFn: async () => {
+      const { data: files, error } = await supabase.storage.from('documents').list('', { limit: 1000 });
+      if (error) return { usedBytes: 0, fileCount: 0 };
+      
+      // List all subfolders and files
+      let totalBytes = 0;
+      let fileCount = 0;
+      const folders = ['surat-masuk', 'surat-keluar'];
+      for (const folder of folders) {
+        const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
+        if (folderFiles) {
+          for (const f of folderFiles) {
+            if (f.metadata?.size) {
+              totalBytes += f.metadata.size;
+              fileCount++;
+            }
+          }
+        }
+      }
+      return { usedBytes: totalBytes, fileCount };
+    },
+    enabled: isAdmin,
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 2,
+  });
+
+  const maxRows = 100000;
+  const dbUsedPercent = storageCounts ? Math.min(Math.round((storageCounts.total / maxRows) * 100), 100) : 0;
+  const maxStorageBytes = 1024 * 1024 * 1024; // 1GB
+  const fileUsedPercent = fileStorageData ? Math.min(Math.round((fileStorageData.usedBytes / maxStorageBytes) * 100), 100) : 0;
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
 
   useEffect(() => {
     // Set up realtime subscriptions for live updates
@@ -153,6 +220,73 @@ const Dashboard: React.FC = () => {
         <StatCard title="Agenda Kredit" value={totalAgendaKredit} icon={CreditCard} variant="success" />
         <StatCard title="Total Dokumen" value={suratMasuk.length + suratKeluar.length + totalAgendaKredit} icon={FileText} variant="warning" />
       </div>
+
+      {/* Cloud Storage Usage (Admin Only) */}
+      {isAdmin && storageCounts && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card className="shadow-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Database className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Penggunaan Database</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{storageCounts.total.toLocaleString('id-ID')} rows terpakai</span>
+                  <span>{maxRows.toLocaleString('id-ID')} rows</span>
+                </div>
+                <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${dbUsedPercent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{dbUsedPercent}%</span></span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{100 - dbUsedPercent}%</span></span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <HardDrive className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Penyimpanan File</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'} terpakai ({fileStorageData?.fileCount || 0} file)</span>
+                  <span>1 GB</span>
+                </div>
+                <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${Math.max(fileUsedPercent, 1)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'}</span></span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(maxStorageBytes - fileStorageData.usedBytes) : '1 GB'}</span></span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Quick Actions & Pie Chart */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
