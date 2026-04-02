@@ -72,10 +72,11 @@ const SuratKeluarPage: React.FC = () => {
     tujuanSurat: '',
     keterangan: '',
     tanggal: new Date(),
+    fileUrl: null as string | null,
   });
 
   const resetForm = () => {
-    setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date() });
+    setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date(), fileUrl: null });
   };
 
   const handleAdd = async () => {
