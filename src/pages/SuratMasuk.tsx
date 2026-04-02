@@ -438,6 +438,11 @@ const SuratMasukPage: React.FC = () => {
             <div className="space-y-2"><Label>Perihal</Label><Input value={formData.perihal} onChange={(e) => setFormData({...formData, perihal: e.target.value})} /></div>
             <div className="space-y-2"><Label>Tujuan Disposisi</Label><Input value={formData.tujuanDisposisi} onChange={(e) => setFormData({...formData, tujuanDisposisi: e.target.value})} /></div>
             <div className="space-y-2"><Label>Keterangan</Label><Textarea value={formData.keterangan} onChange={(e) => setFormData({...formData, keterangan: e.target.value})} /></div>
+            <FileUpload
+              value={formData.fileUrl}
+              onChange={(url) => setFormData({...formData, fileUrl: url})}
+              folder="surat-masuk"
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
