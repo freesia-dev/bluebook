@@ -81,6 +81,7 @@ const SuratMasukPage: React.FC = () => {
       tujuanDisposisi: '',
       keterangan: '',
       tanggalMasuk: new Date(),
+      fileUrl: null,
     });
   };
 
