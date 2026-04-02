@@ -49,6 +49,7 @@ import { CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { FileUpload } from '@/components/FileUpload';
 
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
