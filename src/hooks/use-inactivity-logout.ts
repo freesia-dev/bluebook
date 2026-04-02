@@ -7,7 +7,7 @@ const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 hour in milliseconds
 export const useInactivityLogout = () => {
   const { isAuthenticated, logout } = useAuth();
   const { toast } = useToast();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLogout = useCallback(async () => {
     toast({
