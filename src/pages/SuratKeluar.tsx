@@ -119,6 +119,7 @@ const SuratKeluarPage: React.FC = () => {
       await update({ id: selectedItem.id, data: {
         ...formData,
         tanggal: formData.tanggal,
+        fileUrl: formData.fileUrl,
       }});
       toast({ title: 'Berhasil', description: 'Data surat keluar berhasil diperbarui.' });
       setIsEditOpen(false);
