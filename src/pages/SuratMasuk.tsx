@@ -104,6 +104,7 @@ const SuratMasukPage: React.FC = () => {
         keterangan: formData.keterangan || '-',
         userInput: userName || 'Unknown',
         tanggalMasuk: formData.tanggalMasuk,
+        fileUrl: formData.fileUrl,
       });
 
       setSuccessMessage(`Surat Berhasil Disimpan dengan nomor Agenda: ${newItem.nomorAgenda}`);
