@@ -221,6 +221,73 @@ const Dashboard: React.FC = () => {
         <StatCard title="Total Dokumen" value={suratMasuk.length + suratKeluar.length + totalAgendaKredit} icon={FileText} variant="warning" />
       </div>
 
+      {/* Cloud Storage Usage (Admin Only) */}
+      {isAdmin && storageCounts && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card className="shadow-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Database className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Penggunaan Database</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{storageCounts.total.toLocaleString('id-ID')} rows terpakai</span>
+                  <span>{maxRows.toLocaleString('id-ID')} rows</span>
+                </div>
+                <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${dbUsedPercent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{dbUsedPercent}%</span></span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{100 - dbUsedPercent}%</span></span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <HardDrive className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Penyimpanan File</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'} terpakai ({fileStorageData?.fileCount || 0} file)</span>
+                  <span>1 GB</span>
+                </div>
+                <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${Math.max(fileUsedPercent, 1)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'}</span></span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(maxStorageBytes - fileStorageData.usedBytes) : '1 GB'}</span></span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Quick Actions & Pie Chart */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card className="shadow-card hover:shadow-card-hover transition-shadow">
