@@ -264,6 +264,7 @@ const SuratKeluarPage: React.FC = () => {
             tujuanSurat: item.tujuanSurat,
             keterangan: item.keterangan,
             tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
+            fileUrl: item.fileUrl || null,
           });
           setIsEditOpen(true); 
         }}
