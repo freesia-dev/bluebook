@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -89,6 +90,33 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
       tanggal: new Date(),
     });
   };
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setIsAddOpen(true);
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+    const editId = searchParams.get('edit');
+    if (editId && data.length) {
+      const item = data.find(d => d.id === editId);
+      if (item) {
+        setSelectedItem(item);
+        setFormData({
+          namaDebitur: item.namaDebitur,
+          jenisKredit: item.jenisKredit,
+          plafon: formatCurrencyInput(item.plafon.toString()),
+          jangkaWaktu: item.jangkaWaktu,
+          marketing: item.marketing,
+          tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
+        });
+        setIsEditOpen(true);
+        searchParams.delete('edit');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, data, setSearchParams]);
 
   const handlePlafonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCurrencyInput(e.target.value);

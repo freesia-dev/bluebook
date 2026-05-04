@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -78,6 +79,34 @@ const SuratKeluarPage: React.FC = () => {
   const resetForm = () => {
     setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date(), fileUrl: null });
   };
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setIsAddOpen(true);
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+    const editId = searchParams.get('edit');
+    if (editId && data.length) {
+      const item = data.find(d => d.id === editId);
+      if (item) {
+        setSelectedItem(item);
+        setFormData({
+          kodeSurat: item.kodeSurat,
+          namaPenerima: item.namaPenerima,
+          perihal: item.perihal,
+          tujuanSurat: item.tujuanSurat,
+          keterangan: item.keterangan,
+          tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
+          fileUrl: item.fileUrl || null,
+        });
+        setIsEditOpen(true);
+        searchParams.delete('edit');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, data, setSearchParams]);
 
   const handleAdd = async () => {
     if (isSubmitting) return;

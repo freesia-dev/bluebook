@@ -299,7 +299,7 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => navigate('/surat-masuk')}
+              onClick={() => navigate('/surat-masuk?action=add')}
               className="relative group flex flex-col items-center justify-center gap-3 p-6 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/20 hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md overflow-hidden"
             >
               <div className="absolute top-2 right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
@@ -314,7 +314,7 @@ const Dashboard: React.FC = () => {
               </div>
             </button>
             <button
-              onClick={() => navigate('/surat-keluar')}
+              onClick={() => navigate('/surat-keluar?action=add')}
               className="relative group flex flex-col items-center justify-center gap-3 p-6 rounded-xl border border-border bg-gradient-to-br from-secondary/5 to-secondary/10 hover:from-secondary/10 hover:to-secondary/20 hover:border-secondary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md overflow-hidden"
             >
               <div className="absolute top-2 right-2 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">

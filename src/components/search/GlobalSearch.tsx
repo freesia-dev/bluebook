@@ -1,21 +1,33 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Search, Mail, Send, CreditCard, FileText, X } from 'lucide-react';
+import { Search, Mail, Send, CreditCard, FileText, X, Pencil, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK, AgendaKreditEntry } from '@/types';
 
+type AnyRecord = SuratMasuk | SuratKeluar | SPPK | PK | KKMPAK | AgendaKreditEntry;
+
 interface SearchResult {
   id: string;
+  recordId: string;
   title: string;
   subtitle: string;
   module: string;
   icon: React.ElementType;
   href: string;
   badgeColor: string;
+  record: AnyRecord;
 }
 
 export const GlobalSearch: React.FC = () => {
@@ -61,7 +73,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...suratMasuk
         .filter(s => s.namaPengirim.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower) || s.nomorSuratMasuk.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `sm-${s.id}`, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Surat Masuk', icon: Mail, href: '/surat-masuk', badgeColor: 'bg-blue-500/10 text-blue-600' })));
+        .map(s => ({ id: `sm-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Surat Masuk', icon: Mail, href: '/surat-masuk', badgeColor: 'bg-blue-500/10 text-blue-600' })));
     }
 
     const suratKeluar = queryClient.getQueryData<SuratKeluar[]>(['surat-keluar']);
@@ -69,7 +81,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...suratKeluar
         .filter(s => s.namaPenerima.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `sk-${s.id}`, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPenerima}`, module: 'Surat Keluar', icon: Send, href: '/surat-keluar', badgeColor: 'bg-green-500/10 text-green-600' })));
+        .map(s => ({ id: `sk-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPenerima}`, module: 'Surat Keluar', icon: Send, href: '/surat-keluar', badgeColor: 'bg-green-500/10 text-green-600' })));
     }
 
     const sppk = queryClient.getQueryData<SPPK[]>(['sppk']);
@@ -77,7 +89,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...sppk
         .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorSPPK.toLowerCase().includes(lower) || s.jenisKredit.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `sppk-${s.id}`, title: s.namaDebitur, subtitle: `${s.nomorSPPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `SPPK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: `/agenda-kredit/sppk-${s.type}`, badgeColor: 'bg-purple-500/10 text-purple-600' })));
+        .map(s => ({ id: `sppk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `${s.nomorSPPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `SPPK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: `/agenda-kredit/sppk-${s.type}`, badgeColor: 'bg-purple-500/10 text-purple-600' })));
     }
 
     const pk = queryClient.getQueryData<PK[]>(['pk']);
@@ -85,7 +97,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...pk
         .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorPK.toLowerCase().includes(lower) || s.jenisKredit.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `pk-${s.id}`, title: s.namaDebitur, subtitle: `${s.nomorPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `PK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: FileText, href: `/agenda-kredit/pk-${s.type}`, badgeColor: 'bg-orange-500/10 text-orange-600' })));
+        .map(s => ({ id: `pk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `${s.nomorPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `PK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: FileText, href: `/agenda-kredit/pk-${s.type}`, badgeColor: 'bg-orange-500/10 text-orange-600' })));
     }
 
     const kkmpak = queryClient.getQueryData<KKMPAK[]>(['kkmpak']);
@@ -93,7 +105,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...kkmpak
         .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorKK.toLowerCase().includes(lower) || s.nomorMPAK.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `kk-${s.id}`, title: s.namaDebitur, subtitle: `KK: ${s.nomorKK} • MPAK: ${s.nomorMPAK}`, module: `KK/MPAK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: s.type === 'telihan' ? '/agenda-kredit/kk-mpak-telihan' : '/agenda-kredit/agenda-mpak-meranti', badgeColor: 'bg-teal-500/10 text-teal-600' })));
+        .map(s => ({ id: `kk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `KK: ${s.nomorKK} • MPAK: ${s.nomorMPAK}`, module: `KK/MPAK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: s.type === 'telihan' ? '/agenda-kredit/kk-mpak-telihan' : '/agenda-kredit/agenda-mpak-meranti', badgeColor: 'bg-teal-500/10 text-teal-600' })));
     }
 
     const agendaKredit = queryClient.getQueryData<AgendaKreditEntry[]>(['agenda-kredit-entry']);
@@ -101,7 +113,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...agendaKredit
         .filter(s => s.namaPengirim.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `ak-${s.id}`, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Agenda Kredit', icon: FileText, href: '/agenda-kredit/agenda-kredit', badgeColor: 'bg-indigo-500/10 text-indigo-600' })));
+        .map(s => ({ id: `ak-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Agenda Kredit', icon: FileText, href: '/agenda-kredit/agenda-kredit', badgeColor: 'bg-indigo-500/10 text-indigo-600' })));
     }
 
     return results;
@@ -120,11 +132,27 @@ export const GlobalSearch: React.FC = () => {
 
   const flatResults = useMemo(() => results, [results]);
 
-  const handleSelect = (href: string) => {
+  const [detailItem, setDetailItem] = useState<SearchResult | null>(null);
+
+  const openDetail = (item: SearchResult) => {
     setIsFocused(false);
     setQuery('');
     setSelectedIndex(-1);
-    navigate(href);
+    setDetailItem(item);
+  };
+
+  const handleEditFromDetail = () => {
+    if (!detailItem) return;
+    const item = detailItem;
+    setDetailItem(null);
+    navigate(`${item.href}?edit=${item.recordId}`);
+  };
+
+  const handleOpenPage = () => {
+    if (!detailItem) return;
+    const item = detailItem;
+    setDetailItem(null);
+    navigate(item.href);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -136,11 +164,90 @@ export const GlobalSearch: React.FC = () => {
       setSelectedIndex(prev => (prev > 0 ? prev - 1 : flatResults.length - 1));
     } else if (e.key === 'Enter' && selectedIndex >= 0 && flatResults[selectedIndex]) {
       e.preventDefault();
-      handleSelect(flatResults[selectedIndex].href);
+      openDetail(flatResults[selectedIndex]);
     } else if (e.key === 'Escape') {
       setIsFocused(false);
       inputRef.current?.blur();
     }
+  };
+
+  const formatDate = (d: any) => {
+    if (!d) return '-';
+    try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }); } catch { return '-'; }
+  };
+
+  const renderDetailFields = (item: SearchResult) => {
+    const r: any = item.record;
+    const fields: { label: string; value: any; full?: boolean }[] = [];
+    const push = (label: string, value: any, full = false) => {
+      if (value === undefined || value === null || value === '') return;
+      fields.push({ label, value, full });
+    };
+
+    if (item.module === 'Surat Masuk') {
+      push('Nomor Agenda', r.nomorAgenda);
+      push('Kode Surat', r.kodeSurat);
+      push('Nomor Surat Masuk', r.nomorSuratMasuk);
+      push('Nama Pengirim', r.namaPengirim);
+      push('Perihal', r.perihal, true);
+      push('Tujuan Disposisi', r.tujuanDisposisi);
+      push('Status', r.status);
+      push('Tanggal Masuk', formatDate(r.tanggalMasuk));
+      push('Keterangan', r.keterangan, true);
+      push('User Input', r.userInput);
+    } else if (item.module === 'Surat Keluar') {
+      push('Nomor Agenda', r.nomorAgenda);
+      push('Kode Surat', r.kodeSurat);
+      push('Nama Penerima', r.namaPenerima);
+      push('Tujuan Surat', r.tujuanSurat);
+      push('Perihal', r.perihal, true);
+      push('Status', r.status);
+      push('Tanggal', formatDate(r.tanggal));
+      push('Keterangan', r.keterangan, true);
+      push('User Input', r.userInput);
+    } else if (item.module.startsWith('SPPK')) {
+      push('Nomor SPPK', r.nomorSPPK);
+      push('Nama Debitur', r.namaDebitur);
+      push('Jenis Kredit', r.jenisKredit);
+      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
+      push('Jangka Waktu', r.jangkaWaktu);
+      push('Marketing', r.marketing);
+      push('Tanggal', formatDate(r.tanggal));
+    } else if (item.module.startsWith('PK')) {
+      push('Nomor PK', r.nomorPK);
+      push('Nama Debitur', r.namaDebitur);
+      push('Jenis Kredit', r.jenisKredit);
+      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
+      push('Jangka Waktu', r.jangkaWaktu);
+      push('Jenis Debitur', r.jenisDebitur);
+      push('Jenis Penggunaan', r.jenisPenggunaan);
+      push('Sektor Ekonomi', r.sektorEkonomi);
+      push('Tanggal', formatDate(r.tanggal));
+    } else if (item.module.startsWith('KK/MPAK')) {
+      push('Nomor KK', r.nomorKK);
+      push('Nomor MPAK', r.nomorMPAK);
+      push('Nama Debitur', r.namaDebitur);
+      push('Jenis Kredit', r.jenisKredit);
+      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
+      push('Jangka Waktu', r.jangkaWaktu);
+      push('Jenis Debitur', r.jenisDebitur);
+      push('Kode Fasilitas', r.kodeFasilitas);
+      push('Sektor Ekonomi', r.sektorEkonomi);
+      push('Tanggal', formatDate(r.tanggal));
+    } else if (item.module === 'Agenda Kredit') {
+      push('Nomor Agenda', r.nomorAgenda);
+      push('Kode Surat', r.kodeSurat);
+      push('Nomor Surat Masuk', r.nomorSuratMasuk);
+      push('Nama Pengirim', r.namaPengirim);
+      push('Perihal', r.perihal, true);
+      push('Tujuan Disposisi', r.tujuanDisposisi);
+      push('Status', r.status);
+      push('Tanggal Masuk', formatDate(r.tanggalMasuk));
+      push('Keterangan', r.keterangan, true);
+      push('User Input', r.userInput);
+    }
+
+    return fields;
   };
 
   const showDropdown = isFocused && query.length >= 1;
@@ -197,7 +304,7 @@ export const GlobalSearch: React.FC = () => {
                       return (
                         <button
                           key={item.id}
-                          onClick={() => handleSelect(item.href)}
+                          onClick={() => openDetail(item)}
                           onMouseEnter={() => setSelectedIndex(globalIdx)}
                           className={cn(
                             "flex items-center gap-3 w-full px-2.5 py-2.5 rounded-md text-left transition-colors cursor-pointer",
@@ -222,6 +329,35 @@ export const GlobalSearch: React.FC = () => {
           )}
         </div>
       )}
+
+      <Dialog open={!!detailItem} onOpenChange={(o) => !o && setDetailItem(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              {detailItem && <detailItem.icon className="h-5 w-5 text-primary" />}
+              Detail {detailItem?.module}
+            </DialogTitle>
+          </DialogHeader>
+          {detailItem && (
+            <div className="grid grid-cols-2 gap-4 py-2">
+              {renderDetailFields(detailItem).map((f, i) => (
+                <div key={i} className={cn(f.full && 'col-span-2')}>
+                  <p className="text-xs text-muted-foreground">{f.label}</p>
+                  <p className="text-sm font-medium break-words">{String(f.value)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={handleOpenPage} className="gap-1.5">
+              <ExternalLink className="h-4 w-4" /> Buka Halaman
+            </Button>
+            <Button onClick={handleEditFromDetail} className="gap-1.5">
+              <Pencil className="h-4 w-4" /> Edit Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
