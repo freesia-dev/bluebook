@@ -80,6 +80,34 @@ const SuratKeluarPage: React.FC = () => {
     setFormData({ kodeSurat: '', namaPenerima: '', perihal: '', tujuanSurat: '', keterangan: '', tanggal: new Date(), fileUrl: null });
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setIsAddOpen(true);
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+    const editId = searchParams.get('edit');
+    if (editId && data.length) {
+      const item = data.find(d => d.id === editId);
+      if (item) {
+        setSelectedItem(item);
+        setFormData({
+          kodeSurat: item.kodeSurat,
+          namaPenerima: item.namaPenerima,
+          perihal: item.perihal,
+          tujuanSurat: item.tujuanSurat,
+          keterangan: item.keterangan,
+          tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
+          fileUrl: item.fileUrl || null,
+        });
+        setIsEditOpen(true);
+        searchParams.delete('edit');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, data, setSearchParams]);
+
   const handleAdd = async () => {
     if (isSubmitting) return;
     if (!formData.kodeSurat || !formData.namaPenerima || !formData.perihal) {
