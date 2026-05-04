@@ -91,6 +91,33 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
     });
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setIsAddOpen(true);
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+    const editId = searchParams.get('edit');
+    if (editId && data.length) {
+      const item = data.find(d => d.id === editId);
+      if (item) {
+        setSelectedItem(item);
+        setFormData({
+          namaDebitur: item.namaDebitur,
+          jenisKredit: item.jenisKredit,
+          plafon: formatCurrencyInput(item.plafon.toString()),
+          jangkaWaktu: item.jangkaWaktu,
+          marketing: item.marketing,
+          tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
+        });
+        setIsEditOpen(true);
+        searchParams.delete('edit');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, data, setSearchParams]);
+
   const handlePlafonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCurrencyInput(e.target.value);
     setFormData({...formData, plafon: formatted});
