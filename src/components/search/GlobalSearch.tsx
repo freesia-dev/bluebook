@@ -132,11 +132,27 @@ export const GlobalSearch: React.FC = () => {
 
   const flatResults = useMemo(() => results, [results]);
 
-  const handleSelect = (href: string) => {
+  const [detailItem, setDetailItem] = useState<SearchResult | null>(null);
+
+  const openDetail = (item: SearchResult) => {
     setIsFocused(false);
     setQuery('');
     setSelectedIndex(-1);
-    navigate(href);
+    setDetailItem(item);
+  };
+
+  const handleEditFromDetail = () => {
+    if (!detailItem) return;
+    const item = detailItem;
+    setDetailItem(null);
+    navigate(`${item.href}?edit=${item.recordId}`);
+  };
+
+  const handleOpenPage = () => {
+    if (!detailItem) return;
+    const item = detailItem;
+    setDetailItem(null);
+    navigate(item.href);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -148,11 +164,90 @@ export const GlobalSearch: React.FC = () => {
       setSelectedIndex(prev => (prev > 0 ? prev - 1 : flatResults.length - 1));
     } else if (e.key === 'Enter' && selectedIndex >= 0 && flatResults[selectedIndex]) {
       e.preventDefault();
-      handleSelect(flatResults[selectedIndex].href);
+      openDetail(flatResults[selectedIndex]);
     } else if (e.key === 'Escape') {
       setIsFocused(false);
       inputRef.current?.blur();
     }
+  };
+
+  const formatDate = (d: any) => {
+    if (!d) return '-';
+    try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }); } catch { return '-'; }
+  };
+
+  const renderDetailFields = (item: SearchResult) => {
+    const r: any = item.record;
+    const fields: { label: string; value: any; full?: boolean }[] = [];
+    const push = (label: string, value: any, full = false) => {
+      if (value === undefined || value === null || value === '') return;
+      fields.push({ label, value, full });
+    };
+
+    if (item.module === 'Surat Masuk') {
+      push('Nomor Agenda', r.nomorAgenda);
+      push('Kode Surat', r.kodeSurat);
+      push('Nomor Surat Masuk', r.nomorSuratMasuk);
+      push('Nama Pengirim', r.namaPengirim);
+      push('Perihal', r.perihal, true);
+      push('Tujuan Disposisi', r.tujuanDisposisi);
+      push('Status', r.status);
+      push('Tanggal Masuk', formatDate(r.tanggalMasuk));
+      push('Keterangan', r.keterangan, true);
+      push('User Input', r.userInput);
+    } else if (item.module === 'Surat Keluar') {
+      push('Nomor Agenda', r.nomorAgenda);
+      push('Kode Surat', r.kodeSurat);
+      push('Nama Penerima', r.namaPenerima);
+      push('Tujuan Surat', r.tujuanSurat);
+      push('Perihal', r.perihal, true);
+      push('Status', r.status);
+      push('Tanggal', formatDate(r.tanggal));
+      push('Keterangan', r.keterangan, true);
+      push('User Input', r.userInput);
+    } else if (item.module.startsWith('SPPK')) {
+      push('Nomor SPPK', r.nomorSPPK);
+      push('Nama Debitur', r.namaDebitur);
+      push('Jenis Kredit', r.jenisKredit);
+      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
+      push('Jangka Waktu', r.jangkaWaktu);
+      push('Marketing', r.marketing);
+      push('Tanggal', formatDate(r.tanggal));
+    } else if (item.module.startsWith('PK')) {
+      push('Nomor PK', r.nomorPK);
+      push('Nama Debitur', r.namaDebitur);
+      push('Jenis Kredit', r.jenisKredit);
+      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
+      push('Jangka Waktu', r.jangkaWaktu);
+      push('Jenis Debitur', r.jenisDebitur);
+      push('Jenis Penggunaan', r.jenisPenggunaan);
+      push('Sektor Ekonomi', r.sektorEkonomi);
+      push('Tanggal', formatDate(r.tanggal));
+    } else if (item.module.startsWith('KK/MPAK')) {
+      push('Nomor KK', r.nomorKK);
+      push('Nomor MPAK', r.nomorMPAK);
+      push('Nama Debitur', r.namaDebitur);
+      push('Jenis Kredit', r.jenisKredit);
+      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
+      push('Jangka Waktu', r.jangkaWaktu);
+      push('Jenis Debitur', r.jenisDebitur);
+      push('Kode Fasilitas', r.kodeFasilitas);
+      push('Sektor Ekonomi', r.sektorEkonomi);
+      push('Tanggal', formatDate(r.tanggal));
+    } else if (item.module === 'Agenda Kredit') {
+      push('Nomor Agenda', r.nomorAgenda);
+      push('Kode Surat', r.kodeSurat);
+      push('Nomor Surat Masuk', r.nomorSuratMasuk);
+      push('Nama Pengirim', r.namaPengirim);
+      push('Perihal', r.perihal, true);
+      push('Tujuan Disposisi', r.tujuanDisposisi);
+      push('Status', r.status);
+      push('Tanggal Masuk', formatDate(r.tanggalMasuk));
+      push('Keterangan', r.keterangan, true);
+      push('User Input', r.userInput);
+    }
+
+    return fields;
   };
 
   const showDropdown = isFocused && query.length >= 1;
