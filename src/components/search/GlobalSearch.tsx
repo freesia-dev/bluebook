@@ -304,7 +304,7 @@ export const GlobalSearch: React.FC = () => {
                       return (
                         <button
                           key={item.id}
-                          onClick={() => handleSelect(item.href)}
+                          onClick={() => openDetail(item)}
                           onMouseEnter={() => setSelectedIndex(globalIdx)}
                           className={cn(
                             "flex items-center gap-3 w-full px-2.5 py-2.5 rounded-md text-left transition-colors cursor-pointer",
@@ -329,6 +329,35 @@ export const GlobalSearch: React.FC = () => {
           )}
         </div>
       )}
+
+      <Dialog open={!!detailItem} onOpenChange={(o) => !o && setDetailItem(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              {detailItem && <detailItem.icon className="h-5 w-5 text-primary" />}
+              Detail {detailItem?.module}
+            </DialogTitle>
+          </DialogHeader>
+          {detailItem && (
+            <div className="grid grid-cols-2 gap-4 py-2">
+              {renderDetailFields(detailItem).map((f, i) => (
+                <div key={i} className={cn(f.full && 'col-span-2')}>
+                  <p className="text-xs text-muted-foreground">{f.label}</p>
+                  <p className="text-sm font-medium break-words">{String(f.value)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={handleOpenPage} className="gap-1.5">
+              <ExternalLink className="h-4 w-4" /> Buka Halaman
+            </Button>
+            <Button onClick={handleEditFromDetail} className="gap-1.5">
+              <Pencil className="h-4 w-4" /> Edit Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
