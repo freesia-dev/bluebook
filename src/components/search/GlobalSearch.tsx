@@ -1,21 +1,33 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Search, Mail, Send, CreditCard, FileText, X } from 'lucide-react';
+import { Search, Mail, Send, CreditCard, FileText, X, Pencil, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK, AgendaKreditEntry } from '@/types';
 
+type AnyRecord = SuratMasuk | SuratKeluar | SPPK | PK | KKMPAK | AgendaKreditEntry;
+
 interface SearchResult {
   id: string;
+  recordId: string;
   title: string;
   subtitle: string;
   module: string;
   icon: React.ElementType;
   href: string;
   badgeColor: string;
+  record: AnyRecord;
 }
 
 export const GlobalSearch: React.FC = () => {
