@@ -73,7 +73,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...suratMasuk
         .filter(s => s.namaPengirim.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower) || s.nomorSuratMasuk.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `sm-${s.id}`, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Surat Masuk', icon: Mail, href: '/surat-masuk', badgeColor: 'bg-blue-500/10 text-blue-600' })));
+        .map(s => ({ id: `sm-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Surat Masuk', icon: Mail, href: '/surat-masuk', badgeColor: 'bg-blue-500/10 text-blue-600' })));
     }
 
     const suratKeluar = queryClient.getQueryData<SuratKeluar[]>(['surat-keluar']);
@@ -81,7 +81,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...suratKeluar
         .filter(s => s.namaPenerima.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `sk-${s.id}`, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPenerima}`, module: 'Surat Keluar', icon: Send, href: '/surat-keluar', badgeColor: 'bg-green-500/10 text-green-600' })));
+        .map(s => ({ id: `sk-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPenerima}`, module: 'Surat Keluar', icon: Send, href: '/surat-keluar', badgeColor: 'bg-green-500/10 text-green-600' })));
     }
 
     const sppk = queryClient.getQueryData<SPPK[]>(['sppk']);
@@ -89,7 +89,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...sppk
         .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorSPPK.toLowerCase().includes(lower) || s.jenisKredit.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `sppk-${s.id}`, title: s.namaDebitur, subtitle: `${s.nomorSPPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `SPPK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: `/agenda-kredit/sppk-${s.type}`, badgeColor: 'bg-purple-500/10 text-purple-600' })));
+        .map(s => ({ id: `sppk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `${s.nomorSPPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `SPPK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: `/agenda-kredit/sppk-${s.type}`, badgeColor: 'bg-purple-500/10 text-purple-600' })));
     }
 
     const pk = queryClient.getQueryData<PK[]>(['pk']);
@@ -97,7 +97,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...pk
         .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorPK.toLowerCase().includes(lower) || s.jenisKredit.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `pk-${s.id}`, title: s.namaDebitur, subtitle: `${s.nomorPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `PK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: FileText, href: `/agenda-kredit/pk-${s.type}`, badgeColor: 'bg-orange-500/10 text-orange-600' })));
+        .map(s => ({ id: `pk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `${s.nomorPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `PK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: FileText, href: `/agenda-kredit/pk-${s.type}`, badgeColor: 'bg-orange-500/10 text-orange-600' })));
     }
 
     const kkmpak = queryClient.getQueryData<KKMPAK[]>(['kkmpak']);
@@ -105,7 +105,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...kkmpak
         .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorKK.toLowerCase().includes(lower) || s.nomorMPAK.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `kk-${s.id}`, title: s.namaDebitur, subtitle: `KK: ${s.nomorKK} • MPAK: ${s.nomorMPAK}`, module: `KK/MPAK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: s.type === 'telihan' ? '/agenda-kredit/kk-mpak-telihan' : '/agenda-kredit/agenda-mpak-meranti', badgeColor: 'bg-teal-500/10 text-teal-600' })));
+        .map(s => ({ id: `kk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `KK: ${s.nomorKK} • MPAK: ${s.nomorMPAK}`, module: `KK/MPAK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: s.type === 'telihan' ? '/agenda-kredit/kk-mpak-telihan' : '/agenda-kredit/agenda-mpak-meranti', badgeColor: 'bg-teal-500/10 text-teal-600' })));
     }
 
     const agendaKredit = queryClient.getQueryData<AgendaKreditEntry[]>(['agenda-kredit-entry']);
@@ -113,7 +113,7 @@ export const GlobalSearch: React.FC = () => {
       results.push(...agendaKredit
         .filter(s => s.namaPengirim.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower))
         .slice(0, maxPerModule)
-        .map(s => ({ id: `ak-${s.id}`, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Agenda Kredit', icon: FileText, href: '/agenda-kredit/agenda-kredit', badgeColor: 'bg-indigo-500/10 text-indigo-600' })));
+        .map(s => ({ id: `ak-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Agenda Kredit', icon: FileText, href: '/agenda-kredit/agenda-kredit', badgeColor: 'bg-indigo-500/10 text-indigo-600' })));
     }
 
     return results;
