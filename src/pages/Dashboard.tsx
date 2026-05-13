@@ -42,7 +42,7 @@ const COLORS = ['hsl(217, 91%, 45%)', 'hsl(45, 93%, 47%)', 'hsl(142, 76%, 36%)']
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
+  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts } = useDashboardData();
   const { isAdmin } = useAuth();
 
   // Storage usage query (admin only) — parallelized
