@@ -264,6 +264,7 @@ const DatabasePengisianATM = () => {
       'Yang Menyerahkan': item.yangMenyerahkan,
       'Teller Selisih': item.tellerSelisih,
       'Retracts': item.retracts,
+      'Catatan Tambahan': item.catatanTambahan || '',
     }));
     exportToExcel(exportData, 'Database_Pengisian_ATM');
   };
@@ -439,6 +440,12 @@ const DatabasePengisianATM = () => {
                 <div className="border-t pt-4">
                   <span className="text-muted-foreground text-sm">Notes:</span>
                   <p className="mt-1 font-mono">{selectedItem.notes}</p>
+                </div>
+              )}
+              {selectedItem.catatanTambahan && (
+                <div className="border-t pt-4">
+                  <span className="text-muted-foreground text-sm">Keterangan / Catatan Tambahan:</span>
+                  <p className="mt-1 whitespace-pre-wrap">{selectedItem.catatanTambahan}</p>
                 </div>
               )}
             </div>
