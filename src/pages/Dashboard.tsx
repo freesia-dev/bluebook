@@ -219,10 +219,10 @@ const Dashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Surat Masuk" value={suratMasuk.length} icon={Mail} variant="primary" />
-        <StatCard title="Surat Keluar" value={suratKeluar.length} icon={Send} variant="secondary" />
+        <StatCard title="Surat Masuk" value={counts.suratMasuk} icon={Mail} variant="primary" />
+        <StatCard title="Surat Keluar" value={counts.suratKeluar} icon={Send} variant="secondary" />
         <StatCard title="Agenda Kredit" value={totalAgendaKredit} icon={CreditCard} variant="success" />
-        <StatCard title="Total Dokumen" value={suratMasuk.length + suratKeluar.length + totalAgendaKredit} icon={FileText} variant="warning" />
+        <StatCard title="Total Dokumen" value={counts.suratMasuk + counts.suratKeluar + totalAgendaKredit} icon={FileText} variant="warning" />
       </div>
 
       {/* Cloud Storage Usage (Admin Only) */}
