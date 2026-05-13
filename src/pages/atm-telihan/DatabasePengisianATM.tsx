@@ -71,6 +71,7 @@ const DatabasePengisianATM = () => {
     yangMenyerahkan: '',
     namaTeller: '',
     tellerSelisih: '',
+    catatanTambahan: '',
   });
 
   const [formData, setFormData] = useState<PengisianATMFormData>(getDefaultForm());
@@ -163,6 +164,7 @@ const DatabasePengisianATM = () => {
       yangMenyerahkan: formData.yangMenyerahkan,
       tellerSelisih: formData.tellerSelisih,
       retracts: calculations.retracts,
+      catatanTambahan: formData.catatanTambahan,
       userInput: userName || 'System',
     }, {
       onSuccess: (newItem) => {
@@ -209,6 +211,7 @@ const DatabasePengisianATM = () => {
         yangMenyerahkan: formData.yangMenyerahkan,
         tellerSelisih: formData.tellerSelisih,
         retracts: calculations.retracts,
+        catatanTambahan: formData.catatanTambahan,
       }
     }, {
       onSuccess: () => {
@@ -261,6 +264,7 @@ const DatabasePengisianATM = () => {
       'Yang Menyerahkan': item.yangMenyerahkan,
       'Teller Selisih': item.tellerSelisih,
       'Retracts': item.retracts,
+      'Catatan Tambahan': item.catatanTambahan || '',
     }));
     exportToExcel(exportData, 'Database_Pengisian_ATM');
   };
@@ -332,6 +336,7 @@ const DatabasePengisianATM = () => {
               yangMenyerahkan: item.yangMenyerahkan,
               namaTeller: item.namaTeller,
               tellerSelisih: item.tellerSelisih,
+              catatanTambahan: item.catatanTambahan || '',
             });
             setIsEditOpen(true);
           }}
@@ -435,6 +440,12 @@ const DatabasePengisianATM = () => {
                 <div className="border-t pt-4">
                   <span className="text-muted-foreground text-sm">Notes:</span>
                   <p className="mt-1 font-mono">{selectedItem.notes}</p>
+                </div>
+              )}
+              {selectedItem.catatanTambahan && (
+                <div className="border-t pt-4">
+                  <span className="text-muted-foreground text-sm">Keterangan / Catatan Tambahan:</span>
+                  <p className="mt-1 whitespace-pre-wrap">{selectedItem.catatanTambahan}</p>
                 </div>
               )}
             </div>

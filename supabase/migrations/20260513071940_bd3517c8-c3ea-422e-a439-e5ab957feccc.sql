@@ -1,0 +1,1 @@
+ALTER TABLE public.pengisian_atm ADD COLUMN IF NOT EXISTS catatan_tambahan text;

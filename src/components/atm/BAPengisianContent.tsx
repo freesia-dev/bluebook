@@ -362,6 +362,15 @@ const BAPengisianContent = () => {
                     <div style={{ marginBottom: '8px' }}>Tidak ada selisih.</div>
                   )}
 
+                  {selectedData.catatanTambahan && selectedData.catatanTambahan.trim() && (
+                    <>
+                      <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>E. KETERANGAN / CATATAN TAMBAHAN</div>
+                      <div style={{ textAlign: 'justify', marginBottom: '8px', whiteSpace: 'pre-wrap' }}>
+                        {selectedData.catatanTambahan}
+                      </div>
+                    </>
+                  )}
+
                   {/* Signature */}
                   <div style={{ marginTop: '25px' }}>
                     <div style={{ marginBottom: '15px' }}>Demikian Berita Acara ini dibuat dengan sebenarnya oleh :</div>
