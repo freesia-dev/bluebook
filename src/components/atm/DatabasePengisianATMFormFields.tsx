@@ -329,6 +329,24 @@ export function DatabasePengisianATMFormFields({
           </div>
         </CardContent>
       </Card>
+
+      {/* Section 6: Catatan Tambahan */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Keterangan / Catatan Tambahan <span className="text-xs font-normal text-muted-foreground">(opsional)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={formData.catatanTambahan}
+            onChange={(e) => setFormData((p) => ({ ...p, catatanTambahan: e.target.value }))}
+            placeholder="Tulis keterangan atau catatan tambahan terkait pengisian ATM ini (akan tampil di Berita Acara jika diisi)..."
+            rows={4}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
