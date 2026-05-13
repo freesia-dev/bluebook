@@ -127,21 +127,21 @@ const Dashboard: React.FC = () => {
   }, [refetchAll]);
 
   // Memoize computed values
-  const totalAgendaKredit = useMemo(() => sppk.length + pk.length + kkmpak.length, [sppk, pk, kkmpak]);
+  const totalAgendaKredit = useMemo(() => counts.sppk + counts.pk + counts.kkmpak, [counts]);
 
   const barChartData = useMemo(() => [
-    { name: 'Surat Masuk', value: suratMasuk.length, fill: 'hsl(217, 91%, 45%)' },
-    { name: 'Surat Keluar', value: suratKeluar.length, fill: 'hsl(45, 93%, 47%)' },
-    { name: 'SPPK', value: sppk.length, fill: 'hsl(142, 76%, 36%)' },
-    { name: 'PK', value: pk.length, fill: 'hsl(262, 83%, 58%)' },
-    { name: 'KK/MPAK', value: kkmpak.length, fill: 'hsl(0, 84%, 60%)' },
-  ], [suratMasuk, suratKeluar, sppk, pk, kkmpak]);
+    { name: 'Surat Masuk', value: counts.suratMasuk, fill: 'hsl(217, 91%, 45%)' },
+    { name: 'Surat Keluar', value: counts.suratKeluar, fill: 'hsl(45, 93%, 47%)' },
+    { name: 'SPPK', value: counts.sppk, fill: 'hsl(142, 76%, 36%)' },
+    { name: 'PK', value: counts.pk, fill: 'hsl(262, 83%, 58%)' },
+    { name: 'KK/MPAK', value: counts.kkmpak, fill: 'hsl(0, 84%, 60%)' },
+  ], [counts]);
 
   const pieChartData = useMemo(() => [
-    { name: 'Surat Masuk', value: suratMasuk.length },
-    { name: 'Surat Keluar', value: suratKeluar.length },
+    { name: 'Surat Masuk', value: counts.suratMasuk },
+    { name: 'Surat Keluar', value: counts.suratKeluar },
     { name: 'Agenda Kredit', value: totalAgendaKredit },
-  ], [suratMasuk, suratKeluar, totalAgendaKredit]);
+  ], [counts, totalAgendaKredit]);
 
   // Memoize recent data (only compute when data changes)
   const recentSuratMasuk = useMemo(() => 
