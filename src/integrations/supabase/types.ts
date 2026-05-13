@@ -350,6 +350,7 @@ export type Database = {
       }
       pengisian_atm: {
         Row: {
+          catatan_tambahan: string | null
           created_at: string
           hari: string
           id: string
@@ -379,6 +380,7 @@ export type Database = {
           yang_menyerahkan: string | null
         }
         Insert: {
+          catatan_tambahan?: string | null
           created_at?: string
           hari: string
           id?: string
@@ -408,6 +410,7 @@ export type Database = {
           yang_menyerahkan?: string | null
         }
         Update: {
+          catatan_tambahan?: string | null
           created_at?: string
           hari?: string
           id?: string
