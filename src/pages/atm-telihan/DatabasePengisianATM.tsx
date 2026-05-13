@@ -71,6 +71,7 @@ const DatabasePengisianATM = () => {
     yangMenyerahkan: '',
     namaTeller: '',
     tellerSelisih: '',
+    catatanTambahan: '',
   });
 
   const [formData, setFormData] = useState<PengisianATMFormData>(getDefaultForm());
@@ -163,6 +164,7 @@ const DatabasePengisianATM = () => {
       yangMenyerahkan: formData.yangMenyerahkan,
       tellerSelisih: formData.tellerSelisih,
       retracts: calculations.retracts,
+      catatanTambahan: formData.catatanTambahan,
       userInput: userName || 'System',
     }, {
       onSuccess: (newItem) => {
@@ -209,6 +211,7 @@ const DatabasePengisianATM = () => {
         yangMenyerahkan: formData.yangMenyerahkan,
         tellerSelisih: formData.tellerSelisih,
         retracts: calculations.retracts,
+        catatanTambahan: formData.catatanTambahan,
       }
     }, {
       onSuccess: () => {
@@ -332,6 +335,7 @@ const DatabasePengisianATM = () => {
               yangMenyerahkan: item.yangMenyerahkan,
               namaTeller: item.namaTeller,
               tellerSelisih: item.tellerSelisih,
+              catatanTambahan: item.catatanTambahan || '',
             });
             setIsEditOpen(true);
           }}
