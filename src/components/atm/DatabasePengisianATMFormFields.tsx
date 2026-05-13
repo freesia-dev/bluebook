@@ -15,6 +15,7 @@ import { CalendarIcon, Calculator, Clock, CreditCard, Banknote, Users, FileText,
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 export type PengisianATMFormData = {
   tanggal: Date;
@@ -32,6 +33,7 @@ export type PengisianATMFormData = {
   yangMenyerahkan: string;
   namaTeller: string;
   tellerSelisih: string;
+  catatanTambahan: string;
 };
 
 export type PengisianATMCalculations = {
