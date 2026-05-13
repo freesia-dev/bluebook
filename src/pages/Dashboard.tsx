@@ -45,52 +45,56 @@ const Dashboard: React.FC = () => {
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
   const { isAdmin } = useAuth();
 
-  // Storage usage query (admin only)
+  // Storage usage query (admin only) — parallelized
   const { data: storageCounts } = useQuery({
     queryKey: ['storage-counts-dashboard'],
     queryFn: async () => {
       const tables = ['surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan', 'pengisian_atm', 'activity_log', 'recycle_bin', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan', 'agenda_kredit_entry'] as const;
+      const results = await Promise.all(
+        tables.map(async (table) => {
+          const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+          return { table, count: count || 0 };
+        })
+      );
       const counts: Record<string, number> = {};
       let total = 0;
-      for (const table of tables) {
-        const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
-        counts[table] = count || 0;
-        total += count || 0;
+      for (const r of results) {
+        counts[r.table] = r.count;
+        total += r.count;
       }
       return { counts, total };
     },
     enabled: isAdmin,
-    staleTime: 1000 * 60 * 2,
-    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 
-  // File storage usage query (admin only)
+  // File storage usage query (admin only) — parallelized
   const { data: fileStorageData } = useQuery({
     queryKey: ['file-storage-usage'],
     queryFn: async () => {
-      const { data: files, error } = await supabase.storage.from('documents').list('', { limit: 1000 });
-      if (error) return { usedBytes: 0, fileCount: 0 };
-      
-      // List all subfolders and files
-      let totalBytes = 0;
-      let fileCount = 0;
       const folders = ['surat-masuk', 'surat-keluar'];
-      for (const folder of folders) {
-        const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
-        if (folderFiles) {
-          for (const f of folderFiles) {
-            if (f.metadata?.size) {
-              totalBytes += f.metadata.size;
-              fileCount++;
+      const folderResults = await Promise.all(
+        folders.map(async (folder) => {
+          const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
+          let bytes = 0;
+          let count = 0;
+          if (folderFiles) {
+            for (const f of folderFiles) {
+              if (f.metadata?.size) {
+                bytes += f.metadata.size;
+                count++;
+              }
             }
           }
-        }
-      }
-      return { usedBytes: totalBytes, fileCount };
+          return { bytes, count };
+        })
+      );
+      const usedBytes = folderResults.reduce((sum, r) => sum + r.bytes, 0);
+      const fileCount = folderResults.reduce((sum, r) => sum + r.count, 0);
+      return { usedBytes, fileCount };
     },
     enabled: isAdmin,
-    staleTime: 1000 * 60 * 2,
-    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 
   const maxRows = 100000;
