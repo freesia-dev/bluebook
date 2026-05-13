@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK } from '@/types';
 
 const getTableCount = async (table: string): Promise<number> => {
-  const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+  const { count } = await (supabase as any).from(table).select('*', { count: 'exact', head: true });
   return count || 0;
 };
 
