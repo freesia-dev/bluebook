@@ -61,6 +61,7 @@ export const getPengisianATM = async (): Promise<PengisianATM[]> => {
     yangMenyerahkan: s.yang_menyerahkan || '',
     tellerSelisih: s.teller_selisih || '',
     retracts: s.retracts,
+    catatanTambahan: (s as { catatan_tambahan?: string }).catatan_tambahan || '',
     userInput: s.user_input,
     createdAt: new Date(s.created_at)
   }));
@@ -103,6 +104,7 @@ export const addPengisianATM = async (data: Omit<PengisianATM, 'id' | 'nomor' | 
       yang_menyerahkan: data.yangMenyerahkan,
       teller_selisih: data.tellerSelisih,
       retracts: data.retracts,
+      catatan_tambahan: data.catatanTambahan || null,
       user_input: data.userInput
     })
     .select()
@@ -190,6 +192,7 @@ export const updatePengisianATM = async (id: string, data: Partial<PengisianATM>
   if (data.yangMenyerahkan !== undefined) updateData.yang_menyerahkan = data.yangMenyerahkan;
   if (data.tellerSelisih !== undefined) updateData.teller_selisih = data.tellerSelisih;
   if (data.retracts !== undefined) updateData.retracts = data.retracts;
+  if (data.catatanTambahan !== undefined) updateData.catatan_tambahan = data.catatanTambahan || null;
   
   const { error } = await supabase
     .from('pengisian_atm')

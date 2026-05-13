@@ -225,6 +225,7 @@ export interface PengisianATM {
   yangMenyerahkan: string;
   tellerSelisih: string;
   retracts: number;
+  catatanTambahan?: string;
   userInput: string;
   createdAt: Date;
 }
