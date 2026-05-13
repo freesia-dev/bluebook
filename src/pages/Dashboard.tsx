@@ -42,55 +42,59 @@ const COLORS = ['hsl(217, 91%, 45%)', 'hsl(45, 93%, 47%)', 'hsl(142, 76%, 36%)']
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll } = useDashboardData();
+  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts } = useDashboardData();
   const { isAdmin } = useAuth();
 
-  // Storage usage query (admin only)
+  // Storage usage query (admin only) — parallelized
   const { data: storageCounts } = useQuery({
     queryKey: ['storage-counts-dashboard'],
     queryFn: async () => {
       const tables = ['surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan', 'pengisian_atm', 'activity_log', 'recycle_bin', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan', 'agenda_kredit_entry'] as const;
+      const results = await Promise.all(
+        tables.map(async (table) => {
+          const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+          return { table, count: count || 0 };
+        })
+      );
       const counts: Record<string, number> = {};
       let total = 0;
-      for (const table of tables) {
-        const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
-        counts[table] = count || 0;
-        total += count || 0;
+      for (const r of results) {
+        counts[r.table] = r.count;
+        total += r.count;
       }
       return { counts, total };
     },
     enabled: isAdmin,
-    staleTime: 1000 * 60 * 2,
-    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 
-  // File storage usage query (admin only)
+  // File storage usage query (admin only) — parallelized
   const { data: fileStorageData } = useQuery({
     queryKey: ['file-storage-usage'],
     queryFn: async () => {
-      const { data: files, error } = await supabase.storage.from('documents').list('', { limit: 1000 });
-      if (error) return { usedBytes: 0, fileCount: 0 };
-      
-      // List all subfolders and files
-      let totalBytes = 0;
-      let fileCount = 0;
       const folders = ['surat-masuk', 'surat-keluar'];
-      for (const folder of folders) {
-        const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
-        if (folderFiles) {
-          for (const f of folderFiles) {
-            if (f.metadata?.size) {
-              totalBytes += f.metadata.size;
-              fileCount++;
+      const folderResults = await Promise.all(
+        folders.map(async (folder) => {
+          const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
+          let bytes = 0;
+          let count = 0;
+          if (folderFiles) {
+            for (const f of folderFiles) {
+              if (f.metadata?.size) {
+                bytes += f.metadata.size;
+                count++;
+              }
             }
           }
-        }
-      }
-      return { usedBytes: totalBytes, fileCount };
+          return { bytes, count };
+        })
+      );
+      const usedBytes = folderResults.reduce((sum, r) => sum + r.bytes, 0);
+      const fileCount = folderResults.reduce((sum, r) => sum + r.count, 0);
+      return { usedBytes, fileCount };
     },
     enabled: isAdmin,
-    staleTime: 1000 * 60 * 2,
-    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 5,
   });
 
   const maxRows = 100000;
@@ -123,21 +127,21 @@ const Dashboard: React.FC = () => {
   }, [refetchAll]);
 
   // Memoize computed values
-  const totalAgendaKredit = useMemo(() => sppk.length + pk.length + kkmpak.length, [sppk, pk, kkmpak]);
+  const totalAgendaKredit = useMemo(() => counts.sppk + counts.pk + counts.kkmpak, [counts]);
 
   const barChartData = useMemo(() => [
-    { name: 'Surat Masuk', value: suratMasuk.length, fill: 'hsl(217, 91%, 45%)' },
-    { name: 'Surat Keluar', value: suratKeluar.length, fill: 'hsl(45, 93%, 47%)' },
-    { name: 'SPPK', value: sppk.length, fill: 'hsl(142, 76%, 36%)' },
-    { name: 'PK', value: pk.length, fill: 'hsl(262, 83%, 58%)' },
-    { name: 'KK/MPAK', value: kkmpak.length, fill: 'hsl(0, 84%, 60%)' },
-  ], [suratMasuk, suratKeluar, sppk, pk, kkmpak]);
+    { name: 'Surat Masuk', value: counts.suratMasuk, fill: 'hsl(217, 91%, 45%)' },
+    { name: 'Surat Keluar', value: counts.suratKeluar, fill: 'hsl(45, 93%, 47%)' },
+    { name: 'SPPK', value: counts.sppk, fill: 'hsl(142, 76%, 36%)' },
+    { name: 'PK', value: counts.pk, fill: 'hsl(262, 83%, 58%)' },
+    { name: 'KK/MPAK', value: counts.kkmpak, fill: 'hsl(0, 84%, 60%)' },
+  ], [counts]);
 
   const pieChartData = useMemo(() => [
-    { name: 'Surat Masuk', value: suratMasuk.length },
-    { name: 'Surat Keluar', value: suratKeluar.length },
+    { name: 'Surat Masuk', value: counts.suratMasuk },
+    { name: 'Surat Keluar', value: counts.suratKeluar },
     { name: 'Agenda Kredit', value: totalAgendaKredit },
-  ], [suratMasuk, suratKeluar, totalAgendaKredit]);
+  ], [counts, totalAgendaKredit]);
 
   // Memoize recent data (only compute when data changes)
   const recentSuratMasuk = useMemo(() => 
@@ -215,10 +219,10 @@ const Dashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Surat Masuk" value={suratMasuk.length} icon={Mail} variant="primary" />
-        <StatCard title="Surat Keluar" value={suratKeluar.length} icon={Send} variant="secondary" />
+        <StatCard title="Surat Masuk" value={counts.suratMasuk} icon={Mail} variant="primary" />
+        <StatCard title="Surat Keluar" value={counts.suratKeluar} icon={Send} variant="secondary" />
         <StatCard title="Agenda Kredit" value={totalAgendaKredit} icon={CreditCard} variant="success" />
-        <StatCard title="Total Dokumen" value={suratMasuk.length + suratKeluar.length + totalAgendaKredit} icon={FileText} variant="warning" />
+        <StatCard title="Total Dokumen" value={counts.suratMasuk + counts.suratKeluar + totalAgendaKredit} icon={FileText} variant="warning" />
       </div>
 
       {/* Cloud Storage Usage (Admin Only) */}
