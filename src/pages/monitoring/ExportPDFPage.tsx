@@ -193,7 +193,7 @@ const ExportPDFPage: React.FC = () => {
         startY: y,
         head: [['KOL', 'Keterangan', 'Jml Debitur', 'Outstanding', 'Tunggakan Berjalan']],
         body: stats.kolData.map((d) => [
-          String(d.kol),
+          kolDisplay(d.kol),
           KOL_LABEL[d.kol] || '-',
           fmtNum(d.count),
           fmtIDR(d.baki),
