@@ -14,7 +14,8 @@ import {
   X,
   Banknote,
   Trash2,
-  History
+  History,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -123,6 +124,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Penyelesaian Selisih', href: '/atm-telihan/penyelesaian-selisih' },
     { label: 'Berita Acara ATM', href: '/atm-telihan/ba-pengisian' },
     { label: 'Konfigurasi ATM', href: '/atm-telihan/konfigurasi' },
+  ];
+
+  const monitoringItems = [
+    { label: 'Upload Data', href: '/monitoring/upload' },
+    { label: 'Dashboard', href: '/monitoring/dashboard' },
+    { label: 'Export PDF', href: '/monitoring/export-pdf' },
   ];
 
   const konfigurasiItems = isAdmin

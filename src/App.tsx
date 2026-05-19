@@ -37,6 +37,9 @@ const BeritaAcaraATM = lazy(() => import("./pages/atm-telihan/BeritaAcaraATM"));
 const KonfigurasiATMPage = lazy(() => import("./pages/atm-telihan/KonfigurasiATMPage"));
 const PenyelesaianSelisihPage = lazy(() => import("./pages/atm-telihan/PenyelesaianSelisihPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
+const UploadDataPage = lazy(() => import("./pages/monitoring/UploadDataPage"));
+const MonitoringDashboardPage = lazy(() => import("./pages/monitoring/MonitoringDashboardPage"));
+const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -151,6 +154,16 @@ const App = () => (
             } />
             <Route path="/atm-telihan/penyelesaian-selisih" element={
               <Suspense fallback={<TablePageSkeleton />}><PenyelesaianSelisihPage /></Suspense>
+            } />
+            {/* Monitoring KKR & NPL */}
+            <Route path="/monitoring/upload" element={
+              <Suspense fallback={<TablePageSkeleton />}><UploadDataPage /></Suspense>
+            } />
+            <Route path="/monitoring/dashboard" element={
+              <Suspense fallback={<DashboardSkeleton />}><MonitoringDashboardPage /></Suspense>
+            } />
+            <Route path="/monitoring/export-pdf" element={
+              <Suspense fallback={<GenericPageSkeleton />}><ExportPDFPage /></Suspense>
             } />
             {/* Install PWA */}
             <Route path="/install" element={
