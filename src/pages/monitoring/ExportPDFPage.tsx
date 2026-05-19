@@ -173,7 +173,7 @@ const ExportPDFPage: React.FC = () => {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(60, 60, 60);
-        doc.text(`KOL ${d.kol} ${KOL_LABEL[d.kol] || ''}`, barAreaX, ry + 5);
+        doc.text(`KOL ${kolDisplay(d.kol)} ${KOL_LABEL[d.kol] || ''}`, barAreaX, ry + 5);
         const barX = barAreaX + 38;
         const barMaxW = barAreaW - 38 - 50;
         const barW = (d.baki / maxBaki) * barMaxW;
