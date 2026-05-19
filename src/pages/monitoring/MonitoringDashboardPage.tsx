@@ -179,21 +179,21 @@ const MonitoringDashboardPage: React.FC = () => {
           {/* Hero KPI Row — NPL focal */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div className={cn(
-              "lg:col-span-1 relative overflow-hidden rounded-xl p-6 text-white shadow-lg bg-gradient-to-br",
+              "lg:col-span-1 relative overflow-hidden rounded-xl p-5 sm:p-6 text-white shadow-lg bg-gradient-to-br",
               nplColor
             )}>
               <ShieldAlert className="absolute -right-4 -bottom-4 w-40 h-40 opacity-10 rotate-12" strokeWidth={1.2} />
               <Gauge className="absolute right-4 top-4 w-6 h-6 opacity-80" />
               <p className="text-xs uppercase tracking-wider opacity-90">Rasio NPL (KOL 3-5)</p>
-              <p className="text-5xl font-bold mt-2 tracking-tight">{stats.nplRatio.toFixed(2)}<span className="text-2xl opacity-80">%</span></p>
+              <p className="text-4xl sm:text-5xl font-bold mt-2 tracking-tight">{stats.nplRatio.toFixed(2)}<span className="text-2xl opacity-80">%</span></p>
               <div className="mt-4 space-y-1 text-xs opacity-95">
-                <p>NPL: <strong>{fmtIDR(stats.nplBaki)}</strong> dari {fmtIDR(stats.nplBaseBaki)}</p>
+                <p className="break-words">NPL: <strong>{fmtIDR(stats.nplBaki)}</strong> dari {fmtIDR(stats.nplBaseBaki)}</p>
                 <p>{fmtNum(stats.nplCount)} debitur ({stats.nplCountRatio.toFixed(2)}% dari {fmtNum(stats.nplBaseCount)})</p>
                 <p className="pt-2 text-[10px] opacity-75">Basis: outstanding non-ekstrakomtabel</p>
               </div>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <KPICard icon={Users} label="Total Debitur" value={fmtNum(stats.totalDebitur)}
                 sub={includeEkstrakom ? `+ ${fmtNum(stats.ekstraCount)} ekstrakom` : 'tanpa ekstrakom'}
                 tint="blue" />
