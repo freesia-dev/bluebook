@@ -328,8 +328,8 @@ const MonitoringDashboardPage: React.FC = () => {
                 Top 10 Debitur dengan Tunggakan Berjalan Tertinggi
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
+            <CardContent className="px-2 sm:px-6">
+              <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead>No Rekening</TableHead>
