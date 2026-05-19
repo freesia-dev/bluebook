@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMLFUploads, useMLFData143, MLFRow } from '@/hooks/use-mlf-data';
-import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR } from '@/lib/mlf-utils';
+import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
