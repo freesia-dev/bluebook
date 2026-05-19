@@ -14,7 +14,8 @@ import {
   X,
   Banknote,
   Trash2,
-  History
+  History,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -125,6 +126,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Konfigurasi ATM', href: '/atm-telihan/konfigurasi' },
   ];
 
+  const monitoringItems = [
+    { label: 'Upload Data', href: '/monitoring/upload' },
+    { label: 'Dashboard', href: '/monitoring/dashboard' },
+    { label: 'Export PDF', href: '/monitoring/export-pdf' },
+  ];
+
   const konfigurasiItems = isAdmin
     ? [
         { label: 'Pengaturan User', href: '/konfigurasi/users' },
@@ -214,6 +221,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               icon={Banknote} 
               label="ATM Telihan" 
               children={atmTelihanItems}
+              onNavigate={onClose}
+            />
+            <NavItem 
+              icon={TrendingUp} 
+              label="Monitoring KKR & NPL" 
+              children={monitoringItems}
               onNavigate={onClose}
             />
             {isAdmin && (

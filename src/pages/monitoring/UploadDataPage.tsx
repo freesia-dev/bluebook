@@ -1,0 +1,214 @@
+import React, { useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Upload, FileSpreadsheet, Calendar, Loader2, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useMLFUploads } from '@/hooks/use-mlf-data';
+import { parseDateFromFilename, fmtNum } from '@/lib/mlf-utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const UploadDataPage: React.FC = () => {
+  const { toast } = useToast();
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: uploads = [], refetch } = useMLFUploads();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [lastResult, setLastResult] = useState<string | null>(null);
+
+  const handleFile = async (file: File) => {
+    const jobdate = parseDateFromFilename(file.name);
+    if (!jobdate) {
+      toast({ title: 'Format Nama File Salah', description: 'Nama file harus mengandung tanggal, contoh: mlf_13-05-2026.xls', variant: 'destructive' });
+      return;
+    }
+
+    setIsProcessing(true);
+    setLastResult(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+      if (!wb.SheetNames.includes('Master_Loan_Filter')) {
+        throw new Error('Sheet "Master_Loan_Filter" tidak ditemukan di file ini.');
+      }
+      const ws = wb.Sheets['Master_Loan_Filter'];
+      const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: null });
+      if (rows.length === 0) throw new Error('Sheet kosong, tidak ada data.');
+
+      // Create upload row
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: uploadRow, error: upErr } = await (supabase as any)
+        .from('mlf_uploads')
+        .insert({ jobdate, filename: file.name, total_rows: rows.length, uploaded_by: userData?.user?.id })
+        .select()
+        .single();
+      if (upErr) throw upErr;
+
+      // Map rows
+      const toStr = (v: any) => (v === null || v === undefined ? null : String(v).trim());
+      const toNum = (v: any) => {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        return isNaN(n) ? null : n;
+      };
+
+      const mapped = rows.map((r) => ({
+        upload_id: uploadRow.id,
+        jobdate,
+        brcd: toStr(r.L0BRCD),
+        brname: toStr(r.BRNAME),
+        kol: toNum(r.kol) ?? toNum(r.KOL),
+        lytitl: toStr(r.LYTITL),
+        ecname: toStr(r.ECNAME),
+        l0lnno: toStr(r.L0LNNO),
+        l0name: toStr(r.L0NAME),
+        l0narr: toStr(r.L0NARR),
+        pla: toNum(r.PLA),
+        baki: toNum(r.BAKI),
+        tungpk: toNum(r.TUNGPK),
+        tungbg: toNum(r.TUNGBG),
+        cad: toNum(r.CAD),
+        group1: toStr(r.group1),
+        group2: toStr(r.group2),
+        l0usid: toStr(r.L0USID),
+      }));
+
+      // Batch insert
+      const CHUNK = 500;
+      setProgress({ current: 0, total: mapped.length });
+      for (let i = 0; i < mapped.length; i += CHUNK) {
+        const slice = mapped.slice(i, i + CHUNK);
+        const { error } = await (supabase as any).from('mlf_data').insert(slice);
+        if (error) throw error;
+        setProgress({ current: Math.min(i + CHUNK, mapped.length), total: mapped.length });
+      }
+
+      setLastResult(`Berhasil mengunggah ${mapped.length.toLocaleString('id-ID')} baris untuk tanggal ${jobdate}.`);
+      toast({ title: 'Upload Berhasil', description: `${mapped.length} baris data tersimpan.` });
+      queryClient.invalidateQueries({ queryKey: ['mlf-uploads'] });
+      refetch();
+    } catch (e: any) {
+      toast({ title: 'Upload Gagal', description: e.message || 'Terjadi kesalahan.', variant: 'destructive' });
+    } finally {
+      setIsProcessing(false);
+      setProgress({ current: 0, total: 0 });
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async (uploadId: string, filename: string) => {
+    if (!confirm(`Hapus data upload "${filename}"? Data terkait juga akan terhapus.`)) return;
+    const { error } = await (supabase as any).from('mlf_uploads').delete().eq('id', uploadId);
+    if (error) {
+      toast({ title: 'Gagal Hapus', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Berhasil', description: 'Data upload dihapus.' });
+    queryClient.invalidateQueries({ queryKey: ['mlf-uploads'] });
+    refetch();
+  };
+
+  return (
+    <MainLayout>
+      <PageHeader
+        title="Upload Data MLF"
+        description="Upload file Master Loan Filter (.xls) — tanggal data mengikuti nama file (contoh: mlf_13-05-2026.xls)"
+      />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Upload className="w-4 h-4 text-primary" />
+            Pilih File MLF
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".xls,.xlsx"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+            }}
+          />
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-8 bg-muted/30">
+            <FileSpreadsheet className="w-12 h-12 text-primary/60 mb-3" />
+            <p className="text-sm text-muted-foreground mb-4 text-center">
+              Hanya sheet <strong>Master_Loan_Filter</strong> yang akan dibaca.<br />
+              Tanggal diambil dari nama file (format: <code>mlf_DD-MM-YYYY.xls</code>).
+            </p>
+            <Button onClick={() => inputRef.current?.click()} disabled={isProcessing} size="lg">
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Memproses... {progress.total > 0 && `(${fmtNum(progress.current)}/${fmtNum(progress.total)})`}
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Pilih File .xls / .xlsx
+                </>
+              )}
+            </Button>
+            {lastResult && (
+              <Alert className="mt-4 border-green-500/50 bg-green-500/10">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700 dark:text-green-400">{lastResult}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Riwayat Upload</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {uploads.length === 0 ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
+              <AlertCircle className="w-4 h-4" />
+              Belum ada data yang diupload.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {uploads.map((u) => (
+                <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-muted/30 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{format(new Date(u.jobdate), 'dd MMMM yyyy', { locale: idLocale })}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {u.filename} • {fmtNum(u.total_rows)} baris • diupload {format(new Date(u.created_at), 'dd/MM/yyyy HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                  {isAdmin && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id, u.filename)} className="text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </MainLayout>
+  );
+};
+
+export default UploadDataPage;
