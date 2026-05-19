@@ -132,11 +132,11 @@ const MonitoringDashboardPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 pointer-events-none" />
         <Activity className="absolute -right-6 -top-6 w-32 h-32 text-primary/5 rotate-12 pointer-events-none" strokeWidth={1.2} />
         <CardContent className="pt-6 relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div className="w-full sm:w-auto min-w-0">
               <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Periode Data</p>
               <Select value={selectedUpload} onValueChange={setSelectedUpload}>
-                <SelectTrigger className="w-[300px] bg-background/80 backdrop-blur">
+                <SelectTrigger className="w-full sm:w-[300px] bg-background/80 backdrop-blur">
                   <SelectValue placeholder="Pilih periode" />
                 </SelectTrigger>
                 <SelectContent>
@@ -150,16 +150,16 @@ const MonitoringDashboardPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-background/70 backdrop-blur">
               <Switch id="ekstrakom-toggle" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
-              <Label htmlFor="ekstrakom-toggle" className="cursor-pointer">
-                <span className="text-sm font-medium">Tampilkan Ekstrakomtabel</span>
-                <span className="block text-[11px] text-muted-foreground">
+              <Label htmlFor="ekstrakom-toggle" className="cursor-pointer min-w-0 flex-1">
+                <span className="text-sm font-medium block">Tampilkan Ekstrakomtabel</span>
+                <span className="block text-[11px] text-muted-foreground break-words">
                   {includeEkstrakom ? 'Termasuk' : 'Disembunyikan'} • {fmtNum(stats.ekstraCount)} debitur — {fmtIDR(stats.ekstraBaki)}
                 </span>
               </Label>
             </div>
           </div>
           {selectedUploadInfo && (
-            <div className="text-right text-xs text-muted-foreground">
+            <div className="lg:text-right text-xs text-muted-foreground">
               <p>Total baris (semua cabang): <strong className="text-foreground">{fmtNum(selectedUploadInfo.total_rows)}</strong></p>
               <p>Filter cabang: <strong className="text-foreground">143 - CAPEM TELIHAN BONTANG</strong></p>
             </div>
