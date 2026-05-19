@@ -289,6 +289,110 @@ export type Database = {
         }
         Relationships: []
       }
+      mlf_data: {
+        Row: {
+          baki: number | null
+          brcd: string | null
+          brname: string | null
+          cad: number | null
+          created_at: string
+          ecname: string | null
+          group1: string | null
+          group2: string | null
+          id: string
+          jobdate: string
+          kol: number | null
+          l0lnno: string | null
+          l0name: string | null
+          l0narr: string | null
+          l0usid: string | null
+          lytitl: string | null
+          pla: number | null
+          tungbg: number | null
+          tungpk: number | null
+          upload_id: string
+        }
+        Insert: {
+          baki?: number | null
+          brcd?: string | null
+          brname?: string | null
+          cad?: number | null
+          created_at?: string
+          ecname?: string | null
+          group1?: string | null
+          group2?: string | null
+          id?: string
+          jobdate: string
+          kol?: number | null
+          l0lnno?: string | null
+          l0name?: string | null
+          l0narr?: string | null
+          l0usid?: string | null
+          lytitl?: string | null
+          pla?: number | null
+          tungbg?: number | null
+          tungpk?: number | null
+          upload_id: string
+        }
+        Update: {
+          baki?: number | null
+          brcd?: string | null
+          brname?: string | null
+          cad?: number | null
+          created_at?: string
+          ecname?: string | null
+          group1?: string | null
+          group2?: string | null
+          id?: string
+          jobdate?: string
+          kol?: number | null
+          l0lnno?: string | null
+          l0name?: string | null
+          l0narr?: string | null
+          l0usid?: string | null
+          lytitl?: string | null
+          pla?: number | null
+          tungbg?: number | null
+          tungpk?: number | null
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mlf_data_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "mlf_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mlf_uploads: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          jobdate: string
+          total_rows: number
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          jobdate: string
+          total_rows?: number
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          jobdate?: string
+          total_rows?: number
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       nomor_loan: {
         Row: {
           created_at: string
