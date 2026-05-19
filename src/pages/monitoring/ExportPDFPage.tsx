@@ -41,6 +41,12 @@ const computeStats = (rows: MLFRow[]) => {
 
   const nplCount = rows.filter((r) => (Number(r.kol) || 0) >= 3).length;
   const nplBaki = rows.filter((r) => (Number(r.kol) || 0) >= 3).reduce((s, r) => s + (Number(r.baki) || 0), 0);
+  const nplBaseRows = rows.filter((r) => (Number(r.kol) || 0) !== 0);
+  const nplBaseBaki = nplBaseRows.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+  const nplBaseCount = nplBaseRows.length;
+  const nplRatio = nplBaseBaki > 0 ? (nplBaki / nplBaseBaki) * 100 : 0;
+  const nplCountRatio = nplBaseCount > 0 ? (nplCount / nplBaseCount) * 100 : 0;
+  const tunggakanRatio = totalBaki > 0 ? (totalTunggakan / totalBaki) * 100 : 0;
 
   const prodMap = new Map<string, { count: number; baki: number; tunggakan: number }>();
   rows.forEach((r) => {
