@@ -12,6 +12,8 @@ import { FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const hexToRgb = (hex: string): [number, number, number] => {
   const h = hex.replace('#', '');
@@ -39,6 +41,12 @@ const computeStats = (rows: MLFRow[]) => {
 
   const nplCount = rows.filter((r) => (Number(r.kol) || 0) >= 3).length;
   const nplBaki = rows.filter((r) => (Number(r.kol) || 0) >= 3).reduce((s, r) => s + (Number(r.baki) || 0), 0);
+  const nplBaseRows = rows.filter((r) => (Number(r.kol) || 0) !== 0);
+  const nplBaseBaki = nplBaseRows.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+  const nplBaseCount = nplBaseRows.length;
+  const nplRatio = nplBaseBaki > 0 ? (nplBaki / nplBaseBaki) * 100 : 0;
+  const nplCountRatio = nplBaseCount > 0 ? (nplCount / nplBaseCount) * 100 : 0;
+  const tunggakanRatio = totalBaki > 0 ? (totalTunggakan / totalBaki) * 100 : 0;
 
   const prodMap = new Map<string, { count: number; baki: number; tunggakan: number }>();
   rows.forEach((r) => {
@@ -67,7 +75,7 @@ const computeStats = (rows: MLFRow[]) => {
     .filter((r) => r.tunggakan > 0)
     .sort((a, b) => b.tunggakan - a.tunggakan);
 
-  return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, prodData, aoData, topDebitur };
+  return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, nplRatio, nplCountRatio, nplBaseBaki, nplBaseCount, tunggakanRatio, prodData, aoData, topDebitur };
 };
 
 const ExportPDFPage: React.FC = () => {
@@ -75,12 +83,17 @@ const ExportPDFPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [generating, setGenerating] = useState(false);
+  const [includeEkstrakom, setIncludeEkstrakom] = useState(false);
 
   useEffect(() => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
   }, [uploads, selectedUpload]);
 
-  const { data: rows = [], isLoading } = useMLFData143(selectedUpload);
+  const { data: allRows = [], isLoading } = useMLFData143(selectedUpload);
+  const rows = useMemo(
+    () => (includeEkstrakom ? allRows : allRows.filter((r) => (Number(r.kol) || 0) !== 0)),
+    [allRows, includeEkstrakom]
+  );
   const stats = useMemo(() => computeStats(rows), [rows]);
   const uploadInfo = uploads.find((u) => u.id === selectedUpload);
 
@@ -107,7 +120,7 @@ const ExportPDFPage: React.FC = () => {
       doc.setFont('helvetica', 'normal');
       doc.text('Capem Telihan Bontang — Cabang 143', M, 26);
       doc.setFontSize(9);
-      doc.text(`Periode Data: ${format(new Date(uploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale })}`, M, 33);
+      doc.text(`Periode Data: ${format(new Date(uploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale })}  •  ${includeEkstrakom ? 'Termasuk Ekstrakomtabel' : 'Tanpa Ekstrakomtabel'}`, M, 33);
       doc.text(`Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`, W - M, 33, { align: 'right' });
 
       let y = 52;
@@ -115,10 +128,10 @@ const ExportPDFPage: React.FC = () => {
 
       // ===== KPI cards (2x2) =====
       const kpis: Array<{ label: string; value: string; color: [number, number, number]; sub?: string }> = [
-        { label: 'Total Debitur', value: fmtNum(stats.totalDebitur), color: hexToRgb('3b82f6') },
-        { label: 'Total Outstanding (Baki)', value: fmtIDR(stats.totalBaki), color: hexToRgb('10b981') },
+        { label: 'Total Debitur', value: fmtNum(stats.totalDebitur), color: hexToRgb('3b82f6'), sub: `Outstanding ${fmtIDR(stats.totalBaki)}` },
+        { label: 'Rasio NPL (KOL 3-5)', value: `${stats.nplRatio.toFixed(2)}%`, color: hexToRgb('ef4444'), sub: `${fmtNum(stats.nplCount)} debitur • ${fmtIDR(stats.nplBaki)}` },
         { label: 'Tunggakan Berjalan', value: fmtIDR(stats.totalTunggakan), color: hexToRgb('f59e0b'), sub: `Pokok ${fmtIDR(stats.totalTungpk)} | Bunga ${fmtIDR(stats.totalTungbg)}` },
-        { label: 'NPL (KOL 3-5)', value: `${fmtNum(stats.nplCount)} debitur`, color: hexToRgb('ef4444'), sub: fmtIDR(stats.nplBaki) },
+        { label: 'Rasio Tunggakan / OS', value: `${stats.tunggakanRatio.toFixed(2)}%`, color: hexToRgb('10b981'), sub: `Plafon ${fmtIDR(stats.totalPlafon)}` },
       ];
       const cardW = (W - M * 2 - 6) / 2;
       const cardH = 26;
@@ -329,12 +342,23 @@ const ExportPDFPage: React.FC = () => {
               </Select>
             </div>
 
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+              <Switch id="pdf-ekstra" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
+              <Label htmlFor="pdf-ekstra" className="cursor-pointer">
+                <span className="text-sm font-medium">Sertakan data Ekstrakomtabel (KOL 0)</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {includeEkstrakom ? 'Akan ditampilkan' : 'Tidak ditampilkan'} dalam PDF
+                </span>
+              </Label>
+            </div>
+
             {uploadInfo && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-lg bg-muted/40 border border-border">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-lg bg-muted/40 border border-border">
                 <Stat label="Debitur" value={fmtNum(stats.totalDebitur)} />
                 <Stat label="Outstanding" value={fmtIDR(stats.totalBaki)} />
                 <Stat label="Tunggakan Berjalan" value={fmtIDR(stats.totalTunggakan)} />
                 <Stat label="NPL" value={`${fmtNum(stats.nplCount)} • ${fmtIDR(stats.nplBaki)}`} />
+                <Stat label="Rasio NPL" value={`${stats.nplRatio.toFixed(2)}%`} />
               </div>
             )}
 
