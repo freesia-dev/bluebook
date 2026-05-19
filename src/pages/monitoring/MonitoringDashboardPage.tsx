@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMLFUploads, useMLFData143 } from '@/hooks/use-mlf-data';
-import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR } from '@/lib/mlf-utils';
+import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
@@ -42,7 +42,7 @@ const MonitoringDashboardPage: React.FC = () => {
     });
     const kolData = Array.from(kolMap.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(([k, v]) => ({ kol: k, name: `KOL ${k} - ${KOL_LABEL[k] || ''}`, ...v }));
+      .map(([k, v]) => ({ kol: k, name: `KOL ${kolDisplay(k)} - ${KOL_LABEL[k] || ''}`, ...v }));
 
     // NPL (KOL 3-5)
     const nplCount = rows.filter((r) => (Number(r.kol) || 0) >= 3).length;
@@ -279,7 +279,7 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableCell className="text-xs">{d.lytitl}</TableCell>
                         <TableCell className="text-center">
                           <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
-                            {d.kol}
+                            {kolDisplay(d.kol)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMLFUploads, useMLFData143, MLFRow } from '@/hooks/use-mlf-data';
-import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR } from '@/lib/mlf-utils';
+import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -173,7 +173,7 @@ const ExportPDFPage: React.FC = () => {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(60, 60, 60);
-        doc.text(`KOL ${d.kol} ${KOL_LABEL[d.kol] || ''}`, barAreaX, ry + 5);
+        doc.text(`KOL ${kolDisplay(d.kol)} ${KOL_LABEL[d.kol] || ''}`, barAreaX, ry + 5);
         const barX = barAreaX + 38;
         const barMaxW = barAreaW - 38 - 50;
         const barW = (d.baki / maxBaki) * barMaxW;
@@ -193,7 +193,7 @@ const ExportPDFPage: React.FC = () => {
         startY: y,
         head: [['KOL', 'Keterangan', 'Jml Debitur', 'Outstanding', 'Tunggakan Berjalan']],
         body: stats.kolData.map((d) => [
-          String(d.kol),
+          kolDisplay(d.kol),
           KOL_LABEL[d.kol] || '-',
           fmtNum(d.count),
           fmtIDR(d.baki),
@@ -257,7 +257,7 @@ const ExportPDFPage: React.FC = () => {
           d.l0lnno || '-',
           d.l0name || '-',
           (d.lytitl || '-').slice(0, 28),
-          String(d.kol ?? '-'),
+          d.kol == null ? '-' : kolDisplay(d.kol),
           fmtIDR(Number(d.baki) || 0),
           fmtIDR(d.tunggakan),
           d.l0usid || '-',
