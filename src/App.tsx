@@ -40,6 +40,8 @@ const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const UploadDataPage = lazy(() => import("./pages/monitoring/UploadDataPage"));
 const MonitoringDashboardPage = lazy(() => import("./pages/monitoring/MonitoringDashboardPage"));
 const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
+const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPage"));
+const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -164,6 +166,12 @@ const App = () => (
             } />
             <Route path="/monitoring/export-pdf" element={
               <Suspense fallback={<GenericPageSkeleton />}><ExportPDFPage /></Suspense>
+            } />
+            <Route path="/monitoring/kontak" element={
+              <Suspense fallback={<TablePageSkeleton />}><KontakDebiturPage /></Suspense>
+            } />
+            <Route path="/monitoring/reminder" element={
+              <Suspense fallback={<TablePageSkeleton />}><ReminderTunggakanPage /></Suspense>
             } />
             {/* Install PWA */}
             <Route path="/install" element={

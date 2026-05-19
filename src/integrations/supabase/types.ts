@@ -131,6 +131,39 @@ export type Database = {
         }
         Relationships: []
       }
+      debitur_kontak: {
+        Row: {
+          catatan: string | null
+          created_at: string
+          id: string
+          l0lnno: string
+          nama: string | null
+          no_hp: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          l0lnno: string
+          nama?: string | null
+          no_hp?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          l0lnno?: string
+          nama?: string | null
+          no_hp?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       jenis_debitur: {
         Row: {
           id: string
@@ -920,6 +953,84 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      wa_reminder_log: {
+        Row: {
+          id: string
+          kol: number | null
+          l0lnno: string
+          metode: string
+          nama: string | null
+          no_hp: string
+          pesan: string
+          sent_at: string
+          sent_by: string | null
+          status: string
+          template_id: string | null
+          tunggakan: number | null
+          upload_id: string | null
+        }
+        Insert: {
+          id?: string
+          kol?: number | null
+          l0lnno: string
+          metode?: string
+          nama?: string | null
+          no_hp: string
+          pesan: string
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          template_id?: string | null
+          tunggakan?: number | null
+          upload_id?: string | null
+        }
+        Update: {
+          id?: string
+          kol?: number | null
+          l0lnno?: string
+          metode?: string
+          nama?: string | null
+          no_hp?: string
+          pesan?: string
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          template_id?: string | null
+          tunggakan?: number | null
+          upload_id?: string | null
+        }
+        Relationships: []
+      }
+      wa_template: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          isi: string
+          nama_template: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          isi: string
+          nama_template: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          isi?: string
+          nama_template?: string
+          updated_at?: string
         }
         Relationships: []
       }

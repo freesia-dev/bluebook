@@ -130,6 +130,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Upload Data', href: '/monitoring/upload' },
     { label: 'Dashboard', href: '/monitoring/dashboard' },
     { label: 'Export PDF', href: '/monitoring/export-pdf' },
+    { label: 'Kontak Debitur', href: '/monitoring/kontak' },
+    { label: 'Reminder Tunggakan', href: '/monitoring/reminder' },
   ];
 
   const konfigurasiItems = isAdmin
