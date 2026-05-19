@@ -257,7 +257,7 @@ const ExportPDFPage: React.FC = () => {
           d.l0lnno || '-',
           d.l0name || '-',
           (d.lytitl || '-').slice(0, 28),
-          String(d.kol ?? '-'),
+          d.kol == null ? '-' : kolDisplay(d.kol),
           fmtIDR(Number(d.baki) || 0),
           fmtIDR(d.tunggakan),
           d.l0usid || '-',
