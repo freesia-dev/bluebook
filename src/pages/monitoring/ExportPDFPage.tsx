@@ -120,7 +120,7 @@ const ExportPDFPage: React.FC = () => {
       doc.setFont('helvetica', 'normal');
       doc.text('Capem Telihan Bontang — Cabang 143', M, 26);
       doc.setFontSize(9);
-      doc.text(`Periode Data: ${format(new Date(uploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale })}`, M, 33);
+      doc.text(`Periode Data: ${format(new Date(uploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale })}  •  ${includeEkstrakom ? 'Termasuk Ekstrakomtabel' : 'Tanpa Ekstrakomtabel'}`, M, 33);
       doc.text(`Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`, W - M, 33, { align: 'right' });
 
       let y = 52;
