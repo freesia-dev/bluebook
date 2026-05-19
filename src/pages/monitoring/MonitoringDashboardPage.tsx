@@ -389,10 +389,10 @@ const KPICard: React.FC<{ icon: React.ElementType; label: string; value: string;
       <Icon className={cn('absolute -right-3 -bottom-3 w-24 h-24 opacity-[0.08] rotate-12 pointer-events-none', t.silhouette)} strokeWidth={1.3} />
       <CardContent className="pt-5 pb-5 relative">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] text-muted-foreground mb-1 font-medium uppercase tracking-wide">{label}</p>
-            <p className="text-xl font-bold truncate">{value}</p>
-            {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
+            <p className="text-base sm:text-xl font-bold break-words leading-tight">{value}</p>
+            {sub && <p className="text-[11px] text-muted-foreground mt-1 break-words">{sub}</p>}
           </div>
           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', t.icon)}>
             <Icon className="w-5 h-5" />
