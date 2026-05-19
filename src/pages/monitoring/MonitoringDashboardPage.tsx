@@ -132,11 +132,11 @@ const MonitoringDashboardPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 pointer-events-none" />
         <Activity className="absolute -right-6 -top-6 w-32 h-32 text-primary/5 rotate-12 pointer-events-none" strokeWidth={1.2} />
         <CardContent className="pt-6 relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div className="w-full sm:w-auto min-w-0">
               <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Periode Data</p>
               <Select value={selectedUpload} onValueChange={setSelectedUpload}>
-                <SelectTrigger className="w-[300px] bg-background/80 backdrop-blur">
+                <SelectTrigger className="w-full sm:w-[300px] bg-background/80 backdrop-blur">
                   <SelectValue placeholder="Pilih periode" />
                 </SelectTrigger>
                 <SelectContent>
@@ -150,16 +150,16 @@ const MonitoringDashboardPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-background/70 backdrop-blur">
               <Switch id="ekstrakom-toggle" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
-              <Label htmlFor="ekstrakom-toggle" className="cursor-pointer">
-                <span className="text-sm font-medium">Tampilkan Ekstrakomtabel</span>
-                <span className="block text-[11px] text-muted-foreground">
+              <Label htmlFor="ekstrakom-toggle" className="cursor-pointer min-w-0 flex-1">
+                <span className="text-sm font-medium block">Tampilkan Ekstrakomtabel</span>
+                <span className="block text-[11px] text-muted-foreground break-words">
                   {includeEkstrakom ? 'Termasuk' : 'Disembunyikan'} • {fmtNum(stats.ekstraCount)} debitur — {fmtIDR(stats.ekstraBaki)}
                 </span>
               </Label>
             </div>
           </div>
           {selectedUploadInfo && (
-            <div className="text-right text-xs text-muted-foreground">
+            <div className="lg:text-right text-xs text-muted-foreground">
               <p>Total baris (semua cabang): <strong className="text-foreground">{fmtNum(selectedUploadInfo.total_rows)}</strong></p>
               <p>Filter cabang: <strong className="text-foreground">143 - CAPEM TELIHAN BONTANG</strong></p>
             </div>
@@ -179,21 +179,21 @@ const MonitoringDashboardPage: React.FC = () => {
           {/* Hero KPI Row — NPL focal */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <div className={cn(
-              "lg:col-span-1 relative overflow-hidden rounded-xl p-6 text-white shadow-lg bg-gradient-to-br",
+              "lg:col-span-1 relative overflow-hidden rounded-xl p-5 sm:p-6 text-white shadow-lg bg-gradient-to-br",
               nplColor
             )}>
               <ShieldAlert className="absolute -right-4 -bottom-4 w-40 h-40 opacity-10 rotate-12" strokeWidth={1.2} />
               <Gauge className="absolute right-4 top-4 w-6 h-6 opacity-80" />
               <p className="text-xs uppercase tracking-wider opacity-90">Rasio NPL (KOL 3-5)</p>
-              <p className="text-5xl font-bold mt-2 tracking-tight">{stats.nplRatio.toFixed(2)}<span className="text-2xl opacity-80">%</span></p>
+              <p className="text-4xl sm:text-5xl font-bold mt-2 tracking-tight">{stats.nplRatio.toFixed(2)}<span className="text-2xl opacity-80">%</span></p>
               <div className="mt-4 space-y-1 text-xs opacity-95">
-                <p>NPL: <strong>{fmtIDR(stats.nplBaki)}</strong> dari {fmtIDR(stats.nplBaseBaki)}</p>
+                <p className="break-words">NPL: <strong>{fmtIDR(stats.nplBaki)}</strong> dari {fmtIDR(stats.nplBaseBaki)}</p>
                 <p>{fmtNum(stats.nplCount)} debitur ({stats.nplCountRatio.toFixed(2)}% dari {fmtNum(stats.nplBaseCount)})</p>
                 <p className="pt-2 text-[10px] opacity-75">Basis: outstanding non-ekstrakomtabel</p>
               </div>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <KPICard icon={Users} label="Total Debitur" value={fmtNum(stats.totalDebitur)}
                 sub={includeEkstrakom ? `+ ${fmtNum(stats.ekstraCount)} ekstrakom` : 'tanpa ekstrakom'}
                 tint="blue" />
@@ -230,13 +230,13 @@ const MonitoringDashboardPage: React.FC = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
-                    <Pie data={stats.kolData} dataKey="count" nameKey="name" outerRadius={90} label={(e: any) => e.count}>
+                    <Pie data={stats.kolData} dataKey="count" nameKey="name" outerRadius="70%" label={(e: any) => e.count}>
                       {stats.kolData.map((d) => (
                         <Cell key={d.kol} fill={KOL_COLOR[d.kol] || '#94a3b8'} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(v: any) => fmtNum(v as number)} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -248,11 +248,11 @@ const MonitoringDashboardPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={stats.kolData}>
+                  <BarChart data={stats.kolData} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
-                    <Tooltip formatter={(v: any) => fmtIDR(v as number)} />
+                    <XAxis dataKey="kol" tick={{ fontSize: 11 }} tickFormatter={(v) => `KOL ${kolDisplay(v)}`} />
+                    <YAxis tick={{ fontSize: 10 }} width={50} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
+                    <Tooltip formatter={(v: any) => fmtIDR(v as number)} labelFormatter={(l) => `KOL ${kolDisplay(l as number)}`} />
                     <Bar dataKey="baki" name="Outstanding" radius={[6, 6, 0, 0]}>
                       {stats.kolData.map((d) => (
                         <Cell key={d.kol} fill={KOL_COLOR[d.kol] || '#94a3b8'} />
@@ -268,11 +268,11 @@ const MonitoringDashboardPage: React.FC = () => {
                 <CardTitle className="text-base">Outstanding per Produk Kredit</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stats.prodData} layout="vertical" margin={{ left: 130 }}>
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={stats.prodData} layout="vertical" margin={{ left: 4, right: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={130} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={90} />
                     <Tooltip formatter={(v: any) => fmtIDR(v as number)} labelFormatter={(l) => (stats.prodData.find((p) => p.name === l)?.fullName || l) as string} />
                     <Bar dataKey="baki" name="Outstanding" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
                   </BarChart>
@@ -287,15 +287,15 @@ const MonitoringDashboardPage: React.FC = () => {
               <CardHeader>
                 <CardTitle className="text-base">Ringkasan per AO / Petugas</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
+              <CardContent className="px-2 sm:px-6">
+                <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
                   <TableHeader>
                     <TableRow>
                       <TableHead>AO</TableHead>
-                      <TableHead className="text-right">Jumlah Debitur</TableHead>
+                      <TableHead className="text-right">Debitur</TableHead>
                       <TableHead className="text-right">Outstanding</TableHead>
-                      <TableHead className="text-right">Tunggakan Berjalan</TableHead>
-                      <TableHead className="text-right">Rasio NPL</TableHead>
+                      <TableHead className="text-right">Tunggakan</TableHead>
+                      <TableHead className="text-right">NPL</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -328,8 +328,8 @@ const MonitoringDashboardPage: React.FC = () => {
                 Top 10 Debitur dengan Tunggakan Berjalan Tertinggi
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
+            <CardContent className="px-2 sm:px-6">
+              <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead>No Rekening</TableHead>
@@ -389,10 +389,10 @@ const KPICard: React.FC<{ icon: React.ElementType; label: string; value: string;
       <Icon className={cn('absolute -right-3 -bottom-3 w-24 h-24 opacity-[0.08] rotate-12 pointer-events-none', t.silhouette)} strokeWidth={1.3} />
       <CardContent className="pt-5 pb-5 relative">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] text-muted-foreground mb-1 font-medium uppercase tracking-wide">{label}</p>
-            <p className="text-xl font-bold truncate">{value}</p>
-            {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
+            <p className="text-base sm:text-xl font-bold break-words leading-tight">{value}</p>
+            {sub && <p className="text-[11px] text-muted-foreground mt-1 break-words">{sub}</p>}
           </div>
           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', t.icon)}>
             <Icon className="w-5 h-5" />
