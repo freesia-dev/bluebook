@@ -75,7 +75,7 @@ const computeStats = (rows: MLFRow[]) => {
     .filter((r) => r.tunggakan > 0)
     .sort((a, b) => b.tunggakan - a.tunggakan);
 
-  return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, prodData, aoData, topDebitur };
+  return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, nplRatio, nplCountRatio, nplBaseBaki, nplBaseCount, tunggakanRatio, prodData, aoData, topDebitur };
 };
 
 const ExportPDFPage: React.FC = () => {
