@@ -4,23 +4,31 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMLFUploads, useMLFData143 } from '@/hooks/use-mlf-data';
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
-import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet } from 'lucide-react';
+import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const MonitoringDashboardPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
+  const [includeEkstrakom, setIncludeEkstrakom] = useState(false);
 
   useEffect(() => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
   }, [uploads, selectedUpload]);
 
-  const { data: rows = [], isLoading } = useMLFData143(selectedUpload);
+  const { data: allRows = [] } = useMLFData143(selectedUpload);
+  const rows = useMemo(
+    () => (includeEkstrakom ? allRows : allRows.filter((r) => (Number(r.kol) || 0) !== 0)),
+    [allRows, includeEkstrakom]
+  );
 
   const stats = useMemo(() => {
     const totalDebitur = rows.length;
@@ -30,7 +38,6 @@ const MonitoringDashboardPage: React.FC = () => {
     const totalTungpk = rows.reduce((s, r) => s + (Number(r.tungpk) || 0), 0);
     const totalTungbg = rows.reduce((s, r) => s + (Number(r.tungbg) || 0), 0);
 
-    // KOL breakdown
     const kolMap = new Map<number, { count: number; baki: number; tunggakan: number }>();
     rows.forEach((r) => {
       const k = Number(r.kol) || 0;
@@ -44,11 +51,30 @@ const MonitoringDashboardPage: React.FC = () => {
       .sort((a, b) => a[0] - b[0])
       .map(([k, v]) => ({ kol: k, name: `KOL ${kolDisplay(k)} - ${KOL_LABEL[k] || ''}`, ...v }));
 
-    // NPL (KOL 3-5)
+    // NPL (KOL 3-5) — denominator excludes ekstrakom regardless of view
     const nplCount = rows.filter((r) => (Number(r.kol) || 0) >= 3).length;
     const nplBaki = rows.filter((r) => (Number(r.kol) || 0) >= 3).reduce((s, r) => s + (Number(r.baki) || 0), 0);
+    const nplBaseRows = allRows.filter((r) => (Number(r.kol) || 0) !== 0);
+    const nplBaseBaki = nplBaseRows.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+    const nplBaseCount = nplBaseRows.length;
+    const nplRatio = nplBaseBaki > 0 ? (nplBaki / nplBaseBaki) * 100 : 0;
+    const nplCountRatio = nplBaseCount > 0 ? (nplCount / nplBaseCount) * 100 : 0;
 
-    // Product breakdown
+    // Coverage tunggakan vs outstanding
+    const tunggakanRatio = totalBaki > 0 ? (totalTunggakan / totalBaki) * 100 : 0;
+
+    // KOL 2 (DPK) — early warning
+    const dpkCount = rows.filter((r) => (Number(r.kol) || 0) === 2).length;
+    const dpkBaki = rows.filter((r) => (Number(r.kol) || 0) === 2).reduce((s, r) => s + (Number(r.baki) || 0), 0);
+
+    // Lancar
+    const lancarCount = rows.filter((r) => (Number(r.kol) || 0) === 1).length;
+    const lancarBaki = rows.filter((r) => (Number(r.kol) || 0) === 1).reduce((s, r) => s + (Number(r.baki) || 0), 0);
+
+    // Ekstrakom info
+    const ekstraCount = allRows.filter((r) => (Number(r.kol) || 0) === 0).length;
+    const ekstraBaki = allRows.filter((r) => (Number(r.kol) || 0) === 0).reduce((s, r) => s + (Number(r.baki) || 0), 0);
+
     const prodMap = new Map<string, { count: number; baki: number }>();
     rows.forEach((r) => {
       const p = r.lytitl || 'Lainnya';
@@ -62,31 +88,37 @@ const MonitoringDashboardPage: React.FC = () => {
       .sort((a, b) => b.baki - a.baki)
       .slice(0, 8);
 
-    // AO breakdown
-    const aoMap = new Map<string, { count: number; baki: number; tunggakan: number }>();
+    const aoMap = new Map<string, { count: number; baki: number; tunggakan: number; npl: number }>();
     rows.forEach((r) => {
       const ao = r.l0usid || '-';
-      const cur = aoMap.get(ao) || { count: 0, baki: 0, tunggakan: 0 };
+      const cur = aoMap.get(ao) || { count: 0, baki: 0, tunggakan: 0, npl: 0 };
       cur.count += 1;
       cur.baki += Number(r.baki) || 0;
       cur.tunggakan += (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+      if ((Number(r.kol) || 0) >= 3) cur.npl += Number(r.baki) || 0;
       aoMap.set(ao, cur);
     });
     const aoData = Array.from(aoMap.entries())
-      .map(([ao, v]) => ({ ao, ...v }))
+      .map(([ao, v]) => ({ ao, ...v, nplRatio: v.baki > 0 ? (v.npl / v.baki) * 100 : 0 }))
       .sort((a, b) => b.tunggakan - a.tunggakan);
 
-    // Top debitur tunggakan
     const topDebitur = [...rows]
       .map((r) => ({ ...r, tunggakan: (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0) }))
       .filter((r) => r.tunggakan > 0)
       .sort((a, b) => b.tunggakan - a.tunggakan)
       .slice(0, 10);
 
-    return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, prodData, aoData, topDebitur };
-  }, [rows]);
+    return {
+      totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg,
+      kolData, nplCount, nplBaki, nplRatio, nplCountRatio, nplBaseBaki, nplBaseCount,
+      tunggakanRatio, dpkCount, dpkBaki, lancarCount, lancarBaki,
+      ekstraCount, ekstraBaki, prodData, aoData, topDebitur,
+    };
+  }, [rows, allRows]);
 
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
+  const nplLevel = stats.nplRatio < 2 ? 'good' : stats.nplRatio < 5 ? 'warn' : 'bad';
+  const nplColor = nplLevel === 'good' ? 'from-emerald-500 to-teal-600' : nplLevel === 'warn' ? 'from-amber-500 to-orange-600' : 'from-rose-500 to-red-600';
 
   return (
     <MainLayout>
@@ -95,22 +127,36 @@ const MonitoringDashboardPage: React.FC = () => {
         description="Rangkuman pengolahan data Master Loan Filter — Cabang 143 (CAPEM TELIHAN BONTANG)"
       />
 
-      <Card className="mb-6">
-        <CardContent className="pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Periode Data</p>
-            <Select value={selectedUpload} onValueChange={setSelectedUpload}>
-              <SelectTrigger className="w-[280px]">
-                <SelectValue placeholder="Pilih periode" />
-              </SelectTrigger>
-              <SelectContent>
-                {uploads.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {format(new Date(u.jobdate), 'dd MMMM yyyy', { locale: idLocale })} — {u.filename}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Controls bar */}
+      <Card className="mb-6 overflow-hidden relative border-border/60">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+        <Activity className="absolute -right-6 -top-6 w-32 h-32 text-primary/5 rotate-12 pointer-events-none" strokeWidth={1.2} />
+        <CardContent className="pt-6 relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Periode Data</p>
+              <Select value={selectedUpload} onValueChange={setSelectedUpload}>
+                <SelectTrigger className="w-[300px] bg-background/80 backdrop-blur">
+                  <SelectValue placeholder="Pilih periode" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uploads.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {format(new Date(u.jobdate), 'dd MMMM yyyy', { locale: idLocale })} — {u.filename}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-background/70 backdrop-blur">
+              <Switch id="ekstrakom-toggle" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
+              <Label htmlFor="ekstrakom-toggle" className="cursor-pointer">
+                <span className="text-sm font-medium">Tampilkan Ekstrakomtabel</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {includeEkstrakom ? 'Termasuk' : 'Disembunyikan'} • {fmtNum(stats.ekstraCount)} debitur — {fmtIDR(stats.ekstraBaki)}
+                </span>
+              </Label>
+            </div>
           </div>
           {selectedUploadInfo && (
             <div className="text-right text-xs text-muted-foreground">
@@ -130,29 +176,54 @@ const MonitoringDashboardPage: React.FC = () => {
         </Card>
       ) : (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <KPICard icon={Users} label="Total Debitur" value={fmtNum(stats.totalDebitur)} accent="bg-blue-500/10 text-blue-600" />
-            <KPICard icon={Wallet} label="Total Outstanding (Baki)" value={fmtIDR(stats.totalBaki)} accent="bg-emerald-500/10 text-emerald-600" />
-            <KPICard
-              icon={AlertTriangle}
-              label="Tunggakan Berjalan (Pokok + Bunga)"
-              value={fmtIDR(stats.totalTunggakan)}
-              sub={`Pokok ${fmtIDR(stats.totalTungpk)} • Bunga ${fmtIDR(stats.totalTungbg)}`}
-              accent="bg-amber-500/10 text-amber-600"
-            />
-            <KPICard
-              icon={TrendingDown}
-              label="NPL (KOL 3-5)"
-              value={`${fmtNum(stats.nplCount)} debitur`}
-              sub={fmtIDR(stats.nplBaki)}
-              accent="bg-red-500/10 text-red-600"
-            />
+          {/* Hero KPI Row — NPL focal */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <div className={cn(
+              "lg:col-span-1 relative overflow-hidden rounded-xl p-6 text-white shadow-lg bg-gradient-to-br",
+              nplColor
+            )}>
+              <ShieldAlert className="absolute -right-4 -bottom-4 w-40 h-40 opacity-10 rotate-12" strokeWidth={1.2} />
+              <Gauge className="absolute right-4 top-4 w-6 h-6 opacity-80" />
+              <p className="text-xs uppercase tracking-wider opacity-90">Rasio NPL (KOL 3-5)</p>
+              <p className="text-5xl font-bold mt-2 tracking-tight">{stats.nplRatio.toFixed(2)}<span className="text-2xl opacity-80">%</span></p>
+              <div className="mt-4 space-y-1 text-xs opacity-95">
+                <p>NPL: <strong>{fmtIDR(stats.nplBaki)}</strong> dari {fmtIDR(stats.nplBaseBaki)}</p>
+                <p>{fmtNum(stats.nplCount)} debitur ({stats.nplCountRatio.toFixed(2)}% dari {fmtNum(stats.nplBaseCount)})</p>
+                <p className="pt-2 text-[10px] opacity-75">Basis: outstanding non-ekstrakomtabel</p>
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+              <KPICard icon={Users} label="Total Debitur" value={fmtNum(stats.totalDebitur)}
+                sub={includeEkstrakom ? `+ ${fmtNum(stats.ekstraCount)} ekstrakom` : 'tanpa ekstrakom'}
+                tint="blue" />
+              <KPICard icon={Wallet} label="Total Outstanding" value={fmtIDR(stats.totalBaki)}
+                sub={`Plafon ${fmtIDR(stats.totalPlafon)}`}
+                tint="emerald" />
+              <KPICard icon={AlertTriangle} label="Tunggakan Berjalan" value={fmtIDR(stats.totalTunggakan)}
+                sub={`Pokok ${fmtIDR(stats.totalTungpk)} • Bunga ${fmtIDR(stats.totalTungbg)}`}
+                tint="amber" />
+              <KPICard icon={Percent} label="Rasio Tunggakan / OS" value={`${stats.tunggakanRatio.toFixed(2)}%`}
+                sub={`DPK (KOL 2): ${fmtNum(stats.dpkCount)} • ${fmtIDR(stats.dpkBaki)}`}
+                tint="rose" />
+            </div>
           </div>
+
+          {/* Quick health strip */}
+          <Card className="mb-6 relative overflow-hidden border-border/60">
+            <TrendingDown className="absolute -right-4 -top-4 w-28 h-28 text-primary/5 pointer-events-none" strokeWidth={1.2} />
+            <CardContent className="pt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <HealthPill label="Lancar (KOL 1)" count={stats.lancarCount} amount={stats.lancarBaki} color="#22c55e" total={stats.totalBaki} />
+              <HealthPill label="DPK (KOL 2)" count={stats.dpkCount} amount={stats.dpkBaki} color="#eab308" total={stats.totalBaki} />
+              <HealthPill label="NPL (KOL 3-5)" count={stats.nplCount} amount={stats.nplBaki} color="#ef4444" total={stats.totalBaki} />
+              <HealthPill label="Tunggakan Berjalan" count={stats.totalDebitur > 0 ? rows.filter(r => ((Number(r.tungpk)||0)+(Number(r.tungbg)||0))>0).length : 0} amount={stats.totalTunggakan} color="#f97316" total={stats.totalBaki} />
+            </CardContent>
+          </Card>
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            <Card>
+            <Card className="relative overflow-hidden">
+              <PieChart className="hidden" />
               <CardHeader>
                 <CardTitle className="text-base">Komposisi Debitur per KOL</CardTitle>
               </CardHeader>
@@ -224,6 +295,7 @@ const MonitoringDashboardPage: React.FC = () => {
                       <TableHead className="text-right">Jumlah Debitur</TableHead>
                       <TableHead className="text-right">Outstanding</TableHead>
                       <TableHead className="text-right">Tunggakan Berjalan</TableHead>
+                      <TableHead className="text-right">Rasio NPL</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -234,6 +306,11 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableCell className="text-right">{fmtIDR(a.baki)}</TableCell>
                         <TableCell className="text-right">
                           <span className={a.tunggakan > 0 ? 'text-amber-600 font-semibold' : ''}>{fmtIDR(a.tunggakan)}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={a.nplRatio < 2 ? 'secondary' : a.nplRatio < 5 ? 'default' : 'destructive'}>
+                            {a.nplRatio.toFixed(2)}%
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -298,21 +375,51 @@ const MonitoringDashboardPage: React.FC = () => {
   );
 };
 
-const KPICard: React.FC<{ icon: React.ElementType; label: string; value: string; sub?: string; accent: string }> = ({ icon: Icon, label, value, sub, accent }) => (
-  <Card>
-    <CardContent className="pt-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground mb-1">{label}</p>
-          <p className="text-xl font-bold truncate">{value}</p>
-          {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
+const tintMap = {
+  blue: { bg: 'from-blue-500/10 to-blue-500/5', icon: 'bg-blue-500/15 text-blue-600', silhouette: 'text-blue-500' },
+  emerald: { bg: 'from-emerald-500/10 to-emerald-500/5', icon: 'bg-emerald-500/15 text-emerald-600', silhouette: 'text-emerald-500' },
+  amber: { bg: 'from-amber-500/10 to-amber-500/5', icon: 'bg-amber-500/15 text-amber-600', silhouette: 'text-amber-500' },
+  rose: { bg: 'from-rose-500/10 to-rose-500/5', icon: 'bg-rose-500/15 text-rose-600', silhouette: 'text-rose-500' },
+} as const;
+
+const KPICard: React.FC<{ icon: React.ElementType; label: string; value: string; sub?: string; tint: keyof typeof tintMap }> = ({ icon: Icon, label, value, sub, tint }) => {
+  const t = tintMap[tint];
+  return (
+    <Card className={cn('relative overflow-hidden border-border/60 bg-gradient-to-br', t.bg)}>
+      <Icon className={cn('absolute -right-3 -bottom-3 w-24 h-24 opacity-[0.08] rotate-12 pointer-events-none', t.silhouette)} strokeWidth={1.3} />
+      <CardContent className="pt-5 pb-5 relative">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground mb-1 font-medium uppercase tracking-wide">{label}</p>
+            <p className="text-xl font-bold truncate">{value}</p>
+            {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
+          </div>
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', t.icon)}>
+            <Icon className="w-5 h-5" />
+          </div>
         </div>
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${accent}`}>
-          <Icon className="w-5 h-5" />
-        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const HealthPill: React.FC<{ label: string; count: number; amount: number; color: string; total: number }> = ({ label, count, amount, color, total }) => {
+  const pct = total > 0 ? (amount / total) * 100 : 0;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-bold" style={{ color }}>{pct.toFixed(1)}%</span>
       </div>
-    </CardContent>
-  </Card>
-);
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
+      </div>
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="font-semibold">{fmtNum(count)} debitur</span>
+        <span className="text-muted-foreground">{fmtIDR(amount)}</span>
+      </div>
+    </div>
+  );
+};
 
 export default MonitoringDashboardPage;
