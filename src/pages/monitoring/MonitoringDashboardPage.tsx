@@ -230,13 +230,13 @@ const MonitoringDashboardPage: React.FC = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
-                    <Pie data={stats.kolData} dataKey="count" nameKey="name" outerRadius={90} label={(e: any) => e.count}>
+                    <Pie data={stats.kolData} dataKey="count" nameKey="name" outerRadius="70%" label={(e: any) => e.count}>
                       {stats.kolData.map((d) => (
                         <Cell key={d.kol} fill={KOL_COLOR[d.kol] || '#94a3b8'} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(v: any) => fmtNum(v as number)} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -248,11 +248,11 @@ const MonitoringDashboardPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={stats.kolData}>
+                  <BarChart data={stats.kolData} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
-                    <Tooltip formatter={(v: any) => fmtIDR(v as number)} />
+                    <XAxis dataKey="kol" tick={{ fontSize: 11 }} tickFormatter={(v) => `KOL ${kolDisplay(v)}`} />
+                    <YAxis tick={{ fontSize: 10 }} width={50} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
+                    <Tooltip formatter={(v: any) => fmtIDR(v as number)} labelFormatter={(l) => `KOL ${kolDisplay(l as number)}`} />
                     <Bar dataKey="baki" name="Outstanding" radius={[6, 6, 0, 0]}>
                       {stats.kolData.map((d) => (
                         <Cell key={d.kol} fill={KOL_COLOR[d.kol] || '#94a3b8'} />
@@ -268,11 +268,11 @@ const MonitoringDashboardPage: React.FC = () => {
                 <CardTitle className="text-base">Outstanding per Produk Kredit</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stats.prodData} layout="vertical" margin={{ left: 130 }}>
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={stats.prodData} layout="vertical" margin={{ left: 4, right: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={130} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `${(v / 1e6).toFixed(0)}jt`} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={90} />
                     <Tooltip formatter={(v: any) => fmtIDR(v as number)} labelFormatter={(l) => (stats.prodData.find((p) => p.name === l)?.fullName || l) as string} />
                     <Bar dataKey="baki" name="Outstanding" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
                   </BarChart>
