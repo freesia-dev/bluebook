@@ -223,6 +223,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               children={atmTelihanItems}
               onNavigate={onClose}
             />
+            <NavItem 
+              icon={TrendingUp} 
+              label="Monitoring KKR & NPL" 
+              children={monitoringItems}
+              onNavigate={onClose}
+            />
             {isAdmin && (
               <NavItem 
                 icon={Settings} 
