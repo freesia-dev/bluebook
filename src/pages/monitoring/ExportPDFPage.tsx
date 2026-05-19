@@ -342,12 +342,23 @@ const ExportPDFPage: React.FC = () => {
               </Select>
             </div>
 
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+              <Switch id="pdf-ekstra" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
+              <Label htmlFor="pdf-ekstra" className="cursor-pointer">
+                <span className="text-sm font-medium">Sertakan data Ekstrakomtabel (KOL 0)</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {includeEkstrakom ? 'Akan ditampilkan' : 'Tidak ditampilkan'} dalam PDF
+                </span>
+              </Label>
+            </div>
+
             {uploadInfo && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-lg bg-muted/40 border border-border">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-lg bg-muted/40 border border-border">
                 <Stat label="Debitur" value={fmtNum(stats.totalDebitur)} />
                 <Stat label="Outstanding" value={fmtIDR(stats.totalBaki)} />
                 <Stat label="Tunggakan Berjalan" value={fmtIDR(stats.totalTunggakan)} />
                 <Stat label="NPL" value={`${fmtNum(stats.nplCount)} • ${fmtIDR(stats.nplBaki)}`} />
+                <Stat label="Rasio NPL" value={`${stats.nplRatio.toFixed(2)}%`} />
               </div>
             )}
 
