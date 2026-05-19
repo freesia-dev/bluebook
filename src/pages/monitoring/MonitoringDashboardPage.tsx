@@ -279,7 +279,7 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableCell className="text-xs">{d.lytitl}</TableCell>
                         <TableCell className="text-center">
                           <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
-                            {d.kol}
+                            {kolDisplay(d.kol)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
