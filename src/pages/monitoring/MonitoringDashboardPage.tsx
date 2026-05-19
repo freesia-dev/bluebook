@@ -287,15 +287,15 @@ const MonitoringDashboardPage: React.FC = () => {
               <CardHeader>
                 <CardTitle className="text-base">Ringkasan per AO / Petugas</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
+              <CardContent className="px-2 sm:px-6">
+                <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
                   <TableHeader>
                     <TableRow>
                       <TableHead>AO</TableHead>
-                      <TableHead className="text-right">Jumlah Debitur</TableHead>
+                      <TableHead className="text-right">Debitur</TableHead>
                       <TableHead className="text-right">Outstanding</TableHead>
-                      <TableHead className="text-right">Tunggakan Berjalan</TableHead>
-                      <TableHead className="text-right">Rasio NPL</TableHead>
+                      <TableHead className="text-right">Tunggakan</TableHead>
+                      <TableHead className="text-right">NPL</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
