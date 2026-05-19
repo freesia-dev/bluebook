@@ -12,6 +12,8 @@ import { FileDown, Loader2, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const hexToRgb = (hex: string): [number, number, number] => {
   const h = hex.replace('#', '');
