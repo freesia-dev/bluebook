@@ -42,7 +42,7 @@ const MonitoringDashboardPage: React.FC = () => {
     });
     const kolData = Array.from(kolMap.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(([k, v]) => ({ kol: k, name: `KOL ${k} - ${KOL_LABEL[k] || ''}`, ...v }));
+      .map(([k, v]) => ({ kol: k, name: `KOL ${kolDisplay(k)} - ${KOL_LABEL[k] || ''}`, ...v }));
 
     // NPL (KOL 3-5)
     const nplCount = rows.filter((r) => (Number(r.kol) || 0) >= 3).length;
