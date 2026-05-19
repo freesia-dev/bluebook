@@ -41,45 +41,85 @@ const UploadDataPage: React.FC = () => {
         throw new Error('Sheet "Master_Loan_Filter" tidak ditemukan di file ini.');
       }
       const ws = wb.Sheets['Master_Loan_Filter'];
-      const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: null });
-      if (rows.length === 0) throw new Error('Sheet kosong, tidak ada data.');
+      // Read as array-of-arrays so we can map by both header name AND column letter (Z/AA fallback)
+      const aoa: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false });
+      if (aoa.length < 2) throw new Error('Sheet kosong, tidak ada data.');
+
+      const headerRow = aoa[0].map((h) => (h === null || h === undefined ? '' : String(h).trim()));
+      const dataRows = aoa.slice(1);
+
+      const norm = (s: string) => s.toLowerCase().replace(/[\s_\-./]/g, '');
+      const headerIdx = new Map<string, number>();
+      headerRow.forEach((h, i) => {
+        if (h) headerIdx.set(norm(h), i);
+      });
+
+      const findIdx = (...names: string[]): number => {
+        for (const n of names) {
+          const idx = headerIdx.get(norm(n));
+          if (idx !== undefined) return idx;
+        }
+        return -1;
+      };
+
+      const idx = {
+        brcd: findIdx('L0BRCD', 'BRCD'),
+        brname: findIdx('BRNAME'),
+        kol: findIdx('KOL', 'kol'),
+        lytitl: findIdx('LYTITL'),
+        ecname: findIdx('ECNAME'),
+        l0lnno: findIdx('L0LNNO'),
+        l0name: findIdx('L0NAME'),
+        l0narr: findIdx('L0NARR'),
+        pla: findIdx('PLA', 'PLAFON'),
+        baki: findIdx('BAKI'),
+        // Z = index 25, AA = index 26 (0-indexed) — fallback if header tidak ketemu
+        tungpk: (() => { const i = findIdx('TUNGPK', 'TUNG PK', 'TUNGGAKAN POKOK', 'TUNGGAKANPOKOK'); return i >= 0 ? i : 25; })(),
+        tungbg: (() => { const i = findIdx('TUNGBG', 'TUNG BG', 'TUNGGAKAN BUNGA', 'TUNGGAKANBUNGA'); return i >= 0 ? i : 26; })(),
+        cad: findIdx('CAD'),
+        group1: findIdx('group1', 'GROUP1'),
+        group2: findIdx('group2', 'GROUP2'),
+        l0usid: findIdx('L0USID'),
+      };
 
       // Create upload row
       const { data: userData } = await supabase.auth.getUser();
       const { data: uploadRow, error: upErr } = await (supabase as any)
         .from('mlf_uploads')
-        .insert({ jobdate, filename: file.name, total_rows: rows.length, uploaded_by: userData?.user?.id })
+        .insert({ jobdate, filename: file.name, total_rows: dataRows.length, uploaded_by: userData?.user?.id })
         .select()
         .single();
       if (upErr) throw upErr;
 
-      // Map rows
-      const toStr = (v: any) => (v === null || v === undefined ? null : String(v).trim());
+      const toStr = (v: any) => (v === null || v === undefined ? null : String(v).trim() || null);
       const toNum = (v: any) => {
         if (v === null || v === undefined || v === '') return null;
-        const n = Number(v);
+        if (typeof v === 'number') return isNaN(v) ? null : v;
+        const cleaned = String(v).replace(/[^\d.\-,]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
+        const n = Number(cleaned);
         return isNaN(n) ? null : n;
       };
+      const at = (row: any[], i: number) => (i >= 0 && i < row.length ? row[i] : null);
 
-      const mapped = rows.map((r) => ({
+      const mapped = dataRows.map((row) => ({
         upload_id: uploadRow.id,
         jobdate,
-        brcd: toStr(r.L0BRCD),
-        brname: toStr(r.BRNAME),
-        kol: toNum(r.kol) ?? toNum(r.KOL),
-        lytitl: toStr(r.LYTITL),
-        ecname: toStr(r.ECNAME),
-        l0lnno: toStr(r.L0LNNO),
-        l0name: toStr(r.L0NAME),
-        l0narr: toStr(r.L0NARR),
-        pla: toNum(r.PLA),
-        baki: toNum(r.BAKI),
-        tungpk: toNum(r.TUNGPK),
-        tungbg: toNum(r.TUNGBG),
-        cad: toNum(r.CAD),
-        group1: toStr(r.group1),
-        group2: toStr(r.group2),
-        l0usid: toStr(r.L0USID),
+        brcd: toStr(at(row, idx.brcd)),
+        brname: toStr(at(row, idx.brname)),
+        kol: toNum(at(row, idx.kol)),
+        lytitl: toStr(at(row, idx.lytitl)),
+        ecname: toStr(at(row, idx.ecname)),
+        l0lnno: toStr(at(row, idx.l0lnno)),
+        l0name: toStr(at(row, idx.l0name)),
+        l0narr: toStr(at(row, idx.l0narr)),
+        pla: toNum(at(row, idx.pla)),
+        baki: toNum(at(row, idx.baki)),
+        tungpk: toNum(at(row, idx.tungpk)),
+        tungbg: toNum(at(row, idx.tungbg)),
+        cad: toNum(at(row, idx.cad)),
+        group1: toStr(at(row, idx.group1)),
+        group2: toStr(at(row, idx.group2)),
+        l0usid: toStr(at(row, idx.l0usid)),
       }));
 
       // Batch insert
