@@ -40,6 +40,8 @@ const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const UploadDataPage = lazy(() => import("./pages/monitoring/UploadDataPage"));
 const MonitoringDashboardPage = lazy(() => import("./pages/monitoring/MonitoringDashboardPage"));
 const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
+const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPage"));
+const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
