@@ -167,6 +167,12 @@ const App = () => (
             <Route path="/monitoring/export-pdf" element={
               <Suspense fallback={<GenericPageSkeleton />}><ExportPDFPage /></Suspense>
             } />
+            <Route path="/monitoring/kontak" element={
+              <Suspense fallback={<TablePageSkeleton />}><KontakDebiturPage /></Suspense>
+            } />
+            <Route path="/monitoring/reminder" element={
+              <Suspense fallback={<TablePageSkeleton />}><ReminderTunggakanPage /></Suspense>
+            } />
             {/* Install PWA */}
             <Route path="/install" element={
               <Suspense fallback={<LoginLoader />}><InstallApp /></Suspense>
