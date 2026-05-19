@@ -128,10 +128,10 @@ const ExportPDFPage: React.FC = () => {
 
       // ===== KPI cards (2x2) =====
       const kpis: Array<{ label: string; value: string; color: [number, number, number]; sub?: string }> = [
-        { label: 'Total Debitur', value: fmtNum(stats.totalDebitur), color: hexToRgb('3b82f6') },
-        { label: 'Total Outstanding (Baki)', value: fmtIDR(stats.totalBaki), color: hexToRgb('10b981') },
+        { label: 'Total Debitur', value: fmtNum(stats.totalDebitur), color: hexToRgb('3b82f6'), sub: `Outstanding ${fmtIDR(stats.totalBaki)}` },
+        { label: 'Rasio NPL (KOL 3-5)', value: `${stats.nplRatio.toFixed(2)}%`, color: hexToRgb('ef4444'), sub: `${fmtNum(stats.nplCount)} debitur • ${fmtIDR(stats.nplBaki)}` },
         { label: 'Tunggakan Berjalan', value: fmtIDR(stats.totalTunggakan), color: hexToRgb('f59e0b'), sub: `Pokok ${fmtIDR(stats.totalTungpk)} | Bunga ${fmtIDR(stats.totalTungbg)}` },
-        { label: 'NPL (KOL 3-5)', value: `${fmtNum(stats.nplCount)} debitur`, color: hexToRgb('ef4444'), sub: fmtIDR(stats.nplBaki) },
+        { label: 'Rasio Tunggakan / OS', value: `${stats.tunggakanRatio.toFixed(2)}%`, color: hexToRgb('10b981'), sub: `Plafon ${fmtIDR(stats.totalPlafon)}` },
       ];
       const cardW = (W - M * 2 - 6) / 2;
       const cardH = 26;
