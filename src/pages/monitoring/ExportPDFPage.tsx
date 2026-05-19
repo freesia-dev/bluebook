@@ -83,12 +83,17 @@ const ExportPDFPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [generating, setGenerating] = useState(false);
+  const [includeEkstrakom, setIncludeEkstrakom] = useState(false);
 
   useEffect(() => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
   }, [uploads, selectedUpload]);
 
-  const { data: rows = [], isLoading } = useMLFData143(selectedUpload);
+  const { data: allRows = [], isLoading } = useMLFData143(selectedUpload);
+  const rows = useMemo(
+    () => (includeEkstrakom ? allRows : allRows.filter((r) => (Number(r.kol) || 0) !== 0)),
+    [allRows, includeEkstrakom]
+  );
   const stats = useMemo(() => computeStats(rows), [rows]);
   const uploadInfo = uploads.find((u) => u.id === selectedUpload);
 
