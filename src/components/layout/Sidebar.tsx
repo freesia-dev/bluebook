@@ -198,45 +198,75 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            <NavItem 
-              icon={LayoutDashboard} 
-              label="Dashboard" 
-              href="/dashboard" 
-              isActive={location.pathname === '/dashboard'} 
-              onNavigate={onClose}
-            />
-            <NavItem 
-              icon={Mail} 
-              label="Surat Masuk" 
-              href="/surat-masuk" 
-              isActive={location.pathname === '/surat-masuk'} 
-              onNavigate={onClose}
-            />
-            <NavItem 
-              icon={Send} 
-              label="Surat Keluar" 
-              href="/surat-keluar" 
-              isActive={location.pathname === '/surat-keluar'} 
-              onNavigate={onClose}
-            />
-            <NavItem 
-              icon={CreditCard} 
-              label="Agenda Kredit" 
-              children={agendaKreditItems}
-              onNavigate={onClose}
-            />
-            <NavItem 
-              icon={Banknote} 
-              label="ATM Telihan" 
-              children={atmTelihanItems}
-              onNavigate={onClose}
-            />
-            <NavItem 
-              icon={TrendingUp} 
-              label="Monitoring KKR & NPL" 
-              children={monitoringItems}
-              onNavigate={onClose}
-            />
+            {permissions.dashboard && (
+              <NavItem 
+                icon={LayoutDashboard} 
+                label="Dashboard" 
+                href="/dashboard" 
+                isActive={location.pathname === '/dashboard'} 
+                onNavigate={onClose}
+              />
+            )}
+            {permissions.surat && (
+              <>
+                <NavItem 
+                  icon={Mail} 
+                  label="Surat Masuk" 
+                  href="/surat-masuk" 
+                  isActive={location.pathname === '/surat-masuk'} 
+                  onNavigate={onClose}
+                />
+                <NavItem 
+                  icon={Send} 
+                  label="Surat Keluar" 
+                  href="/surat-keluar" 
+                  isActive={location.pathname === '/surat-keluar'} 
+                  onNavigate={onClose}
+                />
+              </>
+            )}
+            {permissions.agendaKredit && (
+              <NavItem 
+                icon={CreditCard} 
+                label="Agenda Kredit" 
+                children={agendaKreditItems}
+                onNavigate={onClose}
+              />
+            )}
+            {permissions.atmTelihan && (
+              <NavItem 
+                icon={Banknote} 
+                label="ATM Telihan" 
+                children={atmTelihanItems}
+                onNavigate={onClose}
+              />
+            )}
+            {permissions.monitoring && monitoringItems.length > 0 && (
+              <NavItem 
+                icon={TrendingUp} 
+                label="Monitoring KKR & NPL" 
+                children={monitoringItems}
+                onNavigate={onClose}
+              />
+            )}
+            {permissions.comingSoonSecurity && (
+              <NavItem 
+                icon={Shield} 
+                label="Security" 
+                href="/security" 
+                isActive={location.pathname === '/security'} 
+                onNavigate={onClose}
+              />
+            )}
+            {permissions.comingSoonOB && (
+              <NavItem 
+                icon={Sparkles} 
+                label="OB" 
+                href="/ob" 
+                isActive={location.pathname === '/ob'} 
+                onNavigate={onClose}
+              />
+            )}
             {isAdmin && (
               <NavItem 
                 icon={Settings} 
