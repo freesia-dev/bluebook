@@ -47,13 +47,14 @@ export const AntrianWAModal: React.FC<Props> = ({ open, items, onClose }) => {
   const handleSend = () => {
     if (!current) return;
     const url = buildWAUrl(current.no_hp, current.pesan);
-    // CRITICAL: open window SYNCHRONOUSLY inside the click handler — any await
-    // before window.open breaks the user-gesture context and the popup gets blocked.
-    const win = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!win) {
-      toast.error('Popup diblokir browser. Izinkan popup untuk situs ini lalu coba lagi.');
-      return;
-    }
+    // whatsapp:// protocol — use anchor click instead of window.open so the browser
+    // hands off to WhatsApp Desktop without leaving a blank tab behind.
+    const a = document.createElement('a');
+    a.href = url;
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     // Fire-and-forget log insert; don't block the UI.
     insertLog.mutate(
       {
