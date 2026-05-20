@@ -502,12 +502,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={createUserForm.role} onValueChange={(v: 'admin' | 'user' | 'demo') => setCreateUserForm({...createUserForm, role: v})}>
+              <Select value={createUserForm.role} onValueChange={(v: AppRole) => setCreateUserForm({...createUserForm, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin (IT)</SelectItem>
-                  <SelectItem value="demo">Demo (View Only)</SelectItem>
+                  {ROLE_OPTIONS.map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
