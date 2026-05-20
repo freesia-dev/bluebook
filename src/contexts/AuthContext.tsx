@@ -27,8 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
+  const [role, setRole] = useState<AppRole>('user');
   const [isApproved, setIsApproved] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,8 +45,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             checkUserStatus(session.user.id);
           }, 0);
         } else {
-          setIsAdmin(false);
-          setIsDemo(false);
+          setRole('user');
           setIsApproved(false);
           setIsPending(false);
         }
@@ -69,15 +67,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const checkUserStatus = async (userId: string) => {
     try {
-      // Parallel queries for maximum speed
       const [roleResult, profileResult] = await Promise.all([
         supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
         supabase.from('profiles').select('status').eq('user_id', userId).maybeSingle()
       ]);
 
-      setIsAdmin(roleResult.data?.role === 'admin');
-      setIsDemo(roleResult.data?.role === 'demo');
-      
+      setRole((roleResult.data?.role as AppRole) || 'user');
+
       if (profileResult.data) {
         setIsApproved(profileResult.data.status === 'approved');
         setIsPending(profileResult.data.status === 'pending');
@@ -87,8 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Error checking user status:', error);
-      setIsAdmin(false);
-      setIsDemo(false);
+      setRole('user');
       setIsApproved(false);
       setIsPending(false);
     }
@@ -108,7 +103,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { error: error.message };
       }
 
-      // Parallel check for role and profile status
       if (data.user) {
         const [roleResult, profileResult] = await Promise.all([
           supabase.from('user_roles').select('role').eq('user_id', data.user.id).maybeSingle(),
@@ -127,9 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { error: 'Akun Anda telah ditolak. Silakan hubungi administrator.' };
         }
 
-        // Set state immediately without waiting for onAuthStateChange
-        setIsAdmin(roleResult.data?.role === 'admin');
-        setIsDemo(roleResult.data?.role === 'demo');
+        setRole((roleResult.data?.role as AppRole) || 'user');
         setIsApproved(status === 'approved');
         setIsPending(status === 'pending');
       }
@@ -174,19 +166,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    setIsAdmin(false);
-    setIsDemo(false);
+    setRole('user');
     setIsApproved(false);
     setIsPending(false);
   };
 
-  // Get user name from metadata or email
   const userName = user?.user_metadata?.nama || user?.email?.split('@')[0] || 'User';
-  // Demo users can only view, not edit
-  const userRole: 'admin' | 'user' | 'demo' = isAdmin ? 'admin' : isDemo ? 'demo' : 'user';
-  const canEdit = !isDemo; // Demo users cannot edit
+  const permissions = getPermissions(role);
+  const isAdmin = role === 'admin';
+  const isDemo = role === 'demo';
+  const canEdit = permissions.canEdit;
 
-  // Prefetch common data after authentication
   usePrefetchData(!!session && isApproved);
 
   return (
@@ -194,7 +184,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user,
       session,
       userName,
-      userRole,
+      userRole: role,
+      permissions,
       isAuthenticated: !!session && isApproved,
       isApproved,
       isPending,
