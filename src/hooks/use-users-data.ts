@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserRoles, addUserRole, updateUserRole, deleteUserRole } from '@/lib/supabase-store';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
+import type { AppRole } from '@/lib/role-permissions';
 
 interface Profile {
   id: string;
