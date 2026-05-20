@@ -69,7 +69,13 @@ export const renderTemplate = (tpl: string, data: TemplateData): string => {
 
 export const buildWAUrl = (noHp: string, pesan: string): string => {
   const n = normalizePhoneID(noHp);
-  return `https://wa.me/${n}?text=${encodeURIComponent(pesan)}`;
+  const encodedMessage = encodeURIComponent(pesan);
+
+  if (typeof window !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
+    return `https://wa.me/${n}?text=${encodedMessage}`;
+  }
+
+  return `https://web.whatsapp.com/send?phone=${n}&text=${encodedMessage}`;
 };
 
 export const SAMPLE_PREVIEW_DATA: TemplateData = {
