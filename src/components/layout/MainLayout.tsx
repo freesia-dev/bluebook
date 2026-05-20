@@ -15,7 +15,8 @@ interface MainLayoutProps {
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isDemo } = useAuth();
+  const { isAuthenticated, isDemo, userRole } = useAuth();
+  const location = useLocation();
   // Default open on desktop (lg+), closed on mobile
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -37,6 +38,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Role-based route guard: redirect to /dashboard if current route isn't allowed
+  if (!isRouteAllowed(location.pathname, userRole)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
