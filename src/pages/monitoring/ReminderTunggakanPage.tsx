@@ -373,7 +373,7 @@ const ReminderTunggakanPage: React.FC = () => {
               <div>
                 <Label className="text-xs mb-1 block">Metode Kirim</Label>
                 <div className="flex gap-2">
-                  <Badge variant="default" className="bg-emerald-600">WhatsApp Web (wa.me)</Badge>
+                  <Badge variant="default" className="bg-emerald-600">WhatsApp Web/Desktop</Badge>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="opacity-50 cursor-not-allowed">Twilio Auto</Badge>
