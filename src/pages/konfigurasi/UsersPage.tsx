@@ -367,11 +367,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={formData.role} onValueChange={(v: 'admin' | 'user') => setFormData({...formData, role: v})}>
+              <Select value={formData.role} onValueChange={(v: AppRole) => setFormData({...formData, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin (IT)</SelectItem>
+                  {ROLE_OPTIONS.map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
