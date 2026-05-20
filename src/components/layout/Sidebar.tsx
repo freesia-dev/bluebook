@@ -292,7 +292,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-                <p className="text-xs text-sidebar-foreground/60 capitalize">{userRole}</p>
+                <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS[userRole] ?? userRole}</p>
               </div>
             </div>
             <Button 
