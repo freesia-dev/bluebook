@@ -44,12 +44,19 @@ export const AntrianWAModal: React.FC<Props> = ({ open, items, onClose }) => {
   const done = idx >= items.length;
   const pct = items.length > 0 ? ((idx) / items.length) * 100 : 0;
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!current) return;
     const url = buildWAUrl(current.no_hp, current.pesan);
-    window.open(url, '_blank', 'noopener,noreferrer');
-    try {
-      await insertLog.mutateAsync({
+    // CRITICAL: open window SYNCHRONOUSLY inside the click handler — any await
+    // before window.open breaks the user-gesture context and the popup gets blocked.
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      toast.error('Popup diblokir browser. Izinkan popup untuk situs ini lalu coba lagi.');
+      return;
+    }
+    // Fire-and-forget log insert; don't block the UI.
+    insertLog.mutate(
+      {
         l0lnno: current.l0lnno,
         nama: current.nama,
         no_hp: current.no_hp,
@@ -60,11 +67,12 @@ export const AntrianWAModal: React.FC<Props> = ({ open, items, onClose }) => {
         kol: current.kol,
         tunggakan: current.tunggakan,
         upload_id: current.upload_id,
-      });
-      setSent((s) => s + 1);
-    } catch (e: any) {
-      toast.error('Gagal mencatat log: ' + e.message);
-    }
+      },
+      {
+        onError: (e: any) => toast.error('Gagal mencatat log: ' + e.message),
+      },
+    );
+    setSent((s) => s + 1);
     setIdx((i) => i + 1);
   };
 
