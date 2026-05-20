@@ -2,12 +2,14 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { usePrefetchData } from '@/hooks/use-prefetch-data';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { AppRole, getPermissions, RolePermissions } from '@/lib/role-permissions';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   userName: string;
-  userRole: 'admin' | 'user' | 'demo';
+  userRole: AppRole;
+  permissions: RolePermissions;
   isAuthenticated: boolean;
   isApproved: boolean;
   isPending: boolean;
