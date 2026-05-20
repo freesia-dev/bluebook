@@ -177,6 +177,13 @@ const App = () => (
             <Route path="/install" element={
               <Suspense fallback={<LoginLoader />}><InstallApp /></Suspense>
             } />
+            {/* Coming soon menus for role-restricted users */}
+            <Route path="/security" element={
+              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+            } />
+            <Route path="/ob" element={
+              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+            } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
             } />
