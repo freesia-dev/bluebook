@@ -225,8 +225,8 @@ const UsersPage: React.FC = () => {
       key: 'role', 
       header: 'Role', 
       render: (item: UserRoleDisplay) => (
-        <Badge variant={item.role === 'admin' ? 'default' : item.role === 'demo' ? 'outline' : 'secondary'}>
-          {item.role === 'admin' ? 'Admin (IT)' : item.role === 'demo' ? 'Demo (View Only)' : 'User'}
+        <Badge variant={item.role === 'admin' ? 'default' : (item.role === 'demo' || item.role === 'pemimpin') ? 'outline' : 'secondary'}>
+          {ROLE_LABELS[item.role] ?? item.role}
         </Badge>
       )
     },
