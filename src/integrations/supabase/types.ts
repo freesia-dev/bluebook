@@ -1047,6 +1047,7 @@ export type Database = {
         Returns: boolean
       }
       is_authenticated: { Args: never; Returns: boolean }
+      is_demo_user: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "demo"
