@@ -1048,9 +1048,22 @@ export type Database = {
       }
       is_authenticated: { Args: never; Returns: boolean }
       is_demo_user: { Args: never; Returns: boolean }
+      is_readonly_user: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user" | "demo"
+      app_role:
+        | "admin"
+        | "user"
+        | "demo"
+        | "meranti"
+        | "officer_rk"
+        | "officer_kredit"
+        | "staff_admin_kcp"
+        | "pemimpin"
+        | "teller"
+        | "cs"
+        | "security"
+        | "ob"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1178,7 +1191,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "demo"],
+      app_role: [
+        "admin",
+        "user",
+        "demo",
+        "meranti",
+        "officer_rk",
+        "officer_kredit",
+        "staff_admin_kcp",
+        "pemimpin",
+        "teller",
+        "cs",
+        "security",
+        "ob",
+      ],
     },
   },
 } as const
