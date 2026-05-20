@@ -15,11 +15,14 @@ import {
   Banknote,
   Trash2,
   History,
-  TrendingUp
+  TrendingUp,
+  Shield,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { ROLE_LABELS } from '@/lib/role-permissions';
 import logoImage from '@/assets/logo_bluebook.png';
 
 interface NavItemProps {
