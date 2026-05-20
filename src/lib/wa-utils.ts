@@ -70,12 +70,9 @@ export const renderTemplate = (tpl: string, data: TemplateData): string => {
 export const buildWAUrl = (noHp: string, pesan: string): string => {
   const n = normalizePhoneID(noHp);
   const encodedMessage = encodeURIComponent(pesan);
-
-  if (typeof window !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
-    return `https://wa.me/${n}?text=${encodedMessage}`;
-  }
-
-  return `https://web.whatsapp.com/send?phone=${n}&text=${encodedMessage}`;
+  // Use whatsapp:// protocol — opens WhatsApp Desktop app directly on desktop,
+  // and the native WhatsApp app on mobile. No browser tab, no api.whatsapp.com redirect.
+  return `whatsapp://send?phone=${n}&text=${encodedMessage}`;
 };
 
 export const SAMPLE_PREVIEW_DATA: TemplateData = {
