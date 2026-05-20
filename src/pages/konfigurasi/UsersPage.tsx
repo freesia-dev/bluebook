@@ -103,8 +103,8 @@ const UsersPage: React.FC = () => {
   const handleResetPassword = async () => {
     if (!selectedItem || !newPassword) return;
     
-    if (newPassword.length < 6) {
-      toast({ title: 'Error', description: 'Password minimal 6 karakter.', variant: 'destructive' });
+    if (newPassword.length < 8) {
+      toast({ title: 'Error', description: 'Password minimal 8 karakter.', variant: 'destructive' });
       return;
     }
 
@@ -154,8 +154,8 @@ const UsersPage: React.FC = () => {
       return;
     }
 
-    if (createUserForm.password.length < 6) {
-      toast({ title: 'Error', description: 'Password minimal 6 karakter.', variant: 'destructive' });
+    if (createUserForm.password.length < 8) {
+      toast({ title: 'Error', description: 'Password minimal 8 karakter.', variant: 'destructive' });
       return;
     }
 
