@@ -49,8 +49,8 @@ const UsersPage: React.FC = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<UserRoleDisplay | null>(null);
-  const [formData, setFormData] = useState({ userId: '', role: 'user' as 'admin' | 'user' | 'demo' });
-  const [editFormData, setEditFormData] = useState({ role: 'user' as 'admin' | 'user' | 'demo' });
+  const [formData, setFormData] = useState({ userId: '', role: 'user' as AppRole });
+  const [editFormData, setEditFormData] = useState({ role: 'user' as AppRole });
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   
@@ -61,7 +61,7 @@ const UsersPage: React.FC = () => {
     email: '', 
     password: '', 
     nama: '', 
-    role: 'user' as 'admin' | 'user' | 'demo'
+    role: 'user' as AppRole
   });
 
   const resetForm = () => setFormData({ userId: '', role: 'user' });
