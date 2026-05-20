@@ -109,7 +109,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { userName, userRole, logout, isAdmin } = useAuth();
+  const { userName, userRole, logout, isAdmin, permissions } = useAuth();
 
   const agendaKreditItems = [
     { label: 'Agenda Kredit', href: '/agenda-kredit/agenda-kredit' },
@@ -129,13 +129,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Konfigurasi ATM', href: '/atm-telihan/konfigurasi' },
   ];
 
-  const monitoringItems = [
+  const monitoringItemsFull = [
     { label: 'Upload Data', href: '/monitoring/upload' },
     { label: 'Dashboard', href: '/monitoring/dashboard' },
     { label: 'Export PDF', href: '/monitoring/export-pdf' },
     { label: 'Kontak Debitur', href: '/monitoring/kontak' },
     { label: 'Reminder Tunggakan', href: '/monitoring/reminder' },
   ];
+  const monitoringItems = permissions.monitoringDashboardOnly
+    ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard')
+    : monitoringItemsFull;
 
   const konfigurasiItems = isAdmin
     ? [
