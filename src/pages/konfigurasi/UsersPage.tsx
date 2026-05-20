@@ -23,6 +23,12 @@ import {
   UserRoleDisplay,
   PendingUser
 } from '@/hooks/use-users-data';
+import { ROLE_LABELS, AppRole } from '@/lib/role-permissions';
+
+const ROLE_OPTIONS: AppRole[] = [
+  'user', 'admin', 'demo', 'meranti', 'officer_rk', 'officer_kredit',
+  'staff_admin_kcp', 'pemimpin', 'teller', 'cs', 'security', 'ob',
+];
 
 const UsersPage: React.FC = () => {
   const { toast } = useToast();
