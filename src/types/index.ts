@@ -1,8 +1,10 @@
 // User Role type (for role management)
+import type { AppRole } from '@/lib/role-permissions';
+
 export interface UserRole {
   id: string;
   userId: string;
-  role: 'admin' | 'user' | 'demo';
+  role: AppRole;
   email?: string;
 }
 
