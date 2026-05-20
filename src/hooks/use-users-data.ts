@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserRoles, addUserRole, updateUserRole, deleteUserRole } from '@/lib/supabase-store';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
+import type { AppRole } from '@/lib/role-permissions';
 
 interface Profile {
   id: string;
@@ -73,7 +74,7 @@ export const useUsersData = () => {
 export const useAddUserRole = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: 'admin' | 'user' | 'demo' }) => 
+    mutationFn: ({ userId, role }: { userId: string; role: AppRole }) => 
       addUserRole(userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-data'] });
@@ -84,7 +85,7 @@ export const useAddUserRole = () => {
 export const useUpdateUserRole = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, role }: { id: string; role: 'admin' | 'user' | 'demo' }) => 
+    mutationFn: ({ id, role }: { id: string; role: AppRole }) => 
       updateUserRole(id, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-data'] });

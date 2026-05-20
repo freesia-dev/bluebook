@@ -4,7 +4,11 @@ import {
   JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan, JenisPenggunaan,
   RecycleBinItem
 } from '@/types';
+import type { AppRole } from '@/lib/role-permissions';
+import type { Database } from '@/integrations/supabase/types';
 import { toRomanMonth } from './store';
+
+type DbAppRole = Database['public']['Enums']['app_role'];
 
 // ============= USER ROLE FUNCTIONS =============
 export const getUserRoles = async (): Promise<UserRole[]> => {
@@ -17,16 +21,16 @@ export const getUserRoles = async (): Promise<UserRole[]> => {
   return data.map(r => ({
     id: r.id,
     userId: r.user_id,
-    role: r.role as 'admin' | 'user' | 'demo'
+    role: r.role as AppRole
   }));
 };
 
-export const addUserRole = async (userId: string, role: 'admin' | 'user' | 'demo'): Promise<UserRole> => {
+export const addUserRole = async (userId: string, role: AppRole): Promise<UserRole> => {
   const { data, error } = await supabase
     .from('user_roles')
     .insert({
       user_id: userId,
-      role: role
+      role: role as DbAppRole
     })
     .select()
     .single();
@@ -36,14 +40,14 @@ export const addUserRole = async (userId: string, role: 'admin' | 'user' | 'demo
   return {
     id: data.id,
     userId: data.user_id,
-    role: data.role as 'admin' | 'user' | 'demo'
+    role: data.role as AppRole
   };
 };
 
-export const updateUserRole = async (id: string, role: 'admin' | 'user' | 'demo'): Promise<void> => {
+export const updateUserRole = async (id: string, role: AppRole): Promise<void> => {
   const { error } = await supabase
     .from('user_roles')
-    .update({ role })
+    .update({ role: role as DbAppRole })
     .eq('id', id);
   
   if (error) throw error;

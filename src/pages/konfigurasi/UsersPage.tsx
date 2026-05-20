@@ -23,6 +23,12 @@ import {
   UserRoleDisplay,
   PendingUser
 } from '@/hooks/use-users-data';
+import { ROLE_LABELS, AppRole } from '@/lib/role-permissions';
+
+const ROLE_OPTIONS: AppRole[] = [
+  'user', 'admin', 'demo', 'meranti', 'officer_rk', 'officer_kredit',
+  'staff_admin_kcp', 'pemimpin', 'teller', 'cs', 'security', 'ob',
+];
 
 const UsersPage: React.FC = () => {
   const { toast } = useToast();
@@ -43,8 +49,8 @@ const UsersPage: React.FC = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<UserRoleDisplay | null>(null);
-  const [formData, setFormData] = useState({ userId: '', role: 'user' as 'admin' | 'user' | 'demo' });
-  const [editFormData, setEditFormData] = useState({ role: 'user' as 'admin' | 'user' | 'demo' });
+  const [formData, setFormData] = useState({ userId: '', role: 'user' as AppRole });
+  const [editFormData, setEditFormData] = useState({ role: 'user' as AppRole });
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   
@@ -55,7 +61,7 @@ const UsersPage: React.FC = () => {
     email: '', 
     password: '', 
     nama: '', 
-    role: 'user' as 'admin' | 'user' | 'demo'
+    role: 'user' as AppRole
   });
 
   const resetForm = () => setFormData({ userId: '', role: 'user' });
@@ -219,8 +225,8 @@ const UsersPage: React.FC = () => {
       key: 'role', 
       header: 'Role', 
       render: (item: UserRoleDisplay) => (
-        <Badge variant={item.role === 'admin' ? 'default' : item.role === 'demo' ? 'outline' : 'secondary'}>
-          {item.role === 'admin' ? 'Admin (IT)' : item.role === 'demo' ? 'Demo (View Only)' : 'User'}
+        <Badge variant={item.role === 'admin' ? 'default' : (item.role === 'demo' || item.role === 'pemimpin') ? 'outline' : 'secondary'}>
+          {ROLE_LABELS[item.role] ?? item.role}
         </Badge>
       )
     },
@@ -361,11 +367,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={formData.role} onValueChange={(v: 'admin' | 'user') => setFormData({...formData, role: v})}>
+              <Select value={formData.role} onValueChange={(v: AppRole) => setFormData({...formData, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin (IT)</SelectItem>
+                  {ROLE_OPTIONS.map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -394,12 +401,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={editFormData.role} onValueChange={(v: 'admin' | 'user' | 'demo') => setEditFormData({...editFormData, role: v})}>
+              <Select value={editFormData.role} onValueChange={(v: AppRole) => setEditFormData({...editFormData, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin (IT)</SelectItem>
-                  <SelectItem value="demo">Demo (View Only)</SelectItem>
+                  {ROLE_OPTIONS.map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -495,12 +502,12 @@ const UsersPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={createUserForm.role} onValueChange={(v: 'admin' | 'user' | 'demo') => setCreateUserForm({...createUserForm, role: v})}>
+              <Select value={createUserForm.role} onValueChange={(v: AppRole) => setCreateUserForm({...createUserForm, role: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin (IT)</SelectItem>
-                  <SelectItem value="demo">Demo (View Only)</SelectItem>
+                  {ROLE_OPTIONS.map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

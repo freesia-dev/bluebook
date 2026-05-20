@@ -32,9 +32,8 @@ const DENOMINASI = 100000; // Rp 100.000 per lembar
 
 const DatabasePengisianATM = () => {
   const { toast } = useToast();
-  const { userName, userRole } = useAuth();
+  const { userName, userRole, canEdit } = useAuth();
   const isAdmin = userRole === 'admin';
-  const canEdit = userRole !== 'demo';
 
   // React Query hooks for data fetching with caching
   const { data: pengisianData = [], isLoading: isLoadingData } = usePengisianATM();

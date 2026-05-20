@@ -1,5 +1,5 @@
 import React, { ReactNode, useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,15 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { isRouteAllowed } from '@/lib/role-permissions';
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isDemo } = useAuth();
+  const { isAuthenticated, isDemo, userRole } = useAuth();
+  const location = useLocation();
   // Default open on desktop (lg+), closed on mobile
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -36,6 +38,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Role-based route guard: redirect to /dashboard if current route isn't allowed
+  if (!isRouteAllowed(location.pathname, userRole)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
