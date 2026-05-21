@@ -1253,6 +1253,13 @@ export type Database = {
       can_access_security_log: { Args: never; Returns: boolean }
       can_edit_security_log: { Args: never; Returns: boolean }
       can_sign_security_ba: { Args: never; Returns: boolean }
+      get_security_users: {
+        Args: never
+        Returns: {
+          nama: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
