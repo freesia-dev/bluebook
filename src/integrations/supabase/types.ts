@@ -806,6 +806,133 @@ export type Database = {
         }
         Relationships: []
       }
+      security_log_entry: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          foto_urls: Json
+          id: string
+          jenis: string
+          kejadian: string
+          shift_id: string
+          updated_at: string
+          video_url: string | null
+          waktu_kejadian: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          foto_urls?: Json
+          id?: string
+          jenis?: string
+          kejadian: string
+          shift_id: string
+          updated_at?: string
+          video_url?: string | null
+          waktu_kejadian?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          foto_urls?: Json
+          id?: string
+          jenis?: string
+          kejadian?: string
+          shift_id?: string
+          updated_at?: string
+          video_url?: string | null
+          waktu_kejadian?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_log_entry_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "security_shift"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_shift: {
+        Row: {
+          catatan_serah_terima: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_lembur: boolean
+          jam_mulai: string
+          jam_selesai: string | null
+          kondisi_akhir: string | null
+          nama_petugas: string
+          parent_shift_id: string | null
+          petugas_user_id: string | null
+          serah_terima_at: string | null
+          serah_terima_ke_nama: string | null
+          serah_terima_ke_user_id: string | null
+          shift: string
+          status: string
+          tanggal: string
+          ttd_pimpinan_at: string | null
+          ttd_pimpinan_nama: string | null
+          ttd_pimpinan_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          catatan_serah_terima?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_lembur?: boolean
+          jam_mulai?: string
+          jam_selesai?: string | null
+          kondisi_akhir?: string | null
+          nama_petugas: string
+          parent_shift_id?: string | null
+          petugas_user_id?: string | null
+          serah_terima_at?: string | null
+          serah_terima_ke_nama?: string | null
+          serah_terima_ke_user_id?: string | null
+          shift: string
+          status?: string
+          tanggal: string
+          ttd_pimpinan_at?: string | null
+          ttd_pimpinan_nama?: string | null
+          ttd_pimpinan_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          catatan_serah_terima?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_lembur?: boolean
+          jam_mulai?: string
+          jam_selesai?: string | null
+          kondisi_akhir?: string | null
+          nama_petugas?: string
+          parent_shift_id?: string | null
+          petugas_user_id?: string | null
+          serah_terima_at?: string | null
+          serah_terima_ke_nama?: string | null
+          serah_terima_ke_user_id?: string | null
+          shift?: string
+          status?: string
+          tanggal?: string
+          ttd_pimpinan_at?: string | null
+          ttd_pimpinan_nama?: string | null
+          ttd_pimpinan_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_shift_parent_shift_id_fkey"
+            columns: ["parent_shift_id"]
+            isOneToOne: false
+            referencedRelation: "security_shift"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sektor_ekonomi: {
         Row: {
           id: string
@@ -1123,6 +1250,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_security_log: { Args: never; Returns: boolean }
+      can_edit_security_log: { Args: never; Returns: boolean }
+      can_sign_security_ba: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
