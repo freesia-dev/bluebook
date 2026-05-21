@@ -43,6 +43,8 @@ const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
 const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPage"));
 const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
 const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPage"));
+const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
+const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -181,10 +183,14 @@ const App = () => (
             <Route path="/install" element={
               <Suspense fallback={<LoginLoader />}><InstallApp /></Suspense>
             } />
-            {/* Coming soon menus for role-restricted users */}
-            <Route path="/security" element={
-              <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+            {/* Log Security */}
+            <Route path="/security/log" element={
+              <Suspense fallback={<TablePageSkeleton />}><LogSecurityPage /></Suspense>
             } />
+            <Route path="/security/log/cetak" element={
+              <Suspense fallback={<LoginLoader />}><BAHarianPrintPage /></Suspense>
+            } />
+            {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
             } />
