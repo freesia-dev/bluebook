@@ -17,6 +17,7 @@ interface Props {
 export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) => {
   const { toast } = useToast();
   const handover = useHandoverShift();
+  const { data: secUsers = [] } = useSecurityUsers();
 
   const [kondisi, setKondisi] = useState('');
   const [penerima, setPenerima] = useState('');
