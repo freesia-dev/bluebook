@@ -131,6 +131,87 @@ export type Database = {
         }
         Relationships: []
       }
+      call_memo_penagihan: {
+        Row: {
+          catatan_tambahan: string | null
+          created_at: string
+          created_by: string | null
+          hasil: string | null
+          id: string
+          jam: string
+          janji_bayar_nominal: number | null
+          janji_bayar_tanggal: string | null
+          jenis_aktivitas: string
+          l0lnno: string | null
+          lampiran_urls: Json
+          nama_debitur: string
+          no_hp: string | null
+          no_rek: string | null
+          nomor: number
+          petugas_penagih: string
+          produk: string | null
+          saksi: string | null
+          status_komitmen: string
+          tanggal: string
+          total_tunggakan: number
+          tunggakan_bunga: number
+          tunggakan_pokok: number
+          updated_at: string
+        }
+        Insert: {
+          catatan_tambahan?: string | null
+          created_at?: string
+          created_by?: string | null
+          hasil?: string | null
+          id?: string
+          jam?: string
+          janji_bayar_nominal?: number | null
+          janji_bayar_tanggal?: string | null
+          jenis_aktivitas?: string
+          l0lnno?: string | null
+          lampiran_urls?: Json
+          nama_debitur: string
+          no_hp?: string | null
+          no_rek?: string | null
+          nomor: number
+          petugas_penagih: string
+          produk?: string | null
+          saksi?: string | null
+          status_komitmen?: string
+          tanggal: string
+          total_tunggakan?: number
+          tunggakan_bunga?: number
+          tunggakan_pokok?: number
+          updated_at?: string
+        }
+        Update: {
+          catatan_tambahan?: string | null
+          created_at?: string
+          created_by?: string | null
+          hasil?: string | null
+          id?: string
+          jam?: string
+          janji_bayar_nominal?: number | null
+          janji_bayar_tanggal?: string | null
+          jenis_aktivitas?: string
+          l0lnno?: string | null
+          lampiran_urls?: Json
+          nama_debitur?: string
+          no_hp?: string | null
+          no_rek?: string | null
+          nomor?: number
+          petugas_penagih?: string
+          produk?: string | null
+          saksi?: string | null
+          status_komitmen?: string
+          tanggal?: string
+          total_tunggakan?: number
+          tunggakan_bunga?: number
+          tunggakan_pokok?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       debitur_kontak: {
         Row: {
           catatan: string | null
