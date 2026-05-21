@@ -1,6 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface SecurityUser {
+  user_id: string;
+  nama: string;
+}
+
+export const useSecurityUsers = () =>
+  useQuery({
+    queryKey: ['security-users'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<SecurityUser[]> => {
+      const { data, error } = await supabase.rpc('get_security_users' as any);
+      if (error) throw error;
+      return (data || []) as SecurityUser[];
+    },
+  });
+
+export const useDeleteShift = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (shift_id: string) => {
+      const { error: e1 } = await supabase.from('security_log_entry' as any).delete().eq('shift_id', shift_id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from('security_shift' as any).delete().eq('id', shift_id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['security-shifts'] });
+    },
+  });
+};
+
 export type ShiftType = 'pagi' | 'sore' | 'malam';
 export type ShiftStatus = 'aktif' | 'selesai';
 export type EntryJenis = 'kejadian' | 'serah_terima' | 'mulai_shift' | 'akhir_shift';

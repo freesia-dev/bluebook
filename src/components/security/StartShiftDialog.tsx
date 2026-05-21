@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift } from '@/hooks/use-security-log';
+import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers } from '@/hooks/use-security-log';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -28,6 +28,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const { userName } = useAuth();
   const { toast } = useToast();
   const start = useStartShift();
+  const { data: secUsers = [] } = useSecurityUsers();
 
   const [nama, setNama] = useState(userName);
   const [shift, setShift] = useState<ShiftType>(detectShift());
@@ -89,7 +90,18 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
           </div>
           <div>
             <Label>Nama Petugas Security</Label>
-            <Input value={nama} onChange={(e) => setNama(e.target.value)} />
+            {secUsers.length > 0 ? (
+              <Select value={nama} onValueChange={setNama}>
+                <SelectTrigger><SelectValue placeholder="Pilih petugas security" /></SelectTrigger>
+                <SelectContent>
+                  {secUsers.map((u) => (
+                    <SelectItem key={u.user_id} value={u.nama}>{u.nama}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Nama lengkap" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Checkbox id="lembur" checked={isLembur} onCheckedChange={(c) => setIsLembur(!!c)} />

@@ -1,50 +1,28 @@
-## Diagnosis
+## Perubahan Log Security
 
-Halaman cetak terbuka di tab baru via `window.open(...)`. Di tab baru:
+### 1. Hapus shift yang sudah terinput
+- Tambah tombol **Hapus Shift** di header `ShiftCard` (icon trash, warna destructive) — hanya muncul untuk admin (sesuai RLS yang sudah ada: `Admins delete security_shift`).
+- Konfirmasi via `AlertDialog`: "Hapus shift ini beserta semua kejadiannya?"
+- Tambah hook `useDeleteShift` di `use-security-log.ts`:
+  - Hapus semua `security_log_entry` dengan `shift_id` terkait dulu
+  - Lalu hapus row di `security_shift`
+  - Invalidate query `security-shifts`
+- Untuk user non-admin (security/staff_admin_kcp): tombol tidak ditampilkan. Mereka tetap bisa hapus per-kejadian (sudah ada).
 
-1. `CallMemoPrintPage` langsung mount dan memanggil `useCallMemo(id)`.
-2. Sebelum Supabase selesai me-restore sesi dari localStorage (async), React Query sudah mengirim request anonim.
-3. Tabel `call_memo_penagihan` punya RLS `SELECT` khusus role `authenticated` → request anonim balikin 0 baris.
-4. `maybeSingle()` → `data = null` → halaman render "Call Memo tidak ditemukan."
+### 2. Nama Security dari daftar user role `security`
+- Tambah hook `useSecurityUsers` (di `use-users-data.ts` atau hook baru) yang query:
+  ```
+  user_roles (role='security') JOIN profiles → ambil profiles.nama
+  ```
+  Hasilnya list `{ user_id, nama }` user dengan role security yang `status='approved'`.
+- Di `StartShiftDialog`: ganti `Input` nama petugas → `Select` (Combobox) berisi nama security, default ke user login jika dia security. Tetap simpan `nama_petugas` (text) + `petugas_user_id` (sudah ada).
+- Di `HandoverDialog`: field "Diserahkan kepada" juga jadi `Select` dari list security (exclude petugas yang sedang aktif), simpan ke `serah_terima_ke_nama` + `serah_terima_ke_user_id`.
+- Fallback: jika list kosong (mis. belum ada user role security), tampilkan input text manual seperti sekarang.
 
-Data sebenarnya ada di DB (id `2fa81f0f-…`, nama HASNAWATI), dan route `/monitoring/call-memo/print` sudah terdaftar di `App.tsx`. Jadi murni race-condition antara auth-restore vs query.
+### Files yang akan diubah
+- `src/hooks/use-security-log.ts` — tambah `useDeleteShift`, `useSecurityUsers`
+- `src/components/security/ShiftCard.tsx` — tombol hapus shift (admin only) + AlertDialog
+- `src/components/security/StartShiftDialog.tsx` — Select nama security
+- `src/components/security/HandoverDialog.tsx` — Select penerima shift
 
-## Fix
-
-Gate query pada user yang sudah authenticated, dan tampilkan loader sampai sesi siap.
-
-### `src/hooks/use-call-memo.ts`
-- Tambahkan parameter opsional / pakai `useAuth()` di dalam hook untuk set `enabled: !!id && !!user`. Karena hook tidak boleh tahu context auth secara global di sini, paling bersih: terima `enabled` flag dari caller, atau import `useAuth` langsung di hook. Pilih impor `useAuth` (sudah dipakai di hook lain di project).
-
-```ts
-import { useAuth } from '@/contexts/AuthContext';
-...
-export const useCallMemo = (id?: string) => {
-  const { user, loading } = useAuth();
-  return useQuery({
-    queryKey: ['call-memo', id],
-    queryFn: async () => { ... },
-    enabled: !!id && !!user && !loading,
-  });
-};
-```
-
-### `src/pages/monitoring/CallMemoPrintPage.tsx`
-- Tampilkan state loading ketika `auth` masih restore (sebelum hanya cek `isLoading` query).
-- Pakai `useAuth()` untuk redirect ke `/login?redirect=...` kalau benar-benar tidak ada sesi setelah loading selesai (bukan langsung "tidak ditemukan"), supaya user tahu harus login dulu jika tab baru kehilangan sesi.
-
-```tsx
-const { user, loading: authLoading } = useAuth();
-if (authLoading) return <Loader/>;
-if (!user) { window.location.href = `/login?redirect=${encodeURIComponent(location.pathname + location.search)}`; return null; }
-if (isLoading) return <Loader/>;
-if (!memo) return <NotFoundState/>;
-```
-
-### Catatan
-- Tidak ada perubahan database atau RLS — policy sudah benar (`authenticated` read).
-- Tidak menyentuh fitur lain. Pattern yang sama bisa dipakai ulang kalau ada print page lain.
-
-## File yang diubah
-- `src/hooks/use-call-memo.ts` — gate query pada auth ready.
-- `src/pages/monitoring/CallMemoPrintPage.tsx` — handle auth loading + redirect login bila perlu.
+Tidak ada perubahan database/RLS (policy admin delete sudah ada, profiles & user_roles sudah bisa di-query).

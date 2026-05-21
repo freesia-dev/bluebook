@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SecurityShift, SecurityLogEntry, SHIFT_LABEL, useSecurityEntries, useDeleteEntry } from '@/hooks/use-security-log';
+import { SecurityShift, SecurityLogEntry, SHIFT_LABEL, useSecurityEntries, useDeleteEntry, useDeleteShift } from '@/hooks/use-security-log';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -10,6 +10,10 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Props {
   shift: SecurityShift;
@@ -23,10 +27,11 @@ const jenisColor: Record<string, string> = {
 };
 
 export const ShiftCard: React.FC<Props> = ({ shift }) => {
-  const { permissions, userRole } = useAuth();
+  const { permissions, userRole, isAdmin } = useAuth();
   const canEdit = permissions.canEditSecurityLog;
   const { data: entries = [], isLoading } = useSecurityEntries(shift.id);
   const del = useDeleteEntry();
+  const delShift = useDeleteShift();
   const { toast } = useToast();
 
   const [entryOpen, setEntryOpen] = useState(false);
@@ -80,6 +85,39 @@ export const ShiftCard: React.FC<Props> = ({ shift }) => {
                 <ArrowRightLeft className="w-4 h-4 mr-1" />Akhiri & Serah Terima
               </Button>
             </>
+          )}
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="bg-red-600 hover:bg-red-700 text-white border-red-600">
+                  <Trash2 className="w-4 h-4 mr-1" />Hapus Shift
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Hapus shift ini?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Semua kejadian ({entries.length}) di shift {SHIFT_LABEL[shift.shift]} oleh <strong>{shift.nama_petugas}</strong> akan ikut terhapus permanen.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={async () => {
+                      try {
+                        await delShift.mutateAsync(shift.id);
+                        toast({ title: 'Shift dihapus' });
+                      } catch (err: any) {
+                        toast({ title: 'Gagal hapus shift', description: err.message, variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    Hapus
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </div>
