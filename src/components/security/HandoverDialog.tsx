@@ -68,7 +68,18 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
           </div>
           <div>
             <Label>Diserahkan Kepada (Nama Security)</Label>
-            <Input value={penerima} onChange={(e) => setPenerima(e.target.value)} placeholder="Nama lengkap penerima" />
+            {secUsers.filter((u) => u.nama !== shift.nama_petugas).length > 0 ? (
+              <Select value={penerima} onValueChange={setPenerima}>
+                <SelectTrigger><SelectValue placeholder="Pilih penerima shift" /></SelectTrigger>
+                <SelectContent>
+                  {secUsers.filter((u) => u.nama !== shift.nama_petugas).map((u) => (
+                    <SelectItem key={u.user_id} value={u.nama}>{u.nama}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={penerima} onChange={(e) => setPenerima(e.target.value)} placeholder="Nama lengkap penerima" />
+            )}
           </div>
           <div>
             <Label>Catatan Untuk Shift Berikutnya <span className="text-muted-foreground text-xs">(opsional)</span></Label>
