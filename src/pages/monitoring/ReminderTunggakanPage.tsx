@@ -410,9 +410,16 @@ const ReminderTunggakanPage: React.FC = () => {
           </Card>
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
 
       <AntrianWAModal open={queueOpen} items={queueItems} onClose={() => setQueueOpen(false)} />
       <TemplateEditor open={editTplOpen} template={editingTpl} onClose={() => setEditTplOpen(false)} />
+      <CallMemoDialog
+        open={memoDialogOpen}
+        onClose={() => { setMemoDialogOpen(false); setMemoPrefillL0lnno(undefined); }}
+        prefillL0lnno={memoPrefillL0lnno}
+      />
 
       {/* Quick fill HP dialog */}
       {quickFill && (
