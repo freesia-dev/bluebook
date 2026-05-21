@@ -90,7 +90,18 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
           </div>
           <div>
             <Label>Nama Petugas Security</Label>
-            <Input value={nama} onChange={(e) => setNama(e.target.value)} />
+            {secUsers.length > 0 ? (
+              <Select value={nama} onValueChange={setNama}>
+                <SelectTrigger><SelectValue placeholder="Pilih petugas security" /></SelectTrigger>
+                <SelectContent>
+                  {secUsers.map((u) => (
+                    <SelectItem key={u.user_id} value={u.nama}>{u.nama}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Nama lengkap" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Checkbox id="lembur" checked={isLembur} onCheckedChange={(c) => setIsLembur(!!c)} />
