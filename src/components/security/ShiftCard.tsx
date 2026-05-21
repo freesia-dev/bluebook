@@ -1,0 +1,158 @@
+import React, { useState } from 'react';
+import { SecurityShift, SecurityLogEntry, SHIFT_LABEL, useSecurityEntries, useDeleteEntry } from '@/hooks/use-security-log';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { EntryDialog } from './EntryDialog';
+import { HandoverDialog } from './HandoverDialog';
+import { Plus, Pencil, Trash2, ArrowRightLeft, Image as ImageIcon, Video, ShieldCheck, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+
+interface Props {
+  shift: SecurityShift;
+}
+
+const jenisColor: Record<string, string> = {
+  mulai_shift: 'bg-blue-100 text-blue-800 border-blue-300',
+  kejadian: 'bg-slate-100 text-slate-800 border-slate-300',
+  serah_terima: 'bg-amber-100 text-amber-800 border-amber-300',
+  akhir_shift: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+};
+
+export const ShiftCard: React.FC<Props> = ({ shift }) => {
+  const { permissions, userRole } = useAuth();
+  const canEdit = permissions.canEditSecurityLog;
+  const { data: entries = [], isLoading } = useSecurityEntries(shift.id);
+  const del = useDeleteEntry();
+  const { toast } = useToast();
+
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<SecurityLogEntry | null>(null);
+  const [handoverOpen, setHandoverOpen] = useState(false);
+
+  const isMine = shift.nama_petugas && userRole !== 'pemimpin'; // pemimpin view-only
+  const isActive = shift.status === 'aktif';
+
+  const handleDelete = async (e: SecurityLogEntry) => {
+    if (!confirm('Hapus kejadian ini?')) return;
+    try {
+      await del.mutateAsync({ id: e.id, shift_id: shift.id });
+      toast({ title: 'Kejadian dihapus' });
+    } catch (err: any) {
+      toast({ title: 'Gagal hapus', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="font-semibold flex items-center gap-2">
+              {SHIFT_LABEL[shift.shift]}
+              {shift.is_lembur && <Badge variant="secondary" className="text-[10px]">LEMBUR</Badge>}
+              {isActive ? (
+                <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white text-[10px]">AKTIF</Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] border-white/30 text-white">SELESAI</Badge>
+              )}
+            </div>
+            <div className="text-xs text-white/70">
+              {shift.nama_petugas} · {format(new Date(shift.jam_mulai), 'HH:mm')}
+              {shift.jam_selesai && ` – ${format(new Date(shift.jam_selesai), 'HH:mm')}`}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {canEdit && isActive && (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => { setEditEntry(null); setEntryOpen(true); }}>
+                <Plus className="w-4 h-4 mr-1" />Catat Kejadian
+              </Button>
+              <Button size="sm" variant="outline" className="bg-amber-500 hover:bg-amber-600 text-white border-amber-500" onClick={() => setHandoverOpen(true)}>
+                <ArrowRightLeft className="w-4 h-4 mr-1" />Akhiri & Serah Terima
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div className="p-4">
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground py-4 text-center">Memuat kejadian...</div>
+        ) : entries.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-6 text-center italic">
+            Belum ada kejadian dicatat di shift ini.
+          </div>
+        ) : (
+          <ol className="relative border-l-2 border-slate-200 ml-2 space-y-4">
+            {entries.map((e) => (
+              <li key={e.id} className="ml-4">
+                <div className="absolute -left-[7px] mt-1.5 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    <span className="font-medium">
+                      {format(new Date(e.waktu_kejadian), 'HH:mm', { locale: idLocale })} WITA
+                    </span>
+                    <Badge variant="outline" className={`${jenisColor[e.jenis]} text-[10px]`}>
+                      {e.jenis === 'mulai_shift' && 'Mulai Shift'}
+                      {e.jenis === 'kejadian' && 'Kejadian'}
+                      {e.jenis === 'serah_terima' && 'Serah Terima'}
+                      {e.jenis === 'akhir_shift' && 'Akhir Shift'}
+                    </Badge>
+                  </div>
+                  {canEdit && isActive && e.jenis === 'kejadian' && (
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditEntry(e); setEntryOpen(true); }}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(e)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm mt-1 whitespace-pre-wrap text-foreground/90">{e.kejadian}</p>
+                {(e.foto_urls?.length > 0 || e.video_url) && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {e.foto_urls?.map((u, i) => (
+                      <a key={u} href={u} target="_blank" rel="noreferrer" className="w-16 h-16 rounded border overflow-hidden block">
+                        <img src={u} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                    {e.video_url && (
+                      <a href={e.video_url} target="_blank" rel="noreferrer" className="w-16 h-16 rounded border flex items-center justify-center bg-slate-100 text-slate-600">
+                        <Video className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {/* Footer info */}
+        {!isActive && shift.kondisi_akhir && (
+          <div className="mt-4 border-t pt-3 text-xs space-y-1 bg-amber-50 -mx-4 -mb-4 px-4 py-3">
+            <div><strong>Kondisi Akhir:</strong> {shift.kondisi_akhir}</div>
+            <div><strong>Diserahkan kepada:</strong> {shift.serah_terima_ke_nama}</div>
+            {shift.catatan_serah_terima && <div><strong>Catatan:</strong> {shift.catatan_serah_terima}</div>}
+          </div>
+        )}
+      </div>
+
+      <EntryDialog open={entryOpen} onOpenChange={setEntryOpen} shift={shift} entry={editEntry} />
+      <HandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} shift={shift} />
+    </Card>
+  );
+};
