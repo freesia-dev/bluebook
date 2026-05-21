@@ -28,6 +28,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const { userName } = useAuth();
   const { toast } = useToast();
   const start = useStartShift();
+  const { data: secUsers = [] } = useSecurityUsers();
 
   const [nama, setNama] = useState(userName);
   const [shift, setShift] = useState<ShiftType>(detectShift());
