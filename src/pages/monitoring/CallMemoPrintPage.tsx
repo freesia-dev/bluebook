@@ -58,15 +58,15 @@ const CallMemoPrintPage: React.FC = () => {
 
       {/* A4 page */}
       <div
-        className="mx-auto bg-white shadow-lg print:shadow-none my-6 print:my-0 p-[2cm] print:p-[2cm]"
-        style={{ width: '21cm', minHeight: '29.7cm', fontFamily: '"Times New Roman", serif', fontSize: '11pt', color: '#000' }}
+        className="mx-auto bg-white shadow-lg print:shadow-none my-6 print:my-0 p-[2cm] print:p-[1.8cm]"
+        style={{ width: '21cm', minHeight: '29.7cm', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '10.5pt', color: '#111' }}
       >
         <KopSuratBank />
 
         {/* Judul */}
-        <div className="text-center my-5">
-          <h1 className="text-[14pt] font-bold underline">CALL MEMO PENAGIHAN KREDIT</h1>
-          <div className="text-[11pt] mt-1">Nomor: {nomorDoc}</div>
+        <div className="text-center my-4">
+          <h1 className="text-[13pt] font-bold tracking-wide text-[#003F7F]">CALL MEMO PENAGIHAN KREDIT</h1>
+          <div className="text-[10pt] mt-1 text-slate-600">Nomor: {nomorDoc}</div>
         </div>
 
         {/* Identitas debitur */}
@@ -161,20 +161,26 @@ const CallMemoPrintPage: React.FC = () => {
           </div>
         )}
 
-        {/* Tanda tangan */}
-        <div className="mt-10 grid grid-cols-2 gap-8">
+        {/* Tanda tangan: Officer — Saksi (opsional) — Pemimpin KCP */}
+        <div className={`mt-10 grid gap-6 ${memo.saksi ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <div className="text-center">
-            <p>Petugas Penagih,</p>
-            <div style={{ height: '4rem' }} />
+            <p className="text-[10pt]">Officer Relationship Kredit,</p>
+            <div style={{ height: '4.5rem' }} />
             <p className="font-bold underline">{memo.petugas_penagih}</p>
           </div>
           {memo.saksi && (
             <div className="text-center">
-              <p>Saksi,</p>
-              <div style={{ height: '4rem' }} />
+              <p className="text-[10pt]">Saksi,</p>
+              <div style={{ height: '4.5rem' }} />
               <p className="font-bold underline">{memo.saksi}</p>
             </div>
           )}
+          <div className="text-center">
+            <p className="text-[10pt]">Mengetahui,</p>
+            <p className="text-[10pt]">Pemimpin KCP Telihan,</p>
+            <div style={{ height: '4rem' }} />
+            <p className="font-bold underline">{memo.nama_pimpinan || '—'}</p>
+          </div>
         </div>
 
         <p className="text-[9pt] text-slate-500 italic mt-8 text-center">
