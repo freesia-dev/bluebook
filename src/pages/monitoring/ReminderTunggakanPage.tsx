@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMLFUploads, useMLFData143 } from '@/hooks/use-mlf-data';
 import { useDebiturKontak, useUpsertDebiturKontak } from '@/hooks/use-debitur-kontak';
@@ -20,9 +21,11 @@ import { fmtIDR, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { renderTemplate, isValidPhoneID, normalizePhoneID, formatPhoneDisplay } from '@/lib/wa-utils';
 import { AntrianWAModal, QueueItem } from '@/components/monitoring/AntrianWAModal';
 import { TemplateEditor } from '@/components/monitoring/TemplateEditor';
+import { CallMemoTable } from '@/components/monitoring/CallMemoTable';
+import { CallMemoDialog } from '@/components/monitoring/CallMemoDialog';
 import { format, formatDistanceToNow } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { Send, Plus, Edit3, MessageCircle, Phone, FileText } from 'lucide-react';
+import { Send, Plus, Edit3, MessageCircle, Phone, FileText, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
@@ -56,6 +59,10 @@ const ReminderTunggakanPage: React.FC = () => {
   const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
   const [editTplOpen, setEditTplOpen] = useState(false);
   const [editingTpl, setEditingTpl] = useState<WATemplate | null>(null);
+
+  // Call Memo dialog
+  const [memoDialogOpen, setMemoDialogOpen] = useState(false);
+  const [memoPrefillL0lnno, setMemoPrefillL0lnno] = useState<string | undefined>();
 
   // pick default template
   useEffect(() => {
@@ -198,10 +205,21 @@ const ReminderTunggakanPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Reminder Tunggakan WhatsApp"
-        description="Kirim pesan reminder ke debitur dengan tunggakan via WhatsApp Web/Desktop"
+        title="Reminder & Penagihan Tunggakan"
+        description="Kirim reminder WhatsApp & catat Call Memo penagihan kredit"
       />
 
+      <Tabs defaultValue="reminder" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="reminder"><MessageCircle className="w-4 h-4 mr-1" />Kirim Reminder</TabsTrigger>
+          <TabsTrigger value="memo"><ClipboardList className="w-4 h-4 mr-1" />Riwayat Call Memo</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="memo">
+          <CallMemoTable />
+        </TabsContent>
+
+        <TabsContent value="reminder" className="space-y-0">
       {/* Filters */}
       <Card className="mb-4">
         <CardHeader>
@@ -304,12 +322,17 @@ const ReminderTunggakanPage: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {c.lastSent ? (
-                            <Tooltip>
-                              <TooltipTrigger><span className="text-muted-foreground">{formatDistanceToNow(new Date(c.lastSent), { locale: idLocale, addSuffix: true })}</span></TooltipTrigger>
-                              <TooltipContent>{format(new Date(c.lastSent), 'dd MMM yyyy HH:mm', { locale: idLocale })}</TooltipContent>
-                            </Tooltip>
-                          ) : <span className="text-muted-foreground">—</span>}
+                          <div className="flex items-center gap-1">
+                            {c.lastSent ? (
+                              <Tooltip>
+                                <TooltipTrigger><span className="text-muted-foreground">{formatDistanceToNow(new Date(c.lastSent), { locale: idLocale, addSuffix: true })}</span></TooltipTrigger>
+                                <TooltipContent>{format(new Date(c.lastSent), 'dd MMM yyyy HH:mm', { locale: idLocale })}</TooltipContent>
+                              </Tooltip>
+                            ) : <span className="text-muted-foreground">—</span>}
+                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] ml-auto" title="Buat Call Memo" onClick={() => { setMemoPrefillL0lnno(c.l0lnno); setMemoDialogOpen(true); }}>
+                              <ClipboardList className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -392,9 +415,16 @@ const ReminderTunggakanPage: React.FC = () => {
           </Card>
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
 
       <AntrianWAModal open={queueOpen} items={queueItems} onClose={() => setQueueOpen(false)} />
       <TemplateEditor open={editTplOpen} template={editingTpl} onClose={() => setEditTplOpen(false)} />
+      <CallMemoDialog
+        open={memoDialogOpen}
+        onClose={() => { setMemoDialogOpen(false); setMemoPrefillL0lnno(undefined); }}
+        prefillL0lnno={memoPrefillL0lnno}
+      />
 
       {/* Quick fill HP dialog */}
       {quickFill && (
