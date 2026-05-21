@@ -86,6 +86,39 @@ export const ShiftCard: React.FC<Props> = ({ shift }) => {
               </Button>
             </>
           )}
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="bg-red-600 hover:bg-red-700 text-white border-red-600">
+                  <Trash2 className="w-4 h-4 mr-1" />Hapus Shift
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Hapus shift ini?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Semua kejadian ({entries.length}) di shift {SHIFT_LABEL[shift.shift]} oleh <strong>{shift.nama_petugas}</strong> akan ikut terhapus permanen.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700"
+                    onClick={async () => {
+                      try {
+                        await delShift.mutateAsync(shift.id);
+                        toast({ title: 'Shift dihapus' });
+                      } catch (err: any) {
+                        toast({ title: 'Gagal hapus shift', description: err.message, variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    Hapus
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
 
