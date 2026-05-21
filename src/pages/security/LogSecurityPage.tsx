@@ -8,7 +8,7 @@ import { useSecurityShifts, SHIFT_LABEL } from '@/hooks/use-security-log';
 import { ShiftCard } from '@/components/security/ShiftCard';
 import { StartShiftDialog } from '@/components/security/StartShiftDialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Printer, ShieldCheck } from 'lucide-react';
+import { Plus, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
@@ -36,7 +36,6 @@ const LogSecurityPage: React.FC = () => {
       <PageHeader
         title="Log Security"
         description="Catatan aktivitas pengawasan harian per shift Security KCP Telihan"
-        icon={ShieldCheck}
       />
 
       <Card className="p-4 mb-4 flex flex-wrap items-end justify-between gap-3">
