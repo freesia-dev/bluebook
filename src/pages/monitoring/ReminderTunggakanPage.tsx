@@ -205,10 +205,21 @@ const ReminderTunggakanPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Reminder Tunggakan WhatsApp"
-        description="Kirim pesan reminder ke debitur dengan tunggakan via WhatsApp Web/Desktop"
+        title="Reminder & Penagihan Tunggakan"
+        description="Kirim reminder WhatsApp & catat Call Memo penagihan kredit"
       />
 
+      <Tabs defaultValue="reminder" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="reminder"><MessageCircle className="w-4 h-4 mr-1" />Kirim Reminder</TabsTrigger>
+          <TabsTrigger value="memo"><ClipboardList className="w-4 h-4 mr-1" />Riwayat Call Memo</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="memo">
+          <CallMemoTable />
+        </TabsContent>
+
+        <TabsContent value="reminder" className="space-y-0">
       {/* Filters */}
       <Card className="mb-4">
         <CardHeader>
