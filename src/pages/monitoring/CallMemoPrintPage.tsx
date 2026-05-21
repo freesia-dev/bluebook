@@ -8,19 +8,27 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { fmtIDR } from '@/lib/mlf-utils';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const HARI_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 const CallMemoPrintPage: React.FC = () => {
   const [params] = useSearchParams();
   const id = params.get('id') || '';
+  const { user, isLoading: authLoading } = useAuth();
   const { data: memo, isLoading } = useCallMemo(id);
 
   useEffect(() => {
     document.title = memo ? `Call Memo #${memo.nomor} — ${memo.nama_debitur}` : 'Call Memo';
   }, [memo]);
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return <div className="p-10 text-center">Memuat dokumen...</div>;
+  }
+  if (!user) {
+    const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/login?redirect=${redirect}`;
+    return null;
   }
   if (!memo) {
     return <div className="p-10 text-center text-muted-foreground">Call Memo tidak ditemukan.</div>;
