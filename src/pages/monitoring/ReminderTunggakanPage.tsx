@@ -60,6 +60,10 @@ const ReminderTunggakanPage: React.FC = () => {
   const [editTplOpen, setEditTplOpen] = useState(false);
   const [editingTpl, setEditingTpl] = useState<WATemplate | null>(null);
 
+  // Call Memo dialog
+  const [memoDialogOpen, setMemoDialogOpen] = useState(false);
+  const [memoPrefillL0lnno, setMemoPrefillL0lnno] = useState<string | undefined>();
+
   // pick default template
   useEffect(() => {
     if (!selectedTplId && templates.length > 0) {
