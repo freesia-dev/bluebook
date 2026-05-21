@@ -1,0 +1,1 @@
+ALTER TABLE public.call_memo_penagihan ADD COLUMN IF NOT EXISTS nama_pimpinan text;

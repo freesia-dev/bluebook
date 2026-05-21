@@ -145,6 +145,7 @@ export type Database = {
           l0lnno: string | null
           lampiran_urls: Json
           nama_debitur: string
+          nama_pimpinan: string | null
           no_hp: string | null
           no_rek: string | null
           nomor: number
@@ -171,6 +172,7 @@ export type Database = {
           l0lnno?: string | null
           lampiran_urls?: Json
           nama_debitur: string
+          nama_pimpinan?: string | null
           no_hp?: string | null
           no_rek?: string | null
           nomor: number
@@ -197,6 +199,7 @@ export type Database = {
           l0lnno?: string | null
           lampiran_urls?: Json
           nama_debitur?: string
+          nama_pimpinan?: string | null
           no_hp?: string | null
           no_rek?: string | null
           nomor?: number
