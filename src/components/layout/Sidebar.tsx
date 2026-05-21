@@ -249,12 +249,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onNavigate={onClose}
               />
             )}
-            {permissions.comingSoonSecurity && (
+            {permissions.securityLog && (
               <NavItem 
                 icon={Shield} 
-                label="Security" 
-                href="/security" 
-                isActive={location.pathname === '/security'} 
+                label="Log Security" 
+                href="/security/log" 
+                isActive={location.pathname.startsWith('/security')} 
                 onNavigate={onClose}
               />
             )}
