@@ -27,10 +27,11 @@ const jenisColor: Record<string, string> = {
 };
 
 export const ShiftCard: React.FC<Props> = ({ shift }) => {
-  const { permissions, userRole } = useAuth();
+  const { permissions, userRole, isAdmin } = useAuth();
   const canEdit = permissions.canEditSecurityLog;
   const { data: entries = [], isLoading } = useSecurityEntries(shift.id);
   const del = useDeleteEntry();
+  const delShift = useDeleteShift();
   const { toast } = useToast();
 
   const [entryOpen, setEntryOpen] = useState(false);
