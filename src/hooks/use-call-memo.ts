@@ -53,6 +53,7 @@ export const useCallMemoList = () => {
 };
 
 export const useCallMemo = (id?: string) => {
+  const { user, isLoading: authLoading } = useAuth();
   return useQuery({
     queryKey: ['call-memo', id],
     queryFn: async () => {
@@ -61,7 +62,7 @@ export const useCallMemo = (id?: string) => {
       if (error) throw error;
       return data as CallMemo | null;
     },
-    enabled: !!id,
+    enabled: !!id && !!user && !authLoading,
   });
 };
 
