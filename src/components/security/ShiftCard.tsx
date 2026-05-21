@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SecurityShift, SecurityLogEntry, SHIFT_LABEL, useSecurityEntries, useDeleteEntry } from '@/hooks/use-security-log';
+import { SecurityShift, SecurityLogEntry, SHIFT_LABEL, useSecurityEntries, useDeleteEntry, useDeleteShift } from '@/hooks/use-security-log';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -10,6 +10,10 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Props {
   shift: SecurityShift;
