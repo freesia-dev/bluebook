@@ -25,6 +25,7 @@ export interface CallMemo {
   status_komitmen: StatusKomitmen;
   petugas_penagih: string;
   saksi: string | null;
+  nama_pimpinan: string | null;
   lampiran_urls: string[];
   catatan_tambahan: string | null;
   created_by: string | null;
