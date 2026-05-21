@@ -59,6 +59,7 @@ const emptyInput = (petugas: string): CallMemoInput => ({
   status_komitmen: 'belum_ada',
   petugas_penagih: petugas,
   saksi: null,
+  nama_pimpinan: null,
   lampiran_urls: [],
   catatan_tambahan: null,
 });
@@ -107,6 +108,7 @@ export const CallMemoDialog: React.FC<Props> = ({ open, onClose, memo, prefillL0
         status_komitmen: memo.status_komitmen,
         petugas_penagih: memo.petugas_penagih,
         saksi: memo.saksi,
+        nama_pimpinan: memo.nama_pimpinan ?? null,
         lampiran_urls: memo.lampiran_urls || [],
         catatan_tambahan: memo.catatan_tambahan,
       });
@@ -184,7 +186,11 @@ export const CallMemoDialog: React.FC<Props> = ({ open, onClose, memo, prefillL0
       return;
     }
     if (!form.petugas_penagih.trim()) {
-      toast.error('Petugas penagih wajib diisi');
+      toast.error('Officer Relationship Kredit wajib diisi');
+      return;
+    }
+    if (!form.nama_pimpinan || !form.nama_pimpinan.trim()) {
+      toast.error('Nama Pemimpin KCP wajib diisi');
       return;
     }
     try {
@@ -371,15 +377,26 @@ export const CallMemoDialog: React.FC<Props> = ({ open, onClose, memo, prefillL0
             </div>
           </div>
 
-          {/* Petugas & saksi */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Petugas Penagih *</Label>
-              <Input value={form.petugas_penagih} onChange={(e) => setForm({ ...form, petugas_penagih: e.target.value })} />
-            </div>
-            <div>
-              <Label className="text-xs">Saksi (opsional)</Label>
-              <Input value={form.saksi || ''} onChange={(e) => setForm({ ...form, saksi: e.target.value || null })} />
+          {/* Petugas, Pemimpin & saksi */}
+          <div className="space-y-3 rounded-lg border p-3">
+            <h4 className="text-sm font-semibold">Petugas & Penandatangan</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Officer Relationship Kredit *</Label>
+                <Input value={form.petugas_penagih} onChange={(e) => setForm({ ...form, petugas_penagih: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-xs">Pemimpin KCP Telihan (Mengetahui) *</Label>
+                <Input
+                  value={form.nama_pimpinan || ''}
+                  onChange={(e) => setForm({ ...form, nama_pimpinan: e.target.value || null })}
+                  placeholder="Nama Pemimpin KCP"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">Saksi (opsional)</Label>
+                <Input value={form.saksi || ''} onChange={(e) => setForm({ ...form, saksi: e.target.value || null })} />
+              </div>
             </div>
           </div>
 

@@ -3,34 +3,39 @@ import logo from '@/assets/logo-bankaltimtara.png';
 
 /**
  * Kop surat resmi Bankaltimtara KCP Telihan.
- * Dipakai di semua dokumen BA / Call Memo yang akan dicetak.
+ * Desain modern: kompak, profesional, sans-serif untuk header, dengan aksen warna brand.
  */
 export const KopSuratBank: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
-    <div className={`pb-3 mb-4 border-b-[3px] border-double border-black ${className}`}>
-      <div className="flex items-center gap-5">
+    <div className={`mb-5 ${className}`}>
+      <div className="flex items-center gap-4 pb-3">
         <img
           src={logo}
           alt="Logo Bankaltimtara"
-          className="h-20 w-auto object-contain shrink-0"
+          className="h-14 w-auto object-contain shrink-0"
           crossOrigin="anonymous"
         />
-        <div className="flex-1 text-center" style={{ fontFamily: '"Times New Roman", serif' }}>
-          <div className="text-[15pt] font-bold leading-tight tracking-wide">
-            PT. BPD KALIMANTAN TIMUR DAN KALIMANTAN UTARA
+        <div
+          className="flex-1 leading-tight"
+          style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
+        >
+          <div className="text-[12pt] font-bold tracking-tight text-[#003F7F]">
+            PT. BPD Kalimantan Timur &amp; Kalimantan Utara
           </div>
-          <div className="text-[14pt] font-bold leading-tight tracking-wide">
-            KANTOR CABANG PEMBANTU TELIHAN
+          <div className="text-[10.5pt] font-semibold text-[#003F7F]">
+            Kantor Cabang Pembantu Telihan
           </div>
-          <div className="text-[10pt] leading-snug mt-1">
-            Jl. Letjend S. Parman No. 14-15 — Kota Bontang 75383
+          <div className="text-[8.5pt] text-slate-700 mt-0.5">
+            Jl. Letjend S. Parman No. 14–15, Bontang 75383 &nbsp;·&nbsp; Telp. 0548-26567
           </div>
-          <div className="text-[10pt] leading-snug">
-            Telp: 0548 - 26567 &nbsp;|&nbsp; Email: kcp.telihan@bankaltimtara.co.id
+          <div className="text-[8.5pt] text-slate-700">
+            kcp.telihan@bankaltimtara.co.id &nbsp;·&nbsp; bankaltimtara.co.id
           </div>
-          <div className="text-[10pt] leading-snug italic">www.bankaltimtara.co.id</div>
         </div>
       </div>
+      {/* Garis aksen brand: biru tebal + tipis */}
+      <div className="h-[3px] bg-[#003F7F]" />
+      <div className="h-[1px] bg-[#F58220] mt-[2px]" />
     </div>
   );
 };
