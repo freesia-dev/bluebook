@@ -130,8 +130,10 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
     pathname === '/panduan' ||
     pathname === '/install' ||
     pathname === '/dashboard' ||
-    pathname.startsWith('/verify/')
+    pathname.startsWith('/verify/') ||
+    pathname.startsWith('/audit/')
   ) return true;
+
   if (pathname.startsWith('/surat-')) return p.surat;
   if (pathname.startsWith('/agenda-kredit')) return p.agendaKredit;
   if (pathname.startsWith('/atm-telihan')) return p.atmTelihan;
