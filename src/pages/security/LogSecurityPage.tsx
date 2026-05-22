@@ -70,11 +70,48 @@ const LogSecurityPage: React.FC = () => {
             {format(new Date(tanggal), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrint} disabled={sorted.length === 0}>
-            <Printer className="w-4 h-4 mr-2" />Cetak BA
-          </Button>
-          {permissions.canEditSecurityLog && (
+        <div className="flex flex-wrap gap-2">
+          {permissions.canSignSecurityBA && (
+            isSigned ? (
+              <Button variant="outline" disabled className="border-emerald-300 text-emerald-700 bg-emerald-50">
+                <CheckCircle2 className="w-4 h-4 mr-2" />Sudah Disetujui{signedBy ? ` · ${signedBy}` : ''}
+              </Button>
+            ) : (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={sorted.length === 0 || !allClosed || signBA.isPending}
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    {signBA.isPending ? 'Memproses...' : 'Approve BA'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Setujui & Sahkan BA tanggal ini?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Anda akan menandatangani secara digital BA Log Security untuk{' '}
+                      <strong>{format(new Date(tanggal), 'dd MMMM yyyy', { locale: idLocale })}</strong> atas nama{' '}
+                      <strong>{userName}</strong>. QR verifikasi akan dibuat dan tindakan ini tidak dapat dibatalkan.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction className="bg-emerald-600 hover:bg-emerald-700" onClick={handleApprove}>
+                      Setujui & Sahkan
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          )}
+          {permissions.canPrintSecurityBA && (
+            <Button variant="outline" onClick={handlePrint} disabled={sorted.length === 0}>
+              <Printer className="w-4 h-4 mr-2" />Cetak BA
+            </Button>
+          )}
+          {permissions.canStartSecurityShift && (
             <Button onClick={() => setStartOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />Mulai Shift
             </Button>
@@ -87,7 +124,7 @@ const LogSecurityPage: React.FC = () => {
       ) : sorted.length === 0 ? (
         <Card className="p-10 text-center text-muted-foreground">
           Belum ada shift dicatat untuk tanggal ini.
-          {permissions.canEditSecurityLog && ' Klik "Mulai Shift" untuk memulai pencatatan.'}
+          {permissions.canStartSecurityShift && ' Klik "Mulai Shift" untuk memulai pencatatan.'}
         </Card>
       ) : (
         <div className="space-y-4">
