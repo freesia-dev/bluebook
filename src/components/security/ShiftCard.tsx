@@ -145,7 +145,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
               <li key={e.id} className="ml-4">
                 <div className="absolute -left-[7px] mt-1.5 w-3 h-3 rounded-full bg-slate-400 border-2 border-white" />
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
                     <Clock className="w-3 h-3 text-muted-foreground" />
                     <span className="font-medium">
                       {format(new Date(e.waktu_kejadian), 'HH:mm', { locale: idLocale })} WITA
@@ -156,17 +156,35 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
                       {e.jenis === 'serah_terima' && 'Serah Terima'}
                       {e.jenis === 'akhir_shift' && 'Akhir Shift'}
                     </Badge>
+                    {(e as any).is_insiden && (
+                      <Badge className="bg-red-100 text-red-800 border-red-300 border text-[10px] hover:bg-red-100">
+                        <Flag className="w-2.5 h-2.5 mr-0.5" />INSIDEN
+                      </Badge>
+                    )}
                   </div>
-                  {canEdit && isActive && e.jenis === 'kejadian' && (
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditEntry(e); setEntryOpen(true); }}>
-                        <Pencil className="w-3.5 h-3.5" />
+                  <div className="flex gap-1">
+                    {canFlag && e.jenis === 'kejadian' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title={(e as any).is_insiden ? 'Hapus tanda insiden' : 'Tandai sebagai insiden penting'}
+                        className={`h-7 w-7 p-0 ${(e as any).is_insiden ? 'text-red-600' : 'text-muted-foreground'}`}
+                        onClick={() => toggleIncident.mutate({ id: e.id, is_insiden: !(e as any).is_insiden })}
+                      >
+                        <Flag className="w-3.5 h-3.5" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(e)}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                    {canEdit && isActive && e.jenis === 'kejadian' && (
+                      <>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditEntry(e); setEntryOpen(true); }}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(e)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm mt-1 whitespace-pre-wrap text-foreground/90">{e.kejadian}</p>
                 {(e.foto_urls?.length > 0 || e.video_url) && (
@@ -183,10 +201,14 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
                     )}
                   </div>
                 )}
+                {e.jenis === 'kejadian' && (
+                  <CommentThread entry_id={e.id} compact />
+                )}
               </li>
             ))}
           </ol>
         )}
+
 
         {/* Footer info */}
         {!isActive && shift.kondisi_akhir && (
