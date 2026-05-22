@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { SecurityShift, SecurityLogEntry, SHIFT_LABEL, useSecurityEntries, useDeleteEntry, useDeleteShift } from '@/hooks/use-security-log';
+import { useToggleIncident } from '@/hooks/use-security-audit';
+import { CommentThread } from './CommentThread';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { EntryDialog } from './EntryDialog';
 import { HandoverDialog } from './HandoverDialog';
-import { Plus, Pencil, Trash2, ArrowRightLeft, Image as ImageIcon, Video, ShieldCheck, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowRightLeft, Video, ShieldCheck, Clock, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,9 +17,12 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+
 interface Props {
   shift: SecurityShift;
+  insidenOnly?: boolean;
 }
+
 
 const jenisColor: Record<string, string> = {
   mulai_shift: 'bg-blue-100 text-blue-800 border-blue-300',
@@ -26,13 +31,17 @@ const jenisColor: Record<string, string> = {
   akhir_shift: 'bg-emerald-100 text-emerald-800 border-emerald-300',
 };
 
-export const ShiftCard: React.FC<Props> = ({ shift }) => {
+export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
   const { permissions, userRole, isAdmin } = useAuth();
   const canEdit = permissions.canEditSecurityLog;
-  const { data: entries = [], isLoading } = useSecurityEntries(shift.id);
+  const canFlag = permissions.canCommentSecurityLog;
+  const { data: entriesAll = [], isLoading } = useSecurityEntries(shift.id);
+  const entries = insidenOnly ? entriesAll.filter((e) => (e as any).is_insiden) : entriesAll;
   const del = useDeleteEntry();
   const delShift = useDeleteShift();
+  const toggleIncident = useToggleIncident();
   const { toast } = useToast();
+
 
   const [entryOpen, setEntryOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<SecurityLogEntry | null>(null);
