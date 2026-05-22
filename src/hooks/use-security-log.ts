@@ -279,18 +279,27 @@ export const useSignBA = () => {
   return useMutation({
     mutationFn: async (payload: { tanggal: string; nama_pimpinan: string }) => {
       const { data: userRes } = await supabase.auth.getUser();
+      const token = crypto.randomUUID();
       const { error } = await supabase
         .from('security_shift' as any)
         .update({
           ttd_pimpinan_nama: payload.nama_pimpinan,
           ttd_pimpinan_user_id: userRes.user?.id,
           ttd_pimpinan_at: new Date().toISOString(),
+          ba_signature_token: token,
         })
         .eq('tanggal', payload.tanggal);
       if (error) throw error;
+      return token;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['security-shifts'] });
     },
   });
+};
+
+export const SHIFT_PERIODE_ORDER: Record<ShiftType, number> = {
+  malam: 0,
+  pagi: 1,
+  sore: 2,
 };
