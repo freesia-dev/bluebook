@@ -1,16 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useSecurityShifts, SHIFT_LABEL, useSignBA } from '@/hooks/use-security-log';
+import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER, useSignBA } from '@/hooks/use-security-log';
 import { supabase } from '@/integrations/supabase/client';
 import { KopSuratBank } from '@/components/print/KopSuratBank';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Printer, ArrowLeft, PenLine } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { QRCodeSVG } from 'qrcode.react';
 
 const BAHarianPrintPage: React.FC = () => {
   const [params] = useSearchParams();
