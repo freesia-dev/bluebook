@@ -96,7 +96,10 @@ const BAHarianPrintPage: React.FC = () => {
           <ArrowLeft className="w-4 h-4 mr-1" />Tutup
         </Button>
         <div className="flex items-center gap-2">
-          {permissions.canSignSecurityBA && !ttdName && (
+          <Badge variant="outline" className={`${statusBadge.cls} font-medium`}>
+            {statusBadge.label}
+          </Badge>
+          {permissions.canSignSecurityBA && !ttdName && allSelesai && (
             <div className="flex items-center gap-2">
               <Input
                 placeholder="Nama Pimpinan KCP"
@@ -105,7 +108,7 @@ const BAHarianPrintPage: React.FC = () => {
                 className="w-56 h-9"
               />
               <Button onClick={handleSign} disabled={sign.isPending} variant="secondary">
-                <PenLine className="w-4 h-4 mr-1" />Tanda Tangani BA
+                <PenLine className="w-4 h-4 mr-1" />Setujui & Tanda Tangani
               </Button>
             </div>
           )}
