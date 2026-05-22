@@ -1256,6 +1256,7 @@ export type Database = {
       can_access_security_log: { Args: never; Returns: boolean }
       can_edit_security_log: { Args: never; Returns: boolean }
       can_sign_security_ba: { Args: never; Returns: boolean }
+      get_ba_security_nomor: { Args: { _tanggal: string }; Returns: string }
       get_security_users: {
         Args: never
         Returns: {
