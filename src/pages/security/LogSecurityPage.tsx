@@ -18,10 +18,12 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const LogSecurityPage: React.FC = () => {
-  const { permissions } = useAuth();
+  const { permissions, userName } = useAuth();
+  const { toast } = useToast();
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
   const { data: shifts = [], isLoading } = useSecurityShifts(tanggal);
   const [startOpen, setStartOpen] = useState(false);
+  const signBA = useSignBA();
 
   const sorted = useMemo(() => {
     return [...shifts].sort((a, b) => {
@@ -31,8 +33,21 @@ const LogSecurityPage: React.FC = () => {
     });
   }, [shifts]);
 
+  const isSigned = sorted.some((s) => !!s.ttd_pimpinan_at);
+  const signedBy = sorted.find((s) => !!s.ttd_pimpinan_nama)?.ttd_pimpinan_nama;
+  const allClosed = sorted.length > 0 && sorted.every((s) => s.status === 'selesai');
+
   const handlePrint = () => {
     window.open(`/security/log/cetak?tanggal=${tanggal}`, '_blank');
+  };
+
+  const handleApprove = async () => {
+    try {
+      await signBA.mutateAsync({ tanggal, nama_pimpinan: userName });
+      toast({ title: 'BA disetujui', description: `Tanda tangan digital tercatat untuk ${tanggal}` });
+    } catch (err: any) {
+      toast({ title: 'Gagal approve', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
