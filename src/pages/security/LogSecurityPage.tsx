@@ -4,13 +4,18 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER } from '@/hooks/use-security-log';
+import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER, useSignBA } from '@/hooks/use-security-log';
 import { ShiftCard } from '@/components/security/ShiftCard';
 import { StartShiftDialog } from '@/components/security/StartShiftDialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Printer } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const LogSecurityPage: React.FC = () => {
   const { permissions } = useAuth();
