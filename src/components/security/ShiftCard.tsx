@@ -212,13 +212,16 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
 
         {/* Footer info */}
         {!isActive && shift.kondisi_akhir && (
-          <div className="mt-4 border-t pt-3 text-xs space-y-1 bg-amber-50 -mx-4 -mb-4 px-4 py-3">
+          <div className="mt-4 border-t pt-3 text-xs space-y-1 bg-amber-50 -mx-4 px-4 py-3">
             <div><strong>Kondisi Akhir:</strong> {shift.kondisi_akhir}</div>
             <div><strong>Diserahkan kepada:</strong> {shift.serah_terima_ke_nama}</div>
             {shift.catatan_serah_terima && <div><strong>Catatan:</strong> {shift.catatan_serah_terima}</div>}
           </div>
         )}
+
+        <CommentThread shift_id={shift.id} compact />
       </div>
+
 
       <EntryDialog open={entryOpen} onOpenChange={setEntryOpen} shift={shift} entry={editEntry} />
       <HandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} shift={shift} />
