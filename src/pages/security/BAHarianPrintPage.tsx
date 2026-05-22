@@ -39,6 +39,16 @@ const BAHarianPrintPage: React.FC = () => {
     },
   });
 
+  // Nomor BA via RPC: 001/LOG/SEC/BPD-TLH/[Romawi]/[Tahun]
+  const { data: nomorBA = '' } = useQuery({
+    queryKey: ['ba-security-nomor', tanggal],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_ba_security_nomor' as any, { _tanggal: tanggal });
+      if (error) throw error;
+      return (data as string) || '';
+    },
+  });
+
   useEffect(() => {
     document.title = `BA Log Security — ${tanggal}`;
   }, [tanggal]);
@@ -60,9 +70,9 @@ const BAHarianPrintPage: React.FC = () => {
   const ttdName = signedShift?.ttd_pimpinan_nama;
   const ttdAt = signedShift?.ttd_pimpinan_at;
   const baToken = (signedShift as any)?.ba_signature_token as string | undefined;
-  const verifyUrl = baToken
-    ? `${window.location.origin}/verify/ba-security/${baToken}`
-    : null;
+  // Always use production custom domain so QR scans from printed paper resolve correctly
+  const VERIFY_BASE = 'https://bluebook-tlh.my.id';
+  const verifyUrl = baToken ? `${VERIFY_BASE}/verify/ba-security/${baToken}` : null;
 
   const statusBadge = !allSelesai
     ? { label: 'Draft', cls: 'bg-slate-200 text-slate-700' }
@@ -72,8 +82,6 @@ const BAHarianPrintPage: React.FC = () => {
 
   const tanggalStr = format(new Date(tanggal), 'dd MMMM yyyy', { locale: idLocale });
   const hariStr = format(new Date(tanggal), 'EEEE', { locale: idLocale });
-  const yyyy = new Date(tanggal).getFullYear();
-  const nomorBA = `${format(new Date(tanggal), 'ddMM')}/BA-SEC/KCP-TLH/${yyyy}`;
 
 
   const handleSign = async () => {
