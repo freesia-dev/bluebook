@@ -45,6 +45,10 @@ export interface RolePermissions {
   canSignSecurityBA: boolean;
   /** Can create/edit shifts and entries (Security, Staff Admin KCP, Admin). */
   canEditSecurityLog: boolean;
+  /** Can print the daily Security BA (Admin + Staff Admin KCP). */
+  canPrintSecurityBA: boolean;
+  /** Can start a new shift (Admin + Security). */
+  canStartSecurityShift: boolean;
   comingSoonOB: boolean;
 }
 
@@ -60,6 +64,8 @@ const FULL: RolePermissions = {
   securityLog: false,
   canSignSecurityBA: false,
   canEditSecurityLog: false,
+  canPrintSecurityBA: false,
+  canStartSecurityShift: false,
   comingSoonOB: false,
 };
 
@@ -75,21 +81,23 @@ const NONE: RolePermissions = {
   securityLog: false,
   canSignSecurityBA: false,
   canEditSecurityLog: false,
+  canPrintSecurityBA: false,
+  canStartSecurityShift: false,
   comingSoonOB: false,
 };
 
 export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
-  admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true },
+  admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true },
   user: { ...FULL, konfigurasi: false },
   demo: { ...FULL, canEdit: false, konfigurasi: false },
   pemimpin: { ...FULL, canEdit: false, konfigurasi: false, securityLog: true, canSignSecurityBA: true },
   meranti: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
   officer_rk: { ...FULL, konfigurasi: false },
   officer_kredit: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
-  staff_admin_kcp: { ...FULL, konfigurasi: false, monitoringDashboardOnly: true, securityLog: true, canEditSecurityLog: true },
+  staff_admin_kcp: { ...FULL, konfigurasi: false, monitoringDashboardOnly: true, securityLog: true, canEditSecurityLog: true, canPrintSecurityBA: true },
   teller: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false },
   cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false },
-  security: { ...NONE, securityLog: true, canEditSecurityLog: true, canEdit: true },
+  security: { ...NONE, securityLog: true, canEditSecurityLog: true, canStartSecurityShift: true, canEdit: true },
   ob: { ...NONE, comingSoonOB: true },
 };
 
