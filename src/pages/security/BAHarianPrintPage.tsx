@@ -50,9 +50,25 @@ const BAHarianPrintPage: React.FC = () => {
   }
 
   const sorted = [...shifts].sort((a, b) => {
-    const order: Record<string, number> = { pagi: 0, sore: 1, malam: 2 };
-    return (order[a.shift] ?? 9) - (order[b.shift] ?? 9);
+    const o = (SHIFT_PERIODE_ORDER[a.shift] ?? 9) - (SHIFT_PERIODE_ORDER[b.shift] ?? 9);
+    if (o !== 0) return o;
+    return a.jam_mulai.localeCompare(b.jam_mulai);
   });
+
+  const allSelesai = sorted.length > 0 && sorted.every((s) => s.status === 'selesai');
+  const signedShift = sorted.find((s) => s.ttd_pimpinan_nama);
+  const ttdName = signedShift?.ttd_pimpinan_nama;
+  const ttdAt = signedShift?.ttd_pimpinan_at;
+  const baToken = (signedShift as any)?.ba_signature_token as string | undefined;
+  const verifyUrl = baToken
+    ? `${window.location.origin}/verify/ba-security/${baToken}`
+    : null;
+
+  const statusBadge = !allSelesai
+    ? { label: 'Draft', cls: 'bg-slate-200 text-slate-700' }
+    : !ttdName
+      ? { label: 'Menunggu TTD Pimpinan', cls: 'bg-amber-100 text-amber-800 border-amber-300' }
+      : { label: 'Sah & Tervalidasi', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
 
   const tanggalStr = format(new Date(tanggal), 'dd MMMM yyyy', { locale: idLocale });
   const hariStr = format(new Date(tanggal), 'EEEE', { locale: idLocale });
