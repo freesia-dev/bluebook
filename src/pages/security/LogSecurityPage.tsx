@@ -4,19 +4,26 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER } from '@/hooks/use-security-log';
+import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER, useSignBA } from '@/hooks/use-security-log';
 import { ShiftCard } from '@/components/security/ShiftCard';
 import { StartShiftDialog } from '@/components/security/StartShiftDialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Printer } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const LogSecurityPage: React.FC = () => {
-  const { permissions } = useAuth();
+  const { permissions, userName } = useAuth();
+  const { toast } = useToast();
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
   const { data: shifts = [], isLoading } = useSecurityShifts(tanggal);
   const [startOpen, setStartOpen] = useState(false);
+  const signBA = useSignBA();
 
   const sorted = useMemo(() => {
     return [...shifts].sort((a, b) => {
@@ -26,8 +33,21 @@ const LogSecurityPage: React.FC = () => {
     });
   }, [shifts]);
 
+  const isSigned = sorted.some((s) => !!s.ttd_pimpinan_at);
+  const signedBy = sorted.find((s) => !!s.ttd_pimpinan_nama)?.ttd_pimpinan_nama;
+  const allClosed = sorted.length > 0 && sorted.every((s) => s.status === 'selesai');
+
   const handlePrint = () => {
     window.open(`/security/log/cetak?tanggal=${tanggal}`, '_blank');
+  };
+
+  const handleApprove = async () => {
+    try {
+      await signBA.mutateAsync({ tanggal, nama_pimpinan: userName });
+      toast({ title: 'BA disetujui', description: `Tanda tangan digital tercatat untuk ${tanggal}` });
+    } catch (err: any) {
+      toast({ title: 'Gagal approve', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -50,11 +70,48 @@ const LogSecurityPage: React.FC = () => {
             {format(new Date(tanggal), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrint} disabled={sorted.length === 0}>
-            <Printer className="w-4 h-4 mr-2" />Cetak BA
-          </Button>
-          {permissions.canEditSecurityLog && (
+        <div className="flex flex-wrap gap-2">
+          {permissions.canSignSecurityBA && (
+            isSigned ? (
+              <Button variant="outline" disabled className="border-emerald-300 text-emerald-700 bg-emerald-50">
+                <CheckCircle2 className="w-4 h-4 mr-2" />Sudah Disetujui{signedBy ? ` · ${signedBy}` : ''}
+              </Button>
+            ) : (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={sorted.length === 0 || !allClosed || signBA.isPending}
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    {signBA.isPending ? 'Memproses...' : 'Approve BA'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Setujui & Sahkan BA tanggal ini?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Anda akan menandatangani secara digital BA Log Security untuk{' '}
+                      <strong>{format(new Date(tanggal), 'dd MMMM yyyy', { locale: idLocale })}</strong> atas nama{' '}
+                      <strong>{userName}</strong>. QR verifikasi akan dibuat dan tindakan ini tidak dapat dibatalkan.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction className="bg-emerald-600 hover:bg-emerald-700" onClick={handleApprove}>
+                      Setujui & Sahkan
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          )}
+          {permissions.canPrintSecurityBA && (
+            <Button variant="outline" onClick={handlePrint} disabled={sorted.length === 0}>
+              <Printer className="w-4 h-4 mr-2" />Cetak BA
+            </Button>
+          )}
+          {permissions.canStartSecurityShift && (
             <Button onClick={() => setStartOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />Mulai Shift
             </Button>
@@ -67,7 +124,7 @@ const LogSecurityPage: React.FC = () => {
       ) : sorted.length === 0 ? (
         <Card className="p-10 text-center text-muted-foreground">
           Belum ada shift dicatat untuk tanggal ini.
-          {permissions.canEditSecurityLog && ' Klik "Mulai Shift" untuk memulai pencatatan.'}
+          {permissions.canStartSecurityShift && ' Klik "Mulai Shift" untuk memulai pencatatan.'}
         </Card>
       ) : (
         <div className="space-y-4">

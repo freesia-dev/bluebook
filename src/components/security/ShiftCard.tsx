@@ -78,7 +78,7 @@ export const ShiftCard: React.FC<Props> = ({ shift }) => {
         <div className="flex items-center gap-2">
           {canEdit && isActive && (
             <>
-              <Button size="sm" variant="secondary" onClick={() => { setEditEntry(null); setEntryOpen(true); }}>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { setEditEntry(null); setEntryOpen(true); }}>
                 <Plus className="w-4 h-4 mr-1" />Catat Kejadian
               </Button>
               <Button size="sm" variant="outline" className="bg-amber-500 hover:bg-amber-600 text-white border-amber-500" onClick={() => setHandoverOpen(true)}>
