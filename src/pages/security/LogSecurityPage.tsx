@@ -21,9 +21,11 @@ const LogSecurityPage: React.FC = () => {
   const { permissions, userName } = useAuth();
   const { toast } = useToast();
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [insidenOnly, setInsidenOnly] = useState(false);
   const { data: shifts = [], isLoading } = useSecurityShifts(tanggal);
   const [startOpen, setStartOpen] = useState(false);
   const signBA = useSignBA();
+
 
   const sorted = useMemo(() => {
     return [...shifts].sort((a, b) => {
@@ -70,7 +72,19 @@ const LogSecurityPage: React.FC = () => {
             {format(new Date(tanggal), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          {permissions.canCommentSecurityLog && (
+            <label className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-md border bg-violet-50 border-violet-200 text-violet-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={insidenOnly}
+                onChange={(e) => setInsidenOnly(e.target.checked)}
+                className="accent-violet-600"
+              />
+              Tampilkan hanya insiden
+            </label>
+          )}
+
           {permissions.canSignSecurityBA && (
             isSigned ? (
               <Button variant="outline" disabled className="border-emerald-300 text-emerald-700 bg-emerald-50">
@@ -129,8 +143,9 @@ const LogSecurityPage: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {sorted.map((s) => (
-            <ShiftCard key={s.id} shift={s} />
+            <ShiftCard key={s.id} shift={s} insidenOnly={insidenOnly} />
           ))}
+
         </div>
       )}
 
