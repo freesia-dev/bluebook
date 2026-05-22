@@ -46,6 +46,9 @@ const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPag
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
 const VerifyBAPage = lazy(() => import("./pages/security/VerifyBAPage"));
+const AuditLinksAdminPage = lazy(() => import("./pages/security/AuditLinksAdminPage"));
+const AuditPublicPage = lazy(() => import("./pages/security/AuditPublicPage"));
+
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -191,10 +194,18 @@ const App = () => (
             <Route path="/security/log/cetak" element={
               <Suspense fallback={<LoginLoader />}><BAHarianPrintPage /></Suspense>
             } />
+            <Route path="/security/audit-links" element={
+              <Suspense fallback={<TablePageSkeleton />}><AuditLinksAdminPage /></Suspense>
+            } />
             {/* Public BA verification (QR code target) */}
             <Route path="/verify/ba-security/:token" element={
               <Suspense fallback={<LoginLoader />}><VerifyBAPage /></Suspense>
             } />
+            {/* Public audit report (token-based) */}
+            <Route path="/audit/security/:token" element={
+              <Suspense fallback={<LoginLoader />}><AuditPublicPage /></Suspense>
+            } />
+
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>

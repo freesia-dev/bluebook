@@ -13,6 +13,7 @@ export type AppRole =
   | 'teller'
   | 'cs'
   | 'security'
+  | 'team_leader_security'
   | 'ob';
 
 export const ROLE_LABELS: Record<AppRole, string> = {
@@ -27,8 +28,10 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   teller: 'Teller',
   cs: 'Customer Service',
   security: 'Security',
+  team_leader_security: 'Team Leader Security',
   ob: 'OB',
 };
+
 
 export interface RolePermissions {
   canEdit: boolean;
@@ -49,8 +52,13 @@ export interface RolePermissions {
   canPrintSecurityBA: boolean;
   /** Can start a new shift (Admin + Security). */
   canStartSecurityShift: boolean;
+  /** Can post supervisor comments / flag incidents on security log (Admin + Team Leader). */
+  canCommentSecurityLog: boolean;
+  /** Can manage audit access tokens (Admin only). */
+  canManageSecurityAudit: boolean;
   comingSoonOB: boolean;
 }
+
 
 const FULL: RolePermissions = {
   canEdit: true,
@@ -66,6 +74,8 @@ const FULL: RolePermissions = {
   canEditSecurityLog: false,
   canPrintSecurityBA: false,
   canStartSecurityShift: false,
+  canCommentSecurityLog: false,
+  canManageSecurityAudit: false,
   comingSoonOB: false,
 };
 
@@ -83,11 +93,14 @@ const NONE: RolePermissions = {
   canEditSecurityLog: false,
   canPrintSecurityBA: false,
   canStartSecurityShift: false,
+  canCommentSecurityLog: false,
+  canManageSecurityAudit: false,
   comingSoonOB: false,
 };
 
+
 export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
-  admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true },
+  admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true, canCommentSecurityLog: true, canManageSecurityAudit: true },
   user: { ...FULL, konfigurasi: false },
   demo: { ...FULL, canEdit: false, konfigurasi: false },
   pemimpin: { ...FULL, canEdit: false, konfigurasi: false, securityLog: true, canSignSecurityBA: true },
@@ -98,8 +111,10 @@ export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
   teller: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false },
   cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false },
   security: { ...NONE, securityLog: true, canEditSecurityLog: true, canStartSecurityShift: true, canEdit: true },
+  team_leader_security: { ...NONE, securityLog: true, canCommentSecurityLog: true, canEdit: true },
   ob: { ...NONE, comingSoonOB: true },
 };
+
 
 export const getPermissions = (role: AppRole | null | undefined): RolePermissions =>
   role ? ROLE_PERMISSIONS[role] ?? ROLE_PERMISSIONS.user : ROLE_PERMISSIONS.user;
@@ -115,8 +130,10 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
     pathname === '/panduan' ||
     pathname === '/install' ||
     pathname === '/dashboard' ||
-    pathname.startsWith('/verify/')
+    pathname.startsWith('/verify/') ||
+    pathname.startsWith('/audit/')
   ) return true;
+
   if (pathname.startsWith('/surat-')) return p.surat;
   if (pathname.startsWith('/agenda-kredit')) return p.agendaKredit;
   if (pathname.startsWith('/atm-telihan')) return p.atmTelihan;
