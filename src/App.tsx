@@ -45,6 +45,7 @@ const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTung
 const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPage"));
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
+const VerifyBAPage = lazy(() => import("./pages/security/VerifyBAPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
