@@ -855,6 +855,7 @@ export type Database = {
       }
       security_shift: {
         Row: {
+          ba_signature_token: string | null
           catatan_serah_terima: string | null
           created_at: string
           created_by: string | null
@@ -878,6 +879,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ba_signature_token?: string | null
           catatan_serah_terima?: string | null
           created_at?: string
           created_by?: string | null
@@ -901,6 +903,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ba_signature_token?: string | null
           catatan_serah_terima?: string | null
           created_at?: string
           created_by?: string | null
@@ -1270,6 +1273,17 @@ export type Database = {
       is_authenticated: { Args: never; Returns: boolean }
       is_demo_user: { Args: never; Returns: boolean }
       is_readonly_user: { Args: never; Returns: boolean }
+      verify_ba_security: {
+        Args: { _token: string }
+        Returns: {
+          nomor_ba: string
+          petugas: Json
+          tanggal: string
+          total_shift: number
+          ttd_pimpinan_at: string
+          ttd_pimpinan_nama: string
+        }[]
+      }
     }
     Enums: {
       app_role:

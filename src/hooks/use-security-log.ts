@@ -16,6 +16,27 @@ export const useSecurityUsers = () =>
       return (data || []) as SecurityUser[];
     },
   });
+export interface BAVerification {
+  tanggal: string;
+  nomor_ba: string;
+  ttd_pimpinan_nama: string;
+  ttd_pimpinan_at: string;
+  petugas: Array<{ shift: string; nama_petugas: string; is_lembur: boolean }>;
+  total_shift: number;
+}
+
+export const useVerifyBA = (token: string | undefined) =>
+  useQuery({
+    queryKey: ['ba-verify', token],
+    enabled: !!token,
+    queryFn: async (): Promise<BAVerification | null> => {
+      const { data, error } = await supabase.rpc('verify_ba_security' as any, { _token: token });
+      if (error) throw error;
+      const rows = (data || []) as any[];
+      return rows.length ? (rows[0] as BAVerification) : null;
+    },
+  });
+
 
 export const useDeleteShift = () => {
   const qc = useQueryClient();
@@ -279,18 +300,27 @@ export const useSignBA = () => {
   return useMutation({
     mutationFn: async (payload: { tanggal: string; nama_pimpinan: string }) => {
       const { data: userRes } = await supabase.auth.getUser();
+      const token = crypto.randomUUID();
       const { error } = await supabase
         .from('security_shift' as any)
         .update({
           ttd_pimpinan_nama: payload.nama_pimpinan,
           ttd_pimpinan_user_id: userRes.user?.id,
           ttd_pimpinan_at: new Date().toISOString(),
+          ba_signature_token: token,
         })
         .eq('tanggal', payload.tanggal);
       if (error) throw error;
+      return token;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['security-shifts'] });
     },
   });
+};
+
+export const SHIFT_PERIODE_ORDER: Record<ShiftType, number> = {
+  malam: 0,
+  pagi: 1,
+  sore: 2,
 };

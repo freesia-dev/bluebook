@@ -45,6 +45,7 @@ const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTung
 const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPage"));
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
+const VerifyBAPage = lazy(() => import("./pages/security/VerifyBAPage"));
 
 // Minimal login loader (no layout needed)
 const LoginLoader = () => (
@@ -189,6 +190,10 @@ const App = () => (
             } />
             <Route path="/security/log/cetak" element={
               <Suspense fallback={<LoginLoader />}><BAHarianPrintPage /></Suspense>
+            } />
+            {/* Public BA verification (QR code target) */}
+            <Route path="/verify/ba-security/:token" element={
+              <Suspense fallback={<LoginLoader />}><VerifyBAPage /></Suspense>
             } />
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={

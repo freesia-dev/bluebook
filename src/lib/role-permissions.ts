@@ -106,7 +106,8 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
     pathname === '/about' ||
     pathname === '/panduan' ||
     pathname === '/install' ||
-    pathname === '/dashboard'
+    pathname === '/dashboard' ||
+    pathname.startsWith('/verify/')
   ) return true;
   if (pathname.startsWith('/surat-')) return p.surat;
   if (pathname.startsWith('/agenda-kredit')) return p.agendaKredit;

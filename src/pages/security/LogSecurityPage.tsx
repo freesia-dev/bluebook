@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { useSecurityShifts, SHIFT_LABEL } from '@/hooks/use-security-log';
+import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER } from '@/hooks/use-security-log';
 import { ShiftCard } from '@/components/security/ShiftCard';
 import { StartShiftDialog } from '@/components/security/StartShiftDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,9 +19,8 @@ const LogSecurityPage: React.FC = () => {
   const [startOpen, setStartOpen] = useState(false);
 
   const sorted = useMemo(() => {
-    const order: Record<string, number> = { pagi: 0, sore: 1, malam: 2 };
     return [...shifts].sort((a, b) => {
-      const o = (order[a.shift] ?? 99) - (order[b.shift] ?? 99);
+      const o = (SHIFT_PERIODE_ORDER[a.shift] ?? 99) - (SHIFT_PERIODE_ORDER[b.shift] ?? 99);
       if (o !== 0) return o;
       return a.jam_mulai.localeCompare(b.jam_mulai);
     });

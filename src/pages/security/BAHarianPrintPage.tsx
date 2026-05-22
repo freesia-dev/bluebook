@@ -1,16 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useSecurityShifts, SHIFT_LABEL, useSignBA } from '@/hooks/use-security-log';
+import { useSecurityShifts, SHIFT_LABEL, SHIFT_PERIODE_ORDER, useSignBA } from '@/hooks/use-security-log';
 import { supabase } from '@/integrations/supabase/client';
 import { KopSuratBank } from '@/components/print/KopSuratBank';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Printer, ArrowLeft, PenLine } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { QRCodeSVG } from 'qrcode.react';
 
 const BAHarianPrintPage: React.FC = () => {
   const [params] = useSearchParams();
@@ -48,18 +50,31 @@ const BAHarianPrintPage: React.FC = () => {
   }
 
   const sorted = [...shifts].sort((a, b) => {
-    const order: Record<string, number> = { pagi: 0, sore: 1, malam: 2 };
-    return (order[a.shift] ?? 9) - (order[b.shift] ?? 9);
+    const o = (SHIFT_PERIODE_ORDER[a.shift] ?? 9) - (SHIFT_PERIODE_ORDER[b.shift] ?? 9);
+    if (o !== 0) return o;
+    return a.jam_mulai.localeCompare(b.jam_mulai);
   });
+
+  const allSelesai = sorted.length > 0 && sorted.every((s) => s.status === 'selesai');
+  const signedShift = sorted.find((s) => s.ttd_pimpinan_nama);
+  const ttdName = signedShift?.ttd_pimpinan_nama;
+  const ttdAt = signedShift?.ttd_pimpinan_at;
+  const baToken = (signedShift as any)?.ba_signature_token as string | undefined;
+  const verifyUrl = baToken
+    ? `${window.location.origin}/verify/ba-security/${baToken}`
+    : null;
+
+  const statusBadge = !allSelesai
+    ? { label: 'Draft', cls: 'bg-slate-200 text-slate-700' }
+    : !ttdName
+      ? { label: 'Menunggu TTD Pimpinan', cls: 'bg-amber-100 text-amber-800 border-amber-300' }
+      : { label: 'Sah & Tervalidasi', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
 
   const tanggalStr = format(new Date(tanggal), 'dd MMMM yyyy', { locale: idLocale });
   const hariStr = format(new Date(tanggal), 'EEEE', { locale: idLocale });
   const yyyy = new Date(tanggal).getFullYear();
   const nomorBA = `${format(new Date(tanggal), 'ddMM')}/BA-SEC/KCP-TLH/${yyyy}`;
 
-  const signedShift = sorted.find((s) => s.ttd_pimpinan_nama);
-  const ttdName = signedShift?.ttd_pimpinan_nama;
-  const ttdAt = signedShift?.ttd_pimpinan_at;
 
   const handleSign = async () => {
     if (!namaPimpinan.trim()) {
@@ -81,7 +96,10 @@ const BAHarianPrintPage: React.FC = () => {
           <ArrowLeft className="w-4 h-4 mr-1" />Tutup
         </Button>
         <div className="flex items-center gap-2">
-          {permissions.canSignSecurityBA && !ttdName && (
+          <Badge variant="outline" className={`${statusBadge.cls} font-medium`}>
+            {statusBadge.label}
+          </Badge>
+          {permissions.canSignSecurityBA && !ttdName && allSelesai && (
             <div className="flex items-center gap-2">
               <Input
                 placeholder="Nama Pimpinan KCP"
@@ -90,7 +108,7 @@ const BAHarianPrintPage: React.FC = () => {
                 className="w-56 h-9"
               />
               <Button onClick={handleSign} disabled={sign.isPending} variant="secondary">
-                <PenLine className="w-4 h-4 mr-1" />Tanda Tangani BA
+                <PenLine className="w-4 h-4 mr-1" />Setujui & Tanda Tangani
               </Button>
             </div>
           )}
@@ -116,7 +134,8 @@ const BAHarianPrintPage: React.FC = () => {
         <p className="text-justify mb-4 leading-relaxed">
           Pada hari <strong>{hariStr}</strong>, tanggal <strong>{tanggalStr}</strong>, telah dilaksanakan
           pengawasan keamanan di lingkungan PT. BPD Kaltim Kaltara Kantor Cabang Pembantu Telihan oleh
-          petugas Security dalam {sorted.length} shift, dengan rincian aktivitas sebagai berikut:
+          petugas Security dalam {sorted.length} shift berurutan (Malam → Pagi → Sore), dengan rincian
+          aktivitas sebagai berikut:
         </p>
 
         {sorted.length === 0 && (
@@ -207,8 +226,20 @@ const BAHarianPrintPage: React.FC = () => {
             <p className="text-[10pt]">Bontang, {tanggalStr}</p>
             <p className="text-[10pt]">Mengetahui & Menyetujui,</p>
             <p className="text-[10pt]">Pemimpin KCP Telihan,</p>
-            <div style={{ height: '5rem' }} />
-            <p className="font-bold underline">{ttdName || '( .......................... )'}</p>
+            {ttdName && verifyUrl ? (
+              <div className="flex flex-col items-center mt-2">
+                <div className="bg-white p-2 border-2 border-[#003F7F] rounded">
+                  <QRCodeSVG value={verifyUrl} size={96} level="M" includeMargin={false} />
+                </div>
+                <p className="text-[8pt] text-slate-600 mt-1">Scan untuk verifikasi keaslian</p>
+                <p className="font-bold underline mt-1">{ttdName}</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ height: '5rem' }} />
+                <p className="font-bold underline">{ttdName || '( .......................... )'}</p>
+              </>
+            )}
             {ttdAt && (
               <p className="text-[8pt] italic text-slate-500 mt-1">
                 Ditandatangani digital pada {format(new Date(ttdAt), "dd MMM yyyy 'pukul' HH:mm", { locale: idLocale })} WITA
