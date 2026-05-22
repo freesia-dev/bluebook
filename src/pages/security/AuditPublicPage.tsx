@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Shield, Calendar, AlertCircle, Flag, CheckCircle2, FileSpreadsheet, Printer, ExternalLink } from 'lucide-react';
-import { format, eachDayOfInterval, parseISO, startOfMonth, endOfMonth, addMonths, isSameMonth, isSameDay } from 'date-fns';
+import { format, eachDayOfInterval, parseISO, startOfMonth, endOfMonth, addMonths, isSameDay } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import logoImage from '@/assets/logo_bluebook.png';
 
