@@ -75,9 +75,6 @@ const BAHarianPrintPage: React.FC = () => {
   const yyyy = new Date(tanggal).getFullYear();
   const nomorBA = `${format(new Date(tanggal), 'ddMM')}/BA-SEC/KCP-TLH/${yyyy}`;
 
-  const signedShift = sorted.find((s) => s.ttd_pimpinan_nama);
-  const ttdName = signedShift?.ttd_pimpinan_nama;
-  const ttdAt = signedShift?.ttd_pimpinan_at;
 
   const handleSign = async () => {
     if (!namaPimpinan.trim()) {
