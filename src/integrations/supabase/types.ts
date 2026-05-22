@@ -806,12 +806,97 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_token: {
+        Row: {
+          catatan: string | null
+          created_at: string
+          created_by: string | null
+          created_by_nama: string | null
+          expires_at: string
+          id: string
+          periode_dari: string
+          periode_sampai: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          expires_at: string
+          id?: string
+          periode_dari: string
+          periode_sampai: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          expires_at?: string
+          id?: string
+          periode_dari?: string
+          periode_sampai?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
+      security_log_comment: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_nama: string | null
+          entry_id: string | null
+          id: string
+          komentar: string
+          shift_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          entry_id?: string | null
+          id?: string
+          komentar: string
+          shift_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          entry_id?: string | null
+          id?: string
+          komentar?: string
+          shift_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_log_comment_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "security_log_entry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_log_comment_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "security_shift"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_log_entry: {
         Row: {
           created_at: string
           created_by: string | null
           foto_urls: Json
           id: string
+          is_insiden: boolean
           jenis: string
           kejadian: string
           shift_id: string
@@ -824,6 +909,7 @@ export type Database = {
           created_by?: string | null
           foto_urls?: Json
           id?: string
+          is_insiden?: boolean
           jenis?: string
           kejadian: string
           shift_id: string
@@ -836,6 +922,7 @@ export type Database = {
           created_by?: string | null
           foto_urls?: Json
           id?: string
+          is_insiden?: boolean
           jenis?: string
           kejadian?: string
           shift_id?: string
@@ -1254,9 +1341,20 @@ export type Database = {
     }
     Functions: {
       can_access_security_log: { Args: never; Returns: boolean }
+      can_comment_security_log: { Args: never; Returns: boolean }
       can_edit_security_log: { Args: never; Returns: boolean }
       can_sign_security_ba: { Args: never; Returns: boolean }
+      create_security_audit_token: {
+        Args: {
+          _catatan?: string
+          _dari: string
+          _expires_at: string
+          _sampai: string
+        }
+        Returns: string
+      }
       get_ba_security_nomor: { Args: { _tanggal: string }; Returns: string }
+      get_security_audit_report: { Args: { _token: string }; Returns: Json }
       get_security_users: {
         Args: never
         Returns: {
@@ -1300,6 +1398,7 @@ export type Database = {
         | "cs"
         | "security"
         | "ob"
+        | "team_leader_security"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1440,6 +1539,7 @@ export const Constants = {
         "cs",
         "security",
         "ob",
+        "team_leader_security",
       ],
     },
   },
