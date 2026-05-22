@@ -226,8 +226,20 @@ const BAHarianPrintPage: React.FC = () => {
             <p className="text-[10pt]">Bontang, {tanggalStr}</p>
             <p className="text-[10pt]">Mengetahui & Menyetujui,</p>
             <p className="text-[10pt]">Pemimpin KCP Telihan,</p>
-            <div style={{ height: '5rem' }} />
-            <p className="font-bold underline">{ttdName || '( .......................... )'}</p>
+            {ttdName && verifyUrl ? (
+              <div className="flex flex-col items-center mt-2">
+                <div className="bg-white p-2 border-2 border-[#003F7F] rounded">
+                  <QRCodeSVG value={verifyUrl} size={96} level="M" includeMargin={false} />
+                </div>
+                <p className="text-[8pt] text-slate-600 mt-1">Scan untuk verifikasi keaslian</p>
+                <p className="font-bold underline mt-1">{ttdName}</p>
+              </div>
+            ) : (
+              <>
+                <div style={{ height: '5rem' }} />
+                <p className="font-bold underline">{ttdName || '( .......................... )'}</p>
+              </>
+            )}
             {ttdAt && (
               <p className="text-[8pt] italic text-slate-500 mt-1">
                 Ditandatangani digital pada {format(new Date(ttdAt), "dd MMM yyyy 'pukul' HH:mm", { locale: idLocale })} WITA
