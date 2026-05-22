@@ -191,6 +191,10 @@ const App = () => (
             <Route path="/security/log/cetak" element={
               <Suspense fallback={<LoginLoader />}><BAHarianPrintPage /></Suspense>
             } />
+            {/* Public BA verification (QR code target) */}
+            <Route path="/verify/ba-security/:token" element={
+              <Suspense fallback={<LoginLoader />}><VerifyBAPage /></Suspense>
+            } />
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
