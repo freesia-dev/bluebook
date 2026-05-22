@@ -250,14 +250,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               />
             )}
             {permissions.securityLog && (
-              <NavItem 
-                icon={Shield} 
-                label="Log Security" 
-                href="/security/log" 
-                isActive={location.pathname.startsWith('/security')} 
-                onNavigate={onClose}
-              />
+              permissions.canManageSecurityAudit ? (
+                <NavItem 
+                  icon={Shield} 
+                  label="Log Security" 
+                  children={[
+                    { label: 'Log Harian', href: '/security/log' },
+                    { label: 'Link Audit', href: '/security/audit-links' },
+                  ]}
+                  onNavigate={onClose}
+                />
+              ) : (
+                <NavItem 
+                  icon={Shield} 
+                  label="Log Security" 
+                  href="/security/log" 
+                  isActive={location.pathname.startsWith('/security')} 
+                  onNavigate={onClose}
+                />
+              )
             )}
+
             {permissions.comingSoonOB && (
               <NavItem 
                 icon={Sparkles} 
