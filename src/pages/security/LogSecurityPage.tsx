@@ -38,6 +38,16 @@ const LogSecurityPage: React.FC = () => {
   const isSigned = sorted.some((s) => !!s.ttd_pimpinan_at);
   const signedBy = sorted.find((s) => !!s.ttd_pimpinan_nama)?.ttd_pimpinan_nama;
   const allClosed = sorted.length > 0 && sorted.every((s) => s.status === 'selesai');
+  const activeShift = sorted.find((s) => s.status === 'aktif');
+  const [blockOpen, setBlockOpen] = useState(false);
+
+  const handleStartClick = () => {
+    if (activeShift) {
+      setBlockOpen(true);
+      return;
+    }
+    setStartOpen(true);
+  };
 
   const handlePrint = () => {
     window.open(`/security/log/cetak?tanggal=${tanggal}`, '_blank');
