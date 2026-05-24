@@ -84,13 +84,13 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {canEdit && isActive && (
             <>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { setEditEntry(null); setEntryOpen(true); }}>
+              <Button size="sm" className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { setEditEntry(null); setEntryOpen(true); }}>
                 <Plus className="w-4 h-4 mr-1" />Catat Kejadian
               </Button>
-              <Button size="sm" variant="outline" className="bg-amber-500 hover:bg-amber-600 text-white border-amber-500" onClick={() => setHandoverOpen(true)}>
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-white border-amber-500" onClick={() => setHandoverOpen(true)}>
                 <ArrowRightLeft className="w-4 h-4 mr-1" />Akhiri & Serah Terima
               </Button>
             </>
@@ -98,7 +98,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
           {isAdmin && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="outline" className="bg-red-600 hover:bg-red-700 text-white border-red-600">
+                <Button size="sm" variant="outline" className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white border-red-600">
                   <Trash2 className="w-4 h-4 mr-1" />Hapus Shift
                 </Button>
               </AlertDialogTrigger>
