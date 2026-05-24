@@ -38,6 +38,16 @@ const LogSecurityPage: React.FC = () => {
   const isSigned = sorted.some((s) => !!s.ttd_pimpinan_at);
   const signedBy = sorted.find((s) => !!s.ttd_pimpinan_nama)?.ttd_pimpinan_nama;
   const allClosed = sorted.length > 0 && sorted.every((s) => s.status === 'selesai');
+  const activeShift = sorted.find((s) => s.status === 'aktif');
+  const [blockOpen, setBlockOpen] = useState(false);
+
+  const handleStartClick = () => {
+    if (activeShift) {
+      setBlockOpen(true);
+      return;
+    }
+    setStartOpen(true);
+  };
 
   const handlePrint = () => {
     window.open(`/security/log/cetak?tanggal=${tanggal}`, '_blank');
@@ -59,22 +69,22 @@ const LogSecurityPage: React.FC = () => {
         description="Catatan aktivitas pengawasan harian per shift Security KCP Telihan"
       />
 
-      <Card className="p-4 mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <Card className="p-3 sm:p-4 mb-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3">
+        <div className="w-full sm:w-auto">
           <label className="text-xs font-medium text-muted-foreground">Tanggal</label>
           <Input
             type="date"
             value={tanggal}
             onChange={(e) => setTanggal(e.target.value)}
-            className="mt-1 w-44"
+            className="mt-1 w-full sm:w-44"
           />
           <p className="text-xs text-muted-foreground mt-1">
             {format(new Date(tanggal), 'EEEE, dd MMMM yyyy', { locale: idLocale })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:items-center w-full sm:w-auto">
           {permissions.canCommentSecurityLog && (
-            <label className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-md border bg-violet-50 border-violet-200 text-violet-900 cursor-pointer">
+            <label className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-md border bg-violet-50 border-violet-200 text-violet-900 cursor-pointer">
               <input
                 type="checkbox"
                 checked={insidenOnly}
@@ -87,14 +97,14 @@ const LogSecurityPage: React.FC = () => {
 
           {permissions.canSignSecurityBA && (
             isSigned ? (
-              <Button variant="outline" disabled className="border-emerald-300 text-emerald-700 bg-emerald-50">
+              <Button variant="outline" disabled className="col-span-2 sm:col-span-1 w-full sm:w-auto border-emerald-300 text-emerald-700 bg-emerald-50">
                 <CheckCircle2 className="w-4 h-4 mr-2" />Sudah Disetujui{signedBy ? ` · ${signedBy}` : ''}
               </Button>
             ) : (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="col-span-2 sm:col-span-1 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
                     disabled={sorted.length === 0 || !allClosed || signBA.isPending}
                   >
                     <ShieldCheck className="w-4 h-4 mr-2" />
@@ -121,17 +131,34 @@ const LogSecurityPage: React.FC = () => {
             )
           )}
           {permissions.canPrintSecurityBA && (
-            <Button variant="outline" onClick={handlePrint} disabled={sorted.length === 0}>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={handlePrint} disabled={sorted.length === 0}>
               <Printer className="w-4 h-4 mr-2" />Cetak BA
             </Button>
           )}
           {permissions.canStartSecurityShift && (
-            <Button onClick={() => setStartOpen(true)}>
+            <Button className="w-full sm:w-auto" onClick={handleStartClick}>
               <Plus className="w-4 h-4 mr-2" />Mulai Shift
             </Button>
           )}
         </div>
       </Card>
+
+      <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tidak bisa memulai shift baru</AlertDialogTitle>
+            <AlertDialogDescription>
+              Masih ada shift <strong>{activeShift ? SHIFT_LABEL[activeShift.shift] : ''}</strong> oleh{' '}
+              <strong>{activeShift?.nama_petugas}</strong> yang belum melakukan serah terima.
+              Harap selesaikan <em>Akhiri & Serah Terima</em> pada shift tersebut terlebih dahulu sebelum memulai shift baru.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBlockOpen(false)}>Mengerti</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {isLoading ? (
         <Card className="p-10 text-center text-muted-foreground">Memuat...</Card>
