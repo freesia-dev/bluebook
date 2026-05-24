@@ -63,14 +63,14 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
   return (
     <Card className="overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 shrink-0 rounded-full bg-white/10 flex items-center justify-center">
             <ShieldCheck className="w-5 h-5" />
           </div>
-          <div>
-            <div className="font-semibold flex items-center gap-2">
-              {SHIFT_LABEL[shift.shift]}
+          <div className="min-w-0">
+            <div className="font-semibold flex items-center gap-2 flex-wrap">
+              <span className="truncate">{SHIFT_LABEL[shift.shift]}</span>
               {shift.is_lembur && <Badge variant="secondary" className="text-[10px]">LEMBUR</Badge>}
               {isActive ? (
                 <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white text-[10px]">AKTIF</Badge>
@@ -78,7 +78,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
                 <Badge variant="outline" className="text-[10px] border-white/30 text-white">SELESAI</Badge>
               )}
             </div>
-            <div className="text-xs text-white/70">
+            <div className="text-xs text-white/70 truncate">
               {shift.nama_petugas} · {format(new Date(shift.jam_mulai), 'HH:mm')}
               {shift.jam_selesai && ` – ${format(new Date(shift.jam_selesai), 'HH:mm')}`}
             </div>
