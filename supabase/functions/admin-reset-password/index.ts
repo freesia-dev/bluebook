@@ -107,9 +107,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Error updating password:", updateError);
+      const code = (updateError as { code?: string }).code;
+      let friendly = updateError.message;
+      if (code === "weak_password") {
+        friendly = "Password terlalu lemah atau pernah bocor di database publik. Gunakan password yang lebih kuat & unik (campuran huruf besar, kecil, angka, simbol).";
+      }
       return new Response(
-        JSON.stringify({ error: updateError.message }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        JSON.stringify({ error: friendly, code }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
