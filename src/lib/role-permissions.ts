@@ -126,6 +126,8 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
   if (
     pathname === '/' ||
     pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
     pathname === '/about' ||
     pathname === '/panduan' ||
     pathname === '/install' ||

@@ -16,6 +16,8 @@ import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SuratMasuk = lazy(() => import("./pages/SuratMasuk"));
 const SuratKeluar = lazy(() => import("./pages/SuratKeluar"));
@@ -90,6 +92,12 @@ const App = () => (
             } />
             <Route path="/login" element={
               <Suspense fallback={<LoginLoader />}><Login /></Suspense>
+            } />
+            <Route path="/forgot-password" element={
+              <Suspense fallback={<LoginLoader />}><ForgotPassword /></Suspense>
+            } />
+            <Route path="/reset-password" element={
+              <Suspense fallback={<LoginLoader />}><ResetPassword /></Suspense>
             } />
             <Route path="/dashboard" element={
               <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
