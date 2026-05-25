@@ -16,6 +16,8 @@ import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SuratMasuk = lazy(() => import("./pages/SuratMasuk"));
 const SuratKeluar = lazy(() => import("./pages/SuratKeluar"));
