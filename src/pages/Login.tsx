@@ -238,6 +238,14 @@ const Login: React.FC = () => {
                     </>
                   )}
                 </Button>
+                <div className="text-center">
+                  <a
+                    href="/forgot-password"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Lupa password?
+                  </a>
+                </div>
               </form>
             </TabsContent>
             
