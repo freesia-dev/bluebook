@@ -93,6 +93,12 @@ const App = () => (
             <Route path="/login" element={
               <Suspense fallback={<LoginLoader />}><Login /></Suspense>
             } />
+            <Route path="/forgot-password" element={
+              <Suspense fallback={<LoginLoader />}><ForgotPassword /></Suspense>
+            } />
+            <Route path="/reset-password" element={
+              <Suspense fallback={<LoginLoader />}><ResetPassword /></Suspense>
+            } />
             <Route path="/dashboard" element={
               <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
             } />
