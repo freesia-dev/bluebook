@@ -21,7 +21,10 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
 
   const [kondisi, setKondisi] = useState('');
   const [penerima, setPenerima] = useState('');
+  const [penggantiNama, setPenggantiNama] = useState('');
   const [catatan, setCatatan] = useState('');
+
+  const isPengganti = /pengganti/i.test(penerima);
 
   const submit = async () => {
     if (!kondisi.trim()) {
@@ -32,14 +35,19 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
       toast({ title: 'Nama penerima shift wajib diisi', variant: 'destructive' });
       return;
     }
+    if (isPengganti && !penggantiNama.trim()) {
+      toast({ title: 'Nama security pengganti wajib diisi', variant: 'destructive' });
+      return;
+    }
+    const finalNama = isPengganti ? `Pengganti - ${penggantiNama.trim()}` : penerima.trim();
     try {
       await handover.mutateAsync({
         shift_id: shift.id,
         kondisi_akhir: kondisi.trim(),
-        serah_terima_ke_nama: penerima.trim(),
+        serah_terima_ke_nama: finalNama,
         catatan_serah_terima: catatan.trim(),
       });
-      toast({ title: 'Shift diserahkan', description: `Kepada ${penerima}` });
+      toast({ title: 'Shift diserahkan', description: `Kepada ${finalNama}` });
       onOpenChange(false);
     } catch (err: any) {
       toast({ title: 'Gagal serah terima', description: err.message, variant: 'destructive' });
@@ -81,6 +89,19 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
               <Input value={penerima} onChange={(e) => setPenerima(e.target.value)} placeholder="Nama lengkap penerima" />
             )}
           </div>
+          {isPengganti && (
+            <div>
+              <Label>Nama Security Pengganti (Manual)</Label>
+              <Input
+                value={penggantiNama}
+                onChange={(e) => setPenggantiNama(e.target.value)}
+                placeholder="Tulis nama lengkap security pengganti"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Akan dicatat sebagai: <strong>Pengganti - {penggantiNama || '...'}</strong>
+              </p>
+            </div>
+          )}
           <div>
             <Label>Catatan Untuk Shift Berikutnya <span className="text-muted-foreground text-xs">(opsional)</span></Label>
             <Textarea

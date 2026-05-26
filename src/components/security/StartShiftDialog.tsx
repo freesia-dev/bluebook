@@ -31,10 +31,13 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const { data: secUsers = [] } = useSecurityUsers();
 
   const [nama, setNama] = useState(userName);
+  const [namaPengganti, setNamaPengganti] = useState('');
   const [shift, setShift] = useState<ShiftType>(detectShift());
   const [isLembur, setIsLembur] = useState(false);
   const [catatanAwal, setCatatanAwal] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  const isPengganti = /pengganti/i.test(nama);
 
   const previousShift = todayShifts
     .filter((s) => s.status === 'selesai')
@@ -46,11 +49,16 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
       toast({ title: 'Nama petugas wajib diisi', variant: 'destructive' });
       return;
     }
+    if (isPengganti && !namaPengganti.trim()) {
+      toast({ title: 'Nama security pengganti wajib diisi', variant: 'destructive' });
+      return;
+    }
+    const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
     try {
       await start.mutateAsync({
         tanggal,
         shift,
-        nama_petugas: nama.trim(),
+        nama_petugas: finalNama,
         is_lembur: isLembur,
         parent_shift_id: isLembur ? previousShift?.id ?? null : null,
         catatan_awal: catatanAwal.trim(),
@@ -103,6 +111,19 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
               <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Nama lengkap" />
             )}
           </div>
+          {isPengganti && (
+            <div>
+              <Label>Nama Security Pengganti (Manual)</Label>
+              <Input
+                value={namaPengganti}
+                onChange={(e) => setNamaPengganti(e.target.value)}
+                placeholder="Tulis nama lengkap security pengganti"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Akan dicatat sebagai: <strong>Pengganti - {namaPengganti || '...'}</strong>
+              </p>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Checkbox id="lembur" checked={isLembur} onCheckedChange={(c) => setIsLembur(!!c)} />
             <Label htmlFor="lembur" className="cursor-pointer text-sm">
