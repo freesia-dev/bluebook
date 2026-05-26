@@ -89,6 +89,19 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
               <Input value={penerima} onChange={(e) => setPenerima(e.target.value)} placeholder="Nama lengkap penerima" />
             )}
           </div>
+          {isPengganti && (
+            <div>
+              <Label>Nama Security Pengganti (Manual)</Label>
+              <Input
+                value={penggantiNama}
+                onChange={(e) => setPenggantiNama(e.target.value)}
+                placeholder="Tulis nama lengkap security pengganti"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Akan dicatat sebagai: <strong>Pengganti - {penggantiNama || '...'}</strong>
+              </p>
+            </div>
+          )}
           <div>
             <Label>Catatan Untuk Shift Berikutnya <span className="text-muted-foreground text-xs">(opsional)</span></Label>
             <Textarea
