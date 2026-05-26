@@ -31,10 +31,13 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const { data: secUsers = [] } = useSecurityUsers();
 
   const [nama, setNama] = useState(userName);
+  const [namaPengganti, setNamaPengganti] = useState('');
   const [shift, setShift] = useState<ShiftType>(detectShift());
   const [isLembur, setIsLembur] = useState(false);
   const [catatanAwal, setCatatanAwal] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  const isPengganti = /pengganti/i.test(nama);
 
   const previousShift = todayShifts
     .filter((s) => s.status === 'selesai')
