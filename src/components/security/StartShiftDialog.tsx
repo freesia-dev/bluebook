@@ -49,11 +49,16 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
       toast({ title: 'Nama petugas wajib diisi', variant: 'destructive' });
       return;
     }
+    if (isPengganti && !namaPengganti.trim()) {
+      toast({ title: 'Nama security pengganti wajib diisi', variant: 'destructive' });
+      return;
+    }
+    const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
     try {
       await start.mutateAsync({
         tanggal,
         shift,
-        nama_petugas: nama.trim(),
+        nama_petugas: finalNama,
         is_lembur: isLembur,
         parent_shift_id: isLembur ? previousShift?.id ?? null : null,
         catatan_awal: catatanAwal.trim(),
