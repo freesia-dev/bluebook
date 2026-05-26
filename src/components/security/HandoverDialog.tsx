@@ -21,7 +21,10 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
 
   const [kondisi, setKondisi] = useState('');
   const [penerima, setPenerima] = useState('');
+  const [penggantiNama, setPenggantiNama] = useState('');
   const [catatan, setCatatan] = useState('');
+
+  const isPengganti = /pengganti/i.test(penerima);
 
   const submit = async () => {
     if (!kondisi.trim()) {
@@ -32,14 +35,19 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
       toast({ title: 'Nama penerima shift wajib diisi', variant: 'destructive' });
       return;
     }
+    if (isPengganti && !penggantiNama.trim()) {
+      toast({ title: 'Nama security pengganti wajib diisi', variant: 'destructive' });
+      return;
+    }
+    const finalNama = isPengganti ? `Pengganti - ${penggantiNama.trim()}` : penerima.trim();
     try {
       await handover.mutateAsync({
         shift_id: shift.id,
         kondisi_akhir: kondisi.trim(),
-        serah_terima_ke_nama: penerima.trim(),
+        serah_terima_ke_nama: finalNama,
         catatan_serah_terima: catatan.trim(),
       });
-      toast({ title: 'Shift diserahkan', description: `Kepada ${penerima}` });
+      toast({ title: 'Shift diserahkan', description: `Kepada ${finalNama}` });
       onOpenChange(false);
     } catch (err: any) {
       toast({ title: 'Gagal serah terima', description: err.message, variant: 'destructive' });
