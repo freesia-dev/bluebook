@@ -111,6 +111,19 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
               <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="Nama lengkap" />
             )}
           </div>
+          {isPengganti && (
+            <div>
+              <Label>Nama Security Pengganti (Manual)</Label>
+              <Input
+                value={namaPengganti}
+                onChange={(e) => setNamaPengganti(e.target.value)}
+                placeholder="Tulis nama lengkap security pengganti"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Akan dicatat sebagai: <strong>Pengganti - {namaPengganti || '...'}</strong>
+              </p>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Checkbox id="lembur" checked={isLembur} onCheckedChange={(c) => setIsLembur(!!c)} />
             <Label htmlFor="lembur" className="cursor-pointer text-sm">
