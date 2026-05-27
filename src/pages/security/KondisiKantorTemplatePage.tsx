@@ -22,8 +22,7 @@ interface Item {
 }
 
 const KondisiKantorTemplatePage: React.FC = () => {
-  const { permissions } = useAuth();
-  const isAdmin = permissions.isAdmin;
+  const { isAdmin } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data = [], isLoading } = useQuery({
