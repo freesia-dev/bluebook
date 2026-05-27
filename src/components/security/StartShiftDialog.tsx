@@ -69,6 +69,10 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
       toast({ title: 'Nama security pengganti wajib diisi', variant: 'destructive' });
       return;
     }
+    if (!isLembur && usedShifts.has(shift)) {
+      toast({ title: 'Shift ini sudah pernah dibuat', description: 'Pilih shift lain atau aktifkan opsi Lembur.', variant: 'destructive' });
+      return;
+    }
     const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
     try {
       await start.mutateAsync({
