@@ -24,6 +24,8 @@ const detectShift = (): ShiftType => {
   return 'malam';
 };
 
+const SHIFT_ORDER: ShiftType[] = ['pagi', 'sore', 'malam'];
+
 export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShifts }) => {
   const { userName } = useAuth();
   const { toast } = useToast();
