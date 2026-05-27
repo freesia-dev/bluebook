@@ -406,6 +406,30 @@ export type Database = {
         }
         Relationships: []
       }
+      kondisi_kantor_template: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          urutan: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          urutan?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          urutan?: number
+        }
+        Relationships: []
+      }
       mlf_data: {
         Row: {
           baki: number | null
