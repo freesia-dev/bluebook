@@ -105,9 +105,13 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
               <Select value={shift} onValueChange={(v) => setShift(v as ShiftType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(SHIFT_LABEL) as ShiftType[]).map((s) => (
-                    <SelectItem key={s} value={s}>{SHIFT_LABEL[s]}</SelectItem>
-                  ))}
+                  {availableShifts.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Semua shift sudah dibuat untuk tanggal ini</div>
+                  ) : (
+                    availableShifts.map((s) => (
+                      <SelectItem key={s} value={s}>{SHIFT_LABEL[s]}</SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
