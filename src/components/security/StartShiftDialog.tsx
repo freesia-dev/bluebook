@@ -41,6 +41,20 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
 
   const isPengganti = /pengganti/i.test(nama);
 
+  // Shift yang sudah pernah dicatat (aktif maupun selesai) untuk tanggal ini — tidak boleh dibuat ulang
+  const usedShifts = new Set(
+    todayShifts.filter((s) => s.tanggal === tanggal && !s.is_lembur).map((s) => s.shift),
+  );
+  const availableShifts = SHIFT_ORDER.filter((s) => isLembur || !usedShifts.has(s));
+
+  // Auto-pindah pilihan kalau shift terpilih sudah dipakai
+  React.useEffect(() => {
+    if (!isLembur && usedShifts.has(shift) && availableShifts.length > 0) {
+      setShift(availableShifts[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tanggal, isLembur, todayShifts.length]);
+
   const previousShift = todayShifts
     .filter((s) => s.status === 'selesai')
     .sort((a, b) => (a.jam_selesai || '').localeCompare(b.jam_selesai || ''))
