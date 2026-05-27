@@ -18,6 +18,7 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
   const { toast } = useToast();
   const handover = useHandoverShift();
   const { data: secUsers = [] } = useSecurityUsers();
+  const { data: kondisiTemplates = [] } = useKondisiTemplates();
 
   const [kondisi, setKondisi] = useState('');
   const [penerima, setPenerima] = useState('');
