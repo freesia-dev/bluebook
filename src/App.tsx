@@ -48,6 +48,7 @@ const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPag
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
 const VerifyBAPage = lazy(() => import("./pages/security/VerifyBAPage"));
+const KondisiKantorTemplatePage = lazy(() => import("./pages/security/KondisiKantorTemplatePage"));
 const AuditLinksAdminPage = lazy(() => import("./pages/security/AuditLinksAdminPage"));
 const AuditPublicPage = lazy(() => import("./pages/security/AuditPublicPage"));
 
