@@ -58,15 +58,15 @@ export type ShiftStatus = 'aktif' | 'selesai';
 export type EntryJenis = 'kejadian' | 'serah_terima' | 'mulai_shift' | 'akhir_shift';
 
 export const SHIFT_LABEL: Record<ShiftType, string> = {
-  malam: 'Malam (24:00 – 08:00)',
   pagi: 'Pagi (08:00 – 16:00)',
   sore: 'Sore (16:00 – 24:00)',
+  malam: 'Malam (24:00 – 08:00, lintas hari)',
 };
 
 export const SHIFT_LABEL_SHORT: Record<ShiftType, string> = {
-  malam: 'Malam',
   pagi: 'Pagi',
   sore: 'Sore',
+  malam: 'Malam',
 };
 
 export interface SecurityShift {
