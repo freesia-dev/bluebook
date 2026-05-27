@@ -24,6 +24,8 @@ const detectShift = (): ShiftType => {
   return 'malam';
 };
 
+const SHIFT_ORDER: ShiftType[] = ['pagi', 'sore', 'malam'];
+
 export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShifts }) => {
   const { userName } = useAuth();
   const { toast } = useToast();
@@ -39,6 +41,20 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
 
   const isPengganti = /pengganti/i.test(nama);
 
+  // Shift yang sudah pernah dicatat (aktif maupun selesai) untuk tanggal ini — tidak boleh dibuat ulang
+  const usedShifts = new Set(
+    todayShifts.filter((s) => s.tanggal === tanggal && !s.is_lembur).map((s) => s.shift),
+  );
+  const availableShifts = SHIFT_ORDER.filter((s) => isLembur || !usedShifts.has(s));
+
+  // Auto-pindah pilihan kalau shift terpilih sudah dipakai
+  React.useEffect(() => {
+    if (!isLembur && usedShifts.has(shift) && availableShifts.length > 0) {
+      setShift(availableShifts[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tanggal, isLembur, todayShifts.length]);
+
   const previousShift = todayShifts
     .filter((s) => s.status === 'selesai')
     .sort((a, b) => (a.jam_selesai || '').localeCompare(b.jam_selesai || ''))
@@ -51,6 +67,10 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
     }
     if (isPengganti && !namaPengganti.trim()) {
       toast({ title: 'Nama security pengganti wajib diisi', variant: 'destructive' });
+      return;
+    }
+    if (!isLembur && usedShifts.has(shift)) {
+      toast({ title: 'Shift ini sudah pernah dibuat', description: 'Pilih shift lain atau aktifkan opsi Lembur.', variant: 'destructive' });
       return;
     }
     const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
@@ -89,9 +109,13 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
               <Select value={shift} onValueChange={(v) => setShift(v as ShiftType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(SHIFT_LABEL) as ShiftType[]).map((s) => (
-                    <SelectItem key={s} value={s}>{SHIFT_LABEL[s]}</SelectItem>
-                  ))}
+                  {availableShifts.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Semua shift sudah dibuat untuk tanggal ini</div>
+                  ) : (
+                    availableShifts.map((s) => (
+                      <SelectItem key={s} value={s}>{SHIFT_LABEL[s]}</SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -142,7 +166,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit} disabled={start.isPending}>
+          <Button onClick={submit} disabled={start.isPending || availableShifts.length === 0}>
             {start.isPending ? 'Memulai...' : 'Mulai Shift'}
           </Button>
         </DialogFooter>

@@ -58,15 +58,15 @@ export type ShiftStatus = 'aktif' | 'selesai';
 export type EntryJenis = 'kejadian' | 'serah_terima' | 'mulai_shift' | 'akhir_shift';
 
 export const SHIFT_LABEL: Record<ShiftType, string> = {
-  malam: 'Malam (24:00 – 08:00)',
   pagi: 'Pagi (08:00 – 16:00)',
   sore: 'Sore (16:00 – 24:00)',
+  malam: 'Malam (24:00 – 08:00, lintas hari)',
 };
 
 export const SHIFT_LABEL_SHORT: Record<ShiftType, string> = {
-  malam: 'Malam',
   pagi: 'Pagi',
   sore: 'Sore',
+  malam: 'Malam',
 };
 
 export interface SecurityShift {
@@ -320,7 +320,29 @@ export const useSignBA = () => {
 };
 
 export const SHIFT_PERIODE_ORDER: Record<ShiftType, number> = {
-  malam: 0,
-  pagi: 1,
-  sore: 2,
+  pagi: 0,
+  sore: 1,
+  malam: 2,
 };
+
+export interface KondisiKantorTemplate {
+  id: string;
+  label: string;
+  urutan: number;
+  is_active: boolean;
+}
+
+export const useKondisiTemplates = () =>
+  useQuery({
+    queryKey: ['kondisi-kantor-template'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<KondisiKantorTemplate[]> => {
+      const { data, error } = await supabase
+        .from('kondisi_kantor_template' as any)
+        .select('*')
+        .eq('is_active', true)
+        .order('urutan', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as KondisiKantorTemplate[];
+    },
+  });

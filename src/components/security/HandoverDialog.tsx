@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHandoverShift, SecurityShift, SHIFT_LABEL_SHORT, useSecurityUsers } from '@/hooks/use-security-log';
+import { useHandoverShift, SecurityShift, SHIFT_LABEL_SHORT, useSecurityUsers, useKondisiTemplates } from '@/hooks/use-security-log';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
@@ -18,6 +18,7 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
   const { toast } = useToast();
   const handover = useHandoverShift();
   const { data: secUsers = [] } = useSecurityUsers();
+  const { data: kondisiTemplates = [] } = useKondisiTemplates();
 
   const [kondisi, setKondisi] = useState('');
   const [penerima, setPenerima] = useState('');
@@ -67,9 +68,27 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
         <div className="space-y-4">
           <div>
             <Label>Review Kondisi Akhir Area</Label>
+            {kondisiTemplates.length > 0 && (
+              <Select
+                value=""
+                onValueChange={(v) => {
+                  if (!v) return;
+                  setKondisi((prev) => (prev.trim() ? `${prev.trim()} ${v}` : v));
+                }}
+              >
+                <SelectTrigger className="mt-1 mb-2 h-9 text-xs">
+                  <SelectValue placeholder="Pilih template (opsional) — isi tetap bisa diedit manual" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kondisiTemplates.map((t) => (
+                    <SelectItem key={t.id} value={t.label} className="text-xs">{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Textarea
               rows={3}
-              placeholder="Kondisi kantor, kunci, CCTV, dll."
+              placeholder="Kondisi kantor, kunci, CCTV, dll. (boleh pilih template lalu edit)"
               value={kondisi}
               onChange={(e) => setKondisi(e.target.value)}
             />

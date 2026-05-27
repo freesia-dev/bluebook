@@ -142,7 +142,7 @@ const BAHarianPrintPage: React.FC = () => {
         <p className="text-justify mb-4 leading-relaxed">
           Pada hari <strong>{hariStr}</strong>, tanggal <strong>{tanggalStr}</strong>, telah dilaksanakan
           pengawasan keamanan di lingkungan PT. BPD Kaltim Kaltara Kantor Cabang Pembantu Telihan oleh
-          petugas Security dalam {sorted.length} shift berurutan (Malam → Pagi → Sore), dengan rincian
+          petugas Security dalam {sorted.length} shift berurutan (Pagi → Sore → Malam), dengan rincian
           aktivitas sebagai berikut:
         </p>
 
