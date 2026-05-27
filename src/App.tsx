@@ -154,6 +154,9 @@ const App = () => (
             <Route path="/konfigurasi/sektor-ekonomi" element={
               <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="sektor-ekonomi" /></Suspense>
             } />
+            <Route path="/konfigurasi/kondisi-kantor" element={
+              <Suspense fallback={<TablePageSkeleton />}><KondisiKantorTemplatePage /></Suspense>
+            } />
             <Route path="/about" element={
               <Suspense fallback={<GenericPageSkeleton />}><About /></Suspense>
             } />
