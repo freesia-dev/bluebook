@@ -320,7 +320,29 @@ export const useSignBA = () => {
 };
 
 export const SHIFT_PERIODE_ORDER: Record<ShiftType, number> = {
-  malam: 0,
-  pagi: 1,
-  sore: 2,
+  pagi: 0,
+  sore: 1,
+  malam: 2,
 };
+
+export interface KondisiKantorTemplate {
+  id: string;
+  label: string;
+  urutan: number;
+  is_active: boolean;
+}
+
+export const useKondisiTemplates = () =>
+  useQuery({
+    queryKey: ['kondisi-kantor-template'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<KondisiKantorTemplate[]> => {
+      const { data, error } = await supabase
+        .from('kondisi_kantor_template' as any)
+        .select('*')
+        .eq('is_active', true)
+        .order('urutan', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as KondisiKantorTemplate[];
+    },
+  });
