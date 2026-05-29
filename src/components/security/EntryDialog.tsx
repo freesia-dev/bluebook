@@ -23,6 +23,23 @@ const toLocalInput = (iso: string) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
+const TemplatePicker: React.FC<{ onPick: (text: string) => void }> = ({ onPick }) => {
+  const { data: templates = [] } = useKondisiTemplates();
+  if (!templates.length) return null;
+  return (
+    <Select onValueChange={(v) => { if (v) onPick(v); }}>
+      <SelectTrigger className="h-8 text-xs mt-1">
+        <SelectValue placeholder="📋 Pilih template kondisi (opsional)" />
+      </SelectTrigger>
+      <SelectContent>
+        {templates.map((t) => (
+          <SelectItem key={t.id} value={t.label}>{t.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
+
 export const EntryDialog: React.FC<Props> = ({ open, onOpenChange, shift, entry }) => {
   const { toast } = useToast();
   const add = useAddEntry();
