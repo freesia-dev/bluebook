@@ -137,7 +137,9 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
           <div className="text-sm text-muted-foreground py-4 text-center">Memuat kejadian...</div>
         ) : entries.length === 0 ? (
           <div className="text-sm text-muted-foreground py-6 text-center italic">
-            Belum ada kejadian dicatat di shift ini.
+            {insidenOnly
+              ? 'Tidak ada kejadian yang ditandai sebagai insiden di shift ini. Klik ikon 🚩 pada kejadian untuk menandainya sebagai insiden.'
+              : 'Belum ada kejadian dicatat di shift ini.'}
           </div>
         ) : (
           <ol className="relative border-l-2 border-slate-200 ml-2 space-y-4">

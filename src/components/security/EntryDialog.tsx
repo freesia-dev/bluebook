@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SecurityMediaUpload } from './SecurityMediaUpload';
-import { useAddEntry, useUpdateEntry, SecurityLogEntry, SecurityShift } from '@/hooks/use-security-log';
+import { useAddEntry, useUpdateEntry, SecurityLogEntry, SecurityShift, useKondisiTemplates } from '@/hooks/use-security-log';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -20,6 +21,23 @@ const toLocalInput = (iso: string) => {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const TemplatePicker: React.FC<{ onPick: (text: string) => void }> = ({ onPick }) => {
+  const { data: templates = [] } = useKondisiTemplates();
+  if (!templates.length) return null;
+  return (
+    <Select onValueChange={(v) => { if (v) onPick(v); }}>
+      <SelectTrigger className="h-8 text-xs mt-1">
+        <SelectValue placeholder="📋 Pilih template kondisi (opsional)" />
+      </SelectTrigger>
+      <SelectContent>
+        {templates.map((t) => (
+          <SelectItem key={t.id} value={t.label}>{t.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 };
 
 export const EntryDialog: React.FC<Props> = ({ open, onOpenChange, shift, entry }) => {
@@ -108,11 +126,13 @@ export const EntryDialog: React.FC<Props> = ({ open, onOpenChange, shift, entry 
           </div>
           <div>
             <Label>Kejadian</Label>
+            <TemplatePicker onPick={(text) => setKejadian((prev) => (prev ? `${prev}\n${text}` : text))} />
             <Textarea
               rows={4}
               placeholder="Deskripsi kejadian, kondisi area, atau aktivitas pengawasan..."
               value={kejadian}
               onChange={(e) => setKejadian(e.target.value)}
+              className="mt-2"
             />
           </div>
           <div>
