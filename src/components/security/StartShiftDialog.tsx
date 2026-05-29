@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers } from '@/hooks/use-security-log';
+import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers, useKondisiTemplates } from '@/hooks/use-security-log';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -31,6 +31,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const { toast } = useToast();
   const start = useStartShift();
   const { data: secUsers = [] } = useSecurityUsers();
+  const { data: kondisiTemplates = [] } = useKondisiTemplates();
 
   const [nama, setNama] = useState(userName);
   const [namaPengganti, setNamaPengganti] = useState('');
@@ -38,6 +39,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const [isLembur, setIsLembur] = useState(false);
   const [catatanAwal, setCatatanAwal] = useState('');
   const [tanggal, setTanggal] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [jamMulai, setJamMulai] = useState(format(new Date(), 'HH:mm'));
 
   const isPengganti = /pengganti/i.test(nama);
 
