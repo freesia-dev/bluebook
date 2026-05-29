@@ -109,11 +109,13 @@ export const EntryDialog: React.FC<Props> = ({ open, onOpenChange, shift, entry 
           </div>
           <div>
             <Label>Kejadian</Label>
+            <TemplatePicker onPick={(text) => setKejadian((prev) => (prev ? `${prev}\n${text}` : text))} />
             <Textarea
               rows={4}
               placeholder="Deskripsi kejadian, kondisi area, atau aktivitas pengawasan..."
               value={kejadian}
               onChange={(e) => setKejadian(e.target.value)}
+              className="mt-2"
             />
           </div>
           <div>
