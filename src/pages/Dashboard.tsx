@@ -45,14 +45,23 @@ const Dashboard: React.FC = () => {
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts } = useDashboardData();
   const { isAdmin } = useAuth();
 
-  // Storage usage query (admin only) — parallelized
+  // Storage usage query (admin only) — parallelized across ALL data tables in Bluebook
   const { data: storageCounts } = useQuery({
     queryKey: ['storage-counts-dashboard'],
     queryFn: async () => {
-      const tables = ['surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan', 'pengisian_atm', 'activity_log', 'recycle_bin', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan', 'agenda_kredit_entry'] as const;
+      const tables = [
+        'surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan',
+        'pengisian_atm', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan',
+        'agenda_kredit_entry', 'call_memo_penagihan', 'debitur_kontak',
+        'mlf_data', 'mlf_uploads', 'wa_reminder_log', 'wa_template',
+        'security_shift', 'security_log_entry', 'security_log_comment', 'security_audit_token',
+        'kondisi_kantor_template', 'atm_config',
+        'jenis_kredit', 'jenis_debitur', 'jenis_penggunaan', 'sektor_ekonomi', 'kode_fasilitas',
+        'profiles', 'user_roles', 'activity_log', 'recycle_bin',
+      ] as const;
       const results = await Promise.all(
         tables.map(async (table) => {
-          const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+          const { count } = await supabase.from(table as any).select('*', { count: 'exact', head: true });
           return { table, count: count || 0 };
         })
       );
@@ -68,11 +77,14 @@ const Dashboard: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // File storage usage query (admin only) — parallelized
+  // File storage usage (admin only) — scan ALL top-level folders in documents bucket
   const { data: fileStorageData } = useQuery({
     queryKey: ['file-storage-usage'],
     queryFn: async () => {
-      const folders = ['surat-masuk', 'surat-keluar'];
+      const { data: rootEntries } = await supabase.storage.from('documents').list('', { limit: 1000 });
+      const folders = (rootEntries || []).filter((e: any) => !e.metadata).map((e: any) => e.name);
+      const rootFiles = (rootEntries || []).filter((e: any) => e.metadata?.size);
+
       const folderResults = await Promise.all(
         folders.map(async (folder) => {
           const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
@@ -89,8 +101,12 @@ const Dashboard: React.FC = () => {
           return { bytes, count };
         })
       );
-      const usedBytes = folderResults.reduce((sum, r) => sum + r.bytes, 0);
-      const fileCount = folderResults.reduce((sum, r) => sum + r.count, 0);
+      let usedBytes = folderResults.reduce((sum, r) => sum + r.bytes, 0);
+      let fileCount = folderResults.reduce((sum, r) => sum + r.count, 0);
+      for (const f of rootFiles) {
+        usedBytes += (f as any).metadata.size;
+        fileCount += 1;
+      }
       return { usedBytes, fileCount };
     },
     enabled: isAdmin,

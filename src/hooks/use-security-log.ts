@@ -148,21 +148,24 @@ export const useStartShift = () => {
       is_lembur?: boolean;
       parent_shift_id?: string | null;
       catatan_awal?: string;
+      jam_mulai?: string; // ISO timestamp override
     }) => {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
+      const insertData: any = {
+        tanggal: payload.tanggal,
+        shift: payload.shift,
+        nama_petugas: payload.nama_petugas,
+        petugas_user_id: uid,
+        is_lembur: payload.is_lembur ?? false,
+        parent_shift_id: payload.parent_shift_id ?? null,
+        created_by: uid,
+        status: 'aktif',
+      };
+      if (payload.jam_mulai) insertData.jam_mulai = payload.jam_mulai;
       const { data, error } = await supabase
         .from('security_shift' as any)
-        .insert({
-          tanggal: payload.tanggal,
-          shift: payload.shift,
-          nama_petugas: payload.nama_petugas,
-          petugas_user_id: uid,
-          is_lembur: payload.is_lembur ?? false,
-          parent_shift_id: payload.parent_shift_id ?? null,
-          created_by: uid,
-          status: 'aktif',
-        })
+        .insert(insertData)
         .select()
         .single();
       if (error) throw error;
