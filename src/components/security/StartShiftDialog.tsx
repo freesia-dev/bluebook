@@ -76,6 +76,9 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
       return;
     }
     const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
+    // Build ISO timestamp from tanggal + jamMulai (local time)
+    const [hh, mm] = (jamMulai || '00:00').split(':');
+    const jamIso = new Date(`${tanggal}T${hh.padStart(2, '0')}:${(mm || '00').padStart(2, '0')}:00`).toISOString();
     try {
       await start.mutateAsync({
         tanggal,
@@ -84,6 +87,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
         is_lembur: isLembur,
         parent_shift_id: isLembur ? previousShift?.id ?? null : null,
         catatan_awal: catatanAwal.trim(),
+        jam_mulai: jamIso,
       });
       toast({ title: 'Shift dimulai', description: `${SHIFT_LABEL[shift]} oleh ${nama}` });
       onOpenChange(false);
@@ -107,20 +111,25 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
               <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
             </div>
             <div>
-              <Label>Shift</Label>
-              <Select value={shift} onValueChange={(v) => setShift(v as ShiftType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {availableShifts.length === 0 ? (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Semua shift sudah dibuat untuk tanggal ini</div>
-                  ) : (
-                    availableShifts.map((s) => (
-                      <SelectItem key={s} value={s}>{SHIFT_LABEL[s]}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <Label>Jam Mulai</Label>
+              <Input type="time" value={jamMulai} onChange={(e) => setJamMulai(e.target.value)} />
+              <p className="text-[10px] text-muted-foreground mt-1">Sesuaikan jika input tidak realtime</p>
             </div>
+          </div>
+          <div>
+            <Label>Shift</Label>
+            <Select value={shift} onValueChange={(v) => setShift(v as ShiftType)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {availableShifts.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">Semua shift sudah dibuat untuk tanggal ini</div>
+                ) : (
+                  availableShifts.map((s) => (
+                    <SelectItem key={s} value={s}>{SHIFT_LABEL[s]}</SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Nama Petugas Security</Label>
@@ -158,6 +167,24 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
           </div>
           <div>
             <Label>Catatan Awal Shift <span className="text-muted-foreground text-xs">(opsional)</span></Label>
+            {kondisiTemplates.length > 0 && (
+              <Select
+                value=""
+                onValueChange={(v) => {
+                  if (!v) return;
+                  setCatatanAwal((prev) => (prev.trim() ? `${prev.trim()} ${v}` : v));
+                }}
+              >
+                <SelectTrigger className="mt-1 mb-2 h-9 text-xs">
+                  <SelectValue placeholder="Pilih template kondisi (opsional) — bisa diedit manual" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kondisiTemplates.map((t) => (
+                    <SelectItem key={t.id} value={t.label} className="text-xs">{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Textarea
               placeholder="Kondisi awal area, serah terima dari shift sebelumnya, dll."
               value={catatanAwal}
