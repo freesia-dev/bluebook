@@ -80,6 +80,31 @@ const UploadDataPage: React.FC = () => {
         group1: findIdx('group1', 'GROUP1'),
         group2: findIdx('group2', 'GROUP2'),
         l0usid: findIdx('L0USID'),
+        date1: findIdx('DATE1'),
+      };
+
+      const toDateISO = (v: any): string | null => {
+        if (v === null || v === undefined || v === '') return null;
+        // Excel serial number
+        if (typeof v === 'number' && isFinite(v)) {
+          const ms = Math.round((v - 25569) * 86400 * 1000);
+          const d = new Date(ms);
+          if (isNaN(d.getTime())) return null;
+          return d.toISOString().slice(0, 10);
+        }
+        const s = String(v).trim();
+        // dd/MM/yyyy or dd-MM-yyyy
+        const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+        if (m) {
+          let [_, d, mo, y] = m;
+          if (y.length === 2) y = '20' + y;
+          return `${y.padStart(4,'0')}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        }
+        // yyyy-MM-dd
+        const m2 = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+        if (m2) return `${m2[1]}-${m2[2].padStart(2,'0')}-${m2[3].padStart(2,'0')}`;
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
       };
 
       // Create upload row
@@ -120,6 +145,7 @@ const UploadDataPage: React.FC = () => {
         group1: toStr(at(row, idx.group1)),
         group2: toStr(at(row, idx.group2)),
         l0usid: toStr(at(row, idx.l0usid)),
+        date1: toDateISO(at(row, idx.date1)),
       }));
 
       // Batch insert
