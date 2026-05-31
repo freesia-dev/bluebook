@@ -256,20 +256,41 @@ const ExportPDFPage: React.FC = () => {
       });
       y = (doc as any).lastAutoTable.finalY + 8;
 
-      // ===== AO breakdown =====
+      // ===== Loan Akan Lunas (3 bulan ke depan) =====
+      const akan = computeAkanLunas(rows, uploadInfo.jobdate);
       if (y > H - 60) { doc.addPage(); y = 20; }
-      y = drawSectionTitle('Ringkasan per AO / Petugas', y);
-      autoTable(doc, {
-        startY: y,
-        head: [['AO', 'Jml Debitur', 'Outstanding', 'Tunggakan Berjalan']],
-        body: stats.aoData.map((a) => [a.ao, fmtNum(a.count), fmtIDR(a.baki), fmtIDR(a.tunggakan)]),
-        theme: 'striped',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [15, 27, 61], textColor: 255 },
-        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
-        margin: { left: M, right: M },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
+      const akanTotalBaki = akan.items.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+      y = drawSectionTitle(
+        `Loan Akan Lunas — ${format(akan.start, 'MMM yyyy', { locale: idLocale })} s/d ${format(akan.end, 'MMM yyyy', { locale: idLocale })} (${fmtNum(akan.items.length)} debitur • ${fmtIDR(akanTotalBaki)})`,
+        y
+      );
+      if (akan.items.length === 0) {
+        doc.setFontSize(9);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Tidak ada loan yang akan lunas pada rentang ini (atau kolom DATE1 belum ada pada data MLF).', M, y + 4);
+        y += 10;
+      } else {
+        autoTable(doc, {
+          startY: y,
+          head: [['Jatuh Tempo', 'No Rekening', 'Nama Debitur', 'Produk', 'KOL', 'Outstanding', 'AO']],
+          body: akan.items.map((d: any) => [
+            format(d._due, 'dd/MM/yyyy'),
+            d.l0lnno || '-',
+            d.l0name || '-',
+            (d.lytitl || '-').slice(0, 28),
+            d.kol == null ? '-' : kolDisplay(d.kol),
+            fmtIDR(Number(d.baki) || 0),
+            d.l0usid || '-',
+          ]),
+          theme: 'grid',
+          styles: { fontSize: 7.5, cellPadding: 1.8 },
+          headStyles: { fillColor: [15, 27, 61], textColor: 255, fontStyle: 'bold' },
+          columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 22 }, 4: { halign: 'center', cellWidth: 10 }, 5: { halign: 'right' }, 6: { cellWidth: 22 } },
+          margin: { left: M, right: M },
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+
 
       // ===== Top debitur =====
       doc.addPage();
