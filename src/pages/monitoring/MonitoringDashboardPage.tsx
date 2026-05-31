@@ -118,6 +118,31 @@ const MonitoringDashboardPage: React.FC = () => {
   }, [rows, allRows]);
 
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
+
+  const akanLunas = useMemo(() => {
+    if (!selectedUploadInfo) return { items: [], total: 0, baki: 0, rangeLabel: '' };
+    const job = new Date(selectedUploadInfo.jobdate);
+    const yStart = job.getFullYear();
+    const mStart = job.getMonth();
+    let endY = yStart, endM = mStart;
+    if (lunasRange === '3bulan') {
+      const e = new Date(yStart, mStart + 3, 0);
+      endY = e.getFullYear(); endM = e.getMonth();
+    }
+    const start = new Date(yStart, mStart, 1);
+    const end = new Date(endY, endM + 1, 0); // last day of endM
+    const items = rows
+      .filter((r) => r.date1)
+      .map((r) => ({ ...r, _due: new Date(r.date1 as string) }))
+      .filter((r) => r._due >= start && r._due <= end)
+      .sort((a, b) => a._due.getTime() - b._due.getTime());
+    const baki = items.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+    const rangeLabel = lunasRange === 'bulan'
+      ? format(start, 'MMMM yyyy', { locale: idLocale })
+      : `${format(start, 'MMM yyyy', { locale: idLocale })} – ${format(end, 'MMM yyyy', { locale: idLocale })}`;
+    return { items, total: items.length, baki, rangeLabel };
+  }, [rows, selectedUploadInfo, lunasRange]);
+
   const nplLevel = stats.nplRatio < 2 ? 'good' : stats.nplRatio < 5 ? 'warn' : 'bad';
   const nplColor = nplLevel === 'good' ? 'from-emerald-500 to-teal-600' : nplLevel === 'warn' ? 'from-amber-500 to-orange-600' : 'from-rose-500 to-red-600';
 
