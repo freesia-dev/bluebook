@@ -307,6 +307,82 @@ const MonitoringDashboardPage: React.FC = () => {
             </Card>
           </div>
 
+          {/* Loan akan lunas */}
+          <Card className="mb-6 border-border/60">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <CalendarClock className="w-4 h-4 text-primary" />
+                <CardTitle className="text-base">Loan Akan Lunas</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={lunasRange} onValueChange={(v: any) => setLunasRange(v)}>
+                  <SelectTrigger className="w-[220px] h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bulan">Bulan data ({akanLunas.rangeLabel || '—'})</SelectItem>
+                    <SelectItem value="3bulan">3 bulan ke depan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 px-2 sm:px-0">
+                <div className="rounded-lg border border-border/60 p-3 bg-muted/30">
+                  <p className="text-[10px] uppercase text-muted-foreground">Periode</p>
+                  <p className="text-sm font-semibold mt-1">{akanLunas.rangeLabel || '—'}</p>
+                </div>
+                <div className="rounded-lg border border-border/60 p-3 bg-muted/30">
+                  <p className="text-[10px] uppercase text-muted-foreground">Jumlah Debitur</p>
+                  <p className="text-sm font-semibold mt-1">{fmtNum(akanLunas.total)}</p>
+                </div>
+                <div className="rounded-lg border border-border/60 p-3 bg-muted/30 col-span-2 sm:col-span-1">
+                  <p className="text-[10px] uppercase text-muted-foreground">Total Outstanding</p>
+                  <p className="text-sm font-semibold mt-1">{fmtIDR(akanLunas.baki)}</p>
+                </div>
+              </div>
+              <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Jatuh Tempo</TableHead>
+                    <TableHead>No Rekening</TableHead>
+                    <TableHead>Nama Debitur</TableHead>
+                    <TableHead>Produk</TableHead>
+                    <TableHead className="text-center">KOL</TableHead>
+                    <TableHead className="text-right">Outstanding</TableHead>
+                    <TableHead>AO</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {akanLunas.items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                        Tidak ada loan yang akan lunas pada periode ini.
+                      </TableCell>
+                    </TableRow>
+                  ) : akanLunas.items.map((d) => (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-medium">{format(d._due, 'dd MMM yyyy', { locale: idLocale })}</TableCell>
+                      <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
+                      <TableCell className="font-medium">{d.l0name}</TableCell>
+                      <TableCell className="text-xs">{d.lytitl}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
+                          {kolDisplay(d.kol)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
+                      <TableCell className="text-xs">{d.l0usid}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {akanLunas.items.length === 0 && rows.some(r => !r.date1) && (
+                <p className="text-[11px] text-muted-foreground mt-3 px-2">
+                  Pastikan kolom <strong>DATE1</strong> ada pada file MLF saat upload. Upload ulang data agar tanggal jatuh tempo tersimpan.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* AO breakdown */}
           {stats.aoData.length > 0 && (
             <Card className="mb-6">
