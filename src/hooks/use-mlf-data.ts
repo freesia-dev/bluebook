@@ -29,6 +29,7 @@ export interface MLFRow {
   group1: string | null;
   group2: string | null;
   l0usid: string | null;
+  date1: string | null;
 }
 
 export const useMLFUploads = () => {
