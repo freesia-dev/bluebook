@@ -145,6 +145,7 @@ const UploadDataPage: React.FC = () => {
         group1: toStr(at(row, idx.group1)),
         group2: toStr(at(row, idx.group2)),
         l0usid: toStr(at(row, idx.l0usid)),
+        date1: toDateISO(at(row, idx.date1)),
       }));
 
       // Batch insert
