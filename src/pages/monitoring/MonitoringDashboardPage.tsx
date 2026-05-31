@@ -19,6 +19,7 @@ const MonitoringDashboardPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [includeEkstrakom, setIncludeEkstrakom] = useState(false);
+  const [lunasRange, setLunasRange] = useState<'bulan' | '3bulan'>('bulan');
 
   useEffect(() => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
