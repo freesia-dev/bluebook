@@ -78,6 +78,26 @@ const computeStats = (rows: MLFRow[]) => {
   return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, nplRatio, nplCountRatio, nplBaseBaki, nplBaseCount, tunggakanRatio, prodData, aoData, topDebitur };
 };
 
+const computeAkanLunas = (rows: MLFRow[], jobdate: string) => {
+  const job = new Date(jobdate);
+  const start = new Date(job.getFullYear(), job.getMonth(), 1);
+  const e = new Date(job.getFullYear(), job.getMonth() + 3, 0);
+  const end = new Date(e.getFullYear(), e.getMonth() + 1, 0);
+  const items = rows
+    .filter((r) => r.date1)
+    .map((r) => ({ ...r, _due: new Date(r.date1 as string) }))
+    .filter((r) => r._due >= start && r._due <= end)
+    .sort((a, b) => a._due.getTime() - b._due.getTime());
+  return { items, start, end };
+
+  const topDebitur = [...rows]
+    .map((r) => ({ ...r, tunggakan: (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0) }))
+    .filter((r) => r.tunggakan > 0)
+    .sort((a, b) => b.tunggakan - a.tunggakan);
+
+  return { totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg, kolData, nplCount, nplBaki, nplRatio, nplCountRatio, nplBaseBaki, nplBaseCount, tunggakanRatio, prodData, aoData, topDebitur };
+};
+
 const ExportPDFPage: React.FC = () => {
   const { toast } = useToast();
   const { data: uploads = [] } = useMLFUploads();
