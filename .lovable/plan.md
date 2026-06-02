@@ -1,135 +1,104 @@
 
-# Kalkulator Loan & Simulasi Angsuran (Revisi)
+# Asuransi Al-Amin + Manual Nominal + Jenis Kelamin + PDF Cantik
 
-## Alur
+## 1. Field "Jenis Kelamin" di Data Calon Debitur
+- Radio `Laki-laki` / `Perempuan`. Wajib.
+- Disimpan ke `loan_simulation.jenis_kelamin` (`L`/`P`).
+- Tampil di PDF & Excel di bagian data debitur.
 
-```text
-[Konfigurasi Produk + Usia Pensiun]
-            │ (admin)
-            ▼
-[Form Kalkulator] ─► [Auto-hitung pensiun, DSR, angsuran]
-            │
-            ▼
-[Ringkasan + Tabel Angsuran] ─► [Simpan / Excel / PDF tanpa kop]
-            │
-            ▼
-[Riwayat Simulasi]
-```
+## 2. Asuransi: dropdown provider
 
-## Field Input Kalkulator
+Refactor field asuransi jadi 2 mode pilihan **Provider Asuransi**:
 
-**Data Calon Debitur**
-- Nomor KTP (16 digit)
-- Nama calon debitur
-- Tanggal lahir → otomatis hitung umur
-- Pekerjaan, Instansi
-- Pilihan Karir: PNS Fungsional / PNS Struktural / PPPK Penuh Waktu / PPPK Paruh Waktu / Pensiunan
-- **Waktu pensiun (auto):** umur pensiun (dari konfigurasi per karir) − umur sekarang → tampil "Sisa X tahun Y bulan" + tanggal pensiun.
+**a. Manual** (default)
+- Input satu angka: **Nominal Premi (Rp)** dengan currency formatter.
+- Helper text: "Diambil dari quotation web pihak ketiga".
+- Nilai ini langsung masuk `potongan.asuransi`.
 
-**Data Pinjaman**
-- Produk kredit (dropdown — auto-isi rate default)
-- Plafon pengajuan
-- Jangka waktu (bulan) — **warning kuning** jika melebihi sisa bulan ke pensiun, tapi tetap bisa lanjut
-- Gaji bersih per bulan
-- Rate bunga (dropdown dari preset produk + opsi "Manual")
-- Asuransi (dropdown preset + manual)
-- Provisi % (dropdown preset + manual)
-- ☐ Ada pelunasan? → jika dicentang, muncul input "Pelunasan di bulan ke-?" → hitung sisa pokok + bunga berjalan
-- Nama AO
+**b. Al-Amin (AT TA'MIN UM)**
+- Auto-compute dari Excel logic:
+  - Umur = `ROUND((TglAkad − TglLahir)/365.25)`
+  - Tarif = lookup matriks `alamin_tarif(umur, tenor_bulan)`
+  - **Premi Gross = Tarif × Plafon / 1.000** (min Rp 5.000) → ini yang masuk potongan
+  - Ujroh Gross = 10% × Premi Gross
+  - Pajak = 2% × Ujroh Gross
+  - Ujroh Net = Ujroh Gross − Pajak (feebase bank)
+  - Premi Net = Premi Gross − Ujroh Net (bank → Al-Amin)
+- Readonly card menampilkan: tarif per 1.000 UP, premi gross, ujroh net, premi net, pajak.
+- Badge underwriting (Non Medis / Medis A-E / Tolak) dari tabel rule + tooltip detail.
 
-**Helper otomatis:**
-- **Max plafon by DSR** — input DSR target (default 40%), tombol "Hitung Max Plafon" → reverse-calc dari gaji × DSR / angsuran per juta.
-- **Indikator DSR** real-time: angsuran/gaji → badge hijau (≤40%), kuning (40–50%), merah (>50%).
+Catatan: lookup tarif tidak butuh jenis kelamin (sesuai Excel), tapi jenis kelamin tetap dicatat sebagai data debitur.
 
-## Konfigurasi (Admin)
+## 3. Database
 
-**1. Produk Kredit Kalkulator** (`loan_product_config`)
-- Nama produk, skema (anuitas/efektif/sliding), max tenor
-- **Rate preset (jsonb)**: array `[{label: "Bunga 10%", value: 10}, ...]` untuk bunga, asuransi, provisi
-- Biaya tetap: notaris, perikatan, blokir angsuran (0/1/2)
+**Migrasi baru:**
+- Tambah kolom di `loan_simulation`:
+  - `jenis_kelamin text` (`L`/`P`, nullable)
+  - `asuransi_provider text` default `manual` (`manual` | `alamin`)
+  - `asuransi_nominal bigint` default 0 (premi nominal yang dipakai)
+- Tambah kolom di `loan_product_config`:
+  - `asuransi_provider_default text` default `manual`
+- Tabel baru:
+  - `alamin_tarif (umur int, tenor_bulan int, rate numeric)` PK komposit
+  - `alamin_underwriting_rule (id, umur_min, umur_max, plafon_min, plafon_max, kategori, x_plus_n_max, tenor_max_bulan, urutan)`
+  - `alamin_config (id, ujroh_pct=10, pajak_pct=2, premi_min=5000, x_plus_n_default=70)` — singleton
+- Grants standar: SELECT `authenticated`, write admin via RLS; GRANT ALL ke `service_role`.
+- Seed: matriks tarif (~25rb baris) dan 24 rule underwriting di-embed di body migrasi.
 
-**2. Aturan Usia Pensiun** (`pension_rule`)
-- Pilihan karir → usia pensiun (int)
-- Default seed: Fungsional 60, Struktural 58, PPPK Penuh Waktu 58, PPPK Paruh Waktu 58, Pensiunan 75. Admin bebas ubah.
+## 4. Calculation engine
+- `src/lib/alamin-calc.ts`: `calcUmur`, `lookupTarif`, `calcAlamin`, `cekUnderwriting`.
+- `src/lib/loan-calc.ts` → `calcPotongan` ganti `asuransiPct` → terima `asuransiNominal` langsung (cleaner). Caller hitung nominal sebelum panggil.
+- Hook `useAlamin()` (React Query, cache 1 jam, tarif dinormalisasi jadi `Map<umur, Map<tenor, rate>>`).
 
-## Output
+## 5. UI KalkulatorPage
+- Tambah radio Jenis Kelamin di card Data Calon Debitur.
+- Refactor section Asuransi: dropdown Provider → render Manual input ATAU Al-Amin readonly breakdown + badge underwriting.
+- Ringkasan: baris "Asuransi" pakai nominal aktual (manual atau premi gross Al-Amin). Untuk Al-Amin tambahkan sub-baris "Ujroh Net · Premi Net" sebagai info.
 
-**Ringkasan:**
-- Nama, KTP, Karir, Pensiun (tanggal & sisa bulan)
-- Plafon · Tenor · Skema · Bunga · Asuransi · Provisi
-- Angsuran/bulan · Total angsuran · Total bunga
-- Potongan di muka (asuransi + provisi + notaris + perikatan + blokir) · Dana diterima
-- DSR badge · Pelunasan di bulan ke-N (jika dicentang)
+## 6. PDF Print — redesign cantik & lengkap
 
-**Tabel Angsuran:** No | Bulan | Tanggal | Pokok | Bunga | Angsuran | Saldo Pokok
+Pakai **jsPDF + autotable** tetap, tapi tata ulang:
 
-**Export:** Excel (.xlsx) + PDF biasa tanpa kop. Header PDF: nama debitur, AO, tanggal cetak.
+**a. Kop surat Bankaltimtara** di atas (gambar logo + teks header — port dari `KopSuratBank.tsx` jadi versi PDF: logo dari import asset → `addImage`, lalu teks alamat). Garis aksen biru + oranye.
 
-## Akses
-- **Kalkulator:** semua role login kecuali `security`, `ob`, `teller`, `cs`.
-- **Konfigurasi produk & usia pensiun:** admin only.
-- Demo user: bisa simulasi, tidak bisa simpan.
+**b. Judul** "SIMULASI ANGSURAN KREDIT" + nomor simulasi ringkas + tanggal cetak.
 
-## Bagian Teknis
+**c. Section 1 — Data Calon Debitur** (2 kolom):
+Nama, KTP, Tanggal Lahir, **Jenis Kelamin**, Pekerjaan, Instansi, Pilihan Karir, Tanggal Pensiun, Sisa Masa Kerja, Nama AO.
 
-**Migrasi DB (3 tabel + 1 enum):**
+**d. Section 2 — Parameter Pinjaman** (2 kolom):
+Produk, Skema, Plafon, Tenor, Tanggal Akad, Bunga p.a., Gaji, DSR, Provider Asuransi.
 
-```sql
--- enum
-CREATE TYPE loan_skema AS ENUM ('anuitas','efektif','sliding');
+**e. Section 3 — Rincian Biaya / Potongan di Muka** (tabel head biru):
+| Komponen | Dasar | Nilai |
+- Asuransi — (Manual: "Input nominal" / Al-Amin: "Tarif X per 1.000 × Plafon, umur Y, tenor Z bln") — Rp
+- Provisi — "X% × Plafon" — Rp
+- Biaya Notaris — — Rp
+- Biaya Perikatan — — Rp
+- Blokir Angsuran — "N × Angsuran Pertama" — Rp
+- **TOTAL POTONGAN** — — Rp (bold)
+- **DANA DITERIMA** — Plafon − Total — Rp (highlighted)
 
--- 1. Produk
-CREATE TABLE loan_product_config (
-  id uuid PK,
-  nama text, skema loan_skema, max_tenor_bulan int,
-  bunga_options jsonb,        -- [{label,value}]
-  asuransi_options jsonb,
-  provisi_options jsonb,
-  biaya_notaris bigint, biaya_perikatan bigint,
-  blokir_angsuran int default 0,
-  is_active bool, urutan int,
-  created_at, updated_at
-);
+**f. Section 4 — Khusus Al-Amin** (kalau provider = alamin):
+breakdown Premi Gross / Ujroh Gross / Pajak / Ujroh Net / Premi Net + badge underwriting.
 
--- 2. Aturan pensiun
-CREATE TABLE pension_rule (
-  id uuid PK,
-  pilihan_karir text UNIQUE,
-  usia_pensiun int
-);
+**g. Section 5 — Ringkasan Angsuran:**
+Angsuran Pertama, Angsuran Terakhir, Total Angsuran, Total Bunga, DSR %.
 
--- 3. Simulasi
-CREATE TABLE loan_simulation (
-  id uuid PK,
-  -- debitur
-  nomor_ktp text, nama_debitur text, tanggal_lahir date,
-  pekerjaan text, instansi text, pilihan_karir text,
-  -- pinjaman
-  product_id uuid FK, plafon bigint, tenor_bulan int,
-  gaji bigint, bunga_pa numeric, asuransi_pct numeric, provisi_pct numeric,
-  ada_pelunasan bool, pelunasan_bulan_ke int,
-  nama_ao text,
-  -- hasil cache
-  hasil_ringkasan jsonb, tabel_angsuran jsonb,
-  created_by uuid, created_at
-);
-```
-RLS: read authenticated, insert/update non-demo & bukan role security/ob/teller/cs, delete admin/owner. Konfigurasi tabel: write admin only. GRANT lengkap di tiap migrasi.
+**h. Section 6 — Skenario Pelunasan Dipercepat** (kalau `adaPelunasan`):
+Bulan ke-N, Sisa Pokok, Bunga Berjalan, **Total Pelunasan** (highlighted), serta penghematan vs total sisa angsuran normal.
 
-**Frontend:**
-- `src/lib/loan-calc.ts` — `calcAnuitas`, `calcEfektif`, `calcSliding`, `calcPensiun(tglLahir, usiaPensiun)`, `calcMaxPlafonByDSR(gaji, dsr, ...)`.
-- `src/lib/validation/loan.ts` — schema zod (KTP 16 digit, plafon > 0, dst).
-- `src/hooks/use-loan-calc.ts` — React Query untuk products, pension rules, simulations.
-- `src/pages/kalkulator/KalkulatorPage.tsx` — form + ringkasan + tabel + export.
-- `src/pages/kalkulator/RiwayatPage.tsx` — list simulasi tersimpan.
-- `src/pages/konfigurasi/ProdukKalkulatorPage.tsx` — CRUD produk + preset rate.
-- `src/pages/konfigurasi/UsiaPensiunPage.tsx` — CRUD aturan pensiun.
-- Route baru di `App.tsx`, menu di `Sidebar.tsx`, permission di `role-permissions.ts`.
+**i. Section 7 — Tabel Angsuran lengkap** (zebra rows, font 7, header biru, page-break otomatis).
+
+**j. Footer tiap halaman**: nomor halaman + "Dicetak oleh {nama AO/user} · {timestamp}" + watermark "SIMULASI - bukan dokumen perjanjian" tipis di tengah halaman.
+
+**k. Palet warna PDF**: header `#003F7F` (biru BPD), aksen `#F58220` (oranye BPD), zebra `#F1F5F9`. Konsisten dengan kop surat.
 
 ## Tidak termasuk
-- OCR KTP otomatis (KTP manual input).
-- Generate PDF dengan kop bank.
-- Integrasi ke modul Nomor Loan / PK.
-- Halaman public untuk calon debitur.
+- Bulk peserta multi-row.
+- Cover note polis Al-Amin.
+- Provider asuransi lain (Jiwasraya dsb).
+- BMI sheet.
 
-Klik Implement Plan kalau setuju — aku langsung bikin migrasi DB-nya dulu (3 tabel + seed produk awal + seed aturan pensiun), baru lanjut halaman & form.
+## Konfirmasi sebelum jalan
+Matriks tarif Al-Amin ~25rb baris akan **di-embed langsung di SQL migrasi** (self-contained, ~2-3 MB file SQL). OK?
