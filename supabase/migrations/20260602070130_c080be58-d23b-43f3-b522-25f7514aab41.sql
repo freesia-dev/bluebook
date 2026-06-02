@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public._seed_alamin_tarif(jsonb);
