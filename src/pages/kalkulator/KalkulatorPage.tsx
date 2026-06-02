@@ -1189,7 +1189,7 @@ const KalkulatorPage: React.FC = () => {
                         <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
                         <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
                         <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
-                        <span>Premi Net (bank -> Al-Amin)</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
+                        <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
                       </div>
                       {alamin.cappedToMin && (
                         <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>

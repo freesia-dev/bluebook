@@ -123,6 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     ...(permissions.loanCalc
       ? [
           { label: 'Kalkulator Loan', href: '/kalkulator' },
+          { label: 'Kalkulator Produktif', href: '/kalkulator/produktif' },
           { label: 'Riwayat Simulasi', href: '/kalkulator/riwayat' },
         ]
       : []),
