@@ -113,7 +113,9 @@ const Dashboard: React.FC = () => {
       return { usedBytes, fileCount };
     },
     enabled: isAdmin,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60,
   });
 
   const maxRows = 100000;
