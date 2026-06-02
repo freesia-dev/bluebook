@@ -63,7 +63,21 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
     .sort((a, b) => (a.jam_selesai || '').localeCompare(b.jam_selesai || ''))
     .pop();
 
-  const submit = async () => {
+  // ===== RULE: cannot start a shift on a new day if the previous day's
+  // pagi/sore/malam are not ALL completed. Empty prev day = allow (e.g. first day).
+  const prevDateStr = format(subDays(parseISO(tanggal), 1), 'yyyy-MM-dd');
+  const { data: prevDayShifts = [] } = useSecurityShifts(prevDateStr);
+  const prevDayBlocker = React.useMemo(() => {
+    const real = prevDayShifts.filter((s) => !s.is_lembur);
+    if (real.length === 0) return null; // no prior day data, allow
+    const missing = SHIFT_ORDER.filter((s) => !real.some((r) => r.shift === s));
+    const belumSelesai = real.filter((s) => s.status !== 'selesai').map((s) => SHIFT_LABEL[s.shift]);
+    if (missing.length === 0 && belumSelesai.length === 0) return null;
+    return {
+      missing: missing.map((s) => SHIFT_LABEL[s]),
+      belumSelesai,
+    };
+  }, [prevDayShifts]);
     if (!nama.trim()) {
       toast({ title: 'Nama petugas wajib diisi', variant: 'destructive' });
       return;
