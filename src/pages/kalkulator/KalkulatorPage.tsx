@@ -947,8 +947,138 @@ const KalkulatorPage: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* PROGRAM CERDAS */}
+          {cerdasConfig && (
+            <Card className={cerdasOn ? 'border-amber-400 bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10' : ''}>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Program CERDAS
+                    <Badge variant="outline" className="text-[10px] font-normal">
+                      {new Date(cerdasConfig.periode_mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} — {new Date(cerdasConfig.periode_selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Badge>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="cerdas-switch" className="text-sm font-normal cursor-pointer">
+                      Ikut Promo
+                    </Label>
+                    <Switch
+                      id="cerdas-switch"
+                      checked={cerdasOn}
+                      onCheckedChange={(v) => setCerdasOn(v && isCerdasActive(cerdasConfig, tanggalAkad))}
+                      disabled={!isCerdasActive(cerdasConfig, tanggalAkad)}
+                    />
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!isCerdasActive(cerdasConfig, tanggalAkad) && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Tanggal akad di luar periode promo CERDAS.
+                  </p>
+                )}
+                {cerdasOn && (
+                  <>
+                    <RadioGroup
+                      value={cerdasSkema}
+                      onValueChange={(v) => setCerdasSkema(v as CerdasSkema)}
+                      className="grid grid-cols-1 md:grid-cols-3 gap-3"
+                    >
+                      {(['debitur_baru', 'take_over', 'top_up'] as CerdasSkema[]).map((sk) => {
+                        const bunga = getCerdasBunga(sk, cerdasConfig);
+                        const active = cerdasSkema === sk;
+                        const isTopUp = sk === 'top_up';
+                        return (
+                          <label
+                            key={sk}
+                            htmlFor={`cerdas-${sk}`}
+                            className={`cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                              active
+                                ? isTopUp
+                                  ? 'border-amber-500 bg-amber-100/60 dark:bg-amber-900/30'
+                                  : 'border-primary bg-primary/5'
+                                : 'border-border hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <RadioGroupItem value={sk} id={`cerdas-${sk}`} className="mt-1" />
+                              <div className="flex-1">
+                                <div className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
+                                  {CERDAS_SKEMA_LABEL[sk]}
+                                </div>
+                                <div className={`text-2xl font-bold mt-1 ${isTopUp ? 'text-amber-700 dark:text-amber-400' : 'text-primary'}`}>
+                                  {isTopUp ? `${cerdasConfig.diskon_provisi_top_up_pct}%` : `${bunga.toFixed(2).replace('.', ',')}%`}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {isTopUp
+                                    ? `Diskon provisi · Bunga ${bunga}% p.a.`
+                                    : 'p.a. fixed · Gratis AJK'}
+                                </div>
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </RadioGroup>
+
+                    {cerdasResult && (
+                      <div
+                        className={`rounded-lg p-3 text-sm border ${
+                          cerdasResult.status === 'gratis'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
+                            : cerdasResult.status === 'selisih'
+                            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800'
+                            : 'bg-muted/40 border-border'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {cerdasResult.status === 'gratis' ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : cerdasResult.status === 'selisih' ? (
+                            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <Sparkles className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 space-y-1">
+                            <div className="font-medium">{cerdasResult.pesan}</div>
+                            {cerdasResult.tier && (
+                              <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
+                                <span>{cerdasResult.tier.label}</span>
+                                <span className="text-right">Cap: <strong>{fmtRp(cerdasResult.capSubsidi)}</strong></span>
+                                <span>Premi aktual</span>
+                                <span className="text-right">{fmtRp(cerdasResult.premiAsuransiAktual)}</span>
+                                <span>Subsidi bank</span>
+                                <span className="text-right text-emerald-700 dark:text-emerald-400 font-medium">
+                                  − {fmtRp(cerdasResult.subsidiBank)}
+                                </span>
+                                <span className="font-semibold">Beban debitur</span>
+                                <span className={`text-right font-bold ${cerdasResult.selisihDebitur === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                  {cerdasResult.selisihDebitur === 0 ? 'GRATIS' : fmtRp(cerdasResult.selisihDebitur)}
+                                </span>
+                              </div>
+                            )}
+                            {cerdasResult.skema === 'top_up' && (
+                              <div className="text-xs text-muted-foreground pt-1">
+                                Provisi awal {provisiInput}% → <strong>{cerdasResult.provisiFinalPct.toFixed(2)}%</strong> setelah diskon {cerdasResult.diskonProvisiPct}%.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Catatan: pelunasan dipercepat/top up ≤ 1 tahun wajib mengganti premi AJK yang telah disubsidi bank.
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* ASURANSI */}
           <Card>
+
             <CardHeader>
               <CardTitle className="text-base">Asuransi</CardTitle>
             </CardHeader>
