@@ -1639,6 +1639,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _seed_alamin_tarif: { Args: { payload: Json }; Returns: number }
       can_access_security_log: { Args: never; Returns: boolean }
       can_comment_security_log: { Args: never; Returns: boolean }
       can_edit_security_log: { Args: never; Returns: boolean }
