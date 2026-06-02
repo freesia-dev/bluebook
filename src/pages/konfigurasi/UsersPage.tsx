@@ -27,7 +27,7 @@ import { ROLE_LABELS, AppRole } from '@/lib/role-permissions';
 
 const ROLE_OPTIONS: AppRole[] = [
   'user', 'admin', 'demo', 'meranti', 'officer_rk', 'officer_kredit',
-  'staff_admin_kcp', 'pemimpin', 'teller', 'cs', 'security', 'ob',
+  'staff_admin_kcp', 'pemimpin', 'teller', 'cs', 'security', 'team_leader_security', 'ob',
 ];
 
 const UsersPage: React.FC = () => {
