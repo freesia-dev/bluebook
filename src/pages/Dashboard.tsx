@@ -132,20 +132,39 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    // Set up realtime subscriptions for live updates
-    const channel = supabase
-      .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'surat_masuk' }, () => refetchAll())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'surat_keluar' }, () => refetchAll())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sppk' }, () => refetchAll())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pk' }, () => refetchAll())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'kkmpak' }, () => refetchAll())
-      .subscribe();
+    // Realtime: any change in core public tables triggers refetch of stats AND
+    // the admin storage/db usage cards so the gauges are always up-to-date.
+    const invalidateUsage = () => {
+      refetchAll();
+      queryClient.invalidateQueries({ queryKey: ['storage-counts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['file-storage-usage'] });
+    };
+    const tablesToWatch = [
+      'surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan',
+      'pengisian_atm', 'penyelesaian_selisih', 'kartu_tertelan',
+      'agenda_kredit_entry', 'call_memo_penagihan', 'debitur_kontak',
+      'mlf_data', 'mlf_uploads',
+      'security_shift', 'security_log_entry', 'security_log_comment',
+      'activity_log', 'recycle_bin',
+    ];
+    let channel = supabase.channel('dashboard-changes');
+    tablesToWatch.forEach((t) => {
+      channel = channel.on('postgres_changes' as any, { event: '*', schema: 'public', table: t }, invalidateUsage);
+    });
+    channel.subscribe();
+
+    // Also refetch storage gauges when the tab regains focus
+    const onFocus = () => {
+      queryClient.invalidateQueries({ queryKey: ['storage-counts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['file-storage-usage'] });
+    };
+    window.addEventListener('focus', onFocus);
 
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('focus', onFocus);
     };
-  }, [refetchAll]);
+  }, [refetchAll, queryClient]);
 
   // Memoize computed values
   const totalAgendaKredit = useMemo(() => counts.sppk + counts.pk + counts.kkmpak, [counts]);
