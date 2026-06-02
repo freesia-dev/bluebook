@@ -75,7 +75,9 @@ const Dashboard: React.FC = () => {
       return { counts, total };
     },
     enabled: isAdmin,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60,
   });
 
   // File storage usage (admin only) — scan ALL top-level folders in documents bucket
