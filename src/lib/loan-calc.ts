@@ -113,11 +113,11 @@ export function calcAmortization(input: CalcInput): CalcResult {
   };
 }
 
-// Potongan di muka
+// Potongan di muka. `asuransiNominal` adalah nominal premi (Rp) yang sudah dihitung
+// di luar (manual input atau hasil Al-Amin), bukan persen.
 export interface PotonganInput {
   plafon: number;
-  tenorBulan: number;
-  asuransiPct: number; // % dari plafon × tahun
+  asuransiNominal: number;
   provisiPct: number; // % dari plafon
   biayaNotaris: number;
   biayaPerikatan: number;
@@ -136,8 +136,7 @@ export interface PotonganResult {
 }
 
 export function calcPotongan(p: PotonganInput): PotonganResult {
-  const tahun = p.tenorBulan / 12;
-  const asuransi = round((p.asuransiPct / 100) * p.plafon * tahun);
+  const asuransi = Math.max(0, Math.round(p.asuransiNominal || 0));
   const provisi = round((p.provisiPct / 100) * p.plafon);
   const notaris = p.biayaNotaris || 0;
   const perikatan = p.biayaPerikatan || 0;
