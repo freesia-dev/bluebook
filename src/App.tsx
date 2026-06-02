@@ -55,6 +55,7 @@ const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
 const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
+const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPage"));
 
 
 // Minimal login loader (no layout needed)
