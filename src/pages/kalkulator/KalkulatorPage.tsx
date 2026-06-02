@@ -92,7 +92,8 @@ const KalkulatorPage: React.FC = () => {
   const [perikatanStr, setPerikatanStr] = useState('');
   const [blokir, setBlokir] = useState('0');
   const [adaPelunasan, setAdaPelunasan] = useState(false);
-  const [pelunasanBulan, setPelunasanBulan] = useState('12');
+  const [outstandingPokok, setOutstandingPokok] = useState('');
+  const [outstandingBunga, setOutstandingBunga] = useState('');
   const [dsrTarget, setDsrTarget] = useState('40');
 
   // CERDAS promo
