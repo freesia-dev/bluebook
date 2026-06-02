@@ -312,7 +312,7 @@ const KalkulatorPage: React.FC = () => {
         ['Ujroh Gross', alamin.ujrohGross],
         ['Pajak Ujroh', alamin.pajak],
         ['Ujroh Net (feebase bank)', alamin.ujrohNet],
-        ['Premi Net (bank → Al-Amin)', alamin.premiNet],
+        ['Premi Net (bank -> Al-Amin)', alamin.premiNet],
       );
       if (underwriting) {
         ringkasan.push(['Underwriting', `${underwriting.kode} — ${underwriting.keterangan}`]);
@@ -570,7 +570,7 @@ const KalkulatorPage: React.FC = () => {
           ['Ujroh Gross (10% × Premi Gross)', fmtRp(alamin.ujrohGross)],
           ['Pajak Ujroh (2% × Ujroh Gross)', fmtRp(alamin.pajak)],
           ['Ujroh Net (feebase bank)', fmtRp(alamin.ujrohNet)],
-          ['Premi Net (bank → Al-Amin)', fmtRp(alamin.premiNet)],
+          ['Premi Net (bank -> Al-Amin)', fmtRp(alamin.premiNet)],
           [
             { content: `Underwriting: ${underwriting?.kode ?? '-'}`, styles: { fontStyle: 'bold' } },
             { content: underwriting?.keterangan ?? '-', styles: { textColor: uwColor, fontStyle: 'bold' } },
@@ -596,7 +596,7 @@ const KalkulatorPage: React.FC = () => {
         ['Bunga Promo', `${cerdasResult.bungaFinal}% p.a. fixed`],
       ];
       if (cerdasResult.skema === 'top_up') {
-        cerdasBody.push(['Diskon Provisi', `${cerdasResult.diskonProvisiPct}% (${(parseFloat(provisi) || 0).toFixed(2)}% → ${cerdasResult.provisiFinalPct.toFixed(2)}%)`]);
+        cerdasBody.push(['Diskon Provisi', `${cerdasResult.diskonProvisiPct}% (${(parseFloat(provisi) || 0).toFixed(2)}% -> ${cerdasResult.provisiFinalPct.toFixed(2)}%)`]);
       } else if (cerdasResult.tier) {
         cerdasBody.push(
           ['Tier Plafon', cerdasResult.tier.label],
@@ -1189,7 +1189,7 @@ const KalkulatorPage: React.FC = () => {
                         <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
                         <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
                         <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
-                        <span>Premi Net (bank → Al-Amin)</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
+                        <span>Premi Net (bank -> Al-Amin)</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
                       </div>
                       {alamin.cappedToMin && (
                         <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
