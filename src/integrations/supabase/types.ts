@@ -104,6 +104,90 @@ export type Database = {
         }
         Relationships: []
       }
+      alamin_config: {
+        Row: {
+          id: number
+          pajak_pct: number
+          premi_min: number
+          ujroh_pct: number
+          updated_at: string
+          x_plus_n_default: number
+        }
+        Insert: {
+          id?: number
+          pajak_pct?: number
+          premi_min?: number
+          ujroh_pct?: number
+          updated_at?: string
+          x_plus_n_default?: number
+        }
+        Update: {
+          id?: number
+          pajak_pct?: number
+          premi_min?: number
+          ujroh_pct?: number
+          updated_at?: string
+          x_plus_n_default?: number
+        }
+        Relationships: []
+      }
+      alamin_tarif: {
+        Row: {
+          rate: number
+          tenor_bulan: number
+          umur: number
+        }
+        Insert: {
+          rate: number
+          tenor_bulan: number
+          umur: number
+        }
+        Update: {
+          rate?: number
+          tenor_bulan?: number
+          umur?: number
+        }
+        Relationships: []
+      }
+      alamin_underwriting_rule: {
+        Row: {
+          id: string
+          keterangan: string
+          kode: string
+          plafon_max: number
+          plafon_min: number
+          tenor_max_bulan: number | null
+          umur_max: number
+          umur_min: number
+          urutan: number
+          x_plus_n: number
+        }
+        Insert: {
+          id?: string
+          keterangan: string
+          kode: string
+          plafon_max: number
+          plafon_min: number
+          tenor_max_bulan?: number | null
+          umur_max: number
+          umur_min: number
+          urutan?: number
+          x_plus_n?: number
+        }
+        Update: {
+          id?: string
+          keterangan?: string
+          kode?: string
+          plafon_max?: number
+          plafon_min?: number
+          tenor_max_bulan?: number | null
+          umur_max?: number
+          umur_min?: number
+          urutan?: number
+          x_plus_n?: number
+        }
+        Relationships: []
+      }
       atm_config: {
         Row: {
           created_at: string
@@ -433,6 +517,7 @@ export type Database = {
       loan_product_config: {
         Row: {
           asuransi_options: Json
+          asuransi_provider_default: string
           biaya_notaris: number
           biaya_perikatan: number
           blokir_angsuran: number
@@ -449,6 +534,7 @@ export type Database = {
         }
         Insert: {
           asuransi_options?: Json
+          asuransi_provider_default?: string
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
@@ -465,6 +551,7 @@ export type Database = {
         }
         Update: {
           asuransi_options?: Json
+          asuransi_provider_default?: string
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
@@ -484,7 +571,9 @@ export type Database = {
       loan_simulation: {
         Row: {
           ada_pelunasan: boolean
+          asuransi_nominal: number
           asuransi_pct: number
+          asuransi_provider: string
           biaya_notaris: number
           biaya_perikatan: number
           blokir_angsuran: number
@@ -496,6 +585,7 @@ export type Database = {
           hasil_ringkasan: Json | null
           id: string
           instansi: string | null
+          jenis_kelamin: string | null
           nama_ao: string | null
           nama_debitur: string
           nomor_ktp: string | null
@@ -515,7 +605,9 @@ export type Database = {
         }
         Insert: {
           ada_pelunasan?: boolean
+          asuransi_nominal?: number
           asuransi_pct?: number
+          asuransi_provider?: string
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
@@ -527,6 +619,7 @@ export type Database = {
           hasil_ringkasan?: Json | null
           id?: string
           instansi?: string | null
+          jenis_kelamin?: string | null
           nama_ao?: string | null
           nama_debitur: string
           nomor_ktp?: string | null
@@ -546,7 +639,9 @@ export type Database = {
         }
         Update: {
           ada_pelunasan?: boolean
+          asuransi_nominal?: number
           asuransi_pct?: number
+          asuransi_provider?: string
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
@@ -558,6 +653,7 @@ export type Database = {
           hasil_ringkasan?: Json | null
           id?: string
           instansi?: string | null
+          jenis_kelamin?: string | null
           nama_ao?: string | null
           nama_debitur?: string
           nomor_ktp?: string | null
