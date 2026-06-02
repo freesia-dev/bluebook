@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -28,12 +28,17 @@ import {
   fmtNumber,
   type LoanSkema,
 } from '@/lib/loan-calc';
+import { calcAlamin, calcUmur, cekUnderwriting, type AlaminResult, type UWResult } from '@/lib/alamin-calc';
+import { useAlaminConfig, useAlaminTarif, useAlaminUWRules } from '@/hooks/use-alamin';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
-import { Save, Download, FileText, Calculator, AlertTriangle, History } from 'lucide-react';
+import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '@/contexts/AuthContext';
+import logoBpd from '@/assets/logo-bankaltimtara.png';
+
+type AsuransiProvider = 'manual' | 'alamin';
 
 const KalkulatorPage: React.FC = () => {
   const { toast } = useToast();
@@ -41,12 +46,16 @@ const KalkulatorPage: React.FC = () => {
   const { canEdit } = useAuth();
   const { data: products = [] } = useLoanProducts(true);
   const { data: pensionRules = [] } = usePensionRules();
+  const { data: alaminTarif } = useAlaminTarif();
+  const { data: alaminRules = [] } = useAlaminUWRules();
+  const { data: alaminConfig } = useAlaminConfig();
   const save = useSaveLoanSimulation();
 
   // Debitur
   const [nomorKtp, setNomorKtp] = useState('');
   const [namaDebitur, setNamaDebitur] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
+  const [jenisKelamin, setJenisKelamin] = useState<'L' | 'P' | ''>('');
   const [pekerjaan, setPekerjaan] = useState('');
   const [instansi, setInstansi] = useState('');
   const [pilihanKarir, setPilihanKarir] = useState('');
@@ -60,8 +69,11 @@ const KalkulatorPage: React.FC = () => {
   const [gajiStr, setGajiStr] = useState('');
   const [bunga, setBunga] = useState('');
   const [bungaMode, setBungaMode] = useState<'preset' | 'manual'>('preset');
-  const [asuransi, setAsuransi] = useState('0');
-  const [asuransiMode, setAsuransiMode] = useState<'preset' | 'manual'>('preset');
+
+  // Asuransi
+  const [asuransiProvider, setAsuransiProvider] = useState<AsuransiProvider>('manual');
+  const [asuransiNominalStr, setAsuransiNominalStr] = useState('');
+
   const [provisi, setProvisi] = useState('0');
   const [provisiMode, setProvisiMode] = useState<'preset' | 'manual'>('preset');
   const [notarisStr, setNotarisStr] = useState('');
@@ -73,18 +85,18 @@ const KalkulatorPage: React.FC = () => {
 
   const selectedProduct = products.find((p) => p.id === productId);
 
-  // Auto-apply defaults when product changes
   useEffect(() => {
     if (!selectedProduct) return;
     setBungaMode('preset');
-    setAsuransiMode('preset');
     setProvisiMode('preset');
     setBunga(selectedProduct.bunga_options[0]?.value?.toString() ?? '');
-    setAsuransi(selectedProduct.asuransi_options[0]?.value?.toString() ?? '0');
     setProvisi(selectedProduct.provisi_options[0]?.value?.toString() ?? '0');
     setNotarisStr(selectedProduct.biaya_notaris ? formatCurrencyInput(String(selectedProduct.biaya_notaris)) : '');
     setPerikatanStr(selectedProduct.biaya_perikatan ? formatCurrencyInput(String(selectedProduct.biaya_perikatan)) : '');
     setBlokir(String(selectedProduct.blokir_angsuran ?? 0));
+    if (selectedProduct.asuransi_provider_default === 'alamin') {
+      setAsuransiProvider('alamin');
+    }
   }, [productId]); // eslint-disable-line
 
   const plafon = parseCurrencyValue(plafonStr);
@@ -93,7 +105,6 @@ const KalkulatorPage: React.FC = () => {
   const perikatan = parseCurrencyValue(perikatanStr);
   const tenorBulan = parseInt(tenor) || 0;
   const bungaPa = parseFloat(bunga) || 0;
-  const asuransiPct = parseFloat(asuransi) || 0;
   const provisiPct = parseFloat(provisi) || 0;
   const blokirN = parseInt(blokir) || 0;
   const skema: LoanSkema = selectedProduct?.skema ?? 'anuitas';
@@ -107,6 +118,28 @@ const KalkulatorPage: React.FC = () => {
 
   const tenorMelebihiPensiun = pensiunInfo && tenorBulan > pensiunInfo.sisaBulanTotal;
 
+  // Al-Amin computation
+  const umur = useMemo(
+    () => (tanggalLahir && tanggalAkad ? calcUmur(tanggalLahir, tanggalAkad) : 0),
+    [tanggalLahir, tanggalAkad]
+  );
+
+  const alamin: AlaminResult | null = useMemo(() => {
+    if (asuransiProvider !== 'alamin') return null;
+    if (!alaminTarif || !alaminConfig || plafon <= 0 || tenorBulan <= 0 || umur <= 0) return null;
+    return calcAlamin({ plafon, umur, tenorBulan, tarif: alaminTarif, config: alaminConfig });
+  }, [asuransiProvider, alaminTarif, alaminConfig, plafon, tenorBulan, umur]);
+
+  const underwriting: UWResult | null = useMemo(() => {
+    if (asuransiProvider !== 'alamin' || !alaminRules.length || umur <= 0 || plafon <= 0) return null;
+    return cekUnderwriting(umur, plafon, tenorBulan, alaminRules, alaminConfig?.x_plus_n_default);
+  }, [asuransiProvider, alaminRules, umur, plafon, tenorBulan, alaminConfig]);
+
+  const asuransiNominal =
+    asuransiProvider === 'alamin'
+      ? alamin?.premiGross ?? 0
+      : parseCurrencyValue(asuransiNominalStr);
+
   // Calculation
   const result = useMemo(() => {
     if (plafon <= 0 || tenorBulan <= 0) return null;
@@ -117,15 +150,14 @@ const KalkulatorPage: React.FC = () => {
     if (!result) return null;
     return calcPotongan({
       plafon,
-      tenorBulan,
-      asuransiPct,
+      asuransiNominal,
       provisiPct,
       biayaNotaris: notaris,
       biayaPerikatan: perikatan,
       blokirAngsuran: blokirN,
       angsuranPertama: result.summary.angsuranPertama,
     });
-  }, [result, plafon, tenorBulan, asuransiPct, provisiPct, notaris, perikatan, blokirN]);
+  }, [result, plafon, asuransiNominal, provisiPct, notaris, perikatan, blokirN]);
 
   const pelunasan = useMemo(() => {
     if (!result || !adaPelunasan) return null;
@@ -162,6 +194,7 @@ const KalkulatorPage: React.FC = () => {
         nomor_ktp: nomorKtp || null,
         nama_debitur: namaDebitur,
         tanggal_lahir: tanggalLahir || null,
+        jenis_kelamin: jenisKelamin || null,
         pekerjaan: pekerjaan || null,
         instansi: instansi || null,
         pilihan_karir: pilihanKarir || null,
@@ -173,7 +206,9 @@ const KalkulatorPage: React.FC = () => {
         tanggal_akad: tanggalAkad || null,
         gaji,
         bunga_pa: bungaPa,
-        asuransi_pct: asuransiPct,
+        asuransi_provider: asuransiProvider,
+        asuransi_nominal: asuransiNominal,
+        asuransi_pct: 0,
         provisi_pct: provisiPct,
         biaya_notaris: notaris,
         biaya_perikatan: perikatan,
@@ -191,12 +226,14 @@ const KalkulatorPage: React.FC = () => {
   };
 
   const handleExportExcel = () => {
-    if (!result) return;
+    if (!result || !potongan) return;
     const wb = XLSX.utils.book_new();
-    const ringkasan = [
+    const ringkasan: any[][] = [
       ['Nama Debitur', namaDebitur],
       ['Nomor KTP', nomorKtp],
+      ['Jenis Kelamin', jenisKelamin === 'L' ? 'Laki-laki' : jenisKelamin === 'P' ? 'Perempuan' : '-'],
       ['Tanggal Lahir', tanggalLahir],
+      ['Umur', umur ? `${umur} tahun` : '-'],
       ['Pekerjaan / Instansi', `${pekerjaan} / ${instansi}`],
       ['Pilihan Karir', pilihanKarir],
       ['Tanggal Pensiun', pensiunInfo?.tanggalPensiun || '-'],
@@ -206,21 +243,47 @@ const KalkulatorPage: React.FC = () => {
       ['Skema', skema],
       ['Plafon', plafon],
       ['Tenor (bulan)', tenorBulan],
+      ['Tanggal Akad', tanggalAkad],
       ['Bunga p.a.', `${bungaPa}%`],
-      ['Asuransi', `${asuransiPct}% × ${tenorBulan / 12} thn`],
+      ['Provider Asuransi', asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Manual (input nominal)'],
+      ['Asuransi (Rp)', potongan.asuransi],
       ['Provisi', `${provisiPct}%`],
       ['Notaris', notaris],
       ['Perikatan', perikatan],
-      ['Blokir Angsuran', blokirN],
+      ['Blokir Angsuran', `${blokirN}× angsuran pertama`],
       [],
       ['Angsuran Pertama', result.summary.angsuranPertama],
       ['Angsuran Terakhir', result.summary.angsuranTerakhir],
       ['Total Angsuran', result.summary.totalAngsuran],
       ['Total Bunga', result.summary.totalBunga],
-      ['Total Potongan di Muka', potongan?.total ?? 0],
-      ['Dana Diterima', potongan?.danaDiterima ?? 0],
+      ['Total Potongan di Muka', potongan.total],
+      ['Dana Diterima', potongan.danaDiterima],
       ['Nama AO', namaAo],
     ];
+    if (alamin) {
+      ringkasan.push(
+        [],
+        ['— Al-Amin Detail —'],
+        [`Tarif per Rp 1.000 UP (umur ${umur}, tenor ${tenorBulan} bln)`, alamin.rate],
+        ['Premi Gross', alamin.premiGross],
+        ['Ujroh Gross', alamin.ujrohGross],
+        ['Pajak Ujroh', alamin.pajak],
+        ['Ujroh Net (feebase bank)', alamin.ujrohNet],
+        ['Premi Net (bank → Al-Amin)', alamin.premiNet],
+      );
+      if (underwriting) {
+        ringkasan.push(['Underwriting', `${underwriting.kode} — ${underwriting.keterangan}`]);
+      }
+    }
+    if (pelunasan) {
+      ringkasan.push(
+        [],
+        [`— Pelunasan Bulan ke-${pelunasan.bulanKe} —`],
+        ['Sisa Pokok', pelunasan.sisaPokok],
+        ['Bunga Berjalan', pelunasan.bungaBerjalan],
+        ['Total Pelunasan', pelunasan.totalPelunasan],
+      );
+    }
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), 'Ringkasan');
 
     const ang = result.rows.map((r) => ({
@@ -235,68 +298,330 @@ const KalkulatorPage: React.FC = () => {
     XLSX.writeFile(wb, `Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.xlsx`);
   };
 
-  const handleExportPdf = () => {
+  // =========================
+  // PDF EXPORT — redesigned
+  // =========================
+  const handleExportPdf = async () => {
     if (!result || !potongan) return;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    doc.setFontSize(14);
-    doc.text('SIMULASI ANGSURAN KREDIT', 105, 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 105, 21, { align: 'center' });
 
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 14;
+    const BRAND_BLUE: [number, number, number] = [0, 63, 127];
+    const BRAND_ORANGE: [number, number, number] = [245, 130, 32];
+    const ZEBRA: [number, number, number] = [241, 245, 249];
+    const TEXT_DARK: [number, number, number] = [30, 41, 59];
+
+    // ---------- KOP SURAT ----------
+    try {
+      // load logo as data URL
+      const logoData = await fetch(logoBpd).then((r) => r.blob()).then(
+        (b) =>
+          new Promise<string>((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result as string);
+            r.readAsDataURL(b);
+          })
+      );
+      doc.addImage(logoData, 'PNG', M, M, 18, 18);
+    } catch {}
+
+    doc.setTextColor(...BRAND_BLUE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', M + 22, M + 5);
+    doc.setFontSize(10.5);
+    doc.text('Kantor Cabang Pembantu Telihan', M + 22, M + 10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(
+      'Jl. Letjend S. Parman No. 14-15, Bontang 75383  ·  Telp. 0548-26567',
+      M + 22,
+      M + 14.5
+    );
+    doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', M + 22, M + 18);
+
+    // brand accent lines
+    doc.setFillColor(...BRAND_BLUE);
+    doc.rect(M, M + 21, pageW - 2 * M, 1.2, 'F');
+    doc.setFillColor(...BRAND_ORANGE);
+    doc.rect(M, M + 22.4, pageW - 2 * M, 0.5, 'F');
+
+    // ---------- TITLE ----------
+    let y = M + 30;
+    doc.setTextColor(...BRAND_BLUE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('SIMULASI ANGSURAN KREDIT', pageW / 2, y, { align: 'center' });
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(
+      `Dicetak: ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}`,
+      pageW / 2,
+      y,
+      { align: 'center' }
+    );
+
+    // ---------- SECTION 1: Data Debitur + Parameter Pinjaman (2 col side by side) ----------
+    y += 4;
     autoTable(doc, {
-      startY: 28,
+      startY: y,
       theme: 'plain',
-      styles: { fontSize: 9, cellPadding: 1 },
+      styles: { fontSize: 8.5, cellPadding: 1.2, textColor: TEXT_DARK },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 32 },
+        1: { cellWidth: 3 },
+        2: { cellWidth: 50 },
+        3: { fontStyle: 'bold', cellWidth: 32 },
+        4: { cellWidth: 3 },
+        5: { cellWidth: 50 },
+      },
+      head: [
+        [
+          { content: 'DATA CALON DEBITUR', colSpan: 3, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold', fontSize: 9 } },
+          { content: 'PARAMETER PINJAMAN', colSpan: 3, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold', fontSize: 9 } },
+        ],
+      ],
       body: [
-        ['Nama Debitur', ':', namaDebitur, 'Produk', ':', selectedProduct?.nama || ''],
-        ['Nomor KTP', ':', nomorKtp, 'Skema', ':', skema.toUpperCase()],
-        ['Pekerjaan', ':', pekerjaan, 'Plafon', ':', fmtRp(plafon)],
-        ['Instansi', ':', instansi, 'Tenor', ':', `${tenorBulan} bulan`],
-        ['Pilihan Karir', ':', pilihanKarir, 'Bunga p.a.', ':', `${bungaPa}%`],
+        ['Nama', ':', namaDebitur || '-', 'Produk', ':', selectedProduct?.nama || '-'],
+        ['Nomor KTP', ':', nomorKtp || '-', 'Skema', ':', skema.toUpperCase()],
+        [
+          'Jenis Kelamin',
+          ':',
+          jenisKelamin === 'L' ? 'Laki-laki' : jenisKelamin === 'P' ? 'Perempuan' : '-',
+          'Plafon',
+          ':',
+          fmtRp(plafon),
+        ],
+        [
+          'Tanggal Lahir',
+          ':',
+          tanggalLahir ? new Date(tanggalLahir).toLocaleDateString('id-ID') : '-',
+          'Tenor',
+          ':',
+          `${tenorBulan} bulan`,
+        ],
+        [
+          'Umur',
+          ':',
+          umur ? `${umur} tahun` : '-',
+          'Tanggal Akad',
+          ':',
+          tanggalAkad ? new Date(tanggalAkad).toLocaleDateString('id-ID') : '-',
+        ],
+        ['Pekerjaan', ':', pekerjaan || '-', 'Bunga p.a.', ':', `${bungaPa}%`],
+        ['Instansi', ':', instansi || '-', 'Gaji Bersih', ':', fmtRp(gaji)],
+        [
+          'Pilihan Karir',
+          ':',
+          pilihanKarir || '-',
+          'DSR',
+          ':',
+          gaji > 0 ? `${dsrPct.toFixed(1)}%` : '-',
+        ],
         [
           'Tanggal Pensiun',
           ':',
-          pensiunInfo?.tanggalPensiun || '-',
-          'Asuransi / Provisi',
+          pensiunInfo ? new Date(pensiunInfo.tanggalPensiun).toLocaleDateString('id-ID') : '-',
+          'Provider Asuransi',
           ':',
-          `${asuransiPct}% / ${provisiPct}%`,
+          asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Manual',
         ],
-        ['Nama AO', ':', namaAo, 'Dana Diterima', ':', fmtRp(potongan.danaDiterima)],
+        [
+          'Sisa Masa Kerja',
+          ':',
+          pensiunInfo ? `${pensiunInfo.sisaTahun} thn ${pensiunInfo.sisaBulan} bln` : '-',
+          'Nama AO',
+          ':',
+          namaAo || '-',
+        ],
       ],
+      margin: { left: M, right: M },
     });
 
+    // ---------- SECTION 2: Rincian Biaya / Potongan ----------
+    let yy = (doc as any).lastAutoTable.finalY + 4;
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 4,
-      head: [['Ringkasan', 'Nilai']],
+      startY: yy,
+      head: [['Komponen Potongan di Muka', 'Dasar Perhitungan', 'Nilai (Rp)']],
+      body: [
+        [
+          'Asuransi',
+          asuransiProvider === 'alamin' && alamin
+            ? `Al-Amin: Tarif ${alamin.rate.toFixed(2)}/1.000 × Plafon (umur ${umur}, ${tenorBulan} bln)`
+            : 'Manual (input nominal premi)',
+          fmtNumber(potongan.asuransi),
+        ],
+        ['Provisi', `${provisiPct}% × Plafon`, fmtNumber(potongan.provisi)],
+        ['Biaya Notaris', '—', fmtNumber(potongan.notaris)],
+        ['Biaya Perikatan', '—', fmtNumber(potongan.perikatan)],
+        [
+          'Blokir Angsuran',
+          blokirN > 0 ? `${blokirN} × Angsuran Pertama` : '—',
+          fmtNumber(potongan.blokir),
+        ],
+        [
+          { content: 'TOTAL POTONGAN', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: ZEBRA } },
+          { content: fmtNumber(potongan.total), styles: { fontStyle: 'bold', fillColor: ZEBRA } },
+        ],
+        [
+          { content: 'DANA DITERIMA DEBITUR', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: BRAND_ORANGE, textColor: 255 } },
+          { content: fmtNumber(potongan.danaDiterima), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
+        ],
+      ],
+      styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 38, halign: 'right' },
+      },
+      margin: { left: M, right: M },
+    });
+
+    // ---------- SECTION 3: Detail Al-Amin (only if alamin) ----------
+    if (alamin) {
+      yy = (doc as any).lastAutoTable.finalY + 4;
+      const uwColor: [number, number, number] =
+        underwriting?.status === 'aman'
+          ? [22, 163, 74]
+          : underwriting?.status === 'medis'
+          ? [217, 119, 6]
+          : [220, 38, 38];
+      autoTable(doc, {
+        startY: yy,
+        head: [[{ content: "DETAIL PREMI AL-AMIN (AT TA'MIN UM)", colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
+        body: [
+          ['Premi Gross (yang masuk potongan)', fmtRp(alamin.premiGross)],
+          ['Ujroh Gross (10% × Premi Gross)', fmtRp(alamin.ujrohGross)],
+          ['Pajak Ujroh (2% × Ujroh Gross)', fmtRp(alamin.pajak)],
+          ['Ujroh Net (feebase bank)', fmtRp(alamin.ujrohNet)],
+          ['Premi Net (bank → Al-Amin)', fmtRp(alamin.premiNet)],
+          [
+            { content: `Underwriting: ${underwriting?.kode ?? '-'}`, styles: { fontStyle: 'bold' } },
+            { content: underwriting?.keterangan ?? '-', styles: { textColor: uwColor, fontStyle: 'bold' } },
+          ],
+        ],
+        styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+        columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { halign: 'right' } },
+        margin: { left: M, right: M },
+      });
+    }
+
+    // ---------- SECTION 4: Ringkasan Angsuran ----------
+    yy = (doc as any).lastAutoTable.finalY + 4;
+    autoTable(doc, {
+      startY: yy,
+      head: [['Ringkasan Angsuran', 'Nilai']],
       body: [
         ['Angsuran Pertama', fmtRp(result.summary.angsuranPertama)],
         ['Angsuran Terakhir', fmtRp(result.summary.angsuranTerakhir)],
-        ['Total Angsuran', fmtRp(result.summary.totalAngsuran)],
+        ['Total Angsuran (selama tenor)', fmtRp(result.summary.totalAngsuran)],
         ['Total Bunga', fmtRp(result.summary.totalBunga)],
-        ['Total Potongan di Muka', fmtRp(potongan.total)],
-        ['Dana Diterima', fmtRp(potongan.danaDiterima)],
       ],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [30, 58, 138] },
+      styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { halign: 'right' } },
+      margin: { left: M, right: M },
     });
 
+    // ---------- SECTION 5: Pelunasan dipercepat ----------
+    if (pelunasan) {
+      yy = (doc as any).lastAutoTable.finalY + 4;
+      const sisaAngsuranNormal = result.rows
+        .slice(pelunasan.bulanKe - 1)
+        .reduce((s, r) => s + r.angsuran, 0);
+      const penghematan = Math.max(0, sisaAngsuranNormal - pelunasan.totalPelunasan);
+      autoTable(doc, {
+        startY: yy,
+        head: [[{ content: `SKENARIO PELUNASAN DIPERCEPAT — Bulan ke-${pelunasan.bulanKe}`, colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
+        body: [
+          ['Sisa Pokok', fmtRp(pelunasan.sisaPokok)],
+          ['Bunga Berjalan', fmtRp(pelunasan.bungaBerjalan)],
+          [
+            { content: 'TOTAL PELUNASAN', styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
+            { content: fmtRp(pelunasan.totalPelunasan), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
+          ],
+          ['Sisa Angsuran (jika tidak dilunasi)', fmtRp(sisaAngsuranNormal)],
+          [
+            { content: 'Penghematan vs jalan normal', styles: { fontStyle: 'bold' } },
+            { content: fmtRp(penghematan), styles: { fontStyle: 'bold', halign: 'right', textColor: [22, 163, 74] } },
+          ],
+        ],
+        styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+        columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { halign: 'right' } },
+        margin: { left: M, right: M },
+      });
+    }
+
+    // ---------- SECTION 6: Tabel Angsuran ----------
+    yy = (doc as any).lastAutoTable.finalY + 6;
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 4,
+      startY: yy,
       head: [['No', 'Tanggal', 'Pokok', 'Bunga', 'Angsuran', 'Saldo Pokok']],
       body: result.rows.map((r) => [
         r.bulan,
-        r.tanggal,
+        new Date(r.tanggal).toLocaleDateString('id-ID'),
         fmtNumber(r.pokok),
         fmtNumber(r.bunga),
         fmtNumber(r.angsuran),
         fmtNumber(r.saldo),
       ]),
-      styles: { fontSize: 7 },
-      headStyles: { fillColor: [30, 58, 138] },
+      styles: { fontSize: 7, cellPadding: 1.2, textColor: TEXT_DARK },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: ZEBRA },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        1: { cellWidth: 24 },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right', fontStyle: 'bold' },
+        5: { halign: 'right' },
+      },
+      margin: { left: M, right: M },
     });
+
+    // ---------- WATERMARK + FOOTER per page ----------
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      // watermark
+      doc.setTextColor(230);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(60);
+      doc.text('SIMULASI', pageW / 2, pageH / 2, { align: 'center', angle: 30 });
+      // footer
+      doc.setTextColor(120);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(
+        'Dokumen simulasi — bukan dokumen perjanjian kredit. Nilai dapat berubah sewaktu-waktu.',
+        M,
+        pageH - 6
+      );
+      doc.text(`Hal ${i} / ${totalPages}  ·  AO: ${namaAo || '-'}`, pageW - M, pageH - 6, {
+        align: 'right',
+      });
+    }
 
     doc.save(`Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.pdf`);
   };
+
+  const uwBadgeVariant = underwriting?.status === 'aman'
+    ? 'success'
+    : underwriting?.status === 'medis'
+    ? 'warning'
+    : 'destructive';
+  const UwIcon =
+    underwriting?.status === 'aman'
+      ? ShieldCheck
+      : underwriting?.status === 'medis'
+      ? ShieldQuestion
+      : ShieldAlert;
 
   return (
     <MainLayout>
@@ -333,6 +658,23 @@ const KalkulatorPage: React.FC = () => {
               <div>
                 <Label>Tanggal Lahir</Label>
                 <Input type="date" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)} />
+              </div>
+              <div>
+                <Label>Jenis Kelamin</Label>
+                <RadioGroup
+                  value={jenisKelamin}
+                  onValueChange={(v) => setJenisKelamin(v as 'L' | 'P')}
+                  className="flex gap-4 pt-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="L" id="jk-l" />
+                    <Label htmlFor="jk-l" className="cursor-pointer font-normal">Laki-laki</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="P" id="jk-p" />
+                    <Label htmlFor="jk-p" className="cursor-pointer font-normal">Perempuan</Label>
+                  </div>
+                </RadioGroup>
               </div>
               <div>
                 <Label>Pilihan Karir</Label>
@@ -435,7 +777,6 @@ const KalkulatorPage: React.FC = () => {
                 />
               </div>
 
-              {/* Rate selectors */}
               <div>
                 <Label>Bunga p.a. (%)</Label>
                 <div className="flex gap-2">
@@ -462,37 +803,6 @@ const KalkulatorPage: React.FC = () => {
                     onClick={() => setBungaMode(bungaMode === 'preset' ? 'manual' : 'preset')}
                   >
                     {bungaMode === 'preset' ? 'Manual' : 'Preset'}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label>Asuransi / tahun (%)</Label>
-                <div className="flex gap-2">
-                  {asuransiMode === 'preset' && selectedProduct ? (
-                    <Select value={asuransi} onValueChange={setAsuransi}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">0%</SelectItem>
-                        {selectedProduct.asuransi_options.map((o) => (
-                          <SelectItem key={o.label} value={String(o.value)}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input type="number" step="0.01" value={asuransi} onChange={(e) => setAsuransi(e.target.value)} />
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAsuransiMode(asuransiMode === 'preset' ? 'manual' : 'preset')}
-                  >
-                    {asuransiMode === 'preset' ? 'Manual' : 'Preset'}
                   </Button>
                 </div>
               </div>
@@ -593,6 +903,92 @@ const KalkulatorPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* ASURANSI */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Asuransi</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Provider Asuransi</Label>
+                <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
+                  <SelectTrigger className="w-full md:w-80">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual (input nominal premi)</SelectItem>
+                    <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {asuransiProvider === 'manual' && (
+                <div>
+                  <Label>Nominal Premi Asuransi (Rp)</Label>
+                  <Input
+                    value={asuransiNominalStr}
+                    onChange={(e) => setAsuransiNominalStr(formatCurrencyInput(e.target.value))}
+                    placeholder="0"
+                    className="md:w-80"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Diambil dari quotation web pihak ketiga (input nominal langsung, bukan persen).
+                  </p>
+                </div>
+              )}
+
+              {asuransiProvider === 'alamin' && (
+                <div className="space-y-3">
+                  {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
+                    </p>
+                  )}
+                  {alamin ? (
+                    <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
+                        <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                        <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
+                        <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
+                        <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
+                        <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
+                        <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
+                        <span>Premi Net (bank → Al-Amin)</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
+                      </div>
+                      {alamin.cappedToMin && (
+                        <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
+                      )}
+                    </div>
+                  ) : (
+                    tanggalLahir && plafon > 0 && tenorBulan > 0 && (
+                      <p className="text-sm text-rose-600 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
+                      </p>
+                    )
+                  )}
+                  {underwriting && (
+                    <div className="flex items-start gap-2">
+                      <Badge variant={uwBadgeVariant as any} className="gap-1">
+                        <UwIcon className="w-3 h-3" />
+                        {underwriting.kode}
+                      </Badge>
+                      <div className="text-sm">
+                        <div className="font-medium">{underwriting.keterangan}</div>
+                        <div className="text-xs text-muted-foreground">
+                          x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
+                          {!underwriting.xPlusNOk && ' — melebihi batas!'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* RESULT */}
@@ -623,7 +1019,15 @@ const KalkulatorPage: React.FC = () => {
                   <Row label="Total Bunga" value={fmtRp(result.summary.totalBunga)} />
                   <hr className="my-2" />
                   <div className="text-xs uppercase text-muted-foreground font-semibold">Potongan di Muka</div>
-                  <Row label="Asuransi" value={fmtRp(potongan.asuransi)} />
+                  <Row
+                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}`}
+                    value={fmtRp(potongan.asuransi)}
+                  />
+                  {alamin && (
+                    <div className="text-xs text-muted-foreground pl-3 -mt-1">
+                      ujroh net {fmtRp(alamin.ujrohNet)} · premi net {fmtRp(alamin.premiNet)}
+                    </div>
+                  )}
                   <Row label="Provisi" value={fmtRp(potongan.provisi)} />
                   <Row label="Notaris" value={fmtRp(potongan.notaris)} />
                   <Row label="Perikatan" value={fmtRp(potongan.perikatan)} />
