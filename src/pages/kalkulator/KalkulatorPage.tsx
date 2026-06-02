@@ -1194,9 +1194,19 @@ const KalkulatorPage: React.FC = () => {
               {result && potongan && (
                 <>
                   <Row label="Skema" value={skema.toUpperCase()} />
+                  {cerdasResult && (
+                    <div className="flex justify-between items-center -mt-1">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-500" /> CERDAS
+                      </span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {cerdasResult.skemaLabel}
+                      </Badge>
+                    </div>
+                  )}
                   <Row label="Plafon" value={fmtRp(plafon)} />
                   <Row label="Tenor" value={`${tenorBulan} bulan`} />
-                  <Row label="Bunga p.a." value={`${bungaPa}%`} />
+                  <Row label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} />
                   <hr className="my-2" />
                   <Row label="Angsuran Pertama" value={fmtRp(result.summary.angsuranPertama)} strong />
                   {skema !== 'anuitas' && (
