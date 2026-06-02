@@ -714,8 +714,8 @@ const KalkulatorPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Kalkulator Loan"
-        description="Hitung simulasi angsuran kredit dengan berbagai skema bunga"
+        title="Kalkulator Konsumtif"
+        description="Hitung simulasi angsuran kredit konsumtif (anuitas / efektif) berdasarkan gaji & DSR"
         actions={
           <Button variant="outline" onClick={() => navigate('/kalkulator/riwayat')}>
             <History className="w-4 h-4 mr-2" /> Riwayat
