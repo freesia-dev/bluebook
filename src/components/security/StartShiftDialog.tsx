@@ -133,6 +133,21 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
           <DialogTitle>Mulai Shift Baru</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {prevDayBlocker && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex gap-2">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-semibold mb-0.5">Shift hari sebelumnya ({prevDateStr}) belum lengkap</div>
+                {prevDayBlocker.missing.length > 0 && (
+                  <div>Belum dibuat: <strong>{prevDayBlocker.missing.join(', ')}</strong></div>
+                )}
+                {prevDayBlocker.belumSelesai.length > 0 && (
+                  <div>Belum diakhiri: <strong>{prevDayBlocker.belumSelesai.join(', ')}</strong></div>
+                )}
+                <div className="mt-1 opacity-80">Selesaikan ketiga shift (Pagi, Sore, Malam) di tanggal {prevDateStr} sebelum memulai shift baru.</div>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Tanggal</Label>
