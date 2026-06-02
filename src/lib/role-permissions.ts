@@ -153,6 +153,7 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
     return p.konfigurasi;
   }
   if (pathname.startsWith('/security')) return p.securityLog;
+  if (pathname.startsWith('/kalkulator')) return p.loanCalc;
   if (pathname.startsWith('/ob')) return p.comingSoonOB;
   return true;
 };
