@@ -6,12 +6,23 @@ export const useAlaminTarif = () =>
   useQuery({
     queryKey: ['alamin-tarif'],
     queryFn: async (): Promise<TarifMap> => {
-      const { data, error } = await (supabase as any)
-        .from('alamin_tarif')
-        .select('umur, tenor_bulan, rate');
-      if (error) throw error;
+      // Paginate (default Supabase limit 1000, data ~9.8k baris)
+      const PAGE = 1000;
+      let from = 0;
+      const all: Array<{ umur: number; tenor_bulan: number; rate: number }> = [];
+      while (true) {
+        const { data, error } = await (supabase as any)
+          .from('alamin_tarif')
+          .select('umur, tenor_bulan, rate')
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as Array<{ umur: number; tenor_bulan: number; rate: number }>;
+        all.push(...batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
       const map: TarifMap = new Map();
-      for (const row of (data ?? []) as Array<{ umur: number; tenor_bulan: number; rate: number }>) {
+      for (const row of all) {
         let inner = map.get(row.umur);
         if (!inner) {
           inner = new Map();
