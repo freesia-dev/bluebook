@@ -92,6 +92,7 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <InactivityHandler />
+          <PWAUpdatePrompt />
           <Toaster />
           <Sonner />
           <BrowserRouter>
