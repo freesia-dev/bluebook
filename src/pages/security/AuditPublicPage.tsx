@@ -475,11 +475,11 @@ const AuditContent: React.FC<{ report: AuditReport }> = ({ report }) => {
 
         {/* Actions */}
         <div className="flex justify-end gap-2 mb-4 print:hidden">
-          <Button variant="outline" onClick={exportCSV}>
-            <FileSpreadsheet className="w-4 h-4 mr-2" />Export CSV
+          <Button variant="outline" onClick={exportExcel}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />Download Excel
           </Button>
-          <Button variant="outline" onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-2" />Cetak
+          <Button onClick={exportPDF} className="bg-[#003F7F] hover:bg-[#003F7F]/90">
+            <FileText className="w-4 h-4 mr-2" />Download Laporan PDF
           </Button>
         </div>
 
