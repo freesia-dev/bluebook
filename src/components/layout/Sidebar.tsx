@@ -299,6 +299,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onNavigate={onClose}
               />
             )}
+            {permissions.loanCalc && (
+              <NavItem
+                icon={Calculator}
+                label="Simulasi Kredit"
+                children={simulasiKreditItems}
+                onNavigate={onClose}
+              />
+            )}
             {permissions.atmTelihan && (
               <NavItem 
                 icon={Banknote} 
