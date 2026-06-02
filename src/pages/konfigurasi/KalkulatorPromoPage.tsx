@@ -13,12 +13,13 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sparkles, Plus, Pencil, Trash2, Save, Calendar, Percent, ShieldCheck, Tag, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Sparkles, Plus, Pencil, Trash2, Save, Calendar, Percent, ShieldCheck, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLoanPromos, useUpsertLoanPromo, useDeleteLoanPromo, type LoanPromo } from '@/hooks/use-loan-promo';
 import { fmtRp } from '@/lib/loan-calc';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
+import ProgramCerdasManager from '@/components/cerdas/ProgramCerdasManager';
 
 const emptyForm: any = {
   nama: '', deskripsi: '',
@@ -30,7 +31,6 @@ const emptyForm: any = {
 };
 
 const KalkulatorPromoPage: React.FC = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: promos = [], isLoading } = useLoanPromos(false);
   const upsert = useUpsertLoanPromo();
@@ -96,102 +96,107 @@ const KalkulatorPromoPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Promo Kalkulator"
-        description="Kelola program promosi yang ditampilkan di kalkulator (selain CERDAS)"
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/konfigurasi/program-cerdas')}>
-              <Sparkles className="w-4 h-4 mr-2 text-amber-500" /> Atur CERDAS
-              <ExternalLink className="w-3 h-3 ml-1" />
-            </Button>
-            <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Tambah Promo</Button>
-          </div>
-        }
+        title="Program Kalkulator"
+        description="Kelola Promo Umum kalkulator & Program CERDAS dalam satu tempat"
       />
 
-      {/* Info card */}
-      <Card className="mb-6 border-amber-200 bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10">
-        <CardContent className="p-4 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
-            <Tag className="w-5 h-5" />
-          </div>
-          <div className="text-sm">
-            <div className="font-semibold">Pengaturan Promo</div>
-            <p className="text-muted-foreground">
-              Program <strong>CERDAS</strong> memiliki halaman khusus (4-tier subsidi AJK + diskon provisi top-up). Halaman ini untuk promo lain yang lebih sederhana — misal flash promo bunga, gratis asuransi event tertentu, atau diskon provisi periodik.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="promo" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="promo"><Tag className="w-4 h-4 mr-2" /> Promo Umum</TabsTrigger>
+          <TabsTrigger value="cerdas"><Sparkles className="w-4 h-4 mr-2 text-amber-500" /> Program CERDAS</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Daftar Promo ({promos.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-muted-foreground text-sm py-8 text-center">Memuat…</p>
-          ) : promos.length === 0 ? (
-            <div className="text-center py-12 text-sm text-muted-foreground">
-              Belum ada promo. Klik <strong>Tambah Promo</strong> untuk membuat.
-            </div>
-          ) : (
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama Promo</TableHead>
-                    <TableHead>Periode</TableHead>
-                    <TableHead>Skema</TableHead>
-                    <TableHead>Bunga</TableHead>
-                    <TableHead>Diskon Provisi</TableHead>
-                    <TableHead>Asuransi</TableHead>
-                    <TableHead>Cap Subsidi</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {promos.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>
-                        <div className="font-medium">{p.nama}</div>
-                        {p.deskripsi && <div className="text-xs text-muted-foreground line-clamp-1">{p.deskripsi}</div>}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {new Date(p.periode_mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} —{' '}
-                        {new Date(p.periode_selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px] uppercase">{p.target_skema}</Badge></TableCell>
-                      <TableCell>{p.bunga_override != null ? `${p.bunga_override}%` : '—'}</TableCell>
-                      <TableCell>{p.provisi_diskon_pct > 0 ? `${p.provisi_diskon_pct}%` : '—'}</TableCell>
-                      <TableCell>{p.gratis_asuransi ? <Badge className="bg-emerald-600 text-white text-[10px]">GRATIS</Badge> : '—'}</TableCell>
-                      <TableCell>{p.cap_subsidi > 0 ? fmtRp(p.cap_subsidi) : '—'}</TableCell>
-                      <TableCell>
-                        {isOngoing(p) ? (
-                          <Badge className="bg-emerald-600 text-white">Berjalan</Badge>
-                        ) : p.aktif ? (
-                          <Badge variant="outline">Aktif (di luar periode)</Badge>
-                        ) : (
-                          <Badge variant="secondary">Nonaktif</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right space-x-1">
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => hapus(p)}>
-                          <Trash2 className="w-4 h-4 text-rose-600" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="promo" className="space-y-6">
+          {/* Info card */}
+          <Card className="border-amber-200 bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10">
+            <CardContent className="p-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                <Tag className="w-5 h-5" />
+              </div>
+              <div className="text-sm flex-1">
+                <div className="font-semibold">Promo Umum</div>
+                <p className="text-muted-foreground">
+                  Untuk flash promo bunga, gratis asuransi event tertentu, atau diskon provisi periodik. Untuk Program CERDAS (4-tier subsidi AJK), gunakan tab di sebelah.
+                </p>
+              </div>
+              <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Tambah Promo</Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Daftar Promo ({promos.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-muted-foreground text-sm py-8 text-center">Memuat…</p>
+              ) : promos.length === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  Belum ada promo. Klik <strong>Tambah Promo</strong> untuk membuat.
+                </div>
+              ) : (
+                <div className="overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nama Promo</TableHead>
+                        <TableHead>Periode</TableHead>
+                        <TableHead>Skema</TableHead>
+                        <TableHead>Bunga</TableHead>
+                        <TableHead>Diskon Provisi</TableHead>
+                        <TableHead>Asuransi</TableHead>
+                        <TableHead>Cap Subsidi</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {promos.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell>
+                            <div className="font-medium">{p.nama}</div>
+                            {p.deskripsi && <div className="text-xs text-muted-foreground line-clamp-1">{p.deskripsi}</div>}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {new Date(p.periode_mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} —{' '}
+                            {new Date(p.periode_selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </TableCell>
+                          <TableCell><Badge variant="outline" className="text-[10px] uppercase">{p.target_skema}</Badge></TableCell>
+                          <TableCell>{p.bunga_override != null ? `${p.bunga_override}%` : '—'}</TableCell>
+                          <TableCell>{p.provisi_diskon_pct > 0 ? `${p.provisi_diskon_pct}%` : '—'}</TableCell>
+                          <TableCell>{p.gratis_asuransi ? <Badge className="bg-emerald-600 text-white text-[10px]">GRATIS</Badge> : '—'}</TableCell>
+                          <TableCell>{p.cap_subsidi > 0 ? fmtRp(p.cap_subsidi) : '—'}</TableCell>
+                          <TableCell>
+                            {isOngoing(p) ? (
+                              <Badge className="bg-emerald-600 text-white">Berjalan</Badge>
+                            ) : p.aktif ? (
+                              <Badge variant="outline">Aktif (di luar periode)</Badge>
+                            ) : (
+                              <Badge variant="secondary">Nonaktif</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right space-x-1">
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => hapus(p)}>
+                              <Trash2 className="w-4 h-4 text-rose-600" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cerdas">
+          <ProgramCerdasManager />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

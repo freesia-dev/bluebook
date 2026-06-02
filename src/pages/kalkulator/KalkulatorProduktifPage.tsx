@@ -56,7 +56,7 @@ const KalkulatorProduktifPage: React.FC = () => {
   const [biayaOpStr, setBiayaOpStr] = useState('');
   const [biayaPribadiStr, setBiayaPribadiStr] = useState('');
 
-  // Pinjaman (skema dikunci ke sliding)
+  // Pinjaman (skema dikunci ke MENURUN / efektif — pokok tetap, bunga dari saldo, angsuran turun tiap bulan)
   const [plafonStr, setPlafonStr] = useState('');
   const [tenor, setTenor] = useState('36');
   const [tanggalAkad, setTanggalAkad] = useState(() => new Date().toISOString().slice(0, 10));
@@ -97,7 +97,9 @@ const KalkulatorProduktifPage: React.FC = () => {
 
   const result = useMemo(() => {
     if (plafon <= 0 || tenorBulan <= 0) return null;
-    return calcAmortization({ plafon, tenorBulan, bungaPa, skema: 'sliding', tanggalAkad });
+    // Skema MENURUN (KUR): pokok tetap (P/n), bunga dari saldo sisa, angsuran turun tiap bulan.
+    // Sesuai sheet "Sliding" pada template AMORTISASI.
+    return calcAmortization({ plafon, tenorBulan, bungaPa, skema: 'efektif', tanggalAkad });
   }, [plafon, tenorBulan, bungaPa, tanggalAkad]);
 
   const potongan = useMemo(() => {
@@ -150,8 +152,8 @@ const KalkulatorProduktifPage: React.FC = () => {
         instansi: jenisUsaha || null,
         pilihan_karir: 'Wiraswasta / Produktif',
         product_id: null,
-        product_nama: 'Kredit Produktif (Sliding)',
-        skema: 'sliding',
+        product_nama: 'Kredit Produktif (Menurun / KUR)',
+        skema: 'efektif',
         plafon,
         tenor_bulan: tenorBulan,
         tanggal_akad: tanggalAkad || null,
@@ -185,7 +187,7 @@ const KalkulatorProduktifPage: React.FC = () => {
     if (!result || !potongan) return;
     const wb = XLSX.utils.book_new();
     const ringkasan: any[][] = [
-      ['SIMULASI KREDIT PRODUKTIF (SLIDING)'],
+      ['SIMULASI KREDIT PRODUKTIF (MENURUN / KUR)'],
       [],
       ['— Debitur & Usaha —'],
       ['Nama Debitur', namaDebitur],
@@ -210,10 +212,11 @@ const KalkulatorProduktifPage: React.FC = () => {
       ['Tenor (bulan)', tenorBulan],
       ['Bunga p.a.', `${bungaPa}%`],
       ['Tanggal Akad', tanggalAkad],
-      ['Skema', 'SLIDING'],
+      ['Skema', 'MENURUN (KUR) — pokok tetap, bunga dari saldo'],
       [],
       ['— Hasil —'],
-      ['Angsuran/Bulan (tetap)', result.summary.angsuranPertama],
+      ['Angsuran Bulan ke-1 (tertinggi)', result.summary.angsuranPertama],
+      ['Angsuran Bulan ke-' + tenorBulan + ' (terendah)', result.summary.angsuranTerakhir],
       ['Total Angsuran', result.summary.totalAngsuran],
       ['Total Bunga', result.summary.totalBunga],
       ['Total Potongan', potongan.total],
@@ -310,7 +313,7 @@ const KalkulatorProduktifPage: React.FC = () => {
     doc.setTextColor(...BRAND_GREEN);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('SIMULASI KREDIT PRODUKTIF (SLIDING)', pageW / 2, y, { align: 'center' });
+    doc.text('SIMULASI KREDIT PRODUKTIF (MENURUN / KUR)', pageW / 2, y, { align: 'center' });
     y += 5;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
@@ -371,7 +374,7 @@ const KalkulatorProduktifPage: React.FC = () => {
     });
     y = (doc as any).lastAutoTable.finalY + 4;
 
-    sectionBar('SIMULASI PINJAMAN — SKEMA SLIDING (Flat Declining)');
+    sectionBar('SIMULASI PINJAMAN — SKEMA MENURUN (KUR / Sliding Excel)');
     autoTable(doc, {
       startY: y,
       theme: 'grid',
@@ -380,9 +383,12 @@ const KalkulatorProduktifPage: React.FC = () => {
       body: [
         ['Plafon', fmtRp(plafon)],
         ['Tenor', `${tenorBulan} bulan`],
-        ['Bunga p.a.', `${bungaPa}% (sliding)`],
-        [{ content: 'Angsuran / Bulan (tetap)', styles: { fillColor: [240, 253, 244], fontStyle: 'bold' } },
+        ['Bunga p.a.', `${bungaPa}% (efektif dari saldo)`],
+        ['Pokok / Bulan (tetap)', fmtRp(Math.round(plafon / tenorBulan))],
+        [{ content: `Angsuran Bulan ke-1 (tertinggi)`, styles: { fillColor: [240, 253, 244], fontStyle: 'bold' } },
          { content: fmtRp(result.summary.angsuranPertama), styles: { fillColor: [240, 253, 244], fontStyle: 'bold', halign: 'right' } }],
+        [{ content: `Angsuran Bulan ke-${tenorBulan} (terendah)`, styles: { fillColor: [240, 253, 244], fontStyle: 'bold' } },
+         { content: fmtRp(result.summary.angsuranTerakhir), styles: { fillColor: [240, 253, 244], fontStyle: 'bold', halign: 'right' } }],
         ['Total Angsuran', fmtRp(result.summary.totalAngsuran)],
         ['Total Bunga', fmtRp(result.summary.totalBunga)],
       ],
@@ -459,7 +465,7 @@ const KalkulatorProduktifPage: React.FC = () => {
     doc.setTextColor(...BRAND_GREEN);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text(`TABEL ANGSURAN (${result.rows.length} bulan) — Sliding`, M, y);
+    doc.text(`TABEL ANGSURAN (${result.rows.length} bulan) — Menurun / KUR`, M, y);
     y += 4;
     autoTable(doc, {
       startY: y,
@@ -501,7 +507,7 @@ const KalkulatorProduktifPage: React.FC = () => {
     <MainLayout>
       <PageHeader
         title="Kalkulator Kredit Produktif"
-        description="Simulasi khusus kredit usaha dengan skema sliding (flat declining) — analisa keuangan usaha & agunan"
+        description="Simulasi kredit usaha — skema MENURUN (KUR): pokok tetap, bunga dari saldo sisa, angsuran turun tiap bulan"
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/kalkulator')}>
@@ -520,9 +526,9 @@ const KalkulatorProduktifPage: React.FC = () => {
           <Factory className="w-6 h-6" />
         </div>
         <div>
-          <div className="font-bold text-emerald-900 dark:text-emerald-100">Skema Sliding — Khusus Kredit Produktif</div>
+          <div className="font-bold text-emerald-900 dark:text-emerald-100">Skema MENURUN (KUR) — Khusus Kredit Produktif</div>
           <div className="text-xs text-emerald-800/80 dark:text-emerald-200/80">
-            Bunga dihitung tetap dari plafon awal. Angsuran <strong>flat (sama tiap bulan)</strong> sampai lunas. Fokus analisa pada arus kas usaha (DSCR & RPC) bukan gaji.
+            Pokok pinjaman tetap tiap bulan (Plafon ÷ Tenor), bunga dihitung dari <strong>saldo sisa</strong>, sehingga angsuran <strong>turun setiap bulan</strong>. Sesuai template AMORTISASI sheet "Sliding". Fokus analisa pada arus kas usaha (DSCR & RPC).
           </div>
         </div>
       </div>
@@ -618,7 +624,7 @@ const KalkulatorProduktifPage: React.FC = () => {
             <CardHeader className="bg-emerald-50/50 dark:bg-emerald-950/20 border-b">
               <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-emerald-600" /> Parameter Pinjaman
-                <Badge className="bg-emerald-600 text-white ml-2">SLIDING</Badge>
+                <Badge className="bg-emerald-600 text-white ml-2">MENURUN</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
@@ -711,7 +717,7 @@ const KalkulatorProduktifPage: React.FC = () => {
             <CardHeader className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-t-lg">
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> Ringkasan Produktif</span>
-                <Badge variant="outline" className="bg-white/20 text-white border-white/30">SLIDING</Badge>
+                <Badge variant="outline" className="bg-white/20 text-white border-white/30">MENURUN</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm pt-4">
@@ -722,10 +728,21 @@ const KalkulatorProduktifPage: React.FC = () => {
                   <Row label="Tenor" value={`${tenorBulan} bulan`} />
                   <Row label="Bunga p.a." value={`${bungaPa}%`} />
                   <hr className="my-2" />
-                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 p-3 -mx-1">
-                    <div className="text-xs uppercase text-emerald-700 dark:text-emerald-300 font-semibold">Angsuran / Bulan (Tetap)</div>
-                    <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">
-                      {fmtRp(result.summary.angsuranPertama)}
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 p-3 -mx-1 space-y-2">
+                    <div>
+                      <div className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300 font-semibold">Angsuran Bulan ke-1 (tertinggi)</div>
+                      <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">
+                        {fmtRp(result.summary.angsuranPertama)}
+                      </div>
+                    </div>
+                    <div className="border-t border-emerald-300/50 pt-2">
+                      <div className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300 font-semibold">Angsuran Bulan ke-{tenorBulan} (terendah)</div>
+                      <div className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                        {fmtRp(result.summary.angsuranTerakhir)}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 italic">
+                      Pokok tetap {fmtRp(Math.round(plafon / Math.max(tenorBulan,1)))}/bulan, bunga turun tiap bulan
                     </div>
                   </div>
                   <Row label="Total Angsuran" value={fmtRp(result.summary.totalAngsuran)} />
@@ -805,7 +822,7 @@ const KalkulatorProduktifPage: React.FC = () => {
       {result && (
         <Card className="mt-6 border-emerald-200">
           <CardHeader className="bg-emerald-50/50 dark:bg-emerald-950/20 border-b">
-            <CardTitle className="text-base">Tabel Angsuran ({result.rows.length} bulan) — Sliding</CardTitle>
+            <CardTitle className="text-base">Tabel Angsuran ({result.rows.length} bulan) — Menurun / KUR (angsuran turun tiap bulan)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="max-h-[500px] overflow-auto">
