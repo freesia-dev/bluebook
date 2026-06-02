@@ -626,27 +626,18 @@ const KalkulatorPage: React.FC = () => {
 
     // (Ringkasan Angsuran sengaja dihilangkan agar lebih ringkas — detail bulanan ada di tabel angsuran)
 
-    // ---------- SECTION 5: Pelunasan dipercepat ----------
+    // ---------- SECTION 5: Top Up / Pelunasan (Outstanding manual) ----------
     if (pelunasan) {
       yy = (doc as any).lastAutoTable.finalY + 4;
-      const sisaAngsuranNormal = result.rows
-        .slice(pelunasan.bulanKe - 1)
-        .reduce((s, r) => s + r.angsuran, 0);
-      const penghematan = Math.max(0, sisaAngsuranNormal - pelunasan.totalPelunasan);
       autoTable(doc, {
         startY: yy,
-        head: [[{ content: `SKENARIO PELUNASAN DIPERCEPAT — Bulan ke-${pelunasan.bulanKe}`, colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
+        head: [[{ content: 'TOP UP / PELUNASAN — Outstanding (Manual dari Core)', colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
         body: [
-          ['Sisa Pokok', fmtRp(pelunasan.sisaPokok)],
-          ['Bunga Berjalan', fmtRp(pelunasan.bungaBerjalan)],
+          ['Outstanding Pokok', fmtRp(pelunasan.sisaPokok)],
+          ['Outstanding Bunga', fmtRp(pelunasan.bungaBerjalan)],
           [
             { content: 'TOTAL PELUNASAN', styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
             { content: fmtRp(pelunasan.totalPelunasan), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
-          ],
-          ['Sisa Angsuran (jika tidak dilunasi)', fmtRp(sisaAngsuranNormal)],
-          [
-            { content: 'Penghematan vs jalan normal', styles: { fontStyle: 'bold' } },
-            { content: fmtRp(penghematan), styles: { fontStyle: 'bold', halign: 'right', textColor: [22, 163, 74] } },
           ],
         ],
         styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
