@@ -56,6 +56,8 @@ export interface RolePermissions {
   canCommentSecurityLog: boolean;
   /** Can manage audit access tokens (Admin only). */
   canManageSecurityAudit: boolean;
+  /** Can use the Loan Calculator (everyone except security/ob/teller/cs). */
+  loanCalc: boolean;
   comingSoonOB: boolean;
 }
 
@@ -76,6 +78,7 @@ const FULL: RolePermissions = {
   canStartSecurityShift: false,
   canCommentSecurityLog: false,
   canManageSecurityAudit: false,
+  loanCalc: true,
   comingSoonOB: false,
 };
 
@@ -95,6 +98,7 @@ const NONE: RolePermissions = {
   canStartSecurityShift: false,
   canCommentSecurityLog: false,
   canManageSecurityAudit: false,
+  loanCalc: false,
   comingSoonOB: false,
 };
 
@@ -108,12 +112,13 @@ export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
   officer_rk: { ...FULL, konfigurasi: false },
   officer_kredit: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
   staff_admin_kcp: { ...FULL, konfigurasi: false, monitoringDashboardOnly: true, securityLog: true, canEditSecurityLog: true, canPrintSecurityBA: true },
-  teller: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false },
-  cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false },
+  teller: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false },
+  cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false },
   security: { ...NONE, securityLog: true, canEditSecurityLog: true, canStartSecurityShift: true, canEdit: true },
   team_leader_security: { ...NONE, securityLog: true, canCommentSecurityLog: true, canEdit: true },
   ob: { ...NONE, comingSoonOB: true },
 };
+
 
 
 export const getPermissions = (role: AppRole | null | undefined): RolePermissions =>
@@ -148,6 +153,7 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
     return p.konfigurasi;
   }
   if (pathname.startsWith('/security')) return p.securityLog;
+  if (pathname.startsWith('/kalkulator')) return p.loanCalc;
   if (pathname.startsWith('/ob')) return p.comingSoonOB;
   return true;
 };

@@ -51,6 +51,10 @@ const VerifyBAPage = lazy(() => import("./pages/security/VerifyBAPage"));
 const KondisiKantorTemplatePage = lazy(() => import("./pages/security/KondisiKantorTemplatePage"));
 const AuditLinksAdminPage = lazy(() => import("./pages/security/AuditLinksAdminPage"));
 const AuditPublicPage = lazy(() => import("./pages/security/AuditPublicPage"));
+const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
+const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
+const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
+const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
 
 
 // Minimal login loader (no layout needed)

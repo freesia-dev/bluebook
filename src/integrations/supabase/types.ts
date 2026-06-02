@@ -430,6 +430,161 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_product_config: {
+        Row: {
+          asuransi_options: Json
+          biaya_notaris: number
+          biaya_perikatan: number
+          blokir_angsuran: number
+          bunga_options: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          max_tenor_bulan: number
+          nama: string
+          provisi_options: Json
+          skema: Database["public"]["Enums"]["loan_skema"]
+          updated_at: string
+          urutan: number
+        }
+        Insert: {
+          asuransi_options?: Json
+          biaya_notaris?: number
+          biaya_perikatan?: number
+          blokir_angsuran?: number
+          bunga_options?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_tenor_bulan?: number
+          nama: string
+          provisi_options?: Json
+          skema?: Database["public"]["Enums"]["loan_skema"]
+          updated_at?: string
+          urutan?: number
+        }
+        Update: {
+          asuransi_options?: Json
+          biaya_notaris?: number
+          biaya_perikatan?: number
+          blokir_angsuran?: number
+          bunga_options?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_tenor_bulan?: number
+          nama?: string
+          provisi_options?: Json
+          skema?: Database["public"]["Enums"]["loan_skema"]
+          updated_at?: string
+          urutan?: number
+        }
+        Relationships: []
+      }
+      loan_simulation: {
+        Row: {
+          ada_pelunasan: boolean
+          asuransi_pct: number
+          biaya_notaris: number
+          biaya_perikatan: number
+          blokir_angsuran: number
+          bunga_pa: number
+          created_at: string
+          created_by: string | null
+          created_by_nama: string | null
+          gaji: number
+          hasil_ringkasan: Json | null
+          id: string
+          instansi: string | null
+          nama_ao: string | null
+          nama_debitur: string
+          nomor_ktp: string | null
+          pekerjaan: string | null
+          pelunasan_bulan_ke: number | null
+          pilihan_karir: string | null
+          plafon: number
+          product_id: string | null
+          product_nama: string | null
+          provisi_pct: number
+          skema: Database["public"]["Enums"]["loan_skema"]
+          tabel_angsuran: Json | null
+          tanggal_akad: string | null
+          tanggal_lahir: string | null
+          tenor_bulan: number
+          updated_at: string
+        }
+        Insert: {
+          ada_pelunasan?: boolean
+          asuransi_pct?: number
+          biaya_notaris?: number
+          biaya_perikatan?: number
+          blokir_angsuran?: number
+          bunga_pa?: number
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          gaji?: number
+          hasil_ringkasan?: Json | null
+          id?: string
+          instansi?: string | null
+          nama_ao?: string | null
+          nama_debitur: string
+          nomor_ktp?: string | null
+          pekerjaan?: string | null
+          pelunasan_bulan_ke?: number | null
+          pilihan_karir?: string | null
+          plafon?: number
+          product_id?: string | null
+          product_nama?: string | null
+          provisi_pct?: number
+          skema?: Database["public"]["Enums"]["loan_skema"]
+          tabel_angsuran?: Json | null
+          tanggal_akad?: string | null
+          tanggal_lahir?: string | null
+          tenor_bulan?: number
+          updated_at?: string
+        }
+        Update: {
+          ada_pelunasan?: boolean
+          asuransi_pct?: number
+          biaya_notaris?: number
+          biaya_perikatan?: number
+          blokir_angsuran?: number
+          bunga_pa?: number
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          gaji?: number
+          hasil_ringkasan?: Json | null
+          id?: string
+          instansi?: string | null
+          nama_ao?: string | null
+          nama_debitur?: string
+          nomor_ktp?: string | null
+          pekerjaan?: string | null
+          pelunasan_bulan_ke?: number | null
+          pilihan_karir?: string | null
+          plafon?: number
+          product_id?: string | null
+          product_nama?: string | null
+          provisi_pct?: number
+          skema?: Database["public"]["Enums"]["loan_skema"]
+          tabel_angsuran?: Json | null
+          tanggal_akad?: string | null
+          tanggal_lahir?: string | null
+          tenor_bulan?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_simulation_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "loan_product_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mlf_data: {
         Row: {
           baki: number | null
@@ -686,6 +841,27 @@ export type Database = {
           terbilang?: string | null
           user_input?: string
           yang_menyerahkan?: string | null
+        }
+        Relationships: []
+      }
+      pension_rule: {
+        Row: {
+          created_at: string
+          id: string
+          pilihan_karir: string
+          usia_pensiun: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pilihan_karir: string
+          usia_pensiun: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pilihan_karir?: string
+          usia_pensiun?: number
         }
         Relationships: []
       }
@@ -1371,6 +1547,7 @@ export type Database = {
       can_comment_security_log: { Args: never; Returns: boolean }
       can_edit_security_log: { Args: never; Returns: boolean }
       can_sign_security_ba: { Args: never; Returns: boolean }
+      can_use_loan_calc: { Args: never; Returns: boolean }
       create_security_audit_token: {
         Args: {
           _catatan?: string
@@ -1426,6 +1603,7 @@ export type Database = {
         | "security"
         | "ob"
         | "team_leader_security"
+      loan_skema: "anuitas" | "efektif" | "sliding"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1568,6 +1746,7 @@ export const Constants = {
         "ob",
         "team_leader_security",
       ],
+      loan_skema: ["anuitas", "efektif", "sliding"],
     },
   },
 } as const

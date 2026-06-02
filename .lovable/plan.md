@@ -1,71 +1,135 @@
-# Log Security — Modul Team Leader & Audit
 
-Menambahkan dua kapabilitas baru di modul Log Security tanpa mengganggu alur petugas/Pimpinan yang sudah ada.
+# Kalkulator Loan & Simulasi Angsuran (Revisi)
 
-## 1. Team Leader Security (Supervisor Harian)
+## Alur
 
-**Posisi:** atasan langsung security, fokus pengawasan harian. **Bukan** approver BA (approve tetap di Pimpinan).
+```text
+[Konfigurasi Produk + Usia Pensiun]
+            │ (admin)
+            ▼
+[Form Kalkulator] ─► [Auto-hitung pensiun, DSR, angsuran]
+            │
+            ▼
+[Ringkasan + Tabel Angsuran] ─► [Simpan / Excel / PDF tanpa kop]
+            │
+            ▼
+[Riwayat Simulasi]
+```
 
-**Yang bisa dilakukan:**
-- Lihat semua shift & kejadian (read-only ke data utama)
-- Beri **komentar/feedback** ke tiap kejadian (mis. "tindak lanjuti ke CCTV", "laporan kurang detail")
-- Tandai kejadian sebagai **insiden penting** (flag untuk auditor)
-- Tidak bisa start shift, tidak bisa edit kejadian milik petugas, tidak bisa approve BA
+## Field Input Kalkulator
 
-**Yang ditambahkan:**
-- Role baru `team_leader_security` di enum `app_role`
-- Tabel `security_log_comment` (shift_id/entry_id, komentar, dibuat oleh, waktu)
-- Kolom `is_insiden boolean` di `security_log_entry`
-- UI komentar inline di kartu kejadian + filter "Tampilkan hanya insiden" di LogSecurityPage
+**Data Calon Debitur**
+- Nomor KTP (16 digit)
+- Nama calon debitur
+- Tanggal lahir → otomatis hitung umur
+- Pekerjaan, Instansi
+- Pilihan Karir: PNS Fungsional / PNS Struktural / PPPK Penuh Waktu / PPPK Paruh Waktu / Pensiunan
+- **Waktu pensiun (auto):** umur pensiun (dari konfigurasi per karir) − umur sekarang → tampil "Sisa X tahun Y bulan" + tanggal pensiun.
 
-## 2. Modul Audit (Akses publik via link bertanda tangan)
+**Data Pinjaman**
+- Produk kredit (dropdown — auto-isi rate default)
+- Plafon pengajuan
+- Jangka waktu (bulan) — **warning kuning** jika melebihi sisa bulan ke pensiun, tapi tetap bisa lanjut
+- Gaji bersih per bulan
+- Rate bunga (dropdown dari preset produk + opsi "Manual")
+- Asuransi (dropdown preset + manual)
+- Provisi % (dropdown preset + manual)
+- ☐ Ada pelunasan? → jika dicentang, muncul input "Pelunasan di bulan ke-?" → hitung sisa pokok + bunga berjalan
+- Nama AO
 
-Auditor **tidak perlu login**. Admin generate link rekap periode (kadaluarsa), bagikan ke auditor.
+**Helper otomatis:**
+- **Max plafon by DSR** — input DSR target (default 40%), tombol "Hitung Max Plafon" → reverse-calc dari gaji × DSR / angsuran per juta.
+- **Indikator DSR** real-time: angsuran/gaji → badge hijau (≤40%), kuning (40–50%), merah (>50%).
 
-**Halaman audit baru `/audit/security/:token`:**
-- Header: identitas periode, tanggal generate, oleh siapa
-- **Tab "Bulanan"** — kalender 1 bulan, klik tanggal → detail shift, kejadian, TTD Pimpinan, status BA
-- **Tab "Rentang"** — pilih dari–sampai, tabel semua shift + statistik ringkas (total shift, total kejadian, kejadian insiden, % BA sudah disetujui)
-- Tombol **Export Excel** & **Cetak rekap PDF**
-- Tiap baris BA punya link ke halaman verifikasi QR yang sudah ada
+## Konfigurasi (Admin)
 
-**Halaman admin baru `/security/audit-links`** (admin only):
-- Form: pilih periode (bulan atau rentang), durasi token (7/30/90 hari)
-- Daftar token aktif: periode, expired, dibuat oleh, tombol copy link & revoke
+**1. Produk Kredit Kalkulator** (`loan_product_config`)
+- Nama produk, skema (anuitas/efektif/sliding), max tenor
+- **Rate preset (jsonb)**: array `[{label: "Bunga 10%", value: 10}, ...]` untuk bunga, asuransi, provisi
+- Biaya tetap: notaris, perikatan, blokir angsuran (0/1/2)
 
-**Yang ditambahkan:**
-- Tabel `security_audit_token` (token uuid, periode_dari, periode_sampai, expires_at, created_by, revoked_at)
-- RPC `get_security_audit_report(_token uuid)` — return rekap shift + kejadian sesuai periode token, validasi expired & revoked
-- RPC `create_security_audit_token(_dari, _sampai, _expires_at)` — admin only
-- Route publik `/audit/security/:token` (tanpa auth)
-- Route admin `/security/audit-links`
+**2. Aturan Usia Pensiun** (`pension_rule`)
+- Pilihan karir → usia pensiun (int)
+- Default seed: Fungsional 60, Struktural 58, PPPK Penuh Waktu 58, PPPK Paruh Waktu 58, Pensiunan 75. Admin bebas ubah.
 
-## Akses Ringkas
+## Output
 
-| Role | Start Shift | Catat Kejadian | Komentar TL | Approve BA | Cetak BA | Generate Link Audit |
-|---|---|---|---|---|---|---|
-| security | ✓ | ✓ | – | – | – | – |
-| team_leader_security | – | – | ✓ | – | – | – |
-| pemimpin | – | – | – | ✓ | – | – |
-| staff_admin_kcp | – | – | – | – | ✓ | – |
-| admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| (publik via token) | – | – | – | – | – | – (hanya baca rekap) |
+**Ringkasan:**
+- Nama, KTP, Karir, Pensiun (tanggal & sisa bulan)
+- Plafon · Tenor · Skema · Bunga · Asuransi · Provisi
+- Angsuran/bulan · Total angsuran · Total bunga
+- Potongan di muka (asuransi + provisi + notaris + perikatan + blokir) · Dana diterima
+- DSR badge · Pelunasan di bulan ke-N (jika dicentang)
 
-## Detail Teknis
+**Tabel Angsuran:** No | Bulan | Tanggal | Pokok | Bunga | Angsuran | Saldo Pokok
 
-- Enum `app_role` += `team_leader_security`
-- Function helper `can_comment_security_log()` untuk RLS komentar
-- Token audit pakai `gen_random_uuid()`, validasi `expires_at > now() AND revoked_at IS NULL` via **trigger**, bukan CHECK
-- Halaman publik audit pakai supabase anon client + RPC `SECURITY DEFINER`, tidak expose tabel langsung
-- Komponen baru:
-  - `src/pages/security/AuditPublicPage.tsx`
-  - `src/pages/security/AuditLinksAdminPage.tsx`
-  - `src/components/security/CommentThread.tsx`
-  - `src/components/security/AuditMonthlyCalendar.tsx`
-  - `src/components/security/AuditRangeTable.tsx`
-- Update `src/lib/role-permissions.ts` untuk role baru
-- Update sidebar (nav item "Audit Links" untuk admin)
+**Export:** Excel (.xlsx) + PDF biasa tanpa kop. Header PDF: nama debitur, AO, tanggal cetak.
 
-## Tidak termasuk plan ini
-- Notifikasi WhatsApp ke TL saat ada kejadian baru (bisa fase berikutnya)
-- Approval 2-lapis (TL → Pimpinan) — sesuai pilihan user, TL hanya supervisor
+## Akses
+- **Kalkulator:** semua role login kecuali `security`, `ob`, `teller`, `cs`.
+- **Konfigurasi produk & usia pensiun:** admin only.
+- Demo user: bisa simulasi, tidak bisa simpan.
+
+## Bagian Teknis
+
+**Migrasi DB (3 tabel + 1 enum):**
+
+```sql
+-- enum
+CREATE TYPE loan_skema AS ENUM ('anuitas','efektif','sliding');
+
+-- 1. Produk
+CREATE TABLE loan_product_config (
+  id uuid PK,
+  nama text, skema loan_skema, max_tenor_bulan int,
+  bunga_options jsonb,        -- [{label,value}]
+  asuransi_options jsonb,
+  provisi_options jsonb,
+  biaya_notaris bigint, biaya_perikatan bigint,
+  blokir_angsuran int default 0,
+  is_active bool, urutan int,
+  created_at, updated_at
+);
+
+-- 2. Aturan pensiun
+CREATE TABLE pension_rule (
+  id uuid PK,
+  pilihan_karir text UNIQUE,
+  usia_pensiun int
+);
+
+-- 3. Simulasi
+CREATE TABLE loan_simulation (
+  id uuid PK,
+  -- debitur
+  nomor_ktp text, nama_debitur text, tanggal_lahir date,
+  pekerjaan text, instansi text, pilihan_karir text,
+  -- pinjaman
+  product_id uuid FK, plafon bigint, tenor_bulan int,
+  gaji bigint, bunga_pa numeric, asuransi_pct numeric, provisi_pct numeric,
+  ada_pelunasan bool, pelunasan_bulan_ke int,
+  nama_ao text,
+  -- hasil cache
+  hasil_ringkasan jsonb, tabel_angsuran jsonb,
+  created_by uuid, created_at
+);
+```
+RLS: read authenticated, insert/update non-demo & bukan role security/ob/teller/cs, delete admin/owner. Konfigurasi tabel: write admin only. GRANT lengkap di tiap migrasi.
+
+**Frontend:**
+- `src/lib/loan-calc.ts` — `calcAnuitas`, `calcEfektif`, `calcSliding`, `calcPensiun(tglLahir, usiaPensiun)`, `calcMaxPlafonByDSR(gaji, dsr, ...)`.
+- `src/lib/validation/loan.ts` — schema zod (KTP 16 digit, plafon > 0, dst).
+- `src/hooks/use-loan-calc.ts` — React Query untuk products, pension rules, simulations.
+- `src/pages/kalkulator/KalkulatorPage.tsx` — form + ringkasan + tabel + export.
+- `src/pages/kalkulator/RiwayatPage.tsx` — list simulasi tersimpan.
+- `src/pages/konfigurasi/ProdukKalkulatorPage.tsx` — CRUD produk + preset rate.
+- `src/pages/konfigurasi/UsiaPensiunPage.tsx` — CRUD aturan pensiun.
+- Route baru di `App.tsx`, menu di `Sidebar.tsx`, permission di `role-permissions.ts`.
+
+## Tidak termasuk
+- OCR KTP otomatis (KTP manual input).
+- Generate PDF dengan kop bank.
+- Integrasi ke modul Nomor Loan / PK.
+- Halaman public untuk calon debitur.
+
+Klik Implement Plan kalau setuju — aku langsung bikin migrasi DB-nya dulu (3 tabel + seed produk awal + seed aturan pensiun), baru lanjut halaman & form.
