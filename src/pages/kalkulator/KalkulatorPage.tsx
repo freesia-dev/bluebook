@@ -196,9 +196,12 @@ const KalkulatorPage: React.FC = () => {
   }, [result, plafon, asuransiNominal, provisiPct, notaris, perikatan, blokirN]);
 
   const pelunasan = useMemo(() => {
-    if (!result || !adaPelunasan) return null;
-    return calcPelunasan(result.rows, parseInt(pelunasanBulan) || 0);
-  }, [result, adaPelunasan, pelunasanBulan]);
+    if (!adaPelunasan) return null;
+    const pokok = parseInt(outstandingPokok) || 0;
+    const bunga = parseInt(outstandingBunga) || 0;
+    if (pokok <= 0 && bunga <= 0) return null;
+    return { sisaPokok: pokok, bungaBerjalan: bunga, totalPelunasan: pokok + bunga };
+  }, [adaPelunasan, outstandingPokok, outstandingBunga]);
 
   const dsrPct = result && gaji > 0 ? (result.summary.angsuranPertama / gaji) * 100 : 0;
   const dsrColor =
