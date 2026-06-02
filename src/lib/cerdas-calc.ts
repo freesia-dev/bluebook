@@ -1,6 +1,6 @@
 // Program CERDAS — Promo CERDAS Divisi Kredit Ritel & Konsumer Bankaltimtara.
 // 3 skema: debitur_baru, take_over, top_up.
-// - debitur_baru & take_over: gratis AJK sesuai cap tier plafon.
+// - debitur_baru & take_over: gratis AJK sesuai cap tier plafon (cap berbeda untuk masing-masing skema).
 // - top_up: diskon provisi (mis. 50%), tidak ada subsidi AJK.
 
 export interface CerdasConfig {
@@ -13,18 +13,23 @@ export interface CerdasConfig {
   bunga_take_over: number;
   bunga_top_up: number;
   diskon_provisi_top_up_pct: number;
-  cap_tier_1: number;
-  cap_tier_2: number;
-  cap_tier_3: number;
   plafon_tier_1_max: number;
   plafon_tier_2_max: number;
   plafon_tier_3_max: number;
+  cap_tier_1_baru: number;
+  cap_tier_2_baru: number;
+  cap_tier_3_baru: number;
+  cap_tier_4_baru: number;
+  cap_tier_1_takeover: number;
+  cap_tier_2_takeover: number;
+  cap_tier_3_takeover: number;
+  cap_tier_4_takeover: number;
 }
 
 export type CerdasSkema = 'debitur_baru' | 'take_over' | 'top_up';
 
 export interface CerdasTier {
-  tier: 1 | 2 | 3;
+  tier: 1 | 2 | 3 | 4;
   label: string;
   cap: number;
 }
@@ -42,12 +47,22 @@ export function isCerdasActive(cfg: CerdasConfig | null | undefined, tanggalAkad
   return d >= new Date(cfg.periode_mulai).getTime() && d <= new Date(cfg.periode_selesai).getTime();
 }
 
-export function getCerdasTier(plafon: number, cfg: CerdasConfig): CerdasTier | null {
+const jt = (n: number) => `${(n / 1_000_000).toFixed(0)} jt`;
+
+export function getCerdasTier(
+  plafon: number,
+  cfg: CerdasConfig,
+  skema: Exclude<CerdasSkema, 'top_up'>
+): CerdasTier | null {
   if (plafon <= 0) return null;
-  if (plafon <= cfg.plafon_tier_1_max) return { tier: 1, label: `Tier 1 — ≤ Rp ${(cfg.plafon_tier_1_max / 1_000_000).toFixed(0)} jt`, cap: cfg.cap_tier_1 };
-  if (plafon <= cfg.plafon_tier_2_max) return { tier: 2, label: `Tier 2 — Rp ${(cfg.plafon_tier_1_max / 1_000_000).toFixed(0)}–${(cfg.plafon_tier_2_max / 1_000_000).toFixed(0)} jt`, cap: cfg.cap_tier_2 };
-  if (plafon <= cfg.plafon_tier_3_max) return { tier: 3, label: `Tier 3 — Rp ${(cfg.plafon_tier_2_max / 1_000_000).toFixed(0)}–${(cfg.plafon_tier_3_max / 1_000_000).toFixed(0)} jt`, cap: cfg.cap_tier_3 };
-  return null;
+  const isBaru = skema === 'debitur_baru';
+  if (plafon <= cfg.plafon_tier_1_max)
+    return { tier: 1, label: `Tier 1 — ≤ Rp ${jt(cfg.plafon_tier_1_max)}`, cap: isBaru ? cfg.cap_tier_1_baru : cfg.cap_tier_1_takeover };
+  if (plafon <= cfg.plafon_tier_2_max)
+    return { tier: 2, label: `Tier 2 — Rp ${jt(cfg.plafon_tier_1_max)} s/d Rp ${jt(cfg.plafon_tier_2_max)}`, cap: isBaru ? cfg.cap_tier_2_baru : cfg.cap_tier_2_takeover };
+  if (plafon <= cfg.plafon_tier_3_max)
+    return { tier: 3, label: `Tier 3 — Rp ${jt(cfg.plafon_tier_2_max)} s/d Rp ${jt(cfg.plafon_tier_3_max)}`, cap: isBaru ? cfg.cap_tier_3_baru : cfg.cap_tier_3_takeover };
+  return { tier: 4, label: `Tier 4 — > Rp ${jt(cfg.plafon_tier_3_max)}`, cap: isBaru ? cfg.cap_tier_4_baru : cfg.cap_tier_4_takeover };
 }
 
 export function getCerdasBunga(skema: CerdasSkema, cfg: CerdasConfig): number {
@@ -59,7 +74,7 @@ export function getCerdasBunga(skema: CerdasSkema, cfg: CerdasConfig): number {
 export interface CerdasApplyInput {
   skema: CerdasSkema;
   plafon: number;
-  premiAsuransiAktual: number; // Rp (dari Al-Amin atau manual)
+  premiAsuransiAktual: number;
   provisiPctAsli: number;
   cfg: CerdasConfig;
 }
@@ -73,7 +88,7 @@ export interface CerdasApplyResult {
   tier: CerdasTier | null;
   capSubsidi: number;
   subsidiBank: number;
-  selisihDebitur: number; // ini yang debitur bayar (jadi nominal asuransi efektif)
+  selisihDebitur: number;
   premiAsuransiAktual: number;
   status: 'gratis' | 'selisih' | 'tidak-eligible-tier' | 'tanpa-subsidi-ajk';
   pesan: string;
@@ -84,7 +99,6 @@ export function applyCerdas(input: CerdasApplyInput): CerdasApplyResult {
   const skemaLabel = CERDAS_SKEMA_LABEL[skema];
   const bungaFinal = getCerdasBunga(skema, cfg);
 
-  // Top Up: diskon provisi, tidak ada subsidi AJK
   if (skema === 'top_up') {
     const diskon = cfg.diskon_provisi_top_up_pct;
     const provisiFinal = provisiPctAsli * (1 - diskon / 100);
@@ -97,15 +111,14 @@ export function applyCerdas(input: CerdasApplyInput): CerdasApplyResult {
       tier: null,
       capSubsidi: 0,
       subsidiBank: 0,
-      selisihDebitur: premiAsuransiAktual, // tetap dibayar debitur penuh
+      selisihDebitur: premiAsuransiAktual,
       premiAsuransiAktual,
       status: 'tanpa-subsidi-ajk',
       pesan: `Bunga promo ${bungaFinal}% p.a. fixed + diskon provisi ${diskon}%. Premi asuransi dibayar debitur penuh.`,
     };
   }
 
-  // Debitur Baru / Take Over: subsidi AJK sesuai cap tier
-  const tier = getCerdasTier(plafon, cfg);
+  const tier = getCerdasTier(plafon, cfg, skema);
   if (!tier) {
     return {
       skema,
@@ -119,7 +132,7 @@ export function applyCerdas(input: CerdasApplyInput): CerdasApplyResult {
       selisihDebitur: premiAsuransiAktual,
       premiAsuransiAktual,
       status: 'tidak-eligible-tier',
-      pesan: `Plafon di luar tier subsidi (maks Rp ${(cfg.plafon_tier_3_max / 1_000_000).toFixed(0)} jt). Bunga promo tetap berlaku, AJK dibayar normal.`,
+      pesan: `Plafon tidak valid untuk subsidi AJK.`,
     };
   }
 
@@ -141,8 +154,8 @@ export function applyCerdas(input: CerdasApplyInput): CerdasApplyResult {
     status,
     pesan:
       status === 'gratis'
-        ? `Premi masih dalam cap subsidi ${tier.label}. Debitur GRATIS AJK — bank menanggung penuh.`
-        : `Premi melebihi cap ${tier.label}. Selisih ${formatRp(selisih)} dibebankan ke debitur.`,
+        ? `Premi masih dalam cap subsidi ${tier.label} (${skemaLabel}). Debitur GRATIS AJK — bank menanggung penuh.`
+        : `Premi melebihi cap ${tier.label} (${skemaLabel}). Selisih ${formatRp(selisih)} dibebankan ke debitur.`,
   };
 }
 

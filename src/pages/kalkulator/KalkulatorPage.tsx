@@ -356,9 +356,32 @@ const KalkulatorPage: React.FC = () => {
     const ZEBRA: [number, number, number] = [241, 245, 249];
     const TEXT_DARK: [number, number, number] = [30, 41, 59];
 
+    // ---------- WATERMARK (tiled, low opacity, drawn at page start) ----------
+    const drawWatermark = () => {
+      const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.06 }) : null;
+      if (gState) (doc as any).setGState(gState);
+      doc.setTextColor(0, 63, 127);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      const stepX = 42;
+      const stepY = 24;
+      for (let row = 0; row * stepY < pageH + stepY; row++) {
+        const offset = (row % 2) * (stepX / 2);
+        for (let col = -1; col * stepX - offset < pageW + stepX; col++) {
+          doc.text('SIMULASI', col * stepX - offset, row * stepY, { angle: 30 });
+        }
+      }
+      // reset opacity
+      const gReset = (doc as any).GState ? new (doc as any).GState({ opacity: 1 }) : null;
+      if (gReset) (doc as any).setGState(gReset);
+    };
+    (doc as any).internal.events.subscribe('addPage', drawWatermark);
+    drawWatermark(); // first page
+
+
     // ---------- KOP SURAT ----------
     try {
-      // load logo as data URL
+      // load logo as data URL with correct aspect ratio
       const logoData = await fetch(logoBpd).then((r) => r.blob()).then(
         (b) =>
           new Promise<string>((res) => {
@@ -367,24 +390,28 @@ const KalkulatorPage: React.FC = () => {
             r.readAsDataURL(b);
           })
       );
-      doc.addImage(logoData, 'PNG', M, M, 18, 18);
+      const props = (doc as any).getImageProperties(logoData);
+      const logoH = 14;
+      const logoW = (props.width / props.height) * logoH;
+      doc.addImage(logoData, 'PNG', M, M + 2, logoW, logoH);
     } catch {}
 
+    const kopX = M + 34;
     doc.setTextColor(...BRAND_BLUE);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', M + 22, M + 5);
+    doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', kopX, M + 5);
     doc.setFontSize(10.5);
-    doc.text('Kantor Cabang Pembantu Telihan', M + 22, M + 10);
+    doc.text('Kantor Cabang Pembantu Telihan', kopX, M + 10);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
     doc.text(
       'Jl. Letjend S. Parman No. 14-15, Bontang 75383  ·  Telp. 0548-26567',
-      M + 22,
+      kopX,
       M + 14.5
     );
-    doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', M + 22, M + 18);
+    doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', kopX, M + 18);
 
     // brand accent lines
     doc.setFillColor(...BRAND_BLUE);
@@ -593,22 +620,7 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
-    // ---------- SECTION 4: Ringkasan Angsuran ----------
-    yy = (doc as any).lastAutoTable.finalY + 4;
-    autoTable(doc, {
-      startY: yy,
-      head: [['Ringkasan Angsuran', 'Nilai']],
-      body: [
-        ['Angsuran Pertama', fmtRp(result.summary.angsuranPertama)],
-        ['Angsuran Terakhir', fmtRp(result.summary.angsuranTerakhir)],
-        ['Total Angsuran (selama tenor)', fmtRp(result.summary.totalAngsuran)],
-        ['Total Bunga', fmtRp(result.summary.totalBunga)],
-      ],
-      styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
-      headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' },
-      columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { halign: 'right' } },
-      margin: { left: M, right: M },
-    });
+    // (Ringkasan Angsuran sengaja dihilangkan agar lebih ringkas — detail bulanan ada di tabel angsuran)
 
     // ---------- SECTION 5: Pelunasan dipercepat ----------
     if (pelunasan) {
@@ -666,15 +678,10 @@ const KalkulatorPage: React.FC = () => {
       margin: { left: M, right: M },
     });
 
-    // ---------- WATERMARK + FOOTER per page ----------
+    // ---------- FOOTER per page ----------
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      // watermark
-      doc.setTextColor(230);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(60);
-      doc.text('SIMULASI', pageW / 2, pageH / 2, { align: 'center', angle: 30 });
       // footer
       doc.setTextColor(120);
       doc.setFont('helvetica', 'normal');
