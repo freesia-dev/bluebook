@@ -728,10 +728,21 @@ const KalkulatorProduktifPage: React.FC = () => {
                   <Row label="Tenor" value={`${tenorBulan} bulan`} />
                   <Row label="Bunga p.a." value={`${bungaPa}%`} />
                   <hr className="my-2" />
-                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 p-3 -mx-1">
-                    <div className="text-xs uppercase text-emerald-700 dark:text-emerald-300 font-semibold">Angsuran / Bulan (Tetap)</div>
-                    <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">
-                      {fmtRp(result.summary.angsuranPertama)}
+                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 p-3 -mx-1 space-y-2">
+                    <div>
+                      <div className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300 font-semibold">Angsuran Bulan ke-1 (tertinggi)</div>
+                      <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-200">
+                        {fmtRp(result.summary.angsuranPertama)}
+                      </div>
+                    </div>
+                    <div className="border-t border-emerald-300/50 pt-2">
+                      <div className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300 font-semibold">Angsuran Bulan ke-{tenorBulan} (terendah)</div>
+                      <div className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                        {fmtRp(result.summary.angsuranTerakhir)}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70 italic">
+                      Pokok tetap {fmtRp(Math.round(plafon / Math.max(tenorBulan,1)))}/bulan, bunga turun tiap bulan
                     </div>
                   </div>
                   <Row label="Total Angsuran" value={fmtRp(result.summary.totalAngsuran)} />
