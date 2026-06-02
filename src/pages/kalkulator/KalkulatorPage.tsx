@@ -1309,10 +1309,10 @@ const KalkulatorPage: React.FC = () => {
                     <>
                       <hr className="my-2" />
                       <div className="text-xs uppercase text-muted-foreground font-semibold">
-                        Pelunasan Bulan ke-{pelunasan.bulanKe}
+                        Top Up / Pelunasan
                       </div>
-                      <Row label="Sisa Pokok" value={fmtRp(pelunasan.sisaPokok)} />
-                      <Row label="Bunga Berjalan" value={fmtRp(pelunasan.bungaBerjalan)} />
+                      <Row label="Outstanding Pokok" value={fmtRp(pelunasan.sisaPokok)} />
+                      <Row label="Outstanding Bunga" value={fmtRp(pelunasan.bungaBerjalan)} />
                       <Row label="Total Pelunasan" value={fmtRp(pelunasan.totalPelunasan)} strong highlight />
                     </>
                   )}
