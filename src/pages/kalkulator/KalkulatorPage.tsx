@@ -965,23 +965,43 @@ const KalkulatorPage: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="md:col-span-2 flex items-center gap-2 pt-2">
-                <Checkbox
-                  id="pelunasan"
-                  checked={adaPelunasan}
-                  onCheckedChange={(c) => setAdaPelunasan(!!c)}
-                />
-                <Label htmlFor="pelunasan" className="cursor-pointer">
-                  Ada simulasi pelunasan dipercepat
-                </Label>
-                {adaPelunasan && (
-                  <Input
-                    className="w-32 ml-2"
-                    type="number"
-                    value={pelunasanBulan}
-                    onChange={(e) => setPelunasanBulan(e.target.value)}
-                    placeholder="Bulan ke-"
+              <div className="md:col-span-2 pt-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="pelunasan"
+                    checked={adaPelunasan}
+                    onCheckedChange={(c) => setAdaPelunasan(!!c)}
                   />
+                  <Label htmlFor="pelunasan" className="cursor-pointer">
+                    Top Up? Ada Pelunasan?
+                  </Label>
+                </div>
+                {adaPelunasan && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-lg border border-dashed p-3 bg-muted/20">
+                    <div>
+                      <Label>Outstanding Pokok (Rp)</Label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        value={outstandingPokok}
+                        onChange={(e) => setOutstandingPokok(e.target.value)}
+                        placeholder="Lihat di core"
+                      />
+                    </div>
+                    <div>
+                      <Label>Outstanding Bunga (Rp)</Label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        value={outstandingBunga}
+                        onChange={(e) => setOutstandingBunga(e.target.value)}
+                        placeholder="Lihat di core"
+                      />
+                    </div>
+                    <p className="md:col-span-2 text-xs text-muted-foreground">
+                      Diisi manual sesuai data outstanding di core banking.
+                    </p>
+                  </div>
                 )}
               </div>
 
