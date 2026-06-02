@@ -78,6 +78,8 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
       belumSelesai,
     };
   }, [prevDayShifts]);
+
+  const submit = async () => {
     if (!nama.trim()) {
       toast({ title: 'Nama petugas wajib diisi', variant: 'destructive' });
       return;
@@ -88,6 +90,17 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
     }
     if (!isLembur && usedShifts.has(shift)) {
       toast({ title: 'Shift ini sudah pernah dibuat', description: 'Pilih shift lain atau aktifkan opsi Lembur.', variant: 'destructive' });
+      return;
+    }
+    if (prevDayBlocker) {
+      const parts: string[] = [];
+      if (prevDayBlocker.missing.length) parts.push(`Shift hilang: ${prevDayBlocker.missing.join(', ')}`);
+      if (prevDayBlocker.belumSelesai.length) parts.push(`Belum selesai: ${prevDayBlocker.belumSelesai.join(', ')}`);
+      toast({
+        title: `Shift hari sebelumnya (${prevDateStr}) belum lengkap`,
+        description: parts.join(' · ') + '. Lengkapi & akhiri shift hari sebelumnya dulu.',
+        variant: 'destructive',
+      });
       return;
     }
     const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
