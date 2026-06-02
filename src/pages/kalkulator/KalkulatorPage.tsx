@@ -120,8 +120,8 @@ const KalkulatorPage: React.FC = () => {
   const notaris = parseCurrencyValue(notarisStr);
   const perikatan = parseCurrencyValue(perikatanStr);
   const tenorBulan = parseInt(tenor) || 0;
-  const bungaPa = parseFloat(bunga) || 0;
-  const provisiPct = parseFloat(provisi) || 0;
+  const bungaInput = parseFloat(bunga) || 0;
+  const provisiInput = parseFloat(provisi) || 0;
   const blokirN = parseInt(blokir) || 0;
   const skema: LoanSkema = selectedProduct?.skema ?? 'anuitas';
 
@@ -151,10 +151,29 @@ const KalkulatorPage: React.FC = () => {
     return cekUnderwriting(umur, plafon, tenorBulan, alaminRules, alaminConfig?.x_plus_n_default);
   }, [asuransiProvider, alaminRules, umur, plafon, tenorBulan, alaminConfig]);
 
-  const asuransiNominal =
+  const premiAktual =
     asuransiProvider === 'alamin'
       ? alamin?.premiGross ?? 0
       : parseCurrencyValue(asuransiNominalStr);
+
+  // CERDAS apply (override bunga + provisi + asuransi nominal)
+  const cerdasResult: CerdasApplyResult | null = useMemo(() => {
+    if (!cerdasOn || !cerdasConfig) return null;
+    return applyCerdas({
+      skema: cerdasSkema,
+      plafon,
+      premiAsuransiAktual: premiAktual,
+      provisiPctAsli: provisiInput,
+      cfg: cerdasConfig,
+    });
+  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiAktual, provisiInput]);
+
+  const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
+  const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
+  // Nominal asuransi yang masuk potongan: jika CERDAS subsidi AJK aktif, hanya selisih yang dibayar debitur
+  const asuransiNominal = cerdasResult
+    ? (cerdasResult.skema === 'top_up' ? premiAktual : cerdasResult.selisihDebitur)
+    : premiAktual;
 
   // Calculation
   const result = useMemo(() => {
