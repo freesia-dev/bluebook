@@ -678,28 +678,10 @@ const KalkulatorPage: React.FC = () => {
       margin: { left: M, right: M },
     });
 
-    // ---------- WATERMARK (tiled, small) + FOOTER per page ----------
+    // ---------- FOOTER per page ----------
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      // tiled watermark — small repeating text on background
-      doc.saveGraphicsState?.();
-      const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.07 }) : null;
-      if (gState) (doc as any).setGState(gState);
-      doc.setTextColor(0, 63, 127);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      const stepX = 38;
-      const stepY = 22;
-      for (let row = 0; row * stepY < pageH + stepY; row++) {
-        const offset = (row % 2) * (stepX / 2);
-        for (let col = -1; col * stepX - offset < pageW + stepX; col++) {
-          const x = col * stepX - offset;
-          const y = row * stepY;
-          doc.text('SIMULASI', x, y, { angle: 30 });
-        }
-      }
-      doc.restoreGraphicsState?.();
       // footer
       doc.setTextColor(120);
       doc.setFont('helvetica', 'normal');
