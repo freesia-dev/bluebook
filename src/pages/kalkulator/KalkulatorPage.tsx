@@ -92,7 +92,8 @@ const KalkulatorPage: React.FC = () => {
   const [perikatanStr, setPerikatanStr] = useState('');
   const [blokir, setBlokir] = useState('0');
   const [adaPelunasan, setAdaPelunasan] = useState(false);
-  const [pelunasanBulan, setPelunasanBulan] = useState('12');
+  const [outstandingPokok, setOutstandingPokok] = useState('');
+  const [outstandingBunga, setOutstandingBunga] = useState('');
   const [dsrTarget, setDsrTarget] = useState('40');
 
   // CERDAS promo
@@ -195,9 +196,12 @@ const KalkulatorPage: React.FC = () => {
   }, [result, plafon, asuransiNominal, provisiPct, notaris, perikatan, blokirN]);
 
   const pelunasan = useMemo(() => {
-    if (!result || !adaPelunasan) return null;
-    return calcPelunasan(result.rows, parseInt(pelunasanBulan) || 0);
-  }, [result, adaPelunasan, pelunasanBulan]);
+    if (!adaPelunasan) return null;
+    const pokok = parseInt(outstandingPokok) || 0;
+    const bunga = parseInt(outstandingBunga) || 0;
+    if (pokok <= 0 && bunga <= 0) return null;
+    return { sisaPokok: pokok, bungaBerjalan: bunga, totalPelunasan: pokok + bunga };
+  }, [adaPelunasan, outstandingPokok, outstandingBunga]);
 
   const dsrPct = result && gaji > 0 ? (result.summary.angsuranPertama / gaji) * 100 : 0;
   const dsrColor =
@@ -249,7 +253,7 @@ const KalkulatorPage: React.FC = () => {
         biaya_perikatan: perikatan,
         blokir_angsuran: blokirN,
         ada_pelunasan: adaPelunasan,
-        pelunasan_bulan_ke: adaPelunasan ? parseInt(pelunasanBulan) || null : null,
+        pelunasan_bulan_ke: null,
         nama_ao: namaAo || null,
         hasil_ringkasan: { ...result.summary, ...potongan, cerdas: cerdasResult ?? null },
         tabel_angsuran: result.rows,
@@ -321,7 +325,7 @@ const KalkulatorPage: React.FC = () => {
     if (pelunasan) {
       ringkasan.push(
         [],
-        [`— Pelunasan Bulan ke-${pelunasan.bulanKe} —`],
+        ['— Top Up / Pelunasan (Outstanding) —'],
         ['Sisa Pokok', pelunasan.sisaPokok],
         ['Bunga Berjalan', pelunasan.bungaBerjalan],
         ['Total Pelunasan', pelunasan.totalPelunasan],
@@ -622,27 +626,18 @@ const KalkulatorPage: React.FC = () => {
 
     // (Ringkasan Angsuran sengaja dihilangkan agar lebih ringkas — detail bulanan ada di tabel angsuran)
 
-    // ---------- SECTION 5: Pelunasan dipercepat ----------
+    // ---------- SECTION 5: Top Up / Pelunasan (Outstanding manual) ----------
     if (pelunasan) {
       yy = (doc as any).lastAutoTable.finalY + 4;
-      const sisaAngsuranNormal = result.rows
-        .slice(pelunasan.bulanKe - 1)
-        .reduce((s, r) => s + r.angsuran, 0);
-      const penghematan = Math.max(0, sisaAngsuranNormal - pelunasan.totalPelunasan);
       autoTable(doc, {
         startY: yy,
-        head: [[{ content: `SKENARIO PELUNASAN DIPERCEPAT — Bulan ke-${pelunasan.bulanKe}`, colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
+        head: [[{ content: 'TOP UP / PELUNASAN — Outstanding (Manual dari Core)', colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
         body: [
-          ['Sisa Pokok', fmtRp(pelunasan.sisaPokok)],
-          ['Bunga Berjalan', fmtRp(pelunasan.bungaBerjalan)],
+          ['Outstanding Pokok', fmtRp(pelunasan.sisaPokok)],
+          ['Outstanding Bunga', fmtRp(pelunasan.bungaBerjalan)],
           [
             { content: 'TOTAL PELUNASAN', styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
             { content: fmtRp(pelunasan.totalPelunasan), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
-          ],
-          ['Sisa Angsuran (jika tidak dilunasi)', fmtRp(sisaAngsuranNormal)],
-          [
-            { content: 'Penghematan vs jalan normal', styles: { fontStyle: 'bold' } },
-            { content: fmtRp(penghematan), styles: { fontStyle: 'bold', halign: 'right', textColor: [22, 163, 74] } },
           ],
         ],
         styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
@@ -970,23 +965,43 @@ const KalkulatorPage: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="md:col-span-2 flex items-center gap-2 pt-2">
-                <Checkbox
-                  id="pelunasan"
-                  checked={adaPelunasan}
-                  onCheckedChange={(c) => setAdaPelunasan(!!c)}
-                />
-                <Label htmlFor="pelunasan" className="cursor-pointer">
-                  Ada simulasi pelunasan dipercepat
-                </Label>
-                {adaPelunasan && (
-                  <Input
-                    className="w-32 ml-2"
-                    type="number"
-                    value={pelunasanBulan}
-                    onChange={(e) => setPelunasanBulan(e.target.value)}
-                    placeholder="Bulan ke-"
+              <div className="md:col-span-2 pt-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="pelunasan"
+                    checked={adaPelunasan}
+                    onCheckedChange={(c) => setAdaPelunasan(!!c)}
                   />
+                  <Label htmlFor="pelunasan" className="cursor-pointer">
+                    Top Up? Ada Pelunasan?
+                  </Label>
+                </div>
+                {adaPelunasan && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-lg border border-dashed p-3 bg-muted/20">
+                    <div>
+                      <Label>Outstanding Pokok (Rp)</Label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        value={outstandingPokok}
+                        onChange={(e) => setOutstandingPokok(e.target.value)}
+                        placeholder="Lihat di core"
+                      />
+                    </div>
+                    <div>
+                      <Label>Outstanding Bunga (Rp)</Label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        value={outstandingBunga}
+                        onChange={(e) => setOutstandingBunga(e.target.value)}
+                        placeholder="Lihat di core"
+                      />
+                    </div>
+                    <p className="md:col-span-2 text-xs text-muted-foreground">
+                      Diisi manual sesuai data outstanding di core banking.
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -1294,10 +1309,10 @@ const KalkulatorPage: React.FC = () => {
                     <>
                       <hr className="my-2" />
                       <div className="text-xs uppercase text-muted-foreground font-semibold">
-                        Pelunasan Bulan ke-{pelunasan.bulanKe}
+                        Top Up / Pelunasan
                       </div>
-                      <Row label="Sisa Pokok" value={fmtRp(pelunasan.sisaPokok)} />
-                      <Row label="Bunga Berjalan" value={fmtRp(pelunasan.bungaBerjalan)} />
+                      <Row label="Outstanding Pokok" value={fmtRp(pelunasan.sisaPokok)} />
+                      <Row label="Outstanding Bunga" value={fmtRp(pelunasan.bungaBerjalan)} />
                       <Row label="Total Pelunasan" value={fmtRp(pelunasan.totalPelunasan)} strong highlight />
                     </>
                   )}
