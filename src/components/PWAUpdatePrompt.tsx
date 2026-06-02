@@ -16,6 +16,7 @@ export const PWAUpdatePrompt = () => {
 
     let reg: ServiceWorkerRegistration | null = null;
     let didReload = false;
+    let pollId: number | undefined;
 
     const handleWaiting = (worker: ServiceWorker | null) => {
       if (!worker) return;
@@ -35,6 +36,8 @@ export const PWAUpdatePrompt = () => {
           }
         });
       });
+      // Aggressive polling inside the prompt as a second line of defence
+      pollId = window.setInterval(() => registration.update().catch(() => {}), 20_000);
     });
 
     navigator.serviceWorker.addEventListener("controllerchange", () => {
@@ -44,6 +47,7 @@ export const PWAUpdatePrompt = () => {
     });
 
     return () => {
+      if (pollId) window.clearInterval(pollId);
       reg = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
