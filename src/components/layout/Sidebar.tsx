@@ -8,16 +8,14 @@ import {
   Settings, 
   Info,
   ChevronDown,
-  ChevronRight,
   LogOut,
   User,
   X,
   Banknote,
-  Trash2,
-  History,
   TrendingUp,
   Shield,
-  Sparkles
+  Sparkles,
+  Calculator
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,11 +23,13 @@ import { Button } from '@/components/ui/button';
 import { ROLE_LABELS } from '@/lib/role-permissions';
 import logoImage from '@/assets/logo_bluebook.png';
 
+type ChildItem = { label: string; href?: string; children?: { label: string; href: string }[] };
+
 interface NavItemProps {
   icon: React.ElementType;
   label: string;
   href?: string;
-  children?: { label: string; href: string }[];
+  children?: ChildItem[];
   isActive?: boolean;
   onNavigate?: () => void;
 }
