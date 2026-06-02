@@ -12,6 +12,7 @@ import {
   GenericPageSkeleton 
 } from "@/components/ui/page-skeleton";
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -91,6 +92,7 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <InactivityHandler />
+          <PWAUpdatePrompt />
           <Toaster />
           <Sonner />
           <BrowserRouter>
