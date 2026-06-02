@@ -251,9 +251,17 @@ const KalkulatorPage: React.FC = () => {
         ada_pelunasan: adaPelunasan,
         pelunasan_bulan_ke: adaPelunasan ? parseInt(pelunasanBulan) || null : null,
         nama_ao: namaAo || null,
-        hasil_ringkasan: { ...result.summary, ...potongan },
+        hasil_ringkasan: { ...result.summary, ...potongan, cerdas: cerdasResult ?? null },
         tabel_angsuran: result.rows,
-      });
+        ...(cerdasResult
+          ? {
+              cerdas_skema: cerdasResult.skema,
+              cerdas_cap_subsidi: cerdasResult.capSubsidi,
+              cerdas_subsidi_bank: cerdasResult.subsidiBank,
+              cerdas_selisih_debitur: cerdasResult.selisihDebitur,
+            }
+          : {}),
+      } as any);
       toast({ title: 'Simulasi tersimpan' });
     } catch (e: any) {
       toast({ title: 'Gagal menyimpan', description: e.message, variant: 'destructive' });
