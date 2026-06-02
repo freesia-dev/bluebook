@@ -1217,10 +1217,24 @@ const KalkulatorPage: React.FC = () => {
                   <hr className="my-2" />
                   <div className="text-xs uppercase text-muted-foreground font-semibold">Potongan di Muka</div>
                   <Row
-                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}`}
+                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}${
+                      cerdasResult && cerdasResult.skema !== 'top_up'
+                        ? cerdasResult.selisihDebitur === 0
+                          ? ' — GRATIS'
+                          : ' — selisih'
+                        : ''
+                    }`}
                     value={fmtRp(potongan.asuransi)}
                   />
-                  {alamin && (
+                  {cerdasResult && cerdasResult.skema !== 'top_up' && (
+                    <div className="text-xs pl-3 -mt-1 space-y-0.5">
+                      <div className="text-muted-foreground">Premi aktual: {fmtRp(cerdasResult.premiAsuransiAktual)}</div>
+                      <div className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        Subsidi bank: − {fmtRp(cerdasResult.subsidiBank)} (cap {fmtRp(cerdasResult.capSubsidi)})
+                      </div>
+                    </div>
+                  )}
+                  {alamin && !cerdasResult && (
                     <div className="text-xs text-muted-foreground pl-3 -mt-1">
                       ujroh net {fmtRp(alamin.ujrohNet)} · premi net {fmtRp(alamin.premiNet)}
                     </div>
