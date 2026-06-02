@@ -52,6 +52,7 @@ const KondisiKantorTemplatePage = lazy(() => import("./pages/security/KondisiKan
 const AuditLinksAdminPage = lazy(() => import("./pages/security/AuditLinksAdminPage"));
 const AuditPublicPage = lazy(() => import("./pages/security/AuditPublicPage"));
 const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
+const KalkulatorProduktifPage = lazy(() => import("./pages/kalkulator/KalkulatorProduktifPage"));
 const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
