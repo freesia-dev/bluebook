@@ -356,6 +356,29 @@ const KalkulatorPage: React.FC = () => {
     const ZEBRA: [number, number, number] = [241, 245, 249];
     const TEXT_DARK: [number, number, number] = [30, 41, 59];
 
+    // ---------- WATERMARK (tiled, low opacity, drawn at page start) ----------
+    const drawWatermark = () => {
+      const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.06 }) : null;
+      if (gState) (doc as any).setGState(gState);
+      doc.setTextColor(0, 63, 127);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      const stepX = 42;
+      const stepY = 24;
+      for (let row = 0; row * stepY < pageH + stepY; row++) {
+        const offset = (row % 2) * (stepX / 2);
+        for (let col = -1; col * stepX - offset < pageW + stepX; col++) {
+          doc.text('SIMULASI', col * stepX - offset, row * stepY, { angle: 30 });
+        }
+      }
+      // reset opacity
+      const gReset = (doc as any).GState ? new (doc as any).GState({ opacity: 1 }) : null;
+      if (gReset) (doc as any).setGState(gReset);
+    };
+    (doc as any).internal.events.subscribe('addPage', drawWatermark);
+    drawWatermark(); // first page
+
+
     // ---------- KOP SURAT ----------
     try {
       // load logo as data URL with correct aspect ratio
