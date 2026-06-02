@@ -67,11 +67,36 @@ const AuditContent: React.FC<{ report: AuditReport }> = ({ report }) => {
     return { totalShift, totalKejadian, totalInsiden, hariTercatat: uniqueDates.size, compliance };
   }, [report]);
 
-  const exportCSV = () => {
-    const rows = [
-      ['Tanggal', 'Shift', 'Petugas', 'Jam Mulai', 'Jam Selesai', 'Status', 'Lembur', 'TTD Pimpinan', 'Tgl TTD'],
-      ...report.shifts.map((s) => [
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1 — Cover
+    const cover: any[][] = [
+      ['LAPORAN AUDIT LOG SECURITY'],
+      ['PT. BPD Kalimantan Timur & Kalimantan Utara — KCP Telihan'],
+      [],
+      ['Periode', `${format(periodeDari, 'dd MMMM yyyy', { locale: idLocale })} – ${format(periodeSampai, 'dd MMMM yyyy', { locale: idLocale })}`],
+      ['Dibuat oleh', report.created_by_nama || '-'],
+      ['Tanggal dibuat', format(parseISO(report.created_at), 'dd MMMM yyyy HH:mm', { locale: idLocale })],
+      ['Berlaku s.d.', format(parseISO(report.expires_at), 'dd MMMM yyyy HH:mm', { locale: idLocale })],
+      ['Catatan', report.catatan || '-'],
+      [],
+      ['— RINGKASAN —'],
+      ['Hari Tercatat', stats.hariTercatat],
+      ['Total Shift', stats.totalShift],
+      ['Total Kejadian', stats.totalKejadian],
+      ['Insiden Penting', stats.totalInsiden],
+      ['BA Disetujui (%)', `${stats.compliance}%`],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cover), 'Ringkasan');
+
+    // Sheet 2 — Rekap Shift
+    const shiftRows = [
+      ['No', 'Tanggal', 'Hari', 'Shift', 'Petugas', 'Jam Mulai', 'Jam Selesai', 'Status', 'Lembur', 'TTD Pimpinan', 'Tanggal TTD'],
+      ...report.shifts.map((s, i) => [
+        i + 1,
         s.tanggal,
+        format(parseISO(s.tanggal), 'EEEE', { locale: idLocale }),
         SHIFT_LABEL[s.shift] || s.shift,
         s.nama_petugas,
         s.jam_mulai ? format(new Date(s.jam_mulai), 'HH:mm') : '',
@@ -81,28 +106,335 @@ const AuditContent: React.FC<{ report: AuditReport }> = ({ report }) => {
         s.ttd_pimpinan_nama || '',
         s.ttd_pimpinan_at ? format(new Date(s.ttd_pimpinan_at), 'yyyy-MM-dd HH:mm') : '',
       ]),
-      [],
-      ['REKAP KEJADIAN'],
-      ['Tanggal', 'Shift', 'Petugas', 'Jam', 'Insiden', 'Kejadian'],
-      ...report.entries
-        .filter((e) => e.jenis === 'kejadian')
-        .map((e) => [
-          e.tanggal,
-          SHIFT_LABEL[e.shift] || e.shift,
-          e.nama_petugas,
-          format(new Date(e.waktu_kejadian), 'HH:mm'),
-          e.is_insiden ? 'YA' : '',
-          e.kejadian.replace(/"/g, '""'),
-        ]),
     ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c ?? '')}"`).join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audit-log-security_${report.periode_dari}_${report.periode_sampai}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(shiftRows), 'Rekap Shift');
+
+    // Sheet 3 — Kejadian
+    const ents = report.entries.filter((e) => e.jenis === 'kejadian');
+    const entRows = [
+      ['No', 'Tanggal', 'Shift', 'Petugas', 'Jam', 'Insiden', 'Kejadian'],
+      ...ents.map((e, i) => [
+        i + 1,
+        e.tanggal,
+        SHIFT_LABEL[e.shift] || e.shift,
+        e.nama_petugas,
+        format(new Date(e.waktu_kejadian), 'HH:mm'),
+        e.is_insiden ? 'YA' : '',
+        e.kejadian,
+      ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(entRows), 'Kejadian');
+
+    // Sheet 4 — Insiden Penting
+    const ins = report.entries.filter((e) => e.is_insiden);
+    const insRows = [
+      ['No', 'Tanggal', 'Shift', 'Petugas', 'Jam', 'Insiden'],
+      ...ins.map((e, i) => [
+        i + 1,
+        e.tanggal,
+        SHIFT_LABEL[e.shift] || e.shift,
+        e.nama_petugas,
+        format(new Date(e.waktu_kejadian), 'HH:mm'),
+        e.kejadian,
+      ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(insRows), 'Insiden Penting');
+
+    XLSX.writeFile(wb, `Laporan_Audit_Security_${report.periode_dari}_${report.periode_sampai}.xlsx`);
+  };
+
+  const exportPDF = async () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 14;
+    const BRAND_BLUE: [number, number, number] = [0, 63, 127];
+    const BRAND_ORANGE: [number, number, number] = [245, 130, 32];
+    const ZEBRA: [number, number, number] = [241, 245, 249];
+    const TEXT_DARK: [number, number, number] = [30, 41, 59];
+
+    // ===== KOP SURAT =====
+    const drawKop = () => {
+      try {
+        // placeholder; will be replaced async below
+      } catch {}
+      const kopX = M + 34;
+      doc.setTextColor(...BRAND_BLUE);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', kopX, M + 5);
+      doc.setFontSize(10.5);
+      doc.text('Kantor Cabang Pembantu Telihan', kopX, M + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Jl. Letjend S. Parman No. 14-15, Bontang 75383  ·  Telp. 0548-26567', kopX, M + 14.5);
+      doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', kopX, M + 18);
+      doc.setFillColor(...BRAND_BLUE);
+      doc.rect(M, M + 21, pageW - 2 * M, 1.2, 'F');
+      doc.setFillColor(...BRAND_ORANGE);
+      doc.rect(M, M + 22.4, pageW - 2 * M, 0.5, 'F');
+    };
+
+    // load logo
+    let logoData: string | null = null;
+    try {
+      logoData = await fetch(logoBpd)
+        .then((r) => r.blob())
+        .then((b) => new Promise<string>((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result as string);
+          r.readAsDataURL(b);
+        }));
+    } catch {}
+
+    const drawLogo = () => {
+      if (!logoData) return;
+      try {
+        const props = (doc as any).getImageProperties(logoData);
+        const logoH = 14;
+        const logoW = (props.width / props.height) * logoH;
+        doc.addImage(logoData, 'PNG', M, M + 2, logoW, logoH);
+      } catch {}
+    };
+
+    // Header on every page
+    const drawHeader = () => {
+      drawLogo();
+      drawKop();
+    };
+
+    // Footer with page number & document line
+    const drawFooter = () => {
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(120);
+      doc.text(
+        `Laporan Audit Log Security · Periode ${format(periodeDari, 'dd MMM yyyy', { locale: idLocale })} – ${format(periodeSampai, 'dd MMM yyyy', { locale: idLocale })}`,
+        M, pageH - 8,
+      );
+      doc.text(`Halaman ${current} dari ${pageCount}`, pageW - M, pageH - 8, { align: 'right' });
+      doc.setDrawColor(200);
+      doc.line(M, pageH - 11, pageW - M, pageH - 11);
+    };
+
+    drawHeader();
+
+    // ===== TITLE =====
+    let y = M + 30;
+    doc.setTextColor(...BRAND_BLUE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('LAPORAN AUDIT LOG SECURITY', pageW / 2, y, { align: 'center' });
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(
+      `Periode: ${format(periodeDari, 'dd MMMM yyyy', { locale: idLocale })} – ${format(periodeSampai, 'dd MMMM yyyy', { locale: idLocale })}`,
+      pageW / 2, y, { align: 'center' },
+    );
+    y += 4;
+    doc.setFontSize(8);
+    doc.text(
+      `Dicetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: idLocale })} · Diterbitkan oleh: ${report.created_by_nama || '-'}`,
+      pageW / 2, y, { align: 'center' },
+    );
+
+    // ===== META =====
+    y += 4;
+    autoTable(doc, {
+      startY: y,
+      theme: 'plain',
+      styles: { fontSize: 8.5, cellPadding: 1.2, textColor: TEXT_DARK },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 38 },
+        1: { cellWidth: 3 },
+        2: { cellWidth: 'auto' },
+      },
+      head: [[{ content: 'INFORMASI LAPORAN', colSpan: 3, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold', fontSize: 9 } }]],
+      body: [
+        ['Periode Audit', ':', `${format(periodeDari, 'dd MMMM yyyy', { locale: idLocale })} – ${format(periodeSampai, 'dd MMMM yyyy', { locale: idLocale })}`],
+        ['Dibuat oleh', ':', report.created_by_nama || '-'],
+        ['Tanggal Dibuat', ':', format(parseISO(report.created_at), 'dd MMMM yyyy HH:mm', { locale: idLocale })],
+        ['Berlaku s.d.', ':', format(parseISO(report.expires_at), 'dd MMMM yyyy HH:mm', { locale: idLocale })],
+        ['Catatan', ':', report.catatan || '-'],
+      ],
+      margin: { left: M, right: M },
+    });
+
+    // ===== RINGKASAN STATISTIK =====
+    let yy = (doc as any).lastAutoTable.finalY + 4;
+    autoTable(doc, {
+      startY: yy,
+      head: [['Indikator', 'Nilai']],
+      body: [
+        ['Hari Tercatat', String(stats.hariTercatat)],
+        ['Total Shift', String(stats.totalShift)],
+        ['Total Kejadian', String(stats.totalKejadian)],
+        [{ content: 'Insiden Penting', styles: { textColor: [185, 28, 28] as any, fontStyle: 'bold' } }, { content: String(stats.totalInsiden), styles: { textColor: [185, 28, 28] as any, fontStyle: 'bold', halign: 'right' } }],
+        [{ content: 'Tingkat Kepatuhan BA', styles: { fontStyle: 'bold' } }, { content: `${stats.compliance}%`, styles: { fontStyle: 'bold', halign: 'right' } }],
+      ],
+      styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 45, halign: 'right' } },
+      margin: { left: M, right: M },
+    });
+
+    // ===== REKAP SHIFT =====
+    yy = (doc as any).lastAutoTable.finalY + 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND_BLUE);
+    doc.text('A. REKAP SHIFT', M, yy);
+    yy += 2;
+    autoTable(doc, {
+      startY: yy + 1,
+      head: [['No', 'Tanggal', 'Shift', 'Petugas', 'Mulai', 'Selesai', 'Status', 'TTD']],
+      body: report.shifts.length === 0
+        ? [[{ content: 'Tidak ada data shift dalam periode ini.', colSpan: 8, styles: { halign: 'center', textColor: [120, 120, 120] as any, fontStyle: 'italic' } }]]
+        : report.shifts.map((s, i) => [
+          i + 1,
+          format(parseISO(s.tanggal), 'dd/MM/yy'),
+          (SHIFT_LABEL[s.shift] || s.shift) + (s.is_lembur ? ' *' : ''),
+          s.nama_petugas,
+          s.jam_mulai ? format(new Date(s.jam_mulai), 'HH:mm') : '-',
+          s.jam_selesai ? format(new Date(s.jam_selesai), 'HH:mm') : '-',
+          s.status,
+          s.ttd_pimpinan_at ? '✓' : '—',
+        ]),
+      styles: { fontSize: 7.5, cellPadding: 1.5, textColor: TEXT_DARK },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255 },
+      alternateRowStyles: { fillColor: ZEBRA },
+      columnStyles: {
+        0: { cellWidth: 9, halign: 'center' },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 'auto' },
+        4: { cellWidth: 14, halign: 'center' },
+        5: { cellWidth: 14, halign: 'center' },
+        6: { cellWidth: 18 },
+        7: { cellWidth: 10, halign: 'center' },
+      },
+      margin: { left: M, right: M },
+    });
+
+    // ===== KEJADIAN =====
+    yy = (doc as any).lastAutoTable.finalY + 6;
+    if (yy > pageH - 50) {
+      doc.addPage();
+      drawHeader();
+      yy = M + 30;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND_BLUE);
+    doc.text('B. CATATAN KEJADIAN', M, yy);
+    yy += 2;
+    const ents = report.entries.filter((e) => e.jenis === 'kejadian');
+    autoTable(doc, {
+      startY: yy + 1,
+      head: [['No', 'Tgl', 'Shift', 'Jam', 'Petugas', 'Kejadian', 'Insiden']],
+      body: ents.length === 0
+        ? [[{ content: 'Tidak ada catatan kejadian dalam periode ini.', colSpan: 7, styles: { halign: 'center', textColor: [120, 120, 120] as any, fontStyle: 'italic' } }]]
+        : ents.map((e, i) => [
+          i + 1,
+          format(parseISO(e.tanggal), 'dd/MM/yy'),
+          SHIFT_LABEL[e.shift] || e.shift,
+          format(new Date(e.waktu_kejadian), 'HH:mm'),
+          e.nama_petugas,
+          e.kejadian,
+          e.is_insiden ? 'YA' : '',
+        ]),
+      styles: { fontSize: 7.5, cellPadding: 1.5, textColor: TEXT_DARK, overflow: 'linebreak' },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255 },
+      alternateRowStyles: { fillColor: ZEBRA },
+      columnStyles: {
+        0: { cellWidth: 9, halign: 'center' },
+        1: { cellWidth: 16 },
+        2: { cellWidth: 16 },
+        3: { cellWidth: 12, halign: 'center' },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 'auto' },
+        6: { cellWidth: 14, halign: 'center', textColor: [185, 28, 28] as any, fontStyle: 'bold' },
+      },
+      margin: { left: M, right: M },
+    });
+
+    // ===== INSIDEN PENTING =====
+    yy = (doc as any).lastAutoTable.finalY + 6;
+    if (yy > pageH - 60) {
+      doc.addPage();
+      drawHeader();
+      yy = M + 30;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND_BLUE);
+    doc.text('C. INSIDEN PENTING', M, yy);
+    yy += 2;
+    const ins = report.entries.filter((e) => e.is_insiden);
+    autoTable(doc, {
+      startY: yy + 1,
+      head: [['No', 'Tanggal', 'Shift', 'Jam', 'Petugas', 'Uraian Insiden']],
+      body: ins.length === 0
+        ? [[{ content: 'Tidak ada insiden tercatat dalam periode ini.', colSpan: 6, styles: { halign: 'center', textColor: [22, 101, 52] as any, fontStyle: 'italic' } }]]
+        : ins.map((e, i) => [
+          i + 1,
+          format(parseISO(e.tanggal), 'dd/MM/yy'),
+          SHIFT_LABEL[e.shift] || e.shift,
+          format(new Date(e.waktu_kejadian), 'HH:mm'),
+          e.nama_petugas,
+          e.kejadian,
+        ]),
+      styles: { fontSize: 7.5, cellPadding: 1.8, textColor: TEXT_DARK, overflow: 'linebreak' },
+      headStyles: { fillColor: [185, 28, 28] as any, textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 9, halign: 'center' },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 14, halign: 'center' },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 'auto' },
+      },
+      margin: { left: M, right: M },
+    });
+
+    // ===== TANDA TANGAN =====
+    yy = (doc as any).lastAutoTable.finalY + 12;
+    if (yy > pageH - 55) {
+      doc.addPage();
+      drawHeader();
+      yy = M + 35;
+    }
+    const colW = (pageW - 2 * M) / 2;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT_DARK);
+    doc.text('Diterbitkan oleh,', M + colW * 0.25, yy, { align: 'center' });
+    doc.text('Diketahui oleh,', M + colW * 1.5, yy, { align: 'center' });
+    doc.text(`Bontang, ${format(new Date(), 'dd MMMM yyyy', { locale: idLocale })}`, M + colW * 1.5, yy - 5, { align: 'center' });
+    yy += 22;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`( ${report.created_by_nama || '-'} )`, M + colW * 0.25, yy, { align: 'center' });
+    doc.text(`( Pimpinan KCP Telihan )`, M + colW * 1.5, yy, { align: 'center' });
+    yy += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(110);
+    doc.text('Petugas Audit', M + colW * 0.25, yy, { align: 'center' });
+    doc.text('Bank Kaltimtara KCP Telihan', M + colW * 1.5, yy, { align: 'center' });
+
+    // Footer all pages
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      drawFooter();
+    }
+
+    doc.save(`Laporan_Audit_Security_${report.periode_dari}_${report.periode_sampai}.pdf`);
   };
 
   return (
