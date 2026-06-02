@@ -222,6 +222,19 @@ const App = () => (
               <Suspense fallback={<LoginLoader />}><AuditPublicPage /></Suspense>
             } />
 
+            {/* Kalkulator Loan */}
+            <Route path="/kalkulator" element={
+              <Suspense fallback={<GenericPageSkeleton />}><KalkulatorPage /></Suspense>
+            } />
+            <Route path="/kalkulator/riwayat" element={
+              <Suspense fallback={<TablePageSkeleton />}><RiwayatKalkulatorPage /></Suspense>
+            } />
+            <Route path="/konfigurasi/produk-kalkulator" element={
+              <Suspense fallback={<TablePageSkeleton />}><ProdukKalkulatorPage /></Suspense>
+            } />
+            <Route path="/konfigurasi/usia-pensiun" element={
+              <Suspense fallback={<TablePageSkeleton />}><UsiaPensiunPage /></Suspense>
+            } />
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
