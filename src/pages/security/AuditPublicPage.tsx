@@ -5,10 +5,14 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Shield, Calendar, AlertCircle, Flag, CheckCircle2, FileSpreadsheet, Printer, ExternalLink } from 'lucide-react';
+import { Shield, Calendar, AlertCircle, Flag, CheckCircle2, FileSpreadsheet, FileText, ExternalLink } from 'lucide-react';
 import { format, eachDayOfInterval, parseISO, startOfMonth, endOfMonth, addMonths, isSameDay } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import logoImage from '@/assets/logo_bluebook.png';
+import logoBpd from '@/assets/logo-bankaltimtara.png';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const SHIFT_LABEL: Record<string, string> = { pagi: 'Pagi', sore: 'Sore', malam: 'Malam' };
 
