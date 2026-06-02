@@ -57,6 +57,7 @@ const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
 const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPage"));
+const KalkulatorPromoPage = lazy(() => import("./pages/konfigurasi/KalkulatorPromoPage"));
 
 
 // Minimal login loader (no layout needed)
@@ -242,6 +243,9 @@ const App = () => (
             } />
             <Route path="/konfigurasi/program-cerdas" element={
               <Suspense fallback={<TablePageSkeleton />}><ProgramCerdasPage /></Suspense>
+            } />
+            <Route path="/konfigurasi/promo-kalkulator" element={
+              <Suspense fallback={<TablePageSkeleton />}><KalkulatorPromoPage /></Suspense>
             } />
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={

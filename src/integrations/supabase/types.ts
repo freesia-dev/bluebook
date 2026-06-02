@@ -640,6 +640,60 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_promo: {
+        Row: {
+          aktif: boolean
+          bunga_override: number | null
+          cap_subsidi: number | null
+          created_at: string
+          deskripsi: string | null
+          gratis_asuransi: boolean
+          id: string
+          nama: string
+          periode_mulai: string
+          periode_selesai: string
+          provisi_diskon_pct: number | null
+          syarat: string | null
+          target_skema: string
+          updated_at: string
+          urutan: number
+        }
+        Insert: {
+          aktif?: boolean
+          bunga_override?: number | null
+          cap_subsidi?: number | null
+          created_at?: string
+          deskripsi?: string | null
+          gratis_asuransi?: boolean
+          id?: string
+          nama: string
+          periode_mulai: string
+          periode_selesai: string
+          provisi_diskon_pct?: number | null
+          syarat?: string | null
+          target_skema?: string
+          updated_at?: string
+          urutan?: number
+        }
+        Update: {
+          aktif?: boolean
+          bunga_override?: number | null
+          cap_subsidi?: number | null
+          created_at?: string
+          deskripsi?: string | null
+          gratis_asuransi?: boolean
+          id?: string
+          nama?: string
+          periode_mulai?: string
+          periode_selesai?: string
+          provisi_diskon_pct?: number | null
+          syarat?: string | null
+          target_skema?: string
+          updated_at?: string
+          urutan?: number
+        }
+        Relationships: []
+      }
       loan_simulation: {
         Row: {
           ada_pelunasan: boolean
