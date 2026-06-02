@@ -228,6 +228,9 @@ const App = () => (
             <Route path="/kalkulator" element={
               <Suspense fallback={<GenericPageSkeleton />}><KalkulatorPage /></Suspense>
             } />
+            <Route path="/kalkulator/produktif" element={
+              <Suspense fallback={<GenericPageSkeleton />}><KalkulatorProduktifPage /></Suspense>
+            } />
             <Route path="/kalkulator/riwayat" element={
               <Suspense fallback={<TablePageSkeleton />}><RiwayatKalkulatorPage /></Suspense>
             } />
