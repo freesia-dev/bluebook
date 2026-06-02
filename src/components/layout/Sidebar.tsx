@@ -120,6 +120,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'KK & MPAK Telihan', href: '/agenda-kredit/kk-mpak-telihan' },
     { label: 'Agenda & MPAK Meranti', href: '/agenda-kredit/agenda-mpak-meranti' },
     { label: 'Nomor Loan', href: '/agenda-kredit/nomor-loan' },
+    ...(permissions.loanCalc
+      ? [
+          { label: 'Kalkulator Loan', href: '/kalkulator' },
+          { label: 'Riwayat Simulasi', href: '/kalkulator/riwayat' },
+        ]
+      : []),
   ];
 
   const atmTelihanItems = [
