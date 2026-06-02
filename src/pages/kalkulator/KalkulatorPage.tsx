@@ -555,6 +555,44 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
+    // ---------- SECTION 3b: Program CERDAS ----------
+    if (cerdasResult) {
+      yy = (doc as any).lastAutoTable.finalY + 4;
+      const statusColor: [number, number, number] =
+        cerdasResult.status === 'gratis'
+          ? [22, 163, 74]
+          : cerdasResult.status === 'selisih'
+          ? [217, 119, 6]
+          : [100, 116, 139];
+      const cerdasBody: any[][] = [
+        ['Skema Promo', cerdasResult.skemaLabel],
+        ['Bunga Promo', `${cerdasResult.bungaFinal}% p.a. fixed`],
+      ];
+      if (cerdasResult.skema === 'top_up') {
+        cerdasBody.push(['Diskon Provisi', `${cerdasResult.diskonProvisiPct}% (${(parseFloat(provisi) || 0).toFixed(2)}% → ${cerdasResult.provisiFinalPct.toFixed(2)}%)`]);
+      } else if (cerdasResult.tier) {
+        cerdasBody.push(
+          ['Tier Plafon', cerdasResult.tier.label],
+          ['Cap Subsidi AJK', fmtRp(cerdasResult.capSubsidi)],
+          ['Premi AJK Aktual', fmtRp(cerdasResult.premiAsuransiAktual)],
+          [{ content: 'Subsidi Bank', styles: { fontStyle: 'bold' } }, { content: `− ${fmtRp(cerdasResult.subsidiBank)}`, styles: { fontStyle: 'bold', textColor: [22, 163, 74], halign: 'right' } }],
+          [
+            { content: 'Beban Debitur (AJK)', styles: { fontStyle: 'bold' } },
+            { content: cerdasResult.selisihDebitur === 0 ? '✓ GRATIS' : fmtRp(cerdasResult.selisihDebitur), styles: { fontStyle: 'bold', textColor: statusColor, halign: 'right' } },
+          ],
+        );
+      }
+      cerdasBody.push([{ content: cerdasResult.pesan, colSpan: 2, styles: { fontStyle: 'italic', textColor: statusColor, fillColor: [254, 252, 232] } }]);
+      autoTable(doc, {
+        startY: yy,
+        head: [[{ content: 'PROGRAM CERDAS — Cicilan Extra Ringan & Diskon Asuransi', colSpan: 2, styles: { fillColor: [245, 130, 32], textColor: 255, fontStyle: 'bold' } }]],
+        body: cerdasBody,
+        styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+        columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold' }, 1: { halign: 'right' } },
+        margin: { left: M, right: M },
+      });
+    }
+
     // ---------- SECTION 4: Ringkasan Angsuran ----------
     yy = (doc as any).lastAutoTable.finalY + 4;
     autoTable(doc, {
