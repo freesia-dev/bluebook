@@ -30,8 +30,19 @@ import {
 } from '@/lib/loan-calc';
 import { calcAlamin, calcUmur, cekUnderwriting, type AlaminResult, type UWResult } from '@/lib/alamin-calc';
 import { useAlaminConfig, useAlaminTarif, useAlaminUWRules } from '@/hooks/use-alamin';
+import { useCerdasConfig } from '@/hooks/use-cerdas';
+import {
+  applyCerdas,
+  isCerdasActive,
+  getCerdasTier,
+  getCerdasBunga,
+  CERDAS_SKEMA_LABEL,
+  type CerdasSkema,
+  type CerdasApplyResult,
+} from '@/lib/cerdas-calc';
+import { Switch } from '@/components/ui/switch';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
-import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion } from 'lucide-react';
+import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion, Sparkles, CheckCircle2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -49,6 +60,7 @@ const KalkulatorPage: React.FC = () => {
   const { data: alaminTarif } = useAlaminTarif();
   const { data: alaminRules = [] } = useAlaminUWRules();
   const { data: alaminConfig } = useAlaminConfig();
+  const { data: cerdasConfig } = useCerdasConfig();
   const save = useSaveLoanSimulation();
 
   // Debitur
@@ -83,6 +95,10 @@ const KalkulatorPage: React.FC = () => {
   const [pelunasanBulan, setPelunasanBulan] = useState('12');
   const [dsrTarget, setDsrTarget] = useState('40');
 
+  // CERDAS promo
+  const [cerdasOn, setCerdasOn] = useState(false);
+  const [cerdasSkema, setCerdasSkema] = useState<CerdasSkema>('debitur_baru');
+
   const selectedProduct = products.find((p) => p.id === productId);
 
   useEffect(() => {
@@ -104,8 +120,8 @@ const KalkulatorPage: React.FC = () => {
   const notaris = parseCurrencyValue(notarisStr);
   const perikatan = parseCurrencyValue(perikatanStr);
   const tenorBulan = parseInt(tenor) || 0;
-  const bungaPa = parseFloat(bunga) || 0;
-  const provisiPct = parseFloat(provisi) || 0;
+  const bungaInput = parseFloat(bunga) || 0;
+  const provisiInput = parseFloat(provisi) || 0;
   const blokirN = parseInt(blokir) || 0;
   const skema: LoanSkema = selectedProduct?.skema ?? 'anuitas';
 
@@ -135,10 +151,29 @@ const KalkulatorPage: React.FC = () => {
     return cekUnderwriting(umur, plafon, tenorBulan, alaminRules, alaminConfig?.x_plus_n_default);
   }, [asuransiProvider, alaminRules, umur, plafon, tenorBulan, alaminConfig]);
 
-  const asuransiNominal =
+  const premiAktual =
     asuransiProvider === 'alamin'
       ? alamin?.premiGross ?? 0
       : parseCurrencyValue(asuransiNominalStr);
+
+  // CERDAS apply (override bunga + provisi + asuransi nominal)
+  const cerdasResult: CerdasApplyResult | null = useMemo(() => {
+    if (!cerdasOn || !cerdasConfig) return null;
+    return applyCerdas({
+      skema: cerdasSkema,
+      plafon,
+      premiAsuransiAktual: premiAktual,
+      provisiPctAsli: provisiInput,
+      cfg: cerdasConfig,
+    });
+  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiAktual, provisiInput]);
+
+  const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
+  const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
+  // Nominal asuransi yang masuk potongan: jika CERDAS subsidi AJK aktif, hanya selisih yang dibayar debitur
+  const asuransiNominal = cerdasResult
+    ? (cerdasResult.skema === 'top_up' ? premiAktual : cerdasResult.selisihDebitur)
+    : premiAktual;
 
   // Calculation
   const result = useMemo(() => {
@@ -216,9 +251,17 @@ const KalkulatorPage: React.FC = () => {
         ada_pelunasan: adaPelunasan,
         pelunasan_bulan_ke: adaPelunasan ? parseInt(pelunasanBulan) || null : null,
         nama_ao: namaAo || null,
-        hasil_ringkasan: { ...result.summary, ...potongan },
+        hasil_ringkasan: { ...result.summary, ...potongan, cerdas: cerdasResult ?? null },
         tabel_angsuran: result.rows,
-      });
+        ...(cerdasResult
+          ? {
+              cerdas_skema: cerdasResult.skema,
+              cerdas_cap_subsidi: cerdasResult.capSubsidi,
+              cerdas_subsidi_bank: cerdasResult.subsidiBank,
+              cerdas_selisih_debitur: cerdasResult.selisihDebitur,
+            }
+          : {}),
+      } as any);
       toast({ title: 'Simulasi tersimpan' });
     } catch (e: any) {
       toast({ title: 'Gagal menyimpan', description: e.message, variant: 'destructive' });
@@ -512,6 +555,44 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
+    // ---------- SECTION 3b: Program CERDAS ----------
+    if (cerdasResult) {
+      yy = (doc as any).lastAutoTable.finalY + 4;
+      const statusColor: [number, number, number] =
+        cerdasResult.status === 'gratis'
+          ? [22, 163, 74]
+          : cerdasResult.status === 'selisih'
+          ? [217, 119, 6]
+          : [100, 116, 139];
+      const cerdasBody: any[][] = [
+        ['Skema Promo', cerdasResult.skemaLabel],
+        ['Bunga Promo', `${cerdasResult.bungaFinal}% p.a. fixed`],
+      ];
+      if (cerdasResult.skema === 'top_up') {
+        cerdasBody.push(['Diskon Provisi', `${cerdasResult.diskonProvisiPct}% (${(parseFloat(provisi) || 0).toFixed(2)}% → ${cerdasResult.provisiFinalPct.toFixed(2)}%)`]);
+      } else if (cerdasResult.tier) {
+        cerdasBody.push(
+          ['Tier Plafon', cerdasResult.tier.label],
+          ['Cap Subsidi AJK', fmtRp(cerdasResult.capSubsidi)],
+          ['Premi AJK Aktual', fmtRp(cerdasResult.premiAsuransiAktual)],
+          [{ content: 'Subsidi Bank', styles: { fontStyle: 'bold' } }, { content: `− ${fmtRp(cerdasResult.subsidiBank)}`, styles: { fontStyle: 'bold', textColor: [22, 163, 74], halign: 'right' } }],
+          [
+            { content: 'Beban Debitur (AJK)', styles: { fontStyle: 'bold' } },
+            { content: cerdasResult.selisihDebitur === 0 ? '✓ GRATIS' : fmtRp(cerdasResult.selisihDebitur), styles: { fontStyle: 'bold', textColor: statusColor, halign: 'right' } },
+          ],
+        );
+      }
+      cerdasBody.push([{ content: cerdasResult.pesan, colSpan: 2, styles: { fontStyle: 'italic', textColor: statusColor, fillColor: [254, 252, 232] } }]);
+      autoTable(doc, {
+        startY: yy,
+        head: [[{ content: 'PROGRAM CERDAS — Cicilan Extra Ringan & Diskon Asuransi', colSpan: 2, styles: { fillColor: [245, 130, 32], textColor: 255, fontStyle: 'bold' } }]],
+        body: cerdasBody,
+        styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
+        columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold' }, 1: { halign: 'right' } },
+        margin: { left: M, right: M },
+      });
+    }
+
     // ---------- SECTION 4: Ringkasan Angsuran ----------
     yy = (doc as any).lastAutoTable.finalY + 4;
     autoTable(doc, {
@@ -778,7 +859,14 @@ const KalkulatorPage: React.FC = () => {
               </div>
 
               <div>
-                <Label>Bunga p.a. (%)</Label>
+                <Label className="flex items-center justify-between">
+                  <span>Bunga p.a. (%)</span>
+                  {cerdasResult && (
+                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> CERDAS: {cerdasResult.bungaFinal}%
+                    </span>
+                  )}
+                </Label>
                 <div className="flex gap-2">
                   {bungaMode === 'preset' && selectedProduct ? (
                     <Select value={bunga} onValueChange={setBunga}>
@@ -808,7 +896,14 @@ const KalkulatorPage: React.FC = () => {
               </div>
 
               <div>
-                <Label>Provisi (%)</Label>
+                <Label className="flex items-center justify-between">
+                  <span>Provisi (%)</span>
+                  {cerdasResult?.skema === 'top_up' && (
+                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> CERDAS: {cerdasResult.provisiFinalPct.toFixed(2)}%
+                    </span>
+                  )}
+                </Label>
                 <div className="flex gap-2">
                   {provisiMode === 'preset' && selectedProduct ? (
                     <Select value={provisi} onValueChange={setProvisi}>
@@ -904,8 +999,138 @@ const KalkulatorPage: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* PROGRAM CERDAS */}
+          {cerdasConfig && (
+            <Card className={cerdasOn ? 'border-amber-400 bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10' : ''}>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Program CERDAS
+                    <Badge variant="outline" className="text-[10px] font-normal">
+                      {new Date(cerdasConfig.periode_mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} — {new Date(cerdasConfig.periode_selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Badge>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="cerdas-switch" className="text-sm font-normal cursor-pointer">
+                      Ikut Promo
+                    </Label>
+                    <Switch
+                      id="cerdas-switch"
+                      checked={cerdasOn}
+                      onCheckedChange={(v) => setCerdasOn(v && isCerdasActive(cerdasConfig, tanggalAkad))}
+                      disabled={!isCerdasActive(cerdasConfig, tanggalAkad)}
+                    />
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!isCerdasActive(cerdasConfig, tanggalAkad) && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Tanggal akad di luar periode promo CERDAS.
+                  </p>
+                )}
+                {cerdasOn && (
+                  <>
+                    <RadioGroup
+                      value={cerdasSkema}
+                      onValueChange={(v) => setCerdasSkema(v as CerdasSkema)}
+                      className="grid grid-cols-1 md:grid-cols-3 gap-3"
+                    >
+                      {(['debitur_baru', 'take_over', 'top_up'] as CerdasSkema[]).map((sk) => {
+                        const bunga = getCerdasBunga(sk, cerdasConfig);
+                        const active = cerdasSkema === sk;
+                        const isTopUp = sk === 'top_up';
+                        return (
+                          <label
+                            key={sk}
+                            htmlFor={`cerdas-${sk}`}
+                            className={`cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                              active
+                                ? isTopUp
+                                  ? 'border-amber-500 bg-amber-100/60 dark:bg-amber-900/30'
+                                  : 'border-primary bg-primary/5'
+                                : 'border-border hover:border-muted-foreground/30'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <RadioGroupItem value={sk} id={`cerdas-${sk}`} className="mt-1" />
+                              <div className="flex-1">
+                                <div className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
+                                  {CERDAS_SKEMA_LABEL[sk]}
+                                </div>
+                                <div className={`text-2xl font-bold mt-1 ${isTopUp ? 'text-amber-700 dark:text-amber-400' : 'text-primary'}`}>
+                                  {isTopUp ? `${cerdasConfig.diskon_provisi_top_up_pct}%` : `${bunga.toFixed(2).replace('.', ',')}%`}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {isTopUp
+                                    ? `Diskon provisi · Bunga ${bunga}% p.a.`
+                                    : 'p.a. fixed · Gratis AJK'}
+                                </div>
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </RadioGroup>
+
+                    {cerdasResult && (
+                      <div
+                        className={`rounded-lg p-3 text-sm border ${
+                          cerdasResult.status === 'gratis'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
+                            : cerdasResult.status === 'selisih'
+                            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800'
+                            : 'bg-muted/40 border-border'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {cerdasResult.status === 'gratis' ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : cerdasResult.status === 'selisih' ? (
+                            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <Sparkles className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 space-y-1">
+                            <div className="font-medium">{cerdasResult.pesan}</div>
+                            {cerdasResult.tier && (
+                              <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
+                                <span>{cerdasResult.tier.label}</span>
+                                <span className="text-right">Cap: <strong>{fmtRp(cerdasResult.capSubsidi)}</strong></span>
+                                <span>Premi aktual</span>
+                                <span className="text-right">{fmtRp(cerdasResult.premiAsuransiAktual)}</span>
+                                <span>Subsidi bank</span>
+                                <span className="text-right text-emerald-700 dark:text-emerald-400 font-medium">
+                                  − {fmtRp(cerdasResult.subsidiBank)}
+                                </span>
+                                <span className="font-semibold">Beban debitur</span>
+                                <span className={`text-right font-bold ${cerdasResult.selisihDebitur === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                  {cerdasResult.selisihDebitur === 0 ? 'GRATIS' : fmtRp(cerdasResult.selisihDebitur)}
+                                </span>
+                              </div>
+                            )}
+                            {cerdasResult.skema === 'top_up' && (
+                              <div className="text-xs text-muted-foreground pt-1">
+                                Provisi awal {provisiInput}% → <strong>{cerdasResult.provisiFinalPct.toFixed(2)}%</strong> setelah diskon {cerdasResult.diskonProvisiPct}%.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Catatan: pelunasan dipercepat/top up ≤ 1 tahun wajib mengganti premi AJK yang telah disubsidi bank.
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* ASURANSI */}
           <Card>
+
             <CardHeader>
               <CardTitle className="text-base">Asuransi</CardTitle>
             </CardHeader>
@@ -1007,9 +1232,19 @@ const KalkulatorPage: React.FC = () => {
               {result && potongan && (
                 <>
                   <Row label="Skema" value={skema.toUpperCase()} />
+                  {cerdasResult && (
+                    <div className="flex justify-between items-center -mt-1">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-500" /> CERDAS
+                      </span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {cerdasResult.skemaLabel}
+                      </Badge>
+                    </div>
+                  )}
                   <Row label="Plafon" value={fmtRp(plafon)} />
                   <Row label="Tenor" value={`${tenorBulan} bulan`} />
-                  <Row label="Bunga p.a." value={`${bungaPa}%`} />
+                  <Row label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} />
                   <hr className="my-2" />
                   <Row label="Angsuran Pertama" value={fmtRp(result.summary.angsuranPertama)} strong />
                   {skema !== 'anuitas' && (
@@ -1020,10 +1255,24 @@ const KalkulatorPage: React.FC = () => {
                   <hr className="my-2" />
                   <div className="text-xs uppercase text-muted-foreground font-semibold">Potongan di Muka</div>
                   <Row
-                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}`}
+                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}${
+                      cerdasResult && cerdasResult.skema !== 'top_up'
+                        ? cerdasResult.selisihDebitur === 0
+                          ? ' — GRATIS'
+                          : ' — selisih'
+                        : ''
+                    }`}
                     value={fmtRp(potongan.asuransi)}
                   />
-                  {alamin && (
+                  {cerdasResult && cerdasResult.skema !== 'top_up' && (
+                    <div className="text-xs pl-3 -mt-1 space-y-0.5">
+                      <div className="text-muted-foreground">Premi aktual: {fmtRp(cerdasResult.premiAsuransiAktual)}</div>
+                      <div className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        Subsidi bank: − {fmtRp(cerdasResult.subsidiBank)} (cap {fmtRp(cerdasResult.capSubsidi)})
+                      </div>
+                    </div>
+                  )}
+                  {alamin && !cerdasResult && (
                     <div className="text-xs text-muted-foreground pl-3 -mt-1">
                       ujroh net {fmtRp(alamin.ujrohNet)} · premi net {fmtRp(alamin.premiNet)}
                     </div>
