@@ -34,6 +34,7 @@ export interface LoanSimulationRow {
   nomor_ktp: string | null;
   nama_debitur: string;
   tanggal_lahir: string | null;
+  jenis_kelamin: string | null;
   pekerjaan: string | null;
   instansi: string | null;
   pilihan_karir: string | null;
@@ -45,6 +46,8 @@ export interface LoanSimulationRow {
   tanggal_akad: string | null;
   gaji: number;
   bunga_pa: number;
+  asuransi_provider: string;
+  asuransi_nominal: number;
   asuransi_pct: number;
   provisi_pct: number;
   biaya_notaris: number;
