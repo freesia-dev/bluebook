@@ -167,11 +167,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'KK & MPAK Telihan', href: '/agenda-kredit/kk-mpak-telihan' },
     { label: 'Agenda & MPAK Meranti', href: '/agenda-kredit/agenda-mpak-meranti' },
     { label: 'Nomor Loan', href: '/agenda-kredit/nomor-loan' },
-    ...(permissions.loanCalc
+  ];
+
+  const simulasiKreditItems: ChildItem[] = [
+    { label: 'Kalkulator Konsumtif', href: '/kalkulator' },
+    { label: 'Kalkulator Produktif', href: '/kalkulator/produktif' },
+    { label: 'Riwayat Simulasi', href: '/kalkulator/riwayat' },
+    ...(isAdmin
       ? [
-          { label: 'Kalkulator Loan', href: '/kalkulator' },
-          { label: 'Kalkulator Produktif', href: '/kalkulator/produktif' },
-          { label: 'Riwayat Simulasi', href: '/kalkulator/riwayat' },
+          {
+            label: 'Konfigurasi',
+            children: [
+              { label: 'Produk Kalkulator', href: '/konfigurasi/produk-kalkulator' },
+              { label: 'Usia Pensiun', href: '/konfigurasi/usia-pensiun' },
+              { label: 'Program Kalkulator', href: '/konfigurasi/promo-kalkulator' },
+            ],
+          },
         ]
       : []),
   ];
@@ -201,10 +212,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
         { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
-        { label: 'Produk Kalkulator', href: '/konfigurasi/produk-kalkulator' },
-        { label: 'Usia Pensiun', href: '/konfigurasi/usia-pensiun' },
-        { label: 'Program CERDAS', href: '/konfigurasi/program-cerdas' },
-        { label: 'Promo Kalkulator', href: '/konfigurasi/promo-kalkulator' },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
