@@ -1,0 +1,224 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { LoanSkema, AmortRow, CalcSummary, PotonganResult } from '@/lib/loan-calc';
+
+export interface RateOption {
+  label: string;
+  value: number;
+}
+
+export interface LoanProduct {
+  id: string;
+  nama: string;
+  skema: LoanSkema;
+  max_tenor_bulan: number;
+  bunga_options: RateOption[];
+  asuransi_options: RateOption[];
+  provisi_options: RateOption[];
+  biaya_notaris: number;
+  biaya_perikatan: number;
+  blokir_angsuran: number;
+  is_active: boolean;
+  urutan: number;
+}
+
+export interface PensionRule {
+  id: string;
+  pilihan_karir: string;
+  usia_pensiun: number;
+}
+
+export interface LoanSimulationRow {
+  id: string;
+  nomor_ktp: string | null;
+  nama_debitur: string;
+  tanggal_lahir: string | null;
+  pekerjaan: string | null;
+  instansi: string | null;
+  pilihan_karir: string | null;
+  product_id: string | null;
+  product_nama: string | null;
+  skema: LoanSkema;
+  plafon: number;
+  tenor_bulan: number;
+  tanggal_akad: string | null;
+  gaji: number;
+  bunga_pa: number;
+  asuransi_pct: number;
+  provisi_pct: number;
+  biaya_notaris: number;
+  biaya_perikatan: number;
+  blokir_angsuran: number;
+  ada_pelunasan: boolean;
+  pelunasan_bulan_ke: number | null;
+  nama_ao: string | null;
+  hasil_ringkasan: (CalcSummary & PotonganResult & { angsuranTengah?: number }) | null;
+  tabel_angsuran: AmortRow[] | null;
+  created_by: string | null;
+  created_by_nama: string | null;
+  created_at: string;
+}
+
+export type LoanSimulationInput = Omit<
+  LoanSimulationRow,
+  'id' | 'created_at' | 'created_by' | 'created_by_nama'
+>;
+
+// ============ PRODUCTS ============
+export const useLoanProducts = (activeOnly = true) =>
+  useQuery({
+    queryKey: ['loan-products', activeOnly],
+    queryFn: async () => {
+      let q = (supabase as any).from('loan_product_config').select('*').order('urutan');
+      if (activeOnly) q = q.eq('is_active', true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as LoanProduct[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+export const useUpsertLoanProduct = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: Partial<LoanProduct> & { nama: string }) => {
+      const { id, ...rest } = p;
+      if (id) {
+        const { data, error } = await (supabase as any)
+          .from('loan_product_config')
+          .update(rest)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+      const { data, error } = await (supabase as any)
+        .from('loan_product_config')
+        .insert(rest)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-products'] }),
+  });
+};
+
+export const useDeleteLoanProduct = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('loan_product_config').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-products'] }),
+  });
+};
+
+// ============ PENSION RULES ============
+export const usePensionRules = () =>
+  useQuery({
+    queryKey: ['pension-rules'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('pension_rule')
+        .select('*')
+        .order('pilihan_karir');
+      if (error) throw error;
+      return (data || []) as PensionRule[];
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+export const useUpsertPensionRule = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (r: Partial<PensionRule> & { pilihan_karir: string; usia_pensiun: number }) => {
+      const { id, ...rest } = r;
+      if (id) {
+        const { error } = await (supabase as any)
+          .from('pension_rule')
+          .update(rest)
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from('pension_rule').insert(rest);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pension-rules'] }),
+  });
+};
+
+export const useDeletePensionRule = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('pension_rule').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pension-rules'] }),
+  });
+};
+
+// ============ SIMULATIONS ============
+export const useLoanSimulations = () =>
+  useQuery({
+    queryKey: ['loan-simulations'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('loan_simulation')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as LoanSimulationRow[];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+export const useSaveLoanSimulation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: LoanSimulationInput) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const userId = userRes.user?.id ?? null;
+      let nama: string | null = null;
+      if (userId) {
+        const { data: prof } = await (supabase as any)
+          .from('profiles')
+          .select('nama')
+          .eq('user_id', userId)
+          .maybeSingle();
+        nama = prof?.nama ?? null;
+      }
+      const { data, error } = await (supabase as any)
+        .from('loan_simulation')
+        .insert({ ...input, created_by: userId, created_by_nama: nama })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as LoanSimulationRow;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-simulations'] }),
+  });
+};
+
+export const useDeleteLoanSimulation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('loan_simulation').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-simulations'] }),
+  });
+};
+
+export const PILIHAN_KARIR_DEFAULT = [
+  'PNS Fungsional',
+  'PNS Struktural',
+  'PPPK Penuh Waktu',
+  'PPPK Paruh Waktu',
+  'Pensiunan',
+];
