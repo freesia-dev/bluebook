@@ -95,6 +95,10 @@ const KalkulatorPage: React.FC = () => {
   const [pelunasanBulan, setPelunasanBulan] = useState('12');
   const [dsrTarget, setDsrTarget] = useState('40');
 
+  // CERDAS promo
+  const [cerdasOn, setCerdasOn] = useState(false);
+  const [cerdasSkema, setCerdasSkema] = useState<CerdasSkema>('debitur_baru');
+
   const selectedProduct = products.find((p) => p.id === productId);
 
   useEffect(() => {
