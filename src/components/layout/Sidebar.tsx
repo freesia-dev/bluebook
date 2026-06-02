@@ -155,6 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
         { label: 'Produk Kalkulator', href: '/konfigurasi/produk-kalkulator' },
         { label: 'Usia Pensiun', href: '/konfigurasi/usia-pensiun' },
+        { label: 'Program CERDAS', href: '/konfigurasi/program-cerdas' },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
