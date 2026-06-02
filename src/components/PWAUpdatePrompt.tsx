@@ -90,7 +90,7 @@ export const PWAUpdatePrompt = () => {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        hideClose={blocking as any}
+        {...(blocking ? { onCloseAutoFocus: (e: Event) => e.preventDefault() } : {})}
       >
         <DialogHeader>
           <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
