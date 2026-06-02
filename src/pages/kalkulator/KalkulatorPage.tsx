@@ -821,7 +821,14 @@ const KalkulatorPage: React.FC = () => {
               </div>
 
               <div>
-                <Label>Bunga p.a. (%)</Label>
+                <Label className="flex items-center justify-between">
+                  <span>Bunga p.a. (%)</span>
+                  {cerdasResult && (
+                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> CERDAS: {cerdasResult.bungaFinal}%
+                    </span>
+                  )}
+                </Label>
                 <div className="flex gap-2">
                   {bungaMode === 'preset' && selectedProduct ? (
                     <Select value={bunga} onValueChange={setBunga}>
