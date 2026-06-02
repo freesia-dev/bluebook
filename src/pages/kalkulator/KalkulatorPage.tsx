@@ -858,7 +858,14 @@ const KalkulatorPage: React.FC = () => {
               </div>
 
               <div>
-                <Label>Provisi (%)</Label>
+                <Label className="flex items-center justify-between">
+                  <span>Provisi (%)</span>
+                  {cerdasResult?.skema === 'top_up' && (
+                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> CERDAS: {cerdasResult.provisiFinalPct.toFixed(2)}%
+                    </span>
+                  )}
+                </Label>
                 <div className="flex gap-2">
                   {provisiMode === 'preset' && selectedProduct ? (
                     <Select value={provisi} onValueChange={setProvisi}>
