@@ -305,9 +305,14 @@ export type Database = {
           bunga_debitur_baru: number
           bunga_take_over: number
           bunga_top_up: number
-          cap_tier_1: number
-          cap_tier_2: number
-          cap_tier_3: number
+          cap_tier_1_baru: number
+          cap_tier_1_takeover: number
+          cap_tier_2_baru: number
+          cap_tier_2_takeover: number
+          cap_tier_3_baru: number
+          cap_tier_3_takeover: number
+          cap_tier_4_baru: number
+          cap_tier_4_takeover: number
           diskon_provisi_top_up_pct: number
           id: number
           nama_program: string
@@ -323,9 +328,14 @@ export type Database = {
           bunga_debitur_baru?: number
           bunga_take_over?: number
           bunga_top_up?: number
-          cap_tier_1?: number
-          cap_tier_2?: number
-          cap_tier_3?: number
+          cap_tier_1_baru?: number
+          cap_tier_1_takeover?: number
+          cap_tier_2_baru?: number
+          cap_tier_2_takeover?: number
+          cap_tier_3_baru?: number
+          cap_tier_3_takeover?: number
+          cap_tier_4_baru?: number
+          cap_tier_4_takeover?: number
           diskon_provisi_top_up_pct?: number
           id?: number
           nama_program?: string
@@ -341,9 +351,14 @@ export type Database = {
           bunga_debitur_baru?: number
           bunga_take_over?: number
           bunga_top_up?: number
-          cap_tier_1?: number
-          cap_tier_2?: number
-          cap_tier_3?: number
+          cap_tier_1_baru?: number
+          cap_tier_1_takeover?: number
+          cap_tier_2_baru?: number
+          cap_tier_2_takeover?: number
+          cap_tier_3_baru?: number
+          cap_tier_3_takeover?: number
+          cap_tier_4_baru?: number
+          cap_tier_4_takeover?: number
           diskon_provisi_top_up_pct?: number
           id?: number
           nama_program?: string
