@@ -253,7 +253,7 @@ const KalkulatorPage: React.FC = () => {
         biaya_perikatan: perikatan,
         blokir_angsuran: blokirN,
         ada_pelunasan: adaPelunasan,
-        pelunasan_bulan_ke: adaPelunasan ? parseInt(pelunasanBulan) || null : null,
+        pelunasan_bulan_ke: null,
         nama_ao: namaAo || null,
         hasil_ringkasan: { ...result.summary, ...potongan, cerdas: cerdasResult ?? null },
         tabel_angsuran: result.rows,
