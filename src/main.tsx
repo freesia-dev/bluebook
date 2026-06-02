@@ -26,15 +26,19 @@ window.addEventListener("unhandledrejection", (e) =>
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// PWA update detection: poll for updates; the <PWAUpdatePrompt /> component
-// shows a modal when a new service worker is waiting and handles activation.
+// PWA update detection: aggressively poll for updates so users get the latest
+// build quickly. The <PWAUpdatePrompt /> component shows a modal when a new
+// service worker is waiting and handles activation.
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.ready.then((reg) => {
     const check = () => reg.update().catch(() => {});
     check();
-    setInterval(check, 60_000);
+    // Poll every 20s (was 60s) for faster detection
+    setInterval(check, 20_000);
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") check();
     });
+    window.addEventListener("focus", check);
+    window.addEventListener("online", check);
   });
 }
