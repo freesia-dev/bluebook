@@ -325,7 +325,7 @@ const KalkulatorPage: React.FC = () => {
     if (pelunasan) {
       ringkasan.push(
         [],
-        [`— Pelunasan Bulan ke-${pelunasan.bulanKe} —`],
+        ['— Top Up / Pelunasan (Outstanding) —'],
         ['Sisa Pokok', pelunasan.sisaPokok],
         ['Bunga Berjalan', pelunasan.bungaBerjalan],
         ['Total Pelunasan', pelunasan.totalPelunasan],
