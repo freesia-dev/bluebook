@@ -56,7 +56,7 @@ const KalkulatorProduktifPage: React.FC = () => {
   const [biayaOpStr, setBiayaOpStr] = useState('');
   const [biayaPribadiStr, setBiayaPribadiStr] = useState('');
 
-  // Pinjaman (skema dikunci ke sliding)
+  // Pinjaman (skema dikunci ke MENURUN / efektif — pokok tetap, bunga dari saldo, angsuran turun tiap bulan)
   const [plafonStr, setPlafonStr] = useState('');
   const [tenor, setTenor] = useState('36');
   const [tanggalAkad, setTanggalAkad] = useState(() => new Date().toISOString().slice(0, 10));
@@ -97,7 +97,9 @@ const KalkulatorProduktifPage: React.FC = () => {
 
   const result = useMemo(() => {
     if (plafon <= 0 || tenorBulan <= 0) return null;
-    return calcAmortization({ plafon, tenorBulan, bungaPa, skema: 'sliding', tanggalAkad });
+    // Skema MENURUN (KUR): pokok tetap (P/n), bunga dari saldo sisa, angsuran turun tiap bulan.
+    // Sesuai sheet "Sliding" pada template AMORTISASI.
+    return calcAmortization({ plafon, tenorBulan, bungaPa, skema: 'efektif', tanggalAkad });
   }, [plafon, tenorBulan, bungaPa, tanggalAkad]);
 
   const potongan = useMemo(() => {
