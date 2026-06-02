@@ -34,10 +34,57 @@ interface NavItemProps {
   onNavigate?: () => void;
 }
 
+const SubGroup: React.FC<{ label: string; items: { label: string; href: string }[]; onNavigate?: () => void }> = ({ label, items, onNavigate }) => {
+  const location = useLocation();
+  const hasActive = items.some((i) => location.pathname === i.href);
+  const [open, setOpen] = useState(hasActive);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs uppercase tracking-wide",
+          "hover:bg-sidebar-accent/50 text-sidebar-foreground/70",
+          hasActive && "text-sidebar-foreground"
+        )}
+      >
+        <Settings className="w-3.5 h-3.5 opacity-70" />
+        <span className="flex-1 text-left font-semibold">{label}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 opacity-60 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="ml-3 mt-0.5 space-y-0.5 border-l border-sidebar-border/40 pl-3">
+          {items.map((it) => (
+            <Link
+              key={it.href}
+              to={it.href}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
+                "hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                location.pathname === it.href && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+              )}
+            >
+              <span className={cn(
+                "w-1 h-1 rounded-full",
+                location.pathname === it.href ? "bg-sidebar-primary-foreground" : "bg-current opacity-40"
+              )} />
+              <span>{it.label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, onNavigate }) => {
   const location = useLocation();
-  // Auto-expand submenu if a child is active
-  const hasActiveChild = children?.some(child => location.pathname === child.href) || false;
+  // Auto-expand if any (nested) child is active
+  const isChildActive = (c: ChildItem): boolean =>
+    (c.href !== undefined && location.pathname === c.href) ||
+    !!c.children?.some((cc) => location.pathname === cc.href);
+  const hasActiveChild = children?.some(isChildActive) || false;
   const [isOpen, setIsOpen] = useState(hasActiveChild);
 
   if (children) {
@@ -53,33 +100,33 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
         >
           <Icon className="w-5 h-5 opacity-90" />
           <span className="flex-1 text-left font-medium text-sm">{label}</span>
-          <div className={cn(
-            "transition-transform duration-200",
-            isOpen && "rotate-180"
-          )}>
-            <ChevronDown className="w-4 h-4 opacity-60" />
-          </div>
+          <ChevronDown className={cn("w-4 h-4 opacity-60 transition-transform", isOpen && "rotate-180")} />
         </button>
         {isOpen && (
           <div className="ml-3 mt-1 space-y-0.5 animate-slide-in border-l-2 border-sidebar-border/50 pl-3">
-            {children.map((child) => (
-              <Link
-                key={child.href}
-                to={child.href}
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
-                  "hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground",
-                  location.pathname === child.href && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
-                )}
-              >
-                <span className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all",
-                  location.pathname === child.href ? "bg-sidebar-primary-foreground" : "bg-current opacity-40"
-                )} />
-                <span>{child.label}</span>
-              </Link>
-            ))}
+            {children.map((child, idx) => {
+              if (child.children && child.children.length > 0) {
+                return <SubGroup key={`sub-${idx}-${child.label}`} label={child.label} items={child.children} onNavigate={onNavigate} />;
+              }
+              return (
+                <Link
+                  key={child.href || `${child.label}-${idx}`}
+                  to={child.href!}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
+                    "hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                    location.pathname === child.href && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                  )}
+                >
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-all",
+                    location.pathname === child.href ? "bg-sidebar-primary-foreground" : "bg-current opacity-40"
+                  )} />
+                  <span>{child.label}</span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
