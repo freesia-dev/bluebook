@@ -153,6 +153,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
         { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
+        { label: 'Produk Kalkulator', href: '/konfigurasi/produk-kalkulator' },
+        { label: 'Usia Pensiun', href: '/konfigurasi/usia-pensiun' },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
