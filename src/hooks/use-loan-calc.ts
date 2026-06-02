@@ -20,6 +20,7 @@ export interface LoanProduct {
   blokir_angsuran: number;
   is_active: boolean;
   urutan: number;
+  asuransi_provider_default?: string;
 }
 
 export interface PensionRule {
