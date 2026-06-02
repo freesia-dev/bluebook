@@ -244,6 +244,9 @@ const App = () => (
             <Route path="/konfigurasi/program-cerdas" element={
               <Suspense fallback={<TablePageSkeleton />}><ProgramCerdasPage /></Suspense>
             } />
+            <Route path="/konfigurasi/promo-kalkulator" element={
+              <Suspense fallback={<TablePageSkeleton />}><KalkulatorPromoPage /></Suspense>
+            } />
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
