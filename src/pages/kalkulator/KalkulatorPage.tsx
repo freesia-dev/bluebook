@@ -602,10 +602,10 @@ const KalkulatorPage: React.FC = () => {
           ['Tier Plafon', cerdasResult.tier.label],
           ['Cap Subsidi AJK', fmtRp(cerdasResult.capSubsidi)],
           ['Premi AJK Aktual', fmtRp(cerdasResult.premiAsuransiAktual)],
-          [{ content: 'Subsidi Bank', styles: { fontStyle: 'bold' } }, { content: `− ${fmtRp(cerdasResult.subsidiBank)}`, styles: { fontStyle: 'bold', textColor: [22, 163, 74], halign: 'right' } }],
+          [{ content: 'Subsidi Bank', styles: { fontStyle: 'bold' } }, { content: `- ${fmtRp(cerdasResult.subsidiBank)}`, styles: { fontStyle: 'bold', textColor: [22, 163, 74], halign: 'right' } }],
           [
             { content: 'Beban Debitur (AJK)', styles: { fontStyle: 'bold' } },
-            { content: cerdasResult.selisihDebitur === 0 ? '✓ GRATIS' : fmtRp(cerdasResult.selisihDebitur), styles: { fontStyle: 'bold', textColor: statusColor, halign: 'right' } },
+            { content: cerdasResult.selisihDebitur === 0 ? 'GRATIS' : fmtRp(cerdasResult.selisihDebitur), styles: { fontStyle: 'bold', textColor: statusColor, halign: 'right' } },
           ],
         );
       }
