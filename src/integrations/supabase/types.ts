@@ -299,6 +299,63 @@ export type Database = {
         }
         Relationships: []
       }
+      cerdas_config: {
+        Row: {
+          aktif: boolean
+          bunga_debitur_baru: number
+          bunga_take_over: number
+          bunga_top_up: number
+          cap_tier_1: number
+          cap_tier_2: number
+          cap_tier_3: number
+          diskon_provisi_top_up_pct: number
+          id: number
+          nama_program: string
+          periode_mulai: string
+          periode_selesai: string
+          plafon_tier_1_max: number
+          plafon_tier_2_max: number
+          plafon_tier_3_max: number
+          updated_at: string
+        }
+        Insert: {
+          aktif?: boolean
+          bunga_debitur_baru?: number
+          bunga_take_over?: number
+          bunga_top_up?: number
+          cap_tier_1?: number
+          cap_tier_2?: number
+          cap_tier_3?: number
+          diskon_provisi_top_up_pct?: number
+          id?: number
+          nama_program?: string
+          periode_mulai?: string
+          periode_selesai?: string
+          plafon_tier_1_max?: number
+          plafon_tier_2_max?: number
+          plafon_tier_3_max?: number
+          updated_at?: string
+        }
+        Update: {
+          aktif?: boolean
+          bunga_debitur_baru?: number
+          bunga_take_over?: number
+          bunga_top_up?: number
+          cap_tier_1?: number
+          cap_tier_2?: number
+          cap_tier_3?: number
+          diskon_provisi_top_up_pct?: number
+          id?: number
+          nama_program?: string
+          periode_mulai?: string
+          periode_selesai?: string
+          plafon_tier_1_max?: number
+          plafon_tier_2_max?: number
+          plafon_tier_3_max?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       debitur_kontak: {
         Row: {
           catatan: string | null
@@ -578,6 +635,10 @@ export type Database = {
           biaya_perikatan: number
           blokir_angsuran: number
           bunga_pa: number
+          cerdas_cap_subsidi: number
+          cerdas_selisih_debitur: number
+          cerdas_skema: string | null
+          cerdas_subsidi_bank: number
           created_at: string
           created_by: string | null
           created_by_nama: string | null
@@ -612,6 +673,10 @@ export type Database = {
           biaya_perikatan?: number
           blokir_angsuran?: number
           bunga_pa?: number
+          cerdas_cap_subsidi?: number
+          cerdas_selisih_debitur?: number
+          cerdas_skema?: string | null
+          cerdas_subsidi_bank?: number
           created_at?: string
           created_by?: string | null
           created_by_nama?: string | null
@@ -646,6 +711,10 @@ export type Database = {
           biaya_perikatan?: number
           blokir_angsuran?: number
           bunga_pa?: number
+          cerdas_cap_subsidi?: number
+          cerdas_selisih_debitur?: number
+          cerdas_skema?: string | null
+          cerdas_subsidi_bank?: number
           created_at?: string
           created_by?: string | null
           created_by_nama?: string | null
