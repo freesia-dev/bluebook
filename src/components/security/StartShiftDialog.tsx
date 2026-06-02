@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers, useKondisiTemplates } from '@/hooks/use-security-log';
+import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers, useKondisiTemplates, useSecurityShifts } from '@/hooks/use-security-log';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, subDays, parseISO } from 'date-fns';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   open: boolean;
