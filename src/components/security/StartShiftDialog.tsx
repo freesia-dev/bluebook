@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers, useKondisiTemplates } from '@/hooks/use-security-log';
+import { SHIFT_LABEL, ShiftType, useStartShift, SecurityShift, useSecurityUsers, useKondisiTemplates, useSecurityShifts } from '@/hooks/use-security-log';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, subDays, parseISO } from 'date-fns';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -62,6 +63,22 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
     .sort((a, b) => (a.jam_selesai || '').localeCompare(b.jam_selesai || ''))
     .pop();
 
+  // ===== RULE: cannot start a shift on a new day if the previous day's
+  // pagi/sore/malam are not ALL completed. Empty prev day = allow (e.g. first day).
+  const prevDateStr = format(subDays(parseISO(tanggal), 1), 'yyyy-MM-dd');
+  const { data: prevDayShifts = [] } = useSecurityShifts(prevDateStr);
+  const prevDayBlocker = React.useMemo(() => {
+    const real = prevDayShifts.filter((s) => !s.is_lembur);
+    if (real.length === 0) return null; // no prior day data, allow
+    const missing = SHIFT_ORDER.filter((s) => !real.some((r) => r.shift === s));
+    const belumSelesai = real.filter((s) => s.status !== 'selesai').map((s) => SHIFT_LABEL[s.shift]);
+    if (missing.length === 0 && belumSelesai.length === 0) return null;
+    return {
+      missing: missing.map((s) => SHIFT_LABEL[s]),
+      belumSelesai,
+    };
+  }, [prevDayShifts]);
+
   const submit = async () => {
     if (!nama.trim()) {
       toast({ title: 'Nama petugas wajib diisi', variant: 'destructive' });
@@ -73,6 +90,17 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
     }
     if (!isLembur && usedShifts.has(shift)) {
       toast({ title: 'Shift ini sudah pernah dibuat', description: 'Pilih shift lain atau aktifkan opsi Lembur.', variant: 'destructive' });
+      return;
+    }
+    if (prevDayBlocker) {
+      const parts: string[] = [];
+      if (prevDayBlocker.missing.length) parts.push(`Shift hilang: ${prevDayBlocker.missing.join(', ')}`);
+      if (prevDayBlocker.belumSelesai.length) parts.push(`Belum selesai: ${prevDayBlocker.belumSelesai.join(', ')}`);
+      toast({
+        title: `Shift hari sebelumnya (${prevDateStr}) belum lengkap`,
+        description: parts.join(' · ') + '. Lengkapi & akhiri shift hari sebelumnya dulu.',
+        variant: 'destructive',
+      });
       return;
     }
     const finalNama = isPengganti ? `Pengganti - ${namaPengganti.trim()}` : nama.trim();
@@ -105,6 +133,21 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
           <DialogTitle>Mulai Shift Baru</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {prevDayBlocker && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex gap-2">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-semibold mb-0.5">Shift hari sebelumnya ({prevDateStr}) belum lengkap</div>
+                {prevDayBlocker.missing.length > 0 && (
+                  <div>Belum dibuat: <strong>{prevDayBlocker.missing.join(', ')}</strong></div>
+                )}
+                {prevDayBlocker.belumSelesai.length > 0 && (
+                  <div>Belum diakhiri: <strong>{prevDayBlocker.belumSelesai.join(', ')}</strong></div>
+                )}
+                <div className="mt-1 opacity-80">Selesaikan ketiga shift (Pagi, Sore, Malam) di tanggal {prevDateStr} sebelum memulai shift baru.</div>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Tanggal</Label>
@@ -195,7 +238,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit} disabled={start.isPending || availableShifts.length === 0}>
+          <Button onClick={submit} disabled={start.isPending || availableShifts.length === 0 || !!prevDayBlocker}>
             {start.isPending ? 'Memulai...' : 'Mulai Shift'}
           </Button>
         </DialogFooter>
