@@ -60,6 +60,7 @@ const KalkulatorPage: React.FC = () => {
   const { data: alaminTarif } = useAlaminTarif();
   const { data: alaminRules = [] } = useAlaminUWRules();
   const { data: alaminConfig } = useAlaminConfig();
+  const { data: cerdasConfig } = useCerdasConfig();
   const save = useSaveLoanSimulation();
 
   // Debitur
