@@ -238,7 +238,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit} disabled={start.isPending || availableShifts.length === 0}>
+          <Button onClick={submit} disabled={start.isPending || availableShifts.length === 0 || !!prevDayBlocker}>
             {start.isPending ? 'Memulai...' : 'Mulai Shift'}
           </Button>
         </DialogFooter>
