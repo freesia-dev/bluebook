@@ -13,12 +13,13 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sparkles, Plus, Pencil, Trash2, Save, Calendar, Percent, ShieldCheck, Tag, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Sparkles, Plus, Pencil, Trash2, Save, Calendar, Percent, ShieldCheck, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLoanPromos, useUpsertLoanPromo, useDeleteLoanPromo, type LoanPromo } from '@/hooks/use-loan-promo';
 import { fmtRp } from '@/lib/loan-calc';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
+import ProgramCerdasManager from '@/components/cerdas/ProgramCerdasManager';
 
 const emptyForm: any = {
   nama: '', deskripsi: '',
@@ -30,7 +31,6 @@ const emptyForm: any = {
 };
 
 const KalkulatorPromoPage: React.FC = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: promos = [], isLoading } = useLoanPromos(false);
   const upsert = useUpsertLoanPromo();
