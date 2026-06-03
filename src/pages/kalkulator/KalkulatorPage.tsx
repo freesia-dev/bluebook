@@ -305,11 +305,9 @@ const KalkulatorPage: React.FC = () => {
       ['Blokir Angsuran', `${blokirN}× angsuran pertama`],
       [],
       ['Angsuran Pertama', result.summary.angsuranPertama],
-      ['Angsuran Terakhir', result.summary.angsuranTerakhir],
       ['Total Angsuran', result.summary.totalAngsuran],
       ['Total Bunga', result.summary.totalBunga],
       ['Total Potongan di Muka', potongan.total],
-      ['Dana Diterima', danaBersih],
       ['Nama AO', namaAo],
     ];
     if (alamin) {
@@ -336,6 +334,10 @@ const KalkulatorPage: React.FC = () => {
         ['Total Pelunasan', pelunasan.totalPelunasan],
       );
     }
+    ringkasan.push(
+      [],
+      ['Dana Diterima', danaBersih],
+    );
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), 'Ringkasan');
 
     const ang = result.rows.map((r) => ({
@@ -546,10 +548,6 @@ const KalkulatorPage: React.FC = () => {
         [
           { content: 'TOTAL POTONGAN', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: ZEBRA } },
           { content: fmtNumber(potongan.total), styles: { fontStyle: 'bold', fillColor: ZEBRA } },
-        ],
-        [
-          { content: 'DANA DITERIMA DEBITUR', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: BRAND_ORANGE, textColor: 255 } },
-          { content: fmtNumber(danaBersih), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
         ],
       ],
       styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
@@ -1306,7 +1304,6 @@ const KalkulatorPage: React.FC = () => {
                   <Row label="Perikatan" value={fmtRp(potongan.perikatan)} />
                   <Row label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
                   <Row label="Total Potongan" value={fmtRp(potongan.total)} strong />
-                  <Row label="Dana Diterima" value={fmtRp(danaBersih)} strong highlight />
                   {pelunasan && (
                     <>
                       <hr className="my-2" />
@@ -1317,6 +1314,7 @@ const KalkulatorPage: React.FC = () => {
                       <Row label="Outstanding Bunga" value={fmtRp(pelunasan.bungaBerjalan)} />
                     </>
                   )}
+                  <Row label="Dana Diterima" value={fmtRp(danaBersih)} strong highlight />
 
                   <div className="grid grid-cols-2 gap-2 pt-3">
                     <Button variant="outline" onClick={handleExportExcel}>
