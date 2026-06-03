@@ -646,6 +646,21 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
+    // ---------- SECTION 5b: Dana Diterima (Nilai Bersih) ----------
+    yy = (doc as any).lastAutoTable.finalY + 4;
+    autoTable(doc, {
+      startY: yy,
+      body: [
+        [
+          { content: 'DANA DITERIMA DEBITUR (NILAI BERSIH)', styles: { fontStyle: 'bold', halign: 'right', fillColor: BRAND_ORANGE, textColor: 255 } },
+          { content: fmtNumber(danaBersih), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
+        ],
+      ],
+      styles: { fontSize: 9, cellPadding: 2.5, textColor: TEXT_DARK },
+      columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { halign: 'right' } },
+      margin: { left: M, right: M },
+    });
+
     // ---------- SECTION 6: Tabel Angsuran ----------
     yy = (doc as any).lastAutoTable.finalY + 6;
     autoTable(doc, {
