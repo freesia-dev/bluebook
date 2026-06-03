@@ -116,6 +116,7 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
         parent_shift_id: isLembur ? previousShift?.id ?? null : null,
         catatan_awal: catatanAwal.trim(),
         jam_mulai: jamIso,
+        nama_sebelumnya: previousShift && !isLembur ? previousShift.nama_petugas : null,
       });
       toast({ title: 'Shift dimulai', description: `${SHIFT_LABEL[shift]} oleh ${nama}` });
       onOpenChange(false);

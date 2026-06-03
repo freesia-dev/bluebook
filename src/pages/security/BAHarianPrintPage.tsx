@@ -50,7 +50,7 @@ const BAHarianPrintPage: React.FC = () => {
   });
 
   useEffect(() => {
-    document.title = `BA Log Security — ${tanggal}`;
+    document.title = `BA Mutasi Aktivitas Pengamanan — ${tanggal}`;
   }, [tanggal]);
 
   if (authLoading || isLoading) return <div className="p-10 text-center">Memuat dokumen...</div>;
@@ -134,7 +134,7 @@ const BAHarianPrintPage: React.FC = () => {
 
         <div className="text-center my-4">
           <h1 className="text-[13pt] font-bold tracking-wide text-[#003F7F]">
-            BERITA ACARA LOG AKTIVITAS SECURITY
+            BERITA ACARA MUTASI AKTIVITAS PENGAMANAN
           </h1>
           <div className="text-[10pt] mt-1 text-slate-600">Nomor: {nomorBA}</div>
         </div>
@@ -187,11 +187,28 @@ const BAHarianPrintPage: React.FC = () => {
                           </td>
                           <td className="border border-slate-400 px-2 py-1 whitespace-pre-wrap">
                             {e.kejadian}
-                            {(e.foto_urls?.length > 0 || e.video_url) && (
+                            {Array.isArray(e.foto_urls) && e.foto_urls.length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {e.foto_urls.slice(0, 6).map((u: string, i: number) => (
+                                  <img
+                                    key={`${e.id}-${i}`}
+                                    src={u}
+                                    alt={`Dokumentasi ${i + 1}`}
+                                    style={{
+                                      width: '3.2cm',
+                                      height: '2.4cm',
+                                      objectFit: 'cover',
+                                      border: '1px solid #cbd5e1',
+                                      borderRadius: 2,
+                                    }}
+                                    crossOrigin="anonymous"
+                                  />
+                                ))}
+                              </div>
+                            )}
+                            {e.video_url && (
                               <div className="text-[9pt] text-slate-500 italic mt-0.5">
-                                [Dokumentasi: {e.foto_urls?.length ? `${e.foto_urls.length} foto` : ''}
-                                {e.foto_urls?.length && e.video_url ? ', ' : ''}
-                                {e.video_url ? '1 video' : ''}]
+                                [Video terlampir: {e.video_url}]
                               </div>
                             )}
                           </td>
