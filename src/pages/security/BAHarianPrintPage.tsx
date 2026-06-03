@@ -50,7 +50,7 @@ const BAHarianPrintPage: React.FC = () => {
   });
 
   useEffect(() => {
-    document.title = `BA Log Security — ${tanggal}`;
+    document.title = `BA Mutasi Aktivitas Pengamanan — ${tanggal}`;
   }, [tanggal]);
 
   if (authLoading || isLoading) return <div className="p-10 text-center">Memuat dokumen...</div>;
