@@ -635,11 +635,39 @@ const MonthlyView: React.FC<{ report: AuditReport }> = ({ report }) => {
                     {s.is_lembur && ' · Lembur'}
                   </div>
                   {entries.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-xs">
+                    <ul className="mt-2 space-y-2 text-xs">
                       {entries.map((e) => (
                         <li key={e.id} className={`pl-2 border-l-2 ${e.is_insiden ? 'border-red-400' : 'border-slate-300'}`}>
-                          <span className="text-muted-foreground">{format(new Date(e.waktu_kejadian), 'HH:mm')}</span>{' '}
-                          {e.is_insiden && <Flag className="w-3 h-3 inline text-red-500" />} {e.kejadian}
+                          <div>
+                            <span className="text-muted-foreground">{format(new Date(e.waktu_kejadian), 'HH:mm')}</span>{' '}
+                            {e.is_insiden && <Flag className="w-3 h-3 inline text-red-500" />} {e.kejadian}
+                          </div>
+                          {Array.isArray(e.foto_urls) && e.foto_urls.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {e.foto_urls.map((u, i) => (
+                                <a
+                                  key={`${e.id}-${i}`}
+                                  href={u}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="w-14 h-14 rounded border overflow-hidden block hover:ring-2 hover:ring-primary/40"
+                                  title={`Dokumentasi ${i + 1}`}
+                                >
+                                  <img src={u} alt={`Dokumentasi ${i + 1}`} className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                          {e.video_url && (
+                            <a
+                              href={e.video_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                            >
+                              ▶ Lihat video
+                            </a>
+                          )}
                         </li>
                       ))}
                     </ul>
