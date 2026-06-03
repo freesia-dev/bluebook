@@ -290,7 +290,7 @@ export const useHandoverShift = () => {
         shift_id: payload.shift_id,
         jenis: 'serah_terima',
         waktu_kejadian: now,
-        kejadian: `Serah terima shift kepada ${payload.serah_terima_ke_nama}. Kondisi akhir: ${payload.kondisi_akhir}${
+        kejadian: `Menyerahkan Tugas dan Tanggungjawab sesuai dengan ketentuan kepada ${payload.serah_terima_ke_nama}. Kondisi akhir: ${payload.kondisi_akhir}${
           payload.catatan_serah_terima ? `. Catatan: ${payload.catatan_serah_terima}` : ''
         }`,
         created_by: userRes.user?.id,
