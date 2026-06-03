@@ -134,7 +134,7 @@ const BAHarianPrintPage: React.FC = () => {
 
         <div className="text-center my-4">
           <h1 className="text-[13pt] font-bold tracking-wide text-[#003F7F]">
-            BERITA ACARA LOG AKTIVITAS SECURITY
+            BERITA ACARA MUTASI AKTIVITAS PENGAMANAN
           </h1>
           <div className="text-[10pt] mt-1 text-slate-600">Nomor: {nomorBA}</div>
         </div>
