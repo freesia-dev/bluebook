@@ -203,6 +203,11 @@ const KalkulatorPage: React.FC = () => {
     return { sisaPokok: pokok, bungaBerjalan: bunga, totalPelunasan: pokok + bunga };
   }, [adaPelunasan, outstandingPokok, outstandingBunga]);
 
+  const danaBersih = useMemo(() => {
+    if (!potongan) return 0;
+    return potongan.danaDiterima - (pelunasan?.totalPelunasan ?? 0);
+  }, [potongan, pelunasan]);
+
   const dsrPct = result && gaji > 0 ? (result.summary.angsuranPertama / gaji) * 100 : 0;
   const dsrColor =
     dsrPct === 0 ? 'bg-muted' : dsrPct <= 40 ? 'bg-emerald-600' : dsrPct <= 50 ? 'bg-amber-500' : 'bg-rose-600';
@@ -255,7 +260,7 @@ const KalkulatorPage: React.FC = () => {
         ada_pelunasan: adaPelunasan,
         pelunasan_bulan_ke: null,
         nama_ao: namaAo || null,
-        hasil_ringkasan: { ...result.summary, ...potongan, cerdas: cerdasResult ?? null },
+        hasil_ringkasan: { ...result.summary, ...potongan, danaDiterima: danaBersih, cerdas: cerdasResult ?? null },
         tabel_angsuran: result.rows,
         ...(cerdasResult
           ? {
@@ -304,7 +309,7 @@ const KalkulatorPage: React.FC = () => {
       ['Total Angsuran', result.summary.totalAngsuran],
       ['Total Bunga', result.summary.totalBunga],
       ['Total Potongan di Muka', potongan.total],
-      ['Dana Diterima', potongan.danaDiterima],
+      ['Dana Diterima', danaBersih],
       ['Nama AO', namaAo],
     ];
     if (alamin) {
@@ -325,7 +330,7 @@ const KalkulatorPage: React.FC = () => {
     if (pelunasan) {
       ringkasan.push(
         [],
-        ['— Top Up / Pelunasan (Outstanding) —'],
+        ['— Top Up / Pelunasan (sudah dipotong dari Dana Diterima) —'],
         ['Sisa Pokok', pelunasan.sisaPokok],
         ['Bunga Berjalan', pelunasan.bungaBerjalan],
         ['Total Pelunasan', pelunasan.totalPelunasan],
@@ -544,7 +549,7 @@ const KalkulatorPage: React.FC = () => {
         ],
         [
           { content: 'DANA DITERIMA DEBITUR', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: BRAND_ORANGE, textColor: 255 } },
-          { content: fmtNumber(potongan.danaDiterima), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
+          { content: fmtNumber(danaBersih), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
         ],
       ],
       styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
@@ -631,14 +636,11 @@ const KalkulatorPage: React.FC = () => {
       yy = (doc as any).lastAutoTable.finalY + 4;
       autoTable(doc, {
         startY: yy,
-        head: [[{ content: 'TOP UP / PELUNASAN — Outstanding (Manual dari Core)', colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
+        head: [[{ content: 'TOP UP / PELUNASAN — Outstanding (sudah dipotong dari Dana Diterima)', colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
         body: [
           ['Outstanding Pokok', fmtRp(pelunasan.sisaPokok)],
           ['Outstanding Bunga', fmtRp(pelunasan.bungaBerjalan)],
-          [
-            { content: 'TOTAL PELUNASAN', styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
-            { content: fmtRp(pelunasan.totalPelunasan), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
-          ],
+          ['Total Pelunasan', fmtRp(pelunasan.totalPelunasan)],
         ],
         styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
         columnStyles: { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { halign: 'right' } },
@@ -1304,16 +1306,15 @@ const KalkulatorPage: React.FC = () => {
                   <Row label="Perikatan" value={fmtRp(potongan.perikatan)} />
                   <Row label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
                   <Row label="Total Potongan" value={fmtRp(potongan.total)} strong />
-                  <Row label="Dana Diterima" value={fmtRp(potongan.danaDiterima)} strong highlight />
+                  <Row label="Dana Diterima" value={fmtRp(danaBersih)} strong highlight />
                   {pelunasan && (
                     <>
                       <hr className="my-2" />
                       <div className="text-xs uppercase text-muted-foreground font-semibold">
-                        Top Up / Pelunasan
+                        Top Up / Pelunasan (sudah dipotong dari Dana Diterima)
                       </div>
                       <Row label="Outstanding Pokok" value={fmtRp(pelunasan.sisaPokok)} />
                       <Row label="Outstanding Bunga" value={fmtRp(pelunasan.bungaBerjalan)} />
-                      <Row label="Total Pelunasan" value={fmtRp(pelunasan.totalPelunasan)} strong highlight />
                     </>
                   )}
 
