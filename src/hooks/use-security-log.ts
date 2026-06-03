@@ -149,6 +149,7 @@ export const useStartShift = () => {
       parent_shift_id?: string | null;
       catatan_awal?: string;
       jam_mulai?: string; // ISO timestamp override
+      nama_sebelumnya?: string | null; // nama security shift sebelumnya
     }) => {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
@@ -170,13 +171,17 @@ export const useStartShift = () => {
         .single();
       if (error) throw error;
       const shift = data as unknown as SecurityShift;
-      // Insert "mulai shift" entry
+      // Insert "mulai shift" entry — kalimat resmi serah terima
+      const baseKalimat = payload.nama_sebelumnya
+        ? `Menerima Tugas dan Tanggungjawab sesuai dengan ketentuan dari ${payload.nama_sebelumnya}.`
+        : `Memulai shift ${SHIFT_LABEL_SHORT[shift.shift]} oleh ${shift.nama_petugas}.`;
+      const kejadianText = payload.catatan_awal?.trim()
+        ? `${baseKalimat} ${payload.catatan_awal.trim()}`
+        : baseKalimat;
       await supabase.from('security_log_entry' as any).insert({
         shift_id: shift.id,
         jenis: 'mulai_shift',
-        kejadian: payload.catatan_awal?.trim()
-          ? `Memulai shift ${SHIFT_LABEL_SHORT[shift.shift]}. ${payload.catatan_awal.trim()}`
-          : `Memulai shift ${SHIFT_LABEL_SHORT[shift.shift]} oleh ${shift.nama_petugas}.`,
+        kejadian: kejadianText,
         waktu_kejadian: shift.jam_mulai,
         created_by: uid,
       });
