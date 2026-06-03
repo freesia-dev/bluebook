@@ -203,6 +203,11 @@ const KalkulatorPage: React.FC = () => {
     return { sisaPokok: pokok, bungaBerjalan: bunga, totalPelunasan: pokok + bunga };
   }, [adaPelunasan, outstandingPokok, outstandingBunga]);
 
+  const danaBersih = useMemo(() => {
+    if (!potongan) return 0;
+    return potongan.danaDiterima - (pelunasan?.totalPelunasan ?? 0);
+  }, [potongan, pelunasan]);
+
   const dsrPct = result && gaji > 0 ? (result.summary.angsuranPertama / gaji) * 100 : 0;
   const dsrColor =
     dsrPct === 0 ? 'bg-muted' : dsrPct <= 40 ? 'bg-emerald-600' : dsrPct <= 50 ? 'bg-amber-500' : 'bg-rose-600';
