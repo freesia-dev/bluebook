@@ -73,6 +73,7 @@ export const HandoverDialog: React.FC<Props> = ({ open, onOpenChange, shift }) =
             ? `Lembur lanjutan dari shift ${SHIFT_LABEL_SHORT[shift.shift]}. ${catatan.trim()}`
             : `Lembur lanjutan dari shift ${SHIFT_LABEL_SHORT[shift.shift]}.`,
           jam_mulai: nowIso,
+          nama_sebelumnya: shift.nama_petugas,
         });
         toast({ title: 'Lembur dimulai', description: `${shift.nama_petugas} melanjutkan dengan status Lembur` });
         onOpenChange(false);
