@@ -68,10 +68,15 @@ export const StartShiftDialog: React.FC<Props> = ({ open, onOpenChange, todayShi
   const prevDateStr = format(subDays(parseISO(tanggal), 1), 'yyyy-MM-dd');
   const { data: prevDayShifts = [] } = useSecurityShifts(prevDateStr);
   const prevDayBlocker = React.useMemo(() => {
-    const real = prevDayShifts.filter((s) => !s.is_lembur);
-    if (real.length === 0) return null; // no prior day data, allow
-    const missing = SHIFT_ORDER.filter((s) => !real.some((r) => r.shift === s));
-    const belumSelesai = real.filter((s) => s.status !== 'selesai').map((s) => SHIFT_LABEL[s.shift]);
+    if (prevDayShifts.length === 0) return null; // no prior day data, allow
+    // Hitung shift lembur juga sebagai pemenuhan slot pagi/sore/malam.
+    // Slot dianggap "ada" jika ada minimal satu entry (lembur atau tidak) untuk shift tsb.
+    const missing = SHIFT_ORDER.filter((s) => !prevDayShifts.some((r) => r.shift === s));
+    // Slot dianggap "selesai" jika minimal satu entry pada shift tsb berstatus selesai.
+    const belumSelesai = SHIFT_ORDER
+      .filter((s) => prevDayShifts.some((r) => r.shift === s) &&
+        !prevDayShifts.some((r) => r.shift === s && r.status === 'selesai'))
+      .map((s) => SHIFT_LABEL[s]);
     if (missing.length === 0 && belumSelesai.length === 0) return null;
     return {
       missing: missing.map((s) => SHIFT_LABEL[s]),
