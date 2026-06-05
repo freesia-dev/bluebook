@@ -82,17 +82,18 @@ export const generateOjkReportPDF = async ({
     /* ignore */
   }
 
+  const textX = marginX + logoW + 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(0, 63, 127);
-  doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', marginX + 22, y + 5);
+  doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', textX, y + 5);
   doc.setFontSize(10.5);
-  doc.text('Kantor Cabang Pembantu Telihan', marginX + 22, y + 10);
+  doc.text('Kantor Cabang Pembantu Telihan', textX, y + 10);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(60, 60, 60);
-  doc.text('Jl. Letjend S. Parman No. 14–15, Bontang 75383  ·  Telp. 0548-26567', marginX + 22, y + 14.5);
-  doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', marginX + 22, y + 18);
+  doc.text('Jl. Letjend S. Parman No. 14–15, Bontang 75383  ·  Telp. 0548-26567', textX, y + 14.5);
+  doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', textX, y + 18);
 
   // Brand accent lines
   doc.setDrawColor(0, 63, 127);
