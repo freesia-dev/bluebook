@@ -445,7 +445,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <OjkReportDialog
-            data={suratKeluar}
             generatedBy="Admin"
             trigger={
               <Button size="sm" className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
