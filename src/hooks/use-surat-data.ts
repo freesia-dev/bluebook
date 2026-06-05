@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   getSuratMasuk, addSuratMasuk, updateSuratMasuk, deleteSuratMasuk,
-  getSuratKeluar, addSuratKeluar, updateSuratKeluar, deleteSuratKeluar
+  getSuratKeluar, addSuratKeluar, updateSuratKeluar, deleteSuratKeluar,
+  updateSuratKeluarOjkStatus
 } from '@/lib/supabase-store';
-import { SuratMasuk, SuratKeluar } from '@/types';
+import { SuratMasuk, SuratKeluar, OjkStatus } from '@/types';
 
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes cache
 
