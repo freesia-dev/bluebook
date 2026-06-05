@@ -516,6 +516,86 @@ const SuratKeluarPage: React.FC = () => {
           <DialogFooter className="justify-center"><Button onClick={() => setIsSuccessOpen(false)}>OK</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* OJK Confirmation Dialog */}
+      <AlertDialog open={!!ojkConfirm} onOpenChange={(open) => !open && setOjkConfirm(null)}>
+        <AlertDialogContent className="max-w-md">
+          {ojkConfirm && (() => {
+            const { item, action } = ojkConfirm;
+            const titleMap: Record<OjkStatus, string> = {
+              diajukan: 'Tandai sebagai Diajukan?',
+              diproses: 'Proses Pengajuan OJK?',
+              ditolak: 'Batalkan Pengajuan OJK?',
+              selesai: 'Tandai Selesai?',
+            };
+            const descMap: Record<OjkStatus, string> = {
+              diajukan: 'Surat akan ditandai sebagai Diajukan.',
+              diproses: 'Surat akan ditandai sebagai Diproses (dilanjutkan ke proses pengajuan).',
+              ditolak: 'Surat akan ditandai sebagai Dibatalkan / Ditolak.',
+              selesai: 'Surat akan ditandai sebagai Selesai.',
+            };
+            const currentLabel: Record<OjkStatus, string> = {
+              diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+            };
+            const currentStatus = (item.ojkStatus || 'diajukan') as OjkStatus;
+            const isDestructive = action === 'ditolak';
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{titleMap[action]}</AlertDialogTitle>
+                  <AlertDialogDescription>{descMap[action]}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm space-y-1.5">
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Nomor Agenda</span>
+                    <span className="font-medium">{item.nomorAgenda || '-'}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Kode Surat</span>
+                    <span className="font-medium">{item.kodeSurat}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Tanggal</span>
+                    <span className="font-medium">{item.tanggal ? format(new Date(item.tanggal), 'dd MMMM yyyy', { locale: id }) : '-'}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Penerima</span>
+                    <span className="font-medium">{item.namaPenerima}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Tujuan</span>
+                    <span className="font-medium break-words">{item.tujuanSurat}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Perihal</span>
+                    <span className="font-medium break-words">{item.perihal}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">User Input</span>
+                    <span className="font-medium">{item.userInput || '-'}</span>
+                  </div>
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Status Saat Ini</span>
+                    <span className="font-medium">{currentLabel[currentStatus]}</span>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      await handleOjkStatus(item, action);
+                      setOjkConfirm(null);
+                    }}
+                    className={isDestructive ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success/90 text-success-foreground'}
+                  >
+                    {action === 'ditolak' ? 'Batalkan' : action === 'selesai' ? 'Tandai Selesai' : 'Proses'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
