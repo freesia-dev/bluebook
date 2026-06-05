@@ -92,7 +92,7 @@ export const generateOjkReportPDF = async ({
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('LAPORAN PENGAJUAN OJK', pageW / 2, y, { align: 'center' });
+  doc.text('LAPORAN PENGAJUAN SLIK OJK', pageW / 2, y, { align: 'center' });
   doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(90, 90, 90);
@@ -191,7 +191,7 @@ export const generateOjkReportPDF = async ({
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
       doc.text(
-        `Bluebook Telihan · Laporan Pengajuan OJK · Halaman ${currentPage} dari ${pageCount}`,
+        `Bluebook Telihan · Laporan Pengajuan SLIK OJK · Halaman ${currentPage} dari ${pageCount}`,
         pageW / 2,
         pageH - 6,
         { align: 'center' }
@@ -199,6 +199,6 @@ export const generateOjkReportPDF = async ({
     },
   });
 
-  const fname = `Laporan_Pengajuan_OJK_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`;
+  const fname = `Laporan_Pengajuan_SLIK_OJK_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`;
   doc.save(fname);
 };
