@@ -88,30 +88,30 @@ export const generateOjkReportPDF = async ({
   doc.line(marginX, y + 22, pageW - marginX, y + 22);
 
   // ===== TITLE =====
-  y = 32;
+  y = 38;
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(15);
   doc.text('LAPORAN PENGAJUAN SLIK OJK', pageW / 2, y, { align: 'center' });
   doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(90, 90, 90);
   const filterLabel = statusFilter === 'all' ? 'Semua Status' : OJK_LABEL[statusFilter];
   doc.text(
-    `Surat Keluar Kode B-4 ke Otoritas Jasa Keuangan — Filter: ${filterLabel}`,
+    `Surat Keluar Kode B-4 ke Otoritas Jasa Keuangan  ·  Filter: ${filterLabel}`,
     pageW / 2,
-    y + 5,
+    y + 5.5,
     { align: 'center' }
   );
   doc.text(
     `Dicetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: idLocale })} oleh ${generatedBy}`,
     pageW / 2,
-    y + 9.5,
+    y + 10.5,
     { align: 'center' }
   );
 
   // ===== SUMMARY CARDS =====
-  y = 48;
+  y = 58;
   const cards = [
     { label: 'Total', value: stats.total, color: [0, 63, 127] as const },
     { label: 'Diajukan', value: stats.diajukan, color: [217, 119, 6] as const },
@@ -119,23 +119,25 @@ export const generateOjkReportPDF = async ({
     { label: 'Disetujui', value: stats.selesai, color: [22, 163, 74] as const },
     { label: 'Ditolak', value: stats.ditolak, color: [220, 38, 38] as const },
   ];
-  const cardW = (pageW - marginX * 2 - 4 * 3) / cards.length;
-  const cardH = 16;
+  const gap = 4;
+  const cardW = (pageW - marginX * 2 - gap * (cards.length - 1)) / cards.length;
+  const cardH = 18;
   cards.forEach((c, i) => {
-    const x = marginX + i * (cardW + 3);
-    doc.setFillColor(248, 250, 252);
+    const x = marginX + i * (cardW + gap);
+    doc.setFillColor(255, 255, 255);
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(x, y, cardW, cardH, 1.5, 1.5, 'FD');
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, cardW, cardH, 2, 2, 'FD');
     doc.setFillColor(c.color[0], c.color[1], c.color[2]);
-    doc.rect(x, y, 1.5, cardH, 'F');
+    doc.roundedRect(x, y, 2, cardH, 1, 1, 'F');
     doc.setTextColor(100, 116, 139);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(c.label.toUpperCase(), x + 4, y + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text(c.label.toUpperCase(), x + 6, y + 6);
     doc.setTextColor(c.color[0], c.color[1], c.color[2]);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text(String(c.value), x + 4, y + 13);
+    doc.setFontSize(16);
+    doc.text(String(c.value), x + 6, y + 14.5);
   });
 
   // ===== TABLE =====
@@ -155,7 +157,7 @@ export const generateOjkReportPDF = async ({
   });
 
   autoTable(doc, {
-    startY: y + cardH + 6,
+    startY: y + cardH + 8,
     head: [['No', 'Nomor Agenda', 'Tanggal', 'Penerima', 'Perihal', 'Status', 'Diperbarui Oleh', 'Waktu Update', 'Alasan Tolak']],
     body: rows.length ? rows : [['—', '—', '—', '—', 'Tidak ada data', '—', '—', '—', '—']],
     styles: { font: 'helvetica', fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
