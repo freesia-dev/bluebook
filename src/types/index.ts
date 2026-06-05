@@ -64,6 +64,7 @@ export interface SuratKeluar {
   ojkStatus?: OjkStatus | null;
   ojkStatusUpdatedAt?: Date | null;
   ojkStatusUpdatedByNama?: string | null;
+  ojkRejectReason?: string | null;
 }
 
 // Helper: detect OJK letter (kode B-4 with OJK in nama_penerima/tujuan)
