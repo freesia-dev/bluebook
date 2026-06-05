@@ -40,13 +40,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { SuratKeluar, KODE_SURAT_LIST } from '@/types';
+import { SuratKeluar, KODE_SURAT_LIST, isOjkSurat, OjkStatus } from '@/types';
 import { useSuratKeluarData } from '@/hooks/use-surat-data';
 import { bulkUpdateSuratKeluarStatus } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle2, CalendarIcon } from 'lucide-react';
+import { CheckCircle2, CalendarIcon, Check, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
