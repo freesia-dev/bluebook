@@ -25,17 +25,17 @@ import {
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { generateOjkReportPDF } from '@/lib/ojk-report';
-import { SuratKeluar, OjkStatus } from '@/types';
+import { getSuratKeluar } from '@/lib/supabase-store';
+import { OjkStatus } from '@/types';
 
 type RangeMode = 'all' | 'this_month' | 'last_30' | 'this_year' | 'custom';
 
 interface Props {
-  data: SuratKeluar[];
   generatedBy?: string;
   trigger?: React.ReactNode;
 }
 
-export const OjkReportDialog: React.FC<Props> = ({ data, generatedBy = 'Admin', trigger }) => {
+export const OjkReportDialog: React.FC<Props> = ({ generatedBy = 'Admin', trigger }) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
