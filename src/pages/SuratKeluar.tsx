@@ -262,7 +262,7 @@ const SuratKeluarPage: React.FC = () => {
                 {status !== 'diproses' && status !== 'selesai' && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'diproses'); }}
+                    onClick={(e) => { e.stopPropagation(); setOjkConfirm({ item, action: 'diproses' }); }}
                     title="Proses pengajuan (✓)"
                     className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
                   >
@@ -272,7 +272,7 @@ const SuratKeluarPage: React.FC = () => {
                 {status === 'diproses' && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'selesai'); }}
+                    onClick={(e) => { e.stopPropagation(); setOjkConfirm({ item, action: 'selesai' }); }}
                     title="Tandai selesai (✓)"
                     className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
                   >
@@ -282,7 +282,7 @@ const SuratKeluarPage: React.FC = () => {
                 {status !== 'ditolak' && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'ditolak'); }}
+                    onClick={(e) => { e.stopPropagation(); setOjkConfirm({ item, action: 'ditolak' }); }}
                     title="Tolak / Batalkan (✗)"
                     className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                   >
