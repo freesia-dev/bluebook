@@ -275,16 +275,17 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
 };
 
 export const updateSuratKeluar = async (id: string, data: Partial<SuratKeluar>): Promise<void> => {
+  const checkOjkChange = data.kodeSurat !== undefined || data.namaPenerima !== undefined || data.tujuanSurat !== undefined;
   const needsRecalc = data.kodeSurat !== undefined || data.tanggal !== undefined;
-  
+
   let currentRecord: Record<string, unknown> | null = null;
-  if (needsRecalc) {
+  if (needsRecalc || checkOjkChange) {
     const { data: existing } = await supabase
       .from('surat_keluar')
       .select('*')
       .eq('id', id)
       .single();
-    currentRecord = existing;
+    currentRecord = existing as any;
   }
 
   const updateData: Record<string, unknown> = {};
@@ -296,7 +297,7 @@ export const updateSuratKeluar = async (id: string, data: Partial<SuratKeluar>):
   if (data.keterangan !== undefined) updateData.keterangan = data.keterangan;
   if (data.fileUrl !== undefined) updateData.file_url = data.fileUrl;
   if (data.tanggal !== undefined) updateData.tanggal = data.tanggal.toISOString();
-  
+
   if (needsRecalc && currentRecord) {
     const kodeSurat = data.kodeSurat || (currentRecord.kode_surat as string);
     const tanggal = data.tanggal 
@@ -305,12 +306,50 @@ export const updateSuratKeluar = async (id: string, data: Partial<SuratKeluar>):
     const nomor = currentRecord.nomor as number;
     updateData.nomor_agenda = `${String(nomor).padStart(3, '0')}/${kodeSurat}/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   }
-  
+
+  // Auto-toggle ojk_status when fields change and the record now qualifies (or no longer qualifies)
+  if (checkOjkChange && currentRecord) {
+    const merged = {
+      kodeSurat: (data.kodeSurat !== undefined ? data.kodeSurat : currentRecord.kode_surat) as string,
+      namaPenerima: (data.namaPenerima !== undefined ? data.namaPenerima : currentRecord.nama_penerima) as string,
+      tujuanSurat: (data.tujuanSurat !== undefined ? data.tujuanSurat : currentRecord.tujuan_surat) as string,
+    };
+    const nowOjk = isOjkSurat(merged);
+    const wasOjk = !!currentRecord.ojk_status;
+    if (nowOjk && !wasOjk) {
+      updateData.ojk_status = 'diajukan';
+      updateData.ojk_status_updated_at = new Date().toISOString();
+    } else if (!nowOjk && wasOjk) {
+      updateData.ojk_status = null;
+      updateData.ojk_status_updated_at = null;
+      updateData.ojk_status_updated_by = null;
+      updateData.ojk_status_updated_by_nama = null;
+    }
+  }
+
   const { error } = await supabase
     .from('surat_keluar')
     .update(updateData)
     .eq('id', id);
-  
+
+  if (error) throw error;
+};
+
+export const updateSuratKeluarOjkStatus = async (
+  id: string,
+  status: OjkStatus,
+  userNama: string,
+): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from('surat_keluar')
+    .update({
+      ojk_status: status,
+      ojk_status_updated_at: new Date().toISOString(),
+      ojk_status_updated_by: user?.id || null,
+      ojk_status_updated_by_nama: userNama,
+    } as any)
+    .eq('id', id);
   if (error) throw error;
 };
 
