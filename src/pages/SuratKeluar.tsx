@@ -40,13 +40,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { SuratKeluar, KODE_SURAT_LIST } from '@/types';
+import { SuratKeluar, KODE_SURAT_LIST, isOjkSurat, OjkStatus } from '@/types';
 import { useSuratKeluarData } from '@/hooks/use-surat-data';
 import { bulkUpdateSuratKeluarStatus } from '@/lib/supabase-store';
 import { exportToExcel } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle2, CalendarIcon } from 'lucide-react';
+import { CheckCircle2, CalendarIcon, Check, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -55,7 +55,7 @@ import { FileUpload } from '@/components/FileUpload';
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
-  const { data, isLoading, add, update, remove, isAdding, refetch } = useSuratKeluarData();
+  const { data, isLoading, add, update, remove, isAdding, refetch, updateOjkStatus } = useSuratKeluarData();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -182,6 +182,22 @@ const SuratKeluarPage: React.FC = () => {
     }
   };
 
+  const canChangeOjk = (item: SuratKeluar) => isAdmin || (userName && item.userInput === userName);
+
+  const handleOjkStatus = async (item: SuratKeluar, status: OjkStatus) => {
+    if (!canChangeOjk(item)) {
+      toast({ title: 'Akses Ditolak', description: 'Hanya admin atau penginput surat yang dapat mengubah status pengajuan OJK.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown' });
+      const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai' };
+      toast({ title: 'Status OJK Diperbarui', description: `Pengajuan OJK ditandai sebagai ${labels[status]}.` });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Gagal memperbarui status OJK.', variant: 'destructive' });
+    }
+  };
+
   const handleExport = () => {
     const exportData = data.map(item => ({
       'No': item.nomor,
@@ -222,6 +238,61 @@ const SuratKeluarPage: React.FC = () => {
           {item.status}
         </Badge>
       )
+    },
+    {
+      key: 'ojk',
+      header: 'Pengajuan OJK',
+      render: (item: SuratKeluar) => {
+        const isOjk = item.ojkStatus || isOjkSurat(item);
+        if (!isOjk) return <span className="text-xs text-muted-foreground">—</span>;
+        const status = (item.ojkStatus || 'diajukan') as OjkStatus;
+        const variantMap: Record<OjkStatus, 'warning' | 'info' | 'destructive' | 'success'> = {
+          diajukan: 'warning', diproses: 'info', ditolak: 'destructive', selesai: 'success',
+        };
+        const labelMap: Record<OjkStatus, string> = {
+          diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+        };
+        const allowed = canChangeOjk(item) && canEdit;
+        return (
+          <div className="flex items-center gap-1.5">
+            <Badge variant={variantMap[status]}>{labelMap[status]}</Badge>
+            {allowed && (
+              <div className="flex gap-1">
+                {status !== 'diproses' && status !== 'selesai' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'diproses'); }}
+                    title="Proses pengajuan (✓)"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {status === 'diproses' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'selesai'); }}
+                    title="Tandai selesai (✓)"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {status !== 'ditolak' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'ditolak'); }}
+                    title="Tolak / Batalkan (✗)"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

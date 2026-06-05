@@ -15,7 +15,10 @@ import {
   TrendingUp,
   Clock,
   HardDrive,
-  Database
+  Database,
+  Landmark,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
@@ -43,7 +46,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts } = useDashboardData();
+  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData();
   const { isAdmin } = useAuth();
 
   // Storage usage query (admin only) — parallelized across ALL data tables in Bluebook
@@ -256,6 +259,20 @@ const Dashboard: React.FC = () => {
           </Button>
         }
       />
+
+      {/* Pengajuan OJK */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Landmark className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-display font-semibold">Pengajuan OJK</h2>
+          <span className="text-xs text-muted-foreground">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard title="Total Pengajuan OJK" value={ojkStats.total} icon={Landmark} variant="primary" />
+          <StatCard title="Pengajuan Diproses" value={ojkStats.diajukan + ojkStats.diproses} icon={Loader2} variant="warning" />
+          <StatCard title="Pengajuan Dibatalkan" value={ojkStats.ditolak} icon={XCircle} variant="default" />
+        </div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

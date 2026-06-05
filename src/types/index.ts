@@ -45,6 +45,8 @@ export interface AgendaKreditEntry {
 }
 
 // Surat Keluar types
+export type OjkStatus = 'diajukan' | 'diproses' | 'ditolak' | 'selesai';
+
 export interface SuratKeluar {
   id: string;
   nomor: number;
@@ -59,7 +61,17 @@ export interface SuratKeluar {
   fileUrl?: string;
   tanggal?: Date;
   createdAt: Date;
+  ojkStatus?: OjkStatus | null;
+  ojkStatusUpdatedAt?: Date | null;
+  ojkStatusUpdatedByNama?: string | null;
 }
+
+// Helper: detect OJK letter (kode B-4 with OJK in nama_penerima/tujuan)
+export const isOjkSurat = (s: { kodeSurat?: string; namaPenerima?: string; tujuanSurat?: string }): boolean => {
+  if (s.kodeSurat !== 'B-4') return false;
+  const text = `${s.namaPenerima || ''} ${s.tujuanSurat || ''}`;
+  return /ojk|otoritas\s+jasa\s+keuangan/i.test(text);
+};
 
 // SPPK types
 export interface SPPK {
