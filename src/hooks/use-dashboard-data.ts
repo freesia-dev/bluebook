@@ -174,6 +174,28 @@ export const useDashboardData = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const ojkStatsQuery = useQuery({
+    queryKey: ['ojk-stats'],
+    queryFn: async () => {
+      const [total, diajukan, diproses, ditolak, selesai] = await Promise.all([
+        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).not('ojk_status', 'is', null),
+        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'diajukan'),
+        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'diproses'),
+        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'ditolak'),
+        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'selesai'),
+      ]);
+      return {
+        total: total.count || 0,
+        diajukan: diajukan.count || 0,
+        diproses: diproses.count || 0,
+        ditolak: ditolak.count || 0,
+        selesai: selesai.count || 0,
+      };
+    },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
+  });
+
   const isLoading =
     countsQuery.isLoading ||
     suratMasukQuery.isLoading ||
@@ -189,6 +211,7 @@ export const useDashboardData = () => {
     sppkQuery.refetch();
     pkQuery.refetch();
     kkmpakQuery.refetch();
+    ojkStatsQuery.refetch();
   };
 
   return {
@@ -198,6 +221,7 @@ export const useDashboardData = () => {
     sppk: sppkQuery.data || [],
     pk: pkQuery.data || [],
     kkmpak: kkmpakQuery.data || [],
+    ojkStats: ojkStatsQuery.data || { total: 0, diajukan: 0, diproses: 0, ditolak: 0, selesai: 0 },
     isLoading,
     refetchAll,
   };
