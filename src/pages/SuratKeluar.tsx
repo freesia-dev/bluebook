@@ -320,6 +320,27 @@ const SuratKeluarPage: React.FC = () => {
     },
   ], [data]);
 
+  // Apply OJK filter
+  const filteredData = useMemo(() => {
+    if (ojkFilter === 'all') return data;
+    if (ojkFilter === 'none') return data.filter(d => !d.ojkStatus && !isOjkSurat(d));
+    return data.filter(d => (d.ojkStatus || (isOjkSurat(d) ? 'diajukan' : null)) === ojkFilter);
+  }, [data, ojkFilter]);
+
+  const handleGenerateLaporan = async () => {
+    try {
+      const { generateOjkReportPDF } = await import('@/lib/ojk-report');
+      await generateOjkReportPDF({
+        data,
+        generatedBy: userName || 'User',
+        statusFilter: ojkFilter === 'all' || ojkFilter === 'none' ? 'all' : ojkFilter,
+      });
+      toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan OJK berhasil diunduh.' });
+    } catch (e: any) {
+      toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
+    }
+  };
+
   const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -353,7 +374,7 @@ const SuratKeluarPage: React.FC = () => {
       <PageHeader title="Surat Keluar" description="Kelola data surat keluar KC Telihan" />
 
       <DataTable
-        data={data}
+        data={filteredData}
         columns={columns}
         onAdd={() => setIsAddOpen(true)}
         onExport={handleExport}
@@ -377,13 +398,32 @@ const SuratKeluarPage: React.FC = () => {
         searchPlaceholder="Cari surat keluar..."
         addLabel="Tambah Surat Keluar"
         toolbarActions={
-          canEdit ? (
-            <BulkStatusAction
-              statusOptions={bulkStatusOptions}
-              onBulkUpdate={bulkUpdateSuratKeluarStatus}
-              onSuccess={() => refetch()}
-            />
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={ojkFilter} onValueChange={(v) => setOjkFilter(v as any)}>
+              <SelectTrigger className="h-10 w-[180px]">
+                <SelectValue placeholder="Filter Pengajuan OJK" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Surat</SelectItem>
+                <SelectItem value="diajukan">OJK · Diajukan</SelectItem>
+                <SelectItem value="diproses">OJK · Diproses</SelectItem>
+                <SelectItem value="selesai">OJK · Disetujui</SelectItem>
+                <SelectItem value="ditolak">OJK · Ditolak</SelectItem>
+                <SelectItem value="none">Non-OJK</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="gap-2 h-10" onClick={handleGenerateLaporan}>
+              <Check className="w-4 h-4" />
+              Laporan OJK
+            </Button>
+            {canEdit && (
+              <BulkStatusAction
+                statusOptions={bulkStatusOptions}
+                onBulkUpdate={bulkUpdateSuratKeluarStatus}
+                onSuccess={() => refetch()}
+              />
+            )}
+          </div>
         }
       />
 
