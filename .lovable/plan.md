@@ -1,69 +1,50 @@
-# Fix Tarif Al-Amin & Tambah Program CERDAS
+## Tujuan
+Menandai surat keluar dengan kode **B-4** yang ditujukan ke **OJK / Otoritas Jasa Keuangan** sebagai "Pengajuan OJK" dengan workflow proses/tolak, plus 3 hero card di dashboard.
 
-## 1. Bug Tarif Al-Amin (SUDAH DIPERBAIKI)
+## 1. Database (migration)
+Tambah kolom baru di `surat_keluar`:
+- `ojk_status` TEXT — nilai: `diajukan` | `diproses` | `ditolak` | `selesai` | NULL
+- `ojk_status_updated_at` TIMESTAMPTZ
+- `ojk_status_updated_by` UUID (user id)
+- `ojk_status_updated_by_nama` TEXT
 
-Penyebab: hook `useAlaminTarif` di `src/hooks/use-alamin.ts` hanya ambil 1.000 baris pertama (default limit Supabase), padahal data 9.813 baris → umur 29 tenor 120 (rate 48) tidak ter-load. Sudah saya tambahkan paginasi `.range()`. Setelah refresh, lookup tarif akan jalan normal.
+Backfill data lampau: untuk semua baris dengan `kode_surat = 'B-4'` AND (nama_penerima/tujuan_surat ILIKE `%ojk%` OR `%otoritas jasa keuangan%`), set `ojk_status = 'diproses'`.
 
-## 2. Program CERDAS — Promo 2 Juni – 31 Agustus 2026
+RLS update: kolom-kolom ini ikut policy `surat_keluar` yang sudah ada. Aksi proses/tolak hanya boleh oleh **user_input asli** atau **admin** — di-enforce di UI + dipertegas di policy update.
 
-### Aturan program
-- **Debitur Baru**: bunga **9,50% p.a. fixed (anuitas)** + **gratis AJK** sesuai cap tier
-- **Take Over**: bunga **9,00% p.a. fixed (anuitas)** + **gratis AJK** sesuai cap tier
-- **Top Up**: bunga **10,50% p.a. fixed (anuitas)** + **diskon provisi 50%** (TIDAK ada subsidi AJK)
-- **Cap subsidi AJK per tier plafon**:
-  - Tier 1: plafon ≤ Rp 75 jt → cap **Rp 1.400.000**
-  - Tier 2: Rp 75 jt < plafon ≤ Rp 150 jt → cap **Rp 3.000.000**
-  - Tier 3: Rp 150 jt < plafon ≤ Rp 300 jt → cap **Rp 5.000.000**
-  - Plafon > Rp 300 jt → tidak ikut subsidi (asuransi normal)
-- **Logika subsidi**: jika premi AJK aktual ≤ cap → debitur GRATIS (bank tanggung penuh). Jika premi > cap → debitur bayar **selisih** = `premiGross - cap`.
-- **Pelunasan dipercepat/top up ≤ 1 tahun**: wajib mengganti premi yang telah dibayar bank (ditampilkan sebagai catatan di PDF, tidak mengubah angka simulasi).
+## 2. Deteksi otomatis (helper)
+Helper `isOjkSurat(s)`: `kode_surat === 'B-4' && /ojk|otoritas\s+jasa\s+keuangan/i.test(nama_penerima + ' ' + tujuan_surat)`.
 
-### Database (1 migration)
-- Tabel `cerdas_config` (single row, editable admin):
-  - `id`, `nama_program` (default "CERDAS"), `aktif` (bool), `periode_mulai`, `periode_selesai`
-  - `bunga_debitur_baru`, `bunga_take_over`, `bunga_top_up` (numeric, default 9.5/9.0/10.5)
-  - `diskon_provisi_top_up_pct` (default 50)
-  - `cap_tier_1`, `cap_tier_2`, `cap_tier_3` (default 1.4jt/3jt/5jt)
-  - `plafon_tier_1_max`, `plafon_tier_2_max`, `plafon_tier_3_max` (default 75jt/150jt/300jt)
-- Kolom baru di `loan_simulation`:
-  - `cerdas_skema text` (`null` | `debitur_baru` | `take_over` | `top_up`)
-  - `cerdas_cap_subsidi int` (cap yang dipakai)
-  - `cerdas_subsidi_bank int` (nominal yang ditanggung bank)
-  - `cerdas_selisih_debitur int` (selisih beban debitur)
-- Grants + RLS: read `authenticated`, write `admin`.
+Saat **insert/update** surat keluar, jika `isOjkSurat` true dan `ojk_status` masih NULL → otomatis set `ojk_status = 'diajukan'`.
 
-### Engine kalkulasi
-File baru `src/lib/cerdas-calc.ts`:
-- `getCerdasTier(plafon, config)` → tier 1/2/3 atau `null`
-- `getCerdasCap(plafon, config)` → nominal cap
-- `applyCerdas({ skema, plafon, premiGross, provisiPct, bungaPa, config })` →
-  - return: `{ bungaFinal, provisiFinalPct, capSubsidi, subsidiBank, selisihDebitur, asuransiBebanDebitur, status: 'gratis'|'selisih'|'tidak-eligible' }`
-  - Untuk Top Up: provisi × (1 − diskon%), tidak ada subsidi AJK.
+## 3. UI Surat Keluar (`src/pages/SuratKeluar.tsx`)
+Di tabel, untuk baris OJK tampilkan:
+- **Badge status** OJK: Diajukan (kuning) / Diproses (biru) / Ditolak (merah) / Selesai (hijau)
+- **Action buttons** (hanya jika `user_input === currentUser.nama` atau role admin):
+  - ✅ tombol hijau → set `diproses`
+  - ❌ tombol merah → set `ditolak`
+  - (saat status `diproses`, tambah tombol ✓ "Selesai")
+- Optimistic update via React Query mutation di `use-surat-data.ts`.
 
-### UI Kalkulator (`src/pages/kalkulator/KalkulatorPage.tsx`)
-- Section baru **"Program CERDAS"** (collapsible / toggle) di antara Pinjaman & Asuransi:
-  - Switch "Ikut Program CERDAS"
-  - Bila on: radio 3 opsi (Debitur Baru / Take Over / Top Up) dengan badge bunga
-  - Auto-override `bungaPa` & (untuk Top Up) `provisiPct`
-  - Tampilkan info card cap tier saat plafon diisi
-- Section Asuransi (Al-Amin) menampilkan breakdown subsidi:
-  - "Subsidi bank: − Rp xxx (cap tier)", "Beban debitur: Rp yyy" (atau "GRATIS")
-  - Badge **GRATIS** / **Bayar Selisih** sesuai gambar
-- Ringkasan: nominal asuransi yang masuk potongan = `asuransiBebanDebitur` (bukan premiGross penuh).
-- Auto-disable program CERDAS jika plafon > 300 jt atau periode di luar.
+## 4. Dashboard hero cards (`src/pages/Dashboard.tsx`)
+Tambah **3 StatCard baru** di atas grid statistik dokumen, dalam section "Pengajuan OJK":
+- **Total Pengajuan OJK** (variant primary)
+- **Pengajuan Diproses** (variant warning — status `diajukan` + `diproses`)
+- **Pengajuan Dibatalkan** (variant default — status `ditolak`)
 
-### PDF
-- Section baru **"Program CERDAS"** dengan skema, bunga promo, cap, subsidi, status (GRATIS/Bayar Selisih).
-- Section asuransi tampil rincian: Premi Gross, Cap, Subsidi Bank, Beban Debitur.
-- Catatan kaki: "Pelunasan dipercepat/top up ≤ 1 tahun wajib mengganti premi AJK yang telah disubsidi bank."
+Data via query baru di `use-dashboard-data.ts` (`ojk-stats`): hitung dari `surat_keluar` filter `ojk_status NOT NULL`. Subscribe realtime supaya update langsung.
 
-### Halaman konfigurasi admin
-`/konfigurasi/program-cerdas` — form edit `cerdas_config` (periode, bunga, cap tier, diskon provisi). Dilindungi role admin.
+## 5. File yang akan diubah
+- migration baru (kolom + backfill)
+- `src/pages/SuratKeluar.tsx` — kolom status OJK + tombol aksi
+- `src/hooks/use-surat-data.ts` — mutation `updateOjkStatus` + auto-set `diajukan` saat insert OJK
+- `src/lib/supabase-store.ts` — mapping kolom baru
+- `src/types/index.ts` — tambah field `ojkStatus`, dll.
+- `src/hooks/use-dashboard-data.ts` — query stats OJK
+- `src/pages/Dashboard.tsx` — section hero OJK
+- `src/lib/utils.ts` (atau file kecil baru) — helper `isOjkSurat`
 
-### Yang TIDAK termasuk
-- Tracking total anggaran subsidi/sisa anggaran (tidak ada data realtime), waiting list logic.
-- Workflow rekap divisi/akuntansi.
-
----
-
-Saya akan mulai dari migration → engine → UI → PDF → halaman config. Lanjut?
+## Catatan
+- Aksi hanya muncul untuk baris OJK; surat keluar non-OJK tidak berubah tampilan.
+- Demo/pemimpin tetap read-only.
+- Data lampau OJK otomatis muncul di card sebagai "Diproses".

@@ -1587,6 +1587,10 @@ export type Database = {
           nama_penerima: string
           nomor: number
           nomor_agenda: string
+          ojk_status: string | null
+          ojk_status_updated_at: string | null
+          ojk_status_updated_by: string | null
+          ojk_status_updated_by_nama: string | null
           perihal: string
           status: string
           tanggal: string | null
@@ -1602,6 +1606,10 @@ export type Database = {
           nama_penerima: string
           nomor: number
           nomor_agenda: string
+          ojk_status?: string | null
+          ojk_status_updated_at?: string | null
+          ojk_status_updated_by?: string | null
+          ojk_status_updated_by_nama?: string | null
           perihal: string
           status?: string
           tanggal?: string | null
@@ -1617,6 +1625,10 @@ export type Database = {
           nama_penerima?: string
           nomor?: number
           nomor_agenda?: string
+          ojk_status?: string | null
+          ojk_status_updated_at?: string | null
+          ojk_status_updated_by?: string | null
+          ojk_status_updated_by_nama?: string | null
           perihal?: string
           status?: string
           tanggal?: string | null
