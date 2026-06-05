@@ -27,17 +27,29 @@ export interface OjkReportOptions {
   data: SuratKeluar[];
   generatedBy?: string;
   statusFilter?: OjkStatus | 'all';
+  dateFrom?: Date | null;
+  dateTo?: Date | null;
 }
 
 export const generateOjkReportPDF = async ({
   data,
   generatedBy = 'Sistem',
   statusFilter = 'all',
+  dateFrom = null,
+  dateTo = null,
 }: OjkReportOptions) => {
   // Filter only OJK letters
   let ojkData = data.filter(s => s.ojkStatus || isOjkSurat(s));
   if (statusFilter !== 'all') {
     ojkData = ojkData.filter(s => (s.ojkStatus || 'diajukan') === statusFilter);
+  }
+  if (dateFrom) {
+    const from = new Date(dateFrom); from.setHours(0, 0, 0, 0);
+    ojkData = ojkData.filter(s => new Date(s.tanggal || s.createdAt).getTime() >= from.getTime());
+  }
+  if (dateTo) {
+    const to = new Date(dateTo); to.setHours(23, 59, 59, 999);
+    ojkData = ojkData.filter(s => new Date(s.tanggal || s.createdAt).getTime() <= to.getTime());
   }
   // Sort newest first
   ojkData.sort((a, b) =>
