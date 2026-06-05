@@ -55,7 +55,7 @@ import { FileUpload } from '@/components/FileUpload';
 const SuratKeluarPage: React.FC = () => {
   const { toast } = useToast();
   const { userName, isAdmin, canEdit } = useAuth();
-  const { data, isLoading, add, update, remove, isAdding, refetch } = useSuratKeluarData();
+  const { data, isLoading, add, update, remove, isAdding, refetch, updateOjkStatus } = useSuratKeluarData();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
