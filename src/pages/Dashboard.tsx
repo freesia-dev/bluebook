@@ -22,7 +22,7 @@ import {
   CheckCircle2,
   FileBarChart,
 } from 'lucide-react';
-import { generateOjkReportPDF } from '@/lib/ojk-report';
+import { OjkReportDialog } from '@/components/ojk/OjkReportDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
 import { useNavigate } from 'react-router-dom';
@@ -444,21 +444,16 @@ const Dashboard: React.FC = () => {
               <p className="text-xs text-muted-foreground mt-0.5">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</p>
             </div>
           </div>
-          <Button
-            size="sm"
-            className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-            onClick={async () => {
-              try {
-                await generateOjkReportPDF({ data: suratKeluar, generatedBy: 'Admin' });
-                toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan SLIK OJK berhasil diunduh.' });
-              } catch (e: any) {
-                toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
-              }
-            }}
-          >
-            <FileBarChart className="w-4 h-4" />
-            Generate Laporan
-          </Button>
+          <OjkReportDialog
+            data={suratKeluar}
+            generatedBy="Admin"
+            trigger={
+              <Button size="sm" className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <FileBarChart className="w-4 h-4" />
+                Generate Laporan
+              </Button>
+            }
+          />
         </div>
         <CardContent className="p-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
