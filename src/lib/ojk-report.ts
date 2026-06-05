@@ -72,9 +72,12 @@ export const generateOjkReportPDF = async ({
 
   // ===== KOP SURAT =====
   let y = 10;
+  // Logo native ratio ~469x235 (≈2:1). Render at 28×14 mm to preserve aspect.
+  const logoW = 28;
+  const logoH = 14;
   try {
     const logoB64 = await loadImageBase64(logoUrl);
-    doc.addImage(logoB64, 'PNG', marginX, y, 18, 18);
+    doc.addImage(logoB64, 'PNG', marginX, y + 2, logoW, logoH);
   } catch {
     /* ignore */
   }
