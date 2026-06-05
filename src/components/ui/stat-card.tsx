@@ -22,6 +22,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   trend,
   variant = 'default',
   className,
+  description,
 }) => {
   const variants = {
     default: 'bg-card border border-border/50',
