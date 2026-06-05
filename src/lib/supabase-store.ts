@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   UserRole, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
   JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan, JenisPenggunaan,
-  RecycleBinItem
+  RecycleBinItem, isOjkSurat, OjkStatus
 } from '@/types';
 import type { AppRole } from '@/lib/role-permissions';
 import type { Database } from '@/integrations/supabase/types';
