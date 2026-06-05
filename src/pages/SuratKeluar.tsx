@@ -239,6 +239,61 @@ const SuratKeluarPage: React.FC = () => {
         </Badge>
       )
     },
+    {
+      key: 'ojk',
+      header: 'Pengajuan OJK',
+      render: (item: SuratKeluar) => {
+        const isOjk = item.ojkStatus || isOjkSurat(item);
+        if (!isOjk) return <span className="text-xs text-muted-foreground">—</span>;
+        const status = (item.ojkStatus || 'diajukan') as OjkStatus;
+        const variantMap: Record<OjkStatus, 'warning' | 'info' | 'destructive' | 'success'> = {
+          diajukan: 'warning', diproses: 'info', ditolak: 'destructive', selesai: 'success',
+        };
+        const labelMap: Record<OjkStatus, string> = {
+          diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+        };
+        const allowed = canChangeOjk(item) && canEdit;
+        return (
+          <div className="flex items-center gap-1.5">
+            <Badge variant={variantMap[status]}>{labelMap[status]}</Badge>
+            {allowed && (
+              <div className="flex gap-1">
+                {status !== 'diproses' && status !== 'selesai' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'diproses'); }}
+                    title="Proses pengajuan (✓)"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {status === 'diproses' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'selesai'); }}
+                    title="Tandai selesai (✓)"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {status !== 'ditolak' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleOjkStatus(item, 'ditolak'); }}
+                    title="Tolak / Batalkan (✗)"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
   ];
 
   // Filter out D-1 (Nasabah Kredit) - only available in Agenda Kredit
