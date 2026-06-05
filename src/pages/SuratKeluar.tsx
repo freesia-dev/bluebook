@@ -65,6 +65,7 @@ const SuratKeluarPage: React.FC = () => {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedItem, setSelectedItem] = useState<SuratKeluar | null>(null);
+  const [ojkConfirm, setOjkConfirm] = useState<{ item: SuratKeluar; action: OjkStatus } | null>(null);
   
   const [formData, setFormData] = useState({
     kodeSurat: '',
