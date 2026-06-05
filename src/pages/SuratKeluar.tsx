@@ -570,12 +570,22 @@ const SuratKeluarPage: React.FC = () => {
                     <span className="text-muted-foreground">Perihal</span>
                     <span className="font-medium break-words">{item.perihal}</span>
                   </div>
+                  {item.keterangan && (
+                    <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                      <span className="text-muted-foreground">Keterangan</span>
+                      <span className="font-medium break-words">{item.keterangan}</span>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                    <span className="text-muted-foreground">Status Kirim</span>
+                    <span className="font-medium">{item.status}</span>
+                  </div>
                   <div className="grid grid-cols-[110px_1fr] gap-x-2">
                     <span className="text-muted-foreground">User Input</span>
                     <span className="font-medium">{item.userInput || '-'}</span>
                   </div>
                   <div className="grid grid-cols-[110px_1fr] gap-x-2">
-                    <span className="text-muted-foreground">Status Saat Ini</span>
+                    <span className="text-muted-foreground">Status OJK</span>
                     <span className="font-medium">{currentLabel[currentStatus]}</span>
                   </div>
                 </div>
