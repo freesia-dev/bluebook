@@ -19,7 +19,10 @@ import {
   Landmark,
   Loader2,
   XCircle,
+  CheckCircle2,
+  FileBarChart,
 } from 'lucide-react';
+import { generateOjkReportPDF } from '@/lib/ojk-report';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
 import { useNavigate } from 'react-router-dom';
@@ -262,12 +265,30 @@ const Dashboard: React.FC = () => {
 
       {/* Pengajuan OJK */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Landmark className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-display font-semibold">Pengajuan OJK</h2>
-          <span className="text-xs text-muted-foreground">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
+        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Landmark className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-display font-semibold">Pengajuan OJK</h2>
+            <span className="text-xs text-muted-foreground hidden sm:inline">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={async () => {
+              try {
+                await generateOjkReportPDF({ data: suratKeluar, generatedBy: 'Admin' });
+                toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan OJK berhasil diunduh.' });
+              } catch (e: any) {
+                toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
+              }
+            }}
+          >
+            <FileBarChart className="w-4 h-4" />
+            Generate Laporan OJK
+          </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             title="Total Pengajuan OJK"
             value={ojkStats.total}
@@ -275,8 +296,9 @@ const Dashboard: React.FC = () => {
             variant="primary"
             description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
           />
-          <StatCard title="Pengajuan Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
-          <StatCard title="Pengajuan Dibatalkan" value={ojkStats.ditolak} icon={XCircle} variant="default" />
+          <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
+          <StatCard title="Disetujui" value={ojkStats.selesai} icon={CheckCircle2} variant="success" />
+          <StatCard title="Ditolak" value={ojkStats.ditolak} icon={XCircle} variant="default" />
         </div>
       </div>
 

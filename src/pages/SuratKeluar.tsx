@@ -67,6 +67,7 @@ const SuratKeluarPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<SuratKeluar | null>(null);
   const [ojkConfirm, setOjkConfirm] = useState<{ item: SuratKeluar; action: OjkStatus } | null>(null);
   const [ojkRejectReason, setOjkRejectReason] = useState('');
+  const [ojkFilter, setOjkFilter] = useState<OjkStatus | 'all' | 'none'>('all');
   
   const [formData, setFormData] = useState({
     kodeSurat: '',
@@ -193,7 +194,7 @@ const SuratKeluarPage: React.FC = () => {
     }
     try {
       await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown', rejectReason: status === 'ditolak' ? (rejectReason || null) : null });
-      const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai' };
+      const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui' };
       toast({ title: 'Status OJK Diperbarui', description: `Pengajuan OJK ditandai sebagai ${labels[status]}.` });
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui status OJK.', variant: 'destructive' });
@@ -252,7 +253,7 @@ const SuratKeluarPage: React.FC = () => {
           diajukan: 'warning', diproses: 'info', ditolak: 'destructive', selesai: 'success',
         };
         const labelMap: Record<OjkStatus, string> = {
-          diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+          diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui',
         };
         const allowed = canChangeOjk(item) && canEdit;
         return (
@@ -274,7 +275,7 @@ const SuratKeluarPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setOjkConfirm({ item, action: 'selesai' }); }}
-                    title="Tandai selesai (✓)"
+                    title="Setujui pengajuan (✓)"
                     className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
                   >
                     <Check className="w-3.5 h-3.5" />
@@ -319,6 +320,27 @@ const SuratKeluarPage: React.FC = () => {
     },
   ], [data]);
 
+  // Apply OJK filter
+  const filteredData = useMemo(() => {
+    if (ojkFilter === 'all') return data;
+    if (ojkFilter === 'none') return data.filter(d => !d.ojkStatus && !isOjkSurat(d));
+    return data.filter(d => (d.ojkStatus || (isOjkSurat(d) ? 'diajukan' : null)) === ojkFilter);
+  }, [data, ojkFilter]);
+
+  const handleGenerateLaporan = async () => {
+    try {
+      const { generateOjkReportPDF } = await import('@/lib/ojk-report');
+      await generateOjkReportPDF({
+        data,
+        generatedBy: userName || 'User',
+        statusFilter: ojkFilter === 'all' || ojkFilter === 'none' ? 'all' : ojkFilter,
+      });
+      toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan OJK berhasil diunduh.' });
+    } catch (e: any) {
+      toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
+    }
+  };
+
   const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -352,7 +374,7 @@ const SuratKeluarPage: React.FC = () => {
       <PageHeader title="Surat Keluar" description="Kelola data surat keluar KC Telihan" />
 
       <DataTable
-        data={data}
+        data={filteredData}
         columns={columns}
         onAdd={() => setIsAddOpen(true)}
         onExport={handleExport}
@@ -376,13 +398,32 @@ const SuratKeluarPage: React.FC = () => {
         searchPlaceholder="Cari surat keluar..."
         addLabel="Tambah Surat Keluar"
         toolbarActions={
-          canEdit ? (
-            <BulkStatusAction
-              statusOptions={bulkStatusOptions}
-              onBulkUpdate={bulkUpdateSuratKeluarStatus}
-              onSuccess={() => refetch()}
-            />
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={ojkFilter} onValueChange={(v) => setOjkFilter(v as any)}>
+              <SelectTrigger className="h-10 w-[180px]">
+                <SelectValue placeholder="Filter Pengajuan OJK" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Surat</SelectItem>
+                <SelectItem value="diajukan">OJK · Diajukan</SelectItem>
+                <SelectItem value="diproses">OJK · Diproses</SelectItem>
+                <SelectItem value="selesai">OJK · Disetujui</SelectItem>
+                <SelectItem value="ditolak">OJK · Ditolak</SelectItem>
+                <SelectItem value="none">Non-OJK</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="gap-2 h-10" onClick={handleGenerateLaporan}>
+              <Check className="w-4 h-4" />
+              Laporan OJK
+            </Button>
+            {canEdit && (
+              <BulkStatusAction
+                statusOptions={bulkStatusOptions}
+                onBulkUpdate={bulkUpdateSuratKeluarStatus}
+                onSuccess={() => refetch()}
+              />
+            )}
+          </div>
         }
       />
 
@@ -526,17 +567,17 @@ const SuratKeluarPage: React.FC = () => {
             const titleMap: Record<OjkStatus, string> = {
               diajukan: 'Tandai sebagai Diajukan?',
               diproses: 'Proses Pengajuan OJK?',
-              ditolak: 'Batalkan Pengajuan OJK?',
-              selesai: 'Tandai Selesai?',
+              ditolak: 'Tolak Pengajuan OJK?',
+              selesai: 'Setujui Pengajuan OJK?',
             };
             const descMap: Record<OjkStatus, string> = {
               diajukan: 'Surat akan ditandai sebagai Diajukan.',
               diproses: 'Surat akan ditandai sebagai Diproses (dilanjutkan ke proses pengajuan).',
-              ditolak: 'Surat akan ditandai sebagai Dibatalkan / Ditolak.',
-              selesai: 'Surat akan ditandai sebagai Selesai.',
+              ditolak: 'Surat akan ditandai sebagai Ditolak / Dibatalkan.',
+              selesai: 'Surat akan ditandai sebagai Disetujui oleh OJK.',
             };
             const currentLabel: Record<OjkStatus, string> = {
-              diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+              diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui',
             };
             const currentStatus = (item.ojkStatus || 'diajukan') as OjkStatus;
             const isDestructive = action === 'ditolak';
@@ -627,7 +668,7 @@ const SuratKeluarPage: React.FC = () => {
                     }}
                     className={isDestructive ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success/90 text-success-foreground'}
                   >
-                    {action === 'ditolak' ? 'Batalkan' : action === 'selesai' ? 'Tandai Selesai' : 'Proses'}
+                    {action === 'ditolak' ? 'Tolak' : action === 'selesai' ? 'Setujui' : 'Proses'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </>
