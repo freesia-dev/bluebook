@@ -106,6 +106,32 @@ export const useSuratKeluarData = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
+  const ojkStatusMutation = useMutation({
+    mutationFn: ({ id, status, userNama }: { id: string; status: OjkStatus; userNama: string }) =>
+      updateSuratKeluarOjkStatus(id, status, userNama),
+    onMutate: async ({ id, status, userNama }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<SuratKeluar[]>(queryKey);
+      queryClient.setQueryData<SuratKeluar[]>(queryKey, (old) =>
+        old?.map(item => item.id === id ? {
+          ...item,
+          ojkStatus: status,
+          ojkStatusUpdatedAt: new Date(),
+          ojkStatusUpdatedByNama: userNama,
+        } : item) || []
+      );
+      queryClient.invalidateQueries({ queryKey: ['ojk-stats'] });
+      return { previousData };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previousData) queryClient.setQueryData(queryKey, ctx.previousData);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['ojk-stats'] });
+    },
+  });
+
   return {
     data: query.data || [],
     isLoading: query.isLoading,
@@ -113,6 +139,7 @@ export const useSuratKeluarData = () => {
     add: addMutation.mutateAsync,
     update: updateMutation.mutateAsync,
     remove: deleteMutation.mutateAsync,
+    updateOjkStatus: ojkStatusMutation.mutateAsync,
     isAdding: addMutation.isPending,
   };
 };
