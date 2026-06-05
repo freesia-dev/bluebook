@@ -12,6 +12,7 @@ interface StatCardProps {
   };
   variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning';
   className?: string;
+  description?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
