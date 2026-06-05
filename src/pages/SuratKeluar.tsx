@@ -66,6 +66,7 @@ const SuratKeluarPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedItem, setSelectedItem] = useState<SuratKeluar | null>(null);
   const [ojkConfirm, setOjkConfirm] = useState<{ item: SuratKeluar; action: OjkStatus } | null>(null);
+  const [ojkRejectReason, setOjkRejectReason] = useState('');
   
   const [formData, setFormData] = useState({
     kodeSurat: '',
@@ -185,13 +186,13 @@ const SuratKeluarPage: React.FC = () => {
 
   const canChangeOjk = (item: SuratKeluar) => isAdmin || (userName && item.userInput === userName);
 
-  const handleOjkStatus = async (item: SuratKeluar, status: OjkStatus) => {
+  const handleOjkStatus = async (item: SuratKeluar, status: OjkStatus, rejectReason?: string) => {
     if (!canChangeOjk(item)) {
       toast({ title: 'Akses Ditolak', description: 'Hanya admin atau penginput surat yang dapat mengubah status pengajuan OJK.', variant: 'destructive' });
       return;
     }
     try {
-      await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown' });
+      await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown', rejectReason: status === 'ditolak' ? (rejectReason || null) : null });
       const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai' };
       toast({ title: 'Status OJK Diperbarui', description: `Pengajuan OJK ditandai sebagai ${labels[status]}.` });
     } catch (error: any) {
