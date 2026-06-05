@@ -234,6 +234,8 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
   const tanggal = data.tanggal || new Date();
   const nomorAgenda = `${String(nomor).padStart(3, '0')}/${data.kodeSurat}/BPD-TLH/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
   
+  const isOjk = isOjkSurat({ kodeSurat: data.kodeSurat, namaPenerima: data.namaPenerima, tujuanSurat: data.tujuanSurat });
+
   const { data: result, error } = await supabase
     .from('surat_keluar')
     .insert({
@@ -247,8 +249,9 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
       keterangan: data.keterangan,
       user_input: data.userInput,
       file_url: data.fileUrl,
-      tanggal: tanggal.toISOString()
-    })
+      tanggal: tanggal.toISOString(),
+      ...(isOjk ? { ojk_status: 'diajukan' } : {}),
+    } as any)
     .select()
     .single();
   
