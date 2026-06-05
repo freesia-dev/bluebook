@@ -109,8 +109,14 @@ export const generateOjkReportPDF = async ({
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(90, 90, 90);
   const filterLabel = statusFilter === 'all' ? 'Semua Status' : OJK_LABEL[statusFilter];
+  const rangeLabel = (() => {
+    if (dateFrom && dateTo) return `${format(dateFrom, 'dd/MM/yyyy')} – ${format(dateTo, 'dd/MM/yyyy')}`;
+    if (dateFrom) return `Sejak ${format(dateFrom, 'dd/MM/yyyy')}`;
+    if (dateTo) return `Sampai ${format(dateTo, 'dd/MM/yyyy')}`;
+    return 'Semua Periode';
+  })();
   doc.text(
-    `Surat Keluar Kode B-4 ke Otoritas Jasa Keuangan  ·  Filter: ${filterLabel}`,
+    `Status: ${filterLabel}  ·  Periode: ${rangeLabel}`,
     pageW / 2,
     y + 5.5,
     { align: 'center' }
