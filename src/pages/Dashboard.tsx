@@ -268,8 +268,14 @@ const Dashboard: React.FC = () => {
           <span className="text-xs text-muted-foreground">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard title="Total Pengajuan OJK" value={ojkStats.total} icon={Landmark} variant="primary" />
-          <StatCard title="Pengajuan Diproses" value={ojkStats.diajukan + ojkStats.diproses} icon={Loader2} variant="warning" />
+          <StatCard
+            title="Total Pengajuan OJK"
+            value={ojkStats.total}
+            icon={Landmark}
+            variant="primary"
+            description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
+          />
+          <StatCard title="Pengajuan Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
           <StatCard title="Pengajuan Dibatalkan" value={ojkStats.ditolak} icon={XCircle} variant="default" />
         </div>
       </div>
