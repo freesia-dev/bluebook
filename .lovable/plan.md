@@ -1,50 +1,41 @@
-## Tujuan
-Menandai surat keluar dengan kode **B-4** yang ditujukan ke **OJK / Otoritas Jasa Keuangan** sebagai "Pengajuan OJK" dengan workflow proses/tolak, plus 3 hero card di dashboard.
+## Perubahan yang diminta
 
-## 1. Database (migration)
-Tambah kolom baru di `surat_keluar`:
-- `ojk_status` TEXT — nilai: `diajukan` | `diproses` | `ditolak` | `selesai` | NULL
-- `ojk_status_updated_at` TIMESTAMPTZ
-- `ojk_status_updated_by` UUID (user id)
-- `ojk_status_updated_by_nama` TEXT
+### 1. Dashboard — perbaiki arti "Pengajuan Diproses"
+Saat ini kartu **"Pengajuan Diproses"** menghitung `diajukan + diproses`. Itu salah — "diproses" artinya pengajuan yang sudah di-**checklist (✓) Jalankan** (lanjut ke proses), bukan yang masih menunggu aksi.
 
-Backfill data lampau: untuk semua baris dengan `kode_surat = 'B-4'` AND (nama_penerima/tujuan_surat ILIKE `%ojk%` OR `%otoritas jasa keuangan%`), set `ojk_status = 'diproses'`.
+**Penyesuaian** di `src/pages/Dashboard.tsx` (dan/atau label di `use-dashboard-data.ts` tidak perlu diubah, hanya cara render):
+- **Total Pengajuan OJK** → `ojkStats.total` (tetap)
+- **Pengajuan Diproses** → `ojkStats.diproses` saja (status `diproses`)
+- **Pengajuan Dibatalkan** → `ojkStats.ditolak` (tetap)
+- Tambahan opsional: jika perlu, tampilkan juga jumlah `diajukan` sebagai sub-info kecil di kartu "Total" ("X menunggu aksi") supaya admin tau ada yang belum direspon. Akan saya tambahkan sebagai baris kecil di bawah angka Total.
 
-RLS update: kolom-kolom ini ikut policy `surat_keluar` yang sudah ada. Aksi proses/tolak hanya boleh oleh **user_input asli** atau **admin** — di-enforce di UI + dipertegas di policy update.
+### 2. Popup konfirmasi sebelum proses / tolak
+Di `src/pages/SuratKeluar.tsx`, tombol ✅ dan ❌ pada baris OJK saat ini langsung mengubah status. Ubah jadi:
 
-## 2. Deteksi otomatis (helper)
-Helper `isOjkSurat(s)`: `kode_surat === 'B-4' && /ojk|otoritas\s+jasa\s+keuangan/i.test(nama_penerima + ' ' + tujuan_surat)`.
+1. Klik tombol ✅ atau ❌ → buka **Dialog konfirmasi** (`@/components/ui/dialog` atau `alert-dialog`).
+2. Dialog menampilkan **ringkasan info surat**:
+   - Nomor Agenda / Nomor surat
+   - Kode Surat (B-4)
+   - Tanggal
+   - Nama Penerima
+   - Tujuan Surat
+   - Perihal
+   - Status OJK saat ini
+   - User Input
+3. Judul dialog dinamis:
+   - ✅ → "Proses Pengajuan OJK?" dengan deskripsi "Surat akan ditandai sebagai **Diproses** (dilanjutkan ke proses pengajuan)."
+   - ❌ → "Batalkan Pengajuan OJK?" dengan deskripsi "Surat akan ditandai sebagai **Dibatalkan/Ditolak**."
+   - ✓ (saat sudah `diproses`) → "Tandai Selesai?"
+4. Tombol footer: **Batal** + **Konfirmasi** (warna sesuai aksi: hijau untuk proses/selesai, merah untuk tolak).
+5. Setelah konfirmasi → jalankan `updateOjkStatus` (mutation existing) → tutup dialog → toast sukses.
 
-Saat **insert/update** surat keluar, jika `isOjkSurat` true dan `ojk_status` masih NULL → otomatis set `ojk_status = 'diajukan'`.
+**Implementasi**:
+- Tambah state lokal di `SuratKeluar.tsx`: `ojkConfirm: { surat, action: 'diproses'|'ditolak'|'selesai' } | null`.
+- Komponen dialog inline (tidak perlu file baru — cukup di `SuratKeluar.tsx` karena spesifik halaman ini).
+- Hak akses tetap: hanya `user_input === currentUser.nama` atau admin yang bisa lihat tombol & buka dialog.
 
-## 3. UI Surat Keluar (`src/pages/SuratKeluar.tsx`)
-Di tabel, untuk baris OJK tampilkan:
-- **Badge status** OJK: Diajukan (kuning) / Diproses (biru) / Ditolak (merah) / Selesai (hijau)
-- **Action buttons** (hanya jika `user_input === currentUser.nama` atau role admin):
-  - ✅ tombol hijau → set `diproses`
-  - ❌ tombol merah → set `ditolak`
-  - (saat status `diproses`, tambah tombol ✓ "Selesai")
-- Optimistic update via React Query mutation di `use-surat-data.ts`.
+### File yang akan diubah
+- `src/pages/Dashboard.tsx` — perbaiki sumber angka kartu "Pengajuan Diproses" (pakai `ojkStats.diproses` saja) + tambah sub-info "X menunggu aksi" di kartu Total.
+- `src/pages/SuratKeluar.tsx` — bungkus aksi tombol ✅/❌/✓ dengan dialog konfirmasi yang menampilkan ringkasan info surat.
 
-## 4. Dashboard hero cards (`src/pages/Dashboard.tsx`)
-Tambah **3 StatCard baru** di atas grid statistik dokumen, dalam section "Pengajuan OJK":
-- **Total Pengajuan OJK** (variant primary)
-- **Pengajuan Diproses** (variant warning — status `diajukan` + `diproses`)
-- **Pengajuan Dibatalkan** (variant default — status `ditolak`)
-
-Data via query baru di `use-dashboard-data.ts` (`ojk-stats`): hitung dari `surat_keluar` filter `ojk_status NOT NULL`. Subscribe realtime supaya update langsung.
-
-## 5. File yang akan diubah
-- migration baru (kolom + backfill)
-- `src/pages/SuratKeluar.tsx` — kolom status OJK + tombol aksi
-- `src/hooks/use-surat-data.ts` — mutation `updateOjkStatus` + auto-set `diajukan` saat insert OJK
-- `src/lib/supabase-store.ts` — mapping kolom baru
-- `src/types/index.ts` — tambah field `ojkStatus`, dll.
-- `src/hooks/use-dashboard-data.ts` — query stats OJK
-- `src/pages/Dashboard.tsx` — section hero OJK
-- `src/lib/utils.ts` (atau file kecil baru) — helper `isOjkSurat`
-
-## Catatan
-- Aksi hanya muncul untuk baris OJK; surat keluar non-OJK tidak berubah tampilan.
-- Demo/pemimpin tetap read-only.
-- Data lampau OJK otomatis muncul di card sebagai "Diproses".
+Tidak ada perubahan database/RLS/hook — murni UI.
