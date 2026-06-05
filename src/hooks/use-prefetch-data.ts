@@ -1,17 +1,17 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { 
-  getSuratMasuk, 
-  getSuratKeluar, 
-  getSPPK, 
-  getPK, 
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import {
+  getSuratMasuk,
+  getSuratKeluar,
+  getSPPK,
+  getPK,
   getKKMPAK,
   getAgendaKreditEntry,
   getJenisKredit,
   getJenisDebitur,
   getJenisPenggunaan,
-  getSektorEkonomi
-} from '@/lib/supabase-store';
+  getSektorEkonomi,
+} from "@/lib/supabase-store";
 
 const STALE_TIME = 1000 * 60 * 5;
 const REF_STALE_TIME = 1000 * 60 * 10;
@@ -30,32 +30,32 @@ export const usePrefetchData = (isAuthenticated: boolean) => {
     const prefetchMainData = async () => {
       await Promise.all([
         queryClient.prefetchQuery({
-          queryKey: ['surat-masuk'],
+          queryKey: ["surat-masuk"],
           queryFn: getSuratMasuk,
           staleTime: STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['surat-keluar'],
+          queryKey: ["surat-keluar"],
           queryFn: getSuratKeluar,
           staleTime: STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['sppk'],
+          queryKey: ["sppk"],
           queryFn: getSPPK,
           staleTime: STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['pk'],
+          queryKey: ["pk"],
           queryFn: getPK,
           staleTime: STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['kkmpak'],
+          queryKey: ["kkmpak"],
           queryFn: getKKMPAK,
           staleTime: STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['agenda-kredit-entry'],
+          queryKey: ["agenda-kredit-entry"],
           queryFn: getAgendaKreditEntry,
           staleTime: STALE_TIME,
         }),
@@ -66,22 +66,22 @@ export const usePrefetchData = (isAuthenticated: boolean) => {
     const prefetchRefData = async () => {
       await Promise.all([
         queryClient.prefetchQuery({
-          queryKey: ['jenis-kredit'],
+          queryKey: ["jenis-kredit"],
           queryFn: getJenisKredit,
           staleTime: REF_STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['jenis-debitur'],
+          queryKey: ["jenis-debitur"],
           queryFn: getJenisDebitur,
           staleTime: REF_STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['jenis-penggunaan'],
+          queryKey: ["jenis-penggunaan"],
           queryFn: getJenisPenggunaan,
           staleTime: REF_STALE_TIME,
         }),
         queryClient.prefetchQuery({
-          queryKey: ['sektor-ekonomi'],
+          queryKey: ["sektor-ekonomi"],
           queryFn: getSektorEkonomi,
           staleTime: REF_STALE_TIME,
         }),
