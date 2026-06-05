@@ -15,7 +15,10 @@ import {
   TrendingUp,
   Clock,
   HardDrive,
-  Database
+  Database,
+  Landmark,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { exportAllTables } from '@/lib/export';
