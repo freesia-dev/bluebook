@@ -507,12 +507,12 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Pengajuan OJK */}
+      {/* Pengajuan SLIK OJK */}
       <div className="mb-6">
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Landmark className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-display font-semibold">Pengajuan OJK</h2>
+            <h2 className="text-lg font-display font-semibold">Pengajuan SLIK OJK</h2>
             <span className="text-xs text-muted-foreground hidden sm:inline">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
           </div>
           <Button
@@ -522,19 +522,19 @@ const Dashboard: React.FC = () => {
             onClick={async () => {
               try {
                 await generateOjkReportPDF({ data: suratKeluar, generatedBy: 'Admin' });
-                toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan OJK berhasil diunduh.' });
+                toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan SLIK OJK berhasil diunduh.' });
               } catch (e: any) {
                 toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
               }
             }}
           >
             <FileBarChart className="w-4 h-4" />
-            Generate Laporan OJK
+            Generate Laporan SLIK OJK
           </Button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
-            title="Total Pengajuan OJK"
+            title="Total Pengajuan SLIK OJK"
             value={ojkStats.total}
             icon={Landmark}
             variant="primary"

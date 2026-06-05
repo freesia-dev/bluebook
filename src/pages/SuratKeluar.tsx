@@ -195,7 +195,7 @@ const SuratKeluarPage: React.FC = () => {
     try {
       await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown', rejectReason: status === 'ditolak' ? (rejectReason || null) : null });
       const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui' };
-      toast({ title: 'Status OJK Diperbarui', description: `Pengajuan OJK ditandai sebagai ${labels[status]}.` });
+      toast({ title: 'Status OJK Diperbarui', description: `Pengajuan SLIK OJK ditandai sebagai ${labels[status]}.` });
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui status OJK.', variant: 'destructive' });
     }
@@ -244,7 +244,7 @@ const SuratKeluarPage: React.FC = () => {
     },
     {
       key: 'ojk',
-      header: 'Pengajuan OJK',
+      header: 'Pengajuan SLIK OJK',
       render: (item: SuratKeluar) => {
         const isOjk = item.ojkStatus || isOjkSurat(item);
         if (!isOjk) return <span className="text-xs text-muted-foreground">—</span>;
@@ -335,7 +335,7 @@ const SuratKeluarPage: React.FC = () => {
         generatedBy: userName || 'User',
         statusFilter: ojkFilter === 'all' || ojkFilter === 'none' ? 'all' : ojkFilter,
       });
-      toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan OJK berhasil diunduh.' });
+      toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan SLIK OJK berhasil diunduh.' });
     } catch (e: any) {
       toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
     }
@@ -401,7 +401,7 @@ const SuratKeluarPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={ojkFilter} onValueChange={(v) => setOjkFilter(v as any)}>
               <SelectTrigger className="h-10 w-[180px]">
-                <SelectValue placeholder="Filter Pengajuan OJK" />
+                <SelectValue placeholder="Filter Pengajuan SLIK OJK" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Surat</SelectItem>
@@ -414,7 +414,7 @@ const SuratKeluarPage: React.FC = () => {
             </Select>
             <Button variant="outline" size="sm" className="gap-2 h-10" onClick={handleGenerateLaporan}>
               <Check className="w-4 h-4" />
-              Laporan OJK
+              Laporan SLIK OJK
             </Button>
             {canEdit && (
               <BulkStatusAction
@@ -566,9 +566,9 @@ const SuratKeluarPage: React.FC = () => {
             const { item, action } = ojkConfirm;
             const titleMap: Record<OjkStatus, string> = {
               diajukan: 'Tandai sebagai Diajukan?',
-              diproses: 'Proses Pengajuan OJK?',
-              ditolak: 'Tolak Pengajuan OJK?',
-              selesai: 'Setujui Pengajuan OJK?',
+              diproses: 'Proses Pengajuan SLIK OJK?',
+              ditolak: 'Tolak Pengajuan SLIK OJK?',
+              selesai: 'Setujui Pengajuan SLIK OJK?',
             };
             const descMap: Record<OjkStatus, string> = {
               diajukan: 'Surat akan ditandai sebagai Diajukan.',
