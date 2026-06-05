@@ -203,7 +203,7 @@ export const getSuratKeluar = async (): Promise<SuratKeluar[]> => {
   
   if (error) throw error;
   
-  return data.map(s => ({
+  return data.map((s: any) => ({
     id: s.id,
     nomor: s.nomor,
     nomorAgenda: s.nomor_agenda,
@@ -215,8 +215,11 @@ export const getSuratKeluar = async (): Promise<SuratKeluar[]> => {
     keterangan: s.keterangan || '',
     userInput: s.user_input,
     fileUrl: s.file_url || undefined,
-    tanggal: new Date((s as any).tanggal || s.created_at),
-    createdAt: new Date(s.created_at)
+    tanggal: new Date(s.tanggal || s.created_at),
+    createdAt: new Date(s.created_at),
+    ojkStatus: (s.ojk_status as any) || null,
+    ojkStatusUpdatedAt: s.ojk_status_updated_at ? new Date(s.ojk_status_updated_at) : null,
+    ojkStatusUpdatedByNama: s.ojk_status_updated_by_nama || null,
   }));
 };
 
