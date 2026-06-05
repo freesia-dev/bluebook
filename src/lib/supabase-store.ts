@@ -270,7 +270,10 @@ export const addSuratKeluar = async (data: Omit<SuratKeluar, 'id' | 'nomor' | 'n
     userInput: result.user_input,
     fileUrl: result.file_url || undefined,
     tanggal: new Date((result as any).tanggal || result.created_at),
-    createdAt: new Date(result.created_at)
+    createdAt: new Date(result.created_at),
+    ojkStatus: ((result as any).ojk_status as any) || null,
+    ojkStatusUpdatedAt: (result as any).ojk_status_updated_at ? new Date((result as any).ojk_status_updated_at) : null,
+    ojkStatusUpdatedByNama: (result as any).ojk_status_updated_by_nama || null,
   };
 };
 
