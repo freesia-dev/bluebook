@@ -107,9 +107,9 @@ export const useSuratKeluarData = () => {
   });
 
   const ojkStatusMutation = useMutation({
-    mutationFn: ({ id, status, userNama }: { id: string; status: OjkStatus; userNama: string }) =>
-      updateSuratKeluarOjkStatus(id, status, userNama),
-    onMutate: async ({ id, status, userNama }) => {
+    mutationFn: ({ id, status, userNama, rejectReason }: { id: string; status: OjkStatus; userNama: string; rejectReason?: string | null }) =>
+      updateSuratKeluarOjkStatus(id, status, userNama, rejectReason),
+    onMutate: async ({ id, status, userNama, rejectReason }) => {
       await queryClient.cancelQueries({ queryKey });
       const previousData = queryClient.getQueryData<SuratKeluar[]>(queryKey);
       queryClient.setQueryData<SuratKeluar[]>(queryKey, (old) =>
@@ -118,6 +118,7 @@ export const useSuratKeluarData = () => {
           ojkStatus: status,
           ojkStatusUpdatedAt: new Date(),
           ojkStatusUpdatedByNama: userNama,
+          ojkRejectReason: status === 'ditolak' ? (rejectReason || null) : null,
         } : item) || []
       );
       queryClient.invalidateQueries({ queryKey: ['ojk-stats'] });

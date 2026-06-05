@@ -220,6 +220,7 @@ export const getSuratKeluar = async (): Promise<SuratKeluar[]> => {
     ojkStatus: (s.ojk_status as any) || null,
     ojkStatusUpdatedAt: s.ojk_status_updated_at ? new Date(s.ojk_status_updated_at) : null,
     ojkStatusUpdatedByNama: s.ojk_status_updated_by_nama || null,
+    ojkRejectReason: (s as any).ojk_reject_reason || null,
   }));
 };
 
@@ -342,6 +343,7 @@ export const updateSuratKeluarOjkStatus = async (
   id: string,
   status: OjkStatus,
   userNama: string,
+  rejectReason?: string | null,
 ): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
@@ -351,6 +353,7 @@ export const updateSuratKeluarOjkStatus = async (
       ojk_status_updated_at: new Date().toISOString(),
       ojk_status_updated_by: user?.id || null,
       ojk_status_updated_by_nama: userNama,
+      ojk_reject_reason: status === 'ditolak' ? (rejectReason || null) : null,
     } as any)
     .eq('id', id);
   if (error) throw error;
