@@ -67,6 +67,7 @@ const SuratKeluarPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<SuratKeluar | null>(null);
   const [ojkConfirm, setOjkConfirm] = useState<{ item: SuratKeluar; action: OjkStatus } | null>(null);
   const [ojkRejectReason, setOjkRejectReason] = useState('');
+  const [ojkFilter, setOjkFilter] = useState<OjkStatus | 'all' | 'none'>('all');
   
   const [formData, setFormData] = useState({
     kodeSurat: '',
@@ -193,7 +194,7 @@ const SuratKeluarPage: React.FC = () => {
     }
     try {
       await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown', rejectReason: status === 'ditolak' ? (rejectReason || null) : null });
-      const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai' };
+      const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui' };
       toast({ title: 'Status OJK Diperbarui', description: `Pengajuan OJK ditandai sebagai ${labels[status]}.` });
     } catch (error: any) {
       toast({ title: 'Error', description: error.message || 'Gagal memperbarui status OJK.', variant: 'destructive' });
@@ -252,7 +253,7 @@ const SuratKeluarPage: React.FC = () => {
           diajukan: 'warning', diproses: 'info', ditolak: 'destructive', selesai: 'success',
         };
         const labelMap: Record<OjkStatus, string> = {
-          diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+          diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui',
         };
         const allowed = canChangeOjk(item) && canEdit;
         return (
@@ -274,7 +275,7 @@ const SuratKeluarPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setOjkConfirm({ item, action: 'selesai' }); }}
-                    title="Tandai selesai (✓)"
+                    title="Setujui pengajuan (✓)"
                     className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-success/10 text-success hover:bg-success/20 transition-colors"
                   >
                     <Check className="w-3.5 h-3.5" />
