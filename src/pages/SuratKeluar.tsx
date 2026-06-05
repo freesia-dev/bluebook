@@ -519,7 +519,7 @@ const SuratKeluarPage: React.FC = () => {
       </Dialog>
 
       {/* OJK Confirmation Dialog */}
-      <AlertDialog open={!!ojkConfirm} onOpenChange={(open) => !open && setOjkConfirm(null)}>
+      <AlertDialog open={!!ojkConfirm} onOpenChange={(open) => { if (!open) { setOjkConfirm(null); setOjkRejectReason(''); } }}>
         <AlertDialogContent className="max-w-md">
           {ojkConfirm && (() => {
             const { item, action } = ojkConfirm;
@@ -540,6 +540,8 @@ const SuratKeluarPage: React.FC = () => {
             };
             const currentStatus = (item.ojkStatus || 'diajukan') as OjkStatus;
             const isDestructive = action === 'ditolak';
+            const reasonTrimmed = ojkRejectReason.trim();
+            const reasonInvalid = action === 'ditolak' && reasonTrimmed.length < 5;
             return (
               <>
                 <AlertDialogHeader>
@@ -589,13 +591,39 @@ const SuratKeluarPage: React.FC = () => {
                     <span className="text-muted-foreground">Status OJK</span>
                     <span className="font-medium">{currentLabel[currentStatus]}</span>
                   </div>
+                  {item.ojkRejectReason && action !== 'ditolak' && (
+                    <div className="grid grid-cols-[110px_1fr] gap-x-2">
+                      <span className="text-muted-foreground">Alasan Tolak</span>
+                      <span className="font-medium break-words text-destructive">{item.ojkRejectReason}</span>
+                    </div>
+                  )}
                 </div>
+                {action === 'ditolak' && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ojk-reject-reason" className="text-sm">
+                      Alasan Penolakan <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea
+                      id="ojk-reject-reason"
+                      value={ojkRejectReason}
+                      onChange={(e) => setOjkRejectReason(e.target.value)}
+                      placeholder="Jelaskan alasan pengajuan ini dibatalkan / ditolak (min. 5 karakter)..."
+                      rows={3}
+                      maxLength={500}
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground">{reasonTrimmed.length}/500 karakter</p>
+                  </div>
+                )}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={async () => {
-                      await handleOjkStatus(item, action);
+                    disabled={reasonInvalid}
+                    onClick={async (e) => {
+                      if (reasonInvalid) { e.preventDefault(); return; }
+                      await handleOjkStatus(item, action, action === 'ditolak' ? reasonTrimmed : undefined);
                       setOjkConfirm(null);
+                      setOjkRejectReason('');
                     }}
                     className={isDestructive ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success/90 text-success-foreground'}
                   >
