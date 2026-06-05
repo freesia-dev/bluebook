@@ -74,7 +74,8 @@ export const OjkReportDialog: React.FC<Props> = ({ generatedBy = 'Admin', trigge
     }
     setLoading(true);
     try {
-      await generateOjkReportPDF({ data, generatedBy, statusFilter, dateFrom: f, dateTo: t });
+      const allData = await getSuratKeluar();
+      await generateOjkReportPDF({ data: allData, generatedBy, statusFilter, dateFrom: f, dateTo: t });
       toast({ title: 'Laporan Dibuat', description: 'Laporan SLIK OJK berhasil diunduh.' });
       setOpen(false);
     } catch (e: any) {
