@@ -182,6 +182,22 @@ const SuratKeluarPage: React.FC = () => {
     }
   };
 
+  const canChangeOjk = (item: SuratKeluar) => isAdmin || (userName && item.userInput === userName);
+
+  const handleOjkStatus = async (item: SuratKeluar, status: OjkStatus) => {
+    if (!canChangeOjk(item)) {
+      toast({ title: 'Akses Ditolak', description: 'Hanya admin atau penginput surat yang dapat mengubah status pengajuan OJK.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await updateOjkStatus({ id: item.id, status, userNama: userName || 'Unknown' });
+      const labels: Record<OjkStatus, string> = { diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai' };
+      toast({ title: 'Status OJK Diperbarui', description: `Pengajuan OJK ditandai sebagai ${labels[status]}.` });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Gagal memperbarui status OJK.', variant: 'destructive' });
+    }
+  };
+
   const handleExport = () => {
     const exportData = data.map(item => ({
       'No': item.nomor,
