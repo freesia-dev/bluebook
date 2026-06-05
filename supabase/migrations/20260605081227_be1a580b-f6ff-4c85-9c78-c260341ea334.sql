@@ -1,0 +1,1 @@
+ALTER TABLE public.surat_keluar ADD COLUMN IF NOT EXISTS ojk_reject_reason text;

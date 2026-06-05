@@ -1587,6 +1587,7 @@ export type Database = {
           nama_penerima: string
           nomor: number
           nomor_agenda: string
+          ojk_reject_reason: string | null
           ojk_status: string | null
           ojk_status_updated_at: string | null
           ojk_status_updated_by: string | null
@@ -1606,6 +1607,7 @@ export type Database = {
           nama_penerima: string
           nomor: number
           nomor_agenda: string
+          ojk_reject_reason?: string | null
           ojk_status?: string | null
           ojk_status_updated_at?: string | null
           ojk_status_updated_by?: string | null
@@ -1625,6 +1627,7 @@ export type Database = {
           nama_penerima?: string
           nomor?: number
           nomor_agenda?: string
+          ojk_reject_reason?: string | null
           ojk_status?: string | null
           ojk_status_updated_at?: string | null
           ojk_status_updated_by?: string | null
