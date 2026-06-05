@@ -46,7 +46,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts } = useDashboardData();
+  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData();
   const { isAdmin } = useAuth();
 
   // Storage usage query (admin only) — parallelized across ALL data tables in Bluebook
