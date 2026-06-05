@@ -81,6 +81,14 @@ export const StatCard: React.FC<StatCardProps> = ({
             {title}
           </p>
           <p className="mt-3 text-3xl font-display font-bold tracking-tight">{value}</p>
+          {description && (
+            <p className={cn(
+              "mt-1.5 text-xs font-medium",
+              variant === 'default' ? 'text-muted-foreground' : 'opacity-80'
+            )}>
+              {description}
+            </p>
+          )}
           {trend && (
             <div className={cn(
               "mt-2 flex items-center gap-1.5 text-sm font-medium",
