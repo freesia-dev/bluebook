@@ -567,17 +567,17 @@ const SuratKeluarPage: React.FC = () => {
             const titleMap: Record<OjkStatus, string> = {
               diajukan: 'Tandai sebagai Diajukan?',
               diproses: 'Proses Pengajuan OJK?',
-              ditolak: 'Batalkan Pengajuan OJK?',
-              selesai: 'Tandai Selesai?',
+              ditolak: 'Tolak Pengajuan OJK?',
+              selesai: 'Setujui Pengajuan OJK?',
             };
             const descMap: Record<OjkStatus, string> = {
               diajukan: 'Surat akan ditandai sebagai Diajukan.',
               diproses: 'Surat akan ditandai sebagai Diproses (dilanjutkan ke proses pengajuan).',
-              ditolak: 'Surat akan ditandai sebagai Dibatalkan / Ditolak.',
-              selesai: 'Surat akan ditandai sebagai Selesai.',
+              ditolak: 'Surat akan ditandai sebagai Ditolak / Dibatalkan.',
+              selesai: 'Surat akan ditandai sebagai Disetujui oleh OJK.',
             };
             const currentLabel: Record<OjkStatus, string> = {
-              diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Selesai',
+              diajukan: 'Diajukan', diproses: 'Diproses', ditolak: 'Ditolak', selesai: 'Disetujui',
             };
             const currentStatus = (item.ojkStatus || 'diajukan') as OjkStatus;
             const isDestructive = action === 'ditolak';
@@ -668,7 +668,7 @@ const SuratKeluarPage: React.FC = () => {
                     }}
                     className={isDestructive ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success/90 text-success-foreground'}
                   >
-                    {action === 'ditolak' ? 'Batalkan' : action === 'selesai' ? 'Tandai Selesai' : 'Proses'}
+                    {action === 'ditolak' ? 'Tolak' : action === 'selesai' ? 'Setujui' : 'Proses'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </>
