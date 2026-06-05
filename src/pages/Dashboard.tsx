@@ -432,6 +432,50 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Pengajuan SLIK OJK */}
+      <Card className="shadow-card mb-6 overflow-hidden border-primary/10">
+        <div className="bg-gradient-to-r from-primary/5 via-primary/[0.03] to-transparent border-b border-border/60 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Landmark className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-display font-semibold leading-tight">Pengajuan SLIK OJK</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            onClick={async () => {
+              try {
+                await generateOjkReportPDF({ data: suratKeluar, generatedBy: 'Admin' });
+                toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan SLIK OJK berhasil diunduh.' });
+              } catch (e: any) {
+                toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
+              }
+            }}
+          >
+            <FileBarChart className="w-4 h-4" />
+            Generate Laporan
+          </Button>
+        </div>
+        <CardContent className="p-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              title="Total Pengajuan"
+              value={ojkStats.total}
+              icon={Landmark}
+              variant="primary"
+              description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
+            />
+            <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
+            <StatCard title="Disetujui" value={ojkStats.selesai} icon={CheckCircle2} variant="success" />
+            <StatCard title="Ditolak" value={ojkStats.ditolak} icon={XCircle} variant="default" />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Recent Data Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="shadow-card">
@@ -507,44 +551,6 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Pengajuan SLIK OJK */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-display font-semibold">Pengajuan SLIK OJK</h2>
-            <span className="text-xs text-muted-foreground hidden sm:inline">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={async () => {
-              try {
-                await generateOjkReportPDF({ data: suratKeluar, generatedBy: 'Admin' });
-                toast({ title: 'Laporan Dibuat', description: 'Laporan Pengajuan SLIK OJK berhasil diunduh.' });
-              } catch (e: any) {
-                toast({ title: 'Gagal', description: e.message || 'Gagal membuat laporan.', variant: 'destructive' });
-              }
-            }}
-          >
-            <FileBarChart className="w-4 h-4" />
-            Generate Laporan SLIK OJK
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Pengajuan SLIK OJK"
-            value={ojkStats.total}
-            icon={Landmark}
-            variant="primary"
-            description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
-          />
-          <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
-          <StatCard title="Disetujui" value={ojkStats.selesai} icon={CheckCircle2} variant="success" />
-          <StatCard title="Ditolak" value={ojkStats.ditolak} icon={XCircle} variant="default" />
-        </div>
-      </div>
     </MainLayout>
   );
 };
