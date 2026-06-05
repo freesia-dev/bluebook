@@ -260,6 +260,20 @@ const Dashboard: React.FC = () => {
         }
       />
 
+      {/* Pengajuan OJK */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Landmark className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-display font-semibold">Pengajuan OJK</h2>
+          <span className="text-xs text-muted-foreground">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard title="Total Pengajuan OJK" value={ojkStats.total} icon={Landmark} variant="primary" />
+          <StatCard title="Pengajuan Diproses" value={ojkStats.diajukan + ojkStats.diproses} icon={Loader2} variant="warning" />
+          <StatCard title="Pengajuan Dibatalkan" value={ojkStats.ditolak} icon={XCircle} variant="default" />
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Surat Masuk" value={counts.suratMasuk} icon={Mail} variant="primary" />
