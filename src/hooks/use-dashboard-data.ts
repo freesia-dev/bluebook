@@ -128,7 +128,7 @@ const getRecentKKMPAK = async (): Promise<KKMPAK[]> => {
 };
 
 // Dashboard stats query with optimized caching
-export const useDashboardData = () => {
+export const useDashboardData = (userInputFilter?: string | null) => {
   const countsQuery = useQuery({
     queryKey: ['dashboard-counts'],
     queryFn: async () => {
