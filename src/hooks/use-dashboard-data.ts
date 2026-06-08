@@ -175,14 +175,21 @@ export const useDashboardData = (userInputFilter?: string | null) => {
   });
 
   const ojkStatsQuery = useQuery({
-    queryKey: ['ojk-stats'],
+    queryKey: ['ojk-stats', userInputFilter || 'all'],
     queryFn: async () => {
+      const build = (status?: string) => {
+        let q = (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true });
+        if (status) q = q.eq('ojk_status', status);
+        else q = q.not('ojk_status', 'is', null);
+        if (userInputFilter) q = q.eq('user_input', userInputFilter);
+        return q;
+      };
       const [total, diajukan, diproses, ditolak, selesai] = await Promise.all([
-        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).not('ojk_status', 'is', null),
-        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'diajukan'),
-        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'diproses'),
-        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'ditolak'),
-        (supabase as any).from('surat_keluar').select('*', { count: 'exact', head: true }).eq('ojk_status', 'selesai'),
+        build(),
+        build('diajukan'),
+        build('diproses'),
+        build('ditolak'),
+        build('selesai'),
       ]);
       return {
         total: total.count || 0,
