@@ -29,6 +29,7 @@ export interface OjkReportOptions {
   statusFilter?: OjkStatus | 'all';
   dateFrom?: Date | null;
   dateTo?: Date | null;
+  userInputFilter?: string | null;
 }
 
 export const generateOjkReportPDF = async ({
@@ -37,9 +38,13 @@ export const generateOjkReportPDF = async ({
   statusFilter = 'all',
   dateFrom = null,
   dateTo = null,
+  userInputFilter = null,
 }: OjkReportOptions) => {
   // Filter only OJK letters
   let ojkData = data.filter(s => s.ojkStatus || isOjkSurat(s));
+  if (userInputFilter) {
+    ojkData = ojkData.filter(s => (s.userInput || '') === userInputFilter);
+  }
   if (statusFilter !== 'all') {
     ojkData = ojkData.filter(s => (s.ojkStatus || 'diajukan') === statusFilter);
   }
