@@ -33,9 +33,10 @@ type RangeMode = 'all' | 'this_month' | 'last_30' | 'this_year' | 'custom';
 interface Props {
   generatedBy?: string;
   trigger?: React.ReactNode;
+  userInputFilter?: string | null;
 }
 
-export const OjkReportDialog: React.FC<Props> = ({ generatedBy = 'Admin', trigger }) => {
+export const OjkReportDialog: React.FC<Props> = ({ generatedBy = 'Admin', trigger, userInputFilter = null }) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,7 +76,7 @@ export const OjkReportDialog: React.FC<Props> = ({ generatedBy = 'Admin', trigge
     setLoading(true);
     try {
       const allData = await getSuratKeluar();
-      await generateOjkReportPDF({ data: allData, generatedBy, statusFilter, dateFrom: f, dateTo: t });
+      await generateOjkReportPDF({ data: allData, generatedBy, statusFilter, dateFrom: f, dateTo: t, userInputFilter });
       toast({ title: 'Laporan Dibuat', description: 'Laporan SLIK OJK berhasil diunduh.' });
       setOpen(false);
     } catch (e: any) {

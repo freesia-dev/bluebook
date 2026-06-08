@@ -29,6 +29,7 @@ export interface OjkReportOptions {
   statusFilter?: OjkStatus | 'all';
   dateFrom?: Date | null;
   dateTo?: Date | null;
+  userInputFilter?: string | null;
 }
 
 export const generateOjkReportPDF = async ({
@@ -37,9 +38,13 @@ export const generateOjkReportPDF = async ({
   statusFilter = 'all',
   dateFrom = null,
   dateTo = null,
+  userInputFilter = null,
 }: OjkReportOptions) => {
   // Filter only OJK letters
   let ojkData = data.filter(s => s.ojkStatus || isOjkSurat(s));
+  if (userInputFilter) {
+    ojkData = ojkData.filter(s => (s.userInput || '') === userInputFilter);
+  }
   if (statusFilter !== 'all') {
     ojkData = ojkData.filter(s => (s.ojkStatus || 'diajukan') === statusFilter);
   }
@@ -119,8 +124,9 @@ export const generateOjkReportPDF = async ({
     if (dateTo) return `Sampai ${format(dateTo, 'dd/MM/yyyy')}`;
     return 'Semua Periode';
   })();
+  const scopeLabel = userInputFilter ? `User: ${userInputFilter}` : 'Semua User';
   doc.text(
-    `Status: ${filterLabel}  ·  Periode: ${rangeLabel}`,
+    `Status: ${filterLabel}  ·  Periode: ${rangeLabel}  ·  ${scopeLabel}`,
     pageW / 2,
     y + 5.5,
     { align: 'center' }

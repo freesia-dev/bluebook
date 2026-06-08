@@ -49,8 +49,10 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData();
-  const { isAdmin } = useAuth();
+  const { isAdmin, userName } = useAuth();
+  const [ojkScope, setOjkScope] = React.useState<'mine' | 'all'>(isAdmin ? 'all' : 'mine');
+  const ojkUserFilter = ojkScope === 'mine' ? userName : null;
+  const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData(ojkUserFilter);
 
   // Storage usage query (admin only) — parallelized across ALL data tables in Bluebook
   const { data: storageCounts } = useQuery({
@@ -441,18 +443,41 @@ const Dashboard: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base font-display font-semibold leading-tight">Pengajuan SLIK OJK</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Surat keluar kode B-4 ke Otoritas Jasa Keuangan</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {ojkScope === 'mine'
+                  ? `Menampilkan data yang Anda input (${userName})`
+                  : 'Menampilkan seluruh data dari semua user input'}
+              </p>
             </div>
           </div>
-          <OjkReportDialog
-            generatedBy="Admin"
-            trigger={
-              <Button size="sm" className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <FileBarChart className="w-4 h-4" />
-                Generate Laporan
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <div className="inline-flex rounded-lg border border-border bg-background p-0.5 text-xs">
+                <button
+                  onClick={() => setOjkScope('mine')}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${ojkScope === 'mine' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Milik Saya
+                </button>
+                <button
+                  onClick={() => setOjkScope('all')}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${ojkScope === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Semua
+                </button>
+              </div>
+            )}
+            <OjkReportDialog
+              generatedBy={userName}
+              userInputFilter={ojkUserFilter}
+              trigger={
+                <Button size="sm" className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <FileBarChart className="w-4 h-4" />
+                  Generate Laporan
+                </Button>
+              }
+            />
+          </div>
         </div>
         <CardContent className="p-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
