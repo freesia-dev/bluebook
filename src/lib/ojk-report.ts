@@ -124,8 +124,9 @@ export const generateOjkReportPDF = async ({
     if (dateTo) return `Sampai ${format(dateTo, 'dd/MM/yyyy')}`;
     return 'Semua Periode';
   })();
+  const scopeLabel = userInputFilter ? `User: ${userInputFilter}` : 'Semua User';
   doc.text(
-    `Status: ${filterLabel}  ·  Periode: ${rangeLabel}`,
+    `Status: ${filterLabel}  ·  Periode: ${rangeLabel}  ·  ${scopeLabel}`,
     pageW / 2,
     y + 5.5,
     { align: 'center' }
