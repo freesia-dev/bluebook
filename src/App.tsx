@@ -216,6 +216,9 @@ const App = () => (
             <Route path="/security/log/cetak" element={
               <Suspense fallback={<LoginLoader />}><BAHarianPrintPage /></Suspense>
             } />
+            <Route path="/security/log/cetak-bulk" element={
+              <Suspense fallback={<LoginLoader />}><BAHarianBulkPrintPage /></Suspense>
+            } />
             <Route path="/security/audit-links" element={
               <Suspense fallback={<TablePageSkeleton />}><AuditLinksAdminPage /></Suspense>
             } />
