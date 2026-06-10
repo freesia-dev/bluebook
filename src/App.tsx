@@ -48,6 +48,7 @@ const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTung
 const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPage"));
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
+const BAHarianBulkPrintPage = lazy(() => import("./pages/security/BAHarianBulkPrintPage"));
 const VerifyBAPage = lazy(() => import("./pages/security/VerifyBAPage"));
 const KondisiKantorTemplatePage = lazy(() => import("./pages/security/KondisiKantorTemplatePage"));
 const AuditLinksAdminPage = lazy(() => import("./pages/security/AuditLinksAdminPage"));
@@ -214,6 +215,9 @@ const App = () => (
             } />
             <Route path="/security/log/cetak" element={
               <Suspense fallback={<LoginLoader />}><BAHarianPrintPage /></Suspense>
+            } />
+            <Route path="/security/log/cetak-bulk" element={
+              <Suspense fallback={<LoginLoader />}><BAHarianBulkPrintPage /></Suspense>
             } />
             <Route path="/security/audit-links" element={
               <Suspense fallback={<TablePageSkeleton />}><AuditLinksAdminPage /></Suspense>

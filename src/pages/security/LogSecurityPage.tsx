@@ -9,13 +9,15 @@ import { ShiftCard } from '@/components/security/ShiftCard';
 import { StartShiftDialog } from '@/components/security/StartShiftDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Plus, Printer, ShieldCheck, CheckCircle2, Printer as PrinterIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
 
 const LogSecurityPage: React.FC = () => {
   const { permissions, userName } = useAuth();
@@ -25,6 +27,26 @@ const LogSecurityPage: React.FC = () => {
   const { data: shifts = [], isLoading } = useSecurityShifts(tanggal);
   const [startOpen, setStartOpen] = useState(false);
   const signBA = useSignBA();
+
+  // Bulk print range
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const firstOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd');
+  const [bulkDari, setBulkDari] = useState(firstOfMonth);
+  const [bulkSampai, setBulkSampai] = useState(today);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  const handleBulkPrint = () => {
+    if (!bulkDari || !bulkSampai) {
+      toast({ title: 'Lengkapi rentang tanggal', variant: 'destructive' });
+      return;
+    }
+    if (bulkSampai < bulkDari) {
+      toast({ title: 'Tanggal akhir harus >= tanggal awal', variant: 'destructive' });
+      return;
+    }
+    setBulkOpen(false);
+    window.open(`/security/log/cetak-bulk?dari=${bulkDari}&sampai=${bulkSampai}`, '_blank');
+  };
 
 
   const sorted = useMemo(() => {
@@ -147,6 +169,38 @@ const LogSecurityPage: React.FC = () => {
             <Button variant="outline" className="w-full sm:w-auto" onClick={handlePrint} disabled={sorted.length === 0}>
               <Printer className="w-4 h-4 mr-2" />Cetak BA
             </Button>
+          )}
+          {permissions.canPrintSecurityBA && (
+            <Popover open={bulkOpen} onOpenChange={setBulkOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto border-[#003F7F] text-[#003F7F] hover:bg-[#003F7F]/5">
+                  <PrinterIcon className="w-4 h-4 mr-2" />Cetak Banyak BA
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4" align="end">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold">Cetak Bulk BA Log Security</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pilih rentang tanggal — semua BA pada periode tersebut akan dicetak sekaligus dalam satu dokumen.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="bulk-dari" className="text-xs">Dari</Label>
+                      <Input id="bulk-dari" type="date" value={bulkDari} max={bulkSampai} onChange={(e) => setBulkDari(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label htmlFor="bulk-sampai" className="text-xs">Sampai</Label>
+                      <Input id="bulk-sampai" type="date" value={bulkSampai} min={bulkDari} max={today} onChange={(e) => setBulkSampai(e.target.value)} className="mt-1" />
+                    </div>
+                  </div>
+                  <Button onClick={handleBulkPrint} className="w-full bg-[#003F7F] hover:bg-[#003366]">
+                    <PrinterIcon className="w-4 h-4 mr-2" />Buka Halaman Cetak
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
           {permissions.canStartSecurityShift && (
             <Button className="w-full sm:w-auto" onClick={handleStartClick}>
