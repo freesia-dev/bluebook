@@ -26,7 +26,7 @@ const FeaturesSection = () => {
     {
       icon: CreditCard,
       title: "Agenda Kredit",
-      description: "SPPK, PK, KK/MPAK, dan Nomor Loan untuk KCP Telihan & Meranti dalam satu tempat.",
+      description: "SPPK, PK, KK/MPAK, dan Nomor Loan untuk KCP Telihan dan Unit Meranti dalam satu tempat.",
       gradient: "from-brand-secondary to-amber-500",
       tag: "Multi-Cabang",
     },
@@ -121,7 +121,7 @@ const FeaturesSection = () => {
           </h2>
           <p className="text-lg text-slate-600 leading-relaxed">
             Dari surat-menyurat sampai monitoring NPL, dari simulasi kredit sampai BA ATM — Bluebook
-            menyatukan operasional harian KCP Telihan & Meranti dalam satu sistem yang ringan dan cepat.
+            menyatukan operasional harian KCP Telihan dan Unit Meranti dalam satu sistem yang ringan dan cepat.
           </p>
         </div>
 
@@ -160,7 +160,7 @@ const FeaturesSection = () => {
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {[
             { value: "12+", label: "Modul Aktif" },
-            { value: "2", label: "KCP Terintegrasi" },
+            { value: "2", label: "Unit Terintegrasi" },
             { value: "Real-time", label: "Dashboard Live" },
             { value: "PWA", label: "Installable" },
           ].map((stat, i) => (
