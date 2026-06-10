@@ -36,15 +36,17 @@ const About: React.FC = () => {
           <div className="absolute -top-20 -right-20 w-72 h-72 bg-brand-secondary/30 rounded-full blur-3xl" />
           <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-brand-primary/40 rounded-full blur-3xl" />
 
-          <div className="relative">
-            <div className="relative inline-block mb-6">
-              <div className="absolute inset-0 bg-brand-secondary/30 blur-2xl rounded-full" />
-              <img
-                src={logoImage}
-                alt="Bluebook Logo"
-                className="relative w-28 h-28 md:w-32 md:h-32 object-contain drop-shadow-2xl"
-              />
-              <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-brand-secondary animate-pulse" />
+          <div className="relative flex flex-col items-center">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-brand-secondary/40 blur-3xl rounded-full scale-125" />
+              <div className="relative w-32 h-32 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-white to-blue-50 shadow-2xl ring-4 ring-white/40 flex items-center justify-center">
+                <img
+                  src={logoImage}
+                  alt="Bluebook Logo"
+                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
+                />
+              </div>
+              <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-brand-secondary animate-pulse" />
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-xs text-white/90 mb-4">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
