@@ -9,13 +9,15 @@ import { ShiftCard } from '@/components/security/ShiftCard';
 import { StartShiftDialog } from '@/components/security/StartShiftDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Plus, Printer, ShieldCheck, CheckCircle2, Printer as PrinterIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
 
 const LogSecurityPage: React.FC = () => {
   const { permissions, userName } = useAuth();
