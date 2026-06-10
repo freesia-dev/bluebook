@@ -170,6 +170,38 @@ const LogSecurityPage: React.FC = () => {
               <Printer className="w-4 h-4 mr-2" />Cetak BA
             </Button>
           )}
+          {permissions.canPrintSecurityBA && (
+            <Popover open={bulkOpen} onOpenChange={setBulkOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto border-[#003F7F] text-[#003F7F] hover:bg-[#003F7F]/5">
+                  <PrinterIcon className="w-4 h-4 mr-2" />Cetak Banyak BA
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4" align="end">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold">Cetak Bulk BA Log Security</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pilih rentang tanggal — semua BA pada periode tersebut akan dicetak sekaligus dalam satu dokumen.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="bulk-dari" className="text-xs">Dari</Label>
+                      <Input id="bulk-dari" type="date" value={bulkDari} max={bulkSampai} onChange={(e) => setBulkDari(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label htmlFor="bulk-sampai" className="text-xs">Sampai</Label>
+                      <Input id="bulk-sampai" type="date" value={bulkSampai} min={bulkDari} max={today} onChange={(e) => setBulkSampai(e.target.value)} className="mt-1" />
+                    </div>
+                  </div>
+                  <Button onClick={handleBulkPrint} className="w-full bg-[#003F7F] hover:bg-[#003366]">
+                    <PrinterIcon className="w-4 h-4 mr-2" />Buka Halaman Cetak
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
           {permissions.canStartSecurityShift && (
             <Button className="w-full sm:w-auto" onClick={handleStartClick}>
               <Plus className="w-4 h-4 mr-2" />Mulai Shift
