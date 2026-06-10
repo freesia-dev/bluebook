@@ -280,8 +280,9 @@ const BAHarianPrintPage: React.FC = () => {
 
       <style>{`
         @media print {
-          @page { size: A4; margin: 0; }
+          @page { size: A4; margin: 1.5cm 1.4cm 1.5cm 1.6cm; }
           body { background: white !important; }
+          .ba-print-page { width: auto !important; min-height: 0 !important; box-shadow: none !important; }
         }
       `}</style>
     </div>
