@@ -28,6 +28,26 @@ const LogSecurityPage: React.FC = () => {
   const [startOpen, setStartOpen] = useState(false);
   const signBA = useSignBA();
 
+  // Bulk print range
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const firstOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd');
+  const [bulkDari, setBulkDari] = useState(firstOfMonth);
+  const [bulkSampai, setBulkSampai] = useState(today);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  const handleBulkPrint = () => {
+    if (!bulkDari || !bulkSampai) {
+      toast({ title: 'Lengkapi rentang tanggal', variant: 'destructive' });
+      return;
+    }
+    if (bulkSampai < bulkDari) {
+      toast({ title: 'Tanggal akhir harus >= tanggal awal', variant: 'destructive' });
+      return;
+    }
+    setBulkOpen(false);
+    window.open(`/security/log/cetak-bulk?dari=${bulkDari}&sampai=${bulkSampai}`, '_blank');
+  };
+
 
   const sorted = useMemo(() => {
     return [...shifts].sort((a, b) => {
