@@ -49,15 +49,15 @@ const HeroSection = () => {
 
             {/* Improved Value Proposition */}
             <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
-              Satu portal resmi untuk mengelola surat masuk & keluar, agenda kredit, dan arsip internal secara digital — <span className="text-brand-secondary font-medium">tanpa Excel, tanpa kertas, tanpa ribet.</span>
+              Satu portal untuk surat, agenda kredit, simulasi, ATM, monitoring NPL, dan security — <span className="text-brand-secondary font-medium">tanpa Excel, tanpa kertas, tanpa ribet.</span>
             </p>
 
             {/* Supporting bullets */}
             <ul className="space-y-3">
               {[
-                "Arsip surat digital & mudah dicari",
-                "Agenda kredit terstruktur dan terpantau", 
-                "Hak akses berbasis peran (Admin, User, Demo)"
+                "12+ modul aktif untuk KCP Telihan & Meranti",
+                "Dashboard real-time, global search (Ctrl+K), audit trail",
+                "Installable sebagai aplikasi (PWA) di HP & Desktop",
               ].map((item, index) => (
                 <li key={index} className="flex items-center gap-3 text-slate-300">
                   <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
