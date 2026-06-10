@@ -127,7 +127,7 @@ const BAHarianPrintPage: React.FC = () => {
       </div>
 
       <div
-        className="mx-auto bg-white shadow-lg print:shadow-none my-6 print:my-0 p-[2cm] print:p-[1.8cm]"
+        className="ba-print-page mx-auto bg-white shadow-lg print:shadow-none my-6 print:my-0 p-[2cm] print:p-0"
         style={{ width: '21cm', minHeight: '29.7cm', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '10.5pt', color: '#111' }}
       >
         <KopSuratBank />
@@ -280,8 +280,9 @@ const BAHarianPrintPage: React.FC = () => {
 
       <style>{`
         @media print {
-          @page { size: A4; margin: 0; }
+          @page { size: A4; margin: 1.5cm 1.4cm 1.5cm 1.6cm; }
           body { background: white !important; }
+          .ba-print-page { width: auto !important; min-height: 0 !important; box-shadow: none !important; }
         }
       `}</style>
     </div>

@@ -130,6 +130,19 @@ const LogSecurityPage: React.FC = () => {
               </AlertDialog>
             )
           )}
+          {!permissions.canSignSecurityBA && sorted.length > 0 && (
+            isSigned ? (
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Log harian sudah disetujui{signedBy ? ` oleh ${signedBy}` : ''}</span>
+              </div>
+            ) : (
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-md border border-amber-300 bg-amber-50 text-amber-800">
+                <ShieldCheck className="w-4 h-4" />
+                <span>{allClosed ? 'Menunggu approval Pimpinan' : 'Belum disetujui (shift belum selesai)'}</span>
+              </div>
+            )
+          )}
           {permissions.canPrintSecurityBA && (
             <Button variant="outline" className="w-full sm:w-auto" onClick={handlePrint} disabled={sorted.length === 0}>
               <Printer className="w-4 h-4 mr-2" />Cetak BA
