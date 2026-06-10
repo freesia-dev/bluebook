@@ -55,7 +55,7 @@ const HeroSection = () => {
             {/* Supporting bullets */}
             <ul className="space-y-3">
               {[
-                "12+ modul aktif untuk KCP Telihan & Meranti",
+                "12+ modul aktif untuk KCP Telihan dan Unit Meranti",
                 "Dashboard real-time, global search (Ctrl+K), audit trail",
                 "Installable sebagai aplikasi (PWA) di HP & Desktop",
               ].map((item, index) => (
@@ -118,7 +118,7 @@ const HeroSection = () => {
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span>Sistem aktif sejak 2024</span>
+                <span>Sistem aktif sejak 2026</span>
               </div>
             </div>
           </div>

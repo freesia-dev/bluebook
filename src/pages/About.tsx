@@ -50,7 +50,7 @@ const About: React.FC = () => {
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-xs text-white/90 mb-4">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Sistem aktif sejak 2024
+              Sistem aktif sejak 2026
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-3">
               Bluebook Telihan
@@ -60,7 +60,7 @@ const About: React.FC = () => {
             </p>
             <p className="max-w-2xl mx-auto text-blue-100/90 leading-relaxed">
               <strong className="text-white">Digital Logbook</strong> resmi untuk{' '}
-              <strong className="text-white">Bankaltimtara KCP Telihan & Meranti</strong>. Menyatukan
+              <strong className="text-white">Bankaltimtara KCP Telihan dan Unit Meranti</strong>. Menyatukan
               surat-menyurat, agenda kredit, simulasi, ATM, monitoring NPL, security, dan SLIK OJK
               dalam satu portal yang cepat, aman, dan mudah diaudit.
             </p>
