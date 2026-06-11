@@ -1,19 +1,32 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type CSProduk = 'simpeda' | 'prama' | 'simpel' | 'tabunganku' | 'giro' | 'alamin' | 'taspen' | 'si';
+export type CSProduk = 'simpeda' | 'simpeda_ib' | 'prama' | 'simpel' | 'tabunganku' | 'giro' | 'alamin' | 'taspen';
 export type CSJenisKartu = 'simpeda' | 'prama' | 'tabunganku';
 export type CSMutasiTipe = 'masuk' | 'keluar';
 export type CSDepositoStatus = 'aktif' | 'cair' | 'pindah';
+export type CSBukuProduk = 'simpeda' | 'simpeda_ib' | 'prama' | 'tabunganku' | 'simpel' | 'alamin' | 'bilyet_giro' | 'bilyet_deposito' | 'buku_cek';
 
 export const PRODUK_LABELS: Record<CSProduk, string> = {
   simpeda: 'Simpeda',
+  simpeda_ib: 'Simpeda IB',
   prama: 'Prama',
   simpel: 'Simpel',
   tabunganku: 'TabunganKu',
   giro: 'Giro',
   alamin: 'Al-Amin',
   taspen: 'Taspen',
-  si: 'SI (Standing Instruction)',
+};
+
+export const BUKU_PRODUK_LABELS: Record<CSBukuProduk, string> = {
+  simpeda: 'Simpeda',
+  simpeda_ib: 'Simpeda IB',
+  prama: 'Prama',
+  tabunganku: 'TabunganKu',
+  simpel: 'Simpel',
+  alamin: 'Al-Amin',
+  bilyet_giro: 'Bilyet Giro',
+  bilyet_deposito: 'Bilyet Deposito',
+  buku_cek: 'Buku Cek',
 };
 
 export const KARTU_LABELS: Record<CSJenisKartu, string> = {
