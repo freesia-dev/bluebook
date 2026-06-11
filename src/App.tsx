@@ -273,6 +273,9 @@ const App = () => (
             <Route path="/cs/rekening/simpeda" element={
               <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="simpeda" /></Suspense>
             } />
+            <Route path="/cs/rekening/simpeda-ib" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="simpeda_ib" /></Suspense>
+            } />
             <Route path="/cs/rekening/prama" element={
               <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="prama" /></Suspense>
             } />
@@ -291,8 +294,8 @@ const App = () => (
             <Route path="/cs/rekening/taspen" element={
               <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="taspen" /></Suspense>
             } />
-            <Route path="/cs/rekening/si" element={
-              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="si" /></Suspense>
+            <Route path="/cs/si" element={
+              <Suspense fallback={<TablePageSkeleton />}><SIPage /></Suspense>
             } />
             <Route path="/cs/kartu-atm" element={
               <Suspense fallback={<TablePageSkeleton />}><KartuATMPage /></Suspense>
