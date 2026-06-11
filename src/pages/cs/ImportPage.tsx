@@ -9,24 +9,28 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addCif, addRekening, CSProduk, getCifList, PRODUK_LABELS } from '@/lib/cs-store';
+import { addBuku, addCif, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSProduk, getCifList, PRODUK_LABELS } from '@/lib/cs-store';
 import { Navigate } from 'react-router-dom';
 import { Upload, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-type SheetKind = 'cif' | CSProduk;
+type SheetKind = 'cif' | CSProduk | 'si' | 'buku_tabungan';
 
 const SHEET_LABELS: Record<SheetKind, string> = {
   cif: 'CIF Nasabah',
   simpeda: 'Rekening Simpeda',
+  simpeda_ib: 'Rekening Simpeda IB',
   prama: 'Rekening Prama',
   simpel: 'Rekening Simpel',
   tabunganku: 'Rekening TabunganKu',
   giro: 'Rekening Giro',
   alamin: 'Rekening Al-Amin',
   taspen: 'Rekening Taspen',
-  si: 'Rekening SI',
+  si: 'Standing Instruction (SI)',
+  buku_tabungan: 'Register Buku Tabungan',
 };
+
+const BUKU_PRODUK_KEYS = Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[];
 
 const ImportPage: React.FC = () => {
   const { toast } = useToast();
@@ -41,6 +45,7 @@ const ImportPage: React.FC = () => {
   const detectKind = (name: string): SheetKind | 'skip' => {
     const n = name.toLowerCase();
     if (n.includes('cif') || n.includes('nasabah')) return 'cif';
+    if (n.includes('simpeda ib') || n.includes('simpeda_ib') || n.includes('simpedaib')) return 'simpeda_ib';
     if (n.includes('simpeda')) return 'simpeda';
     if (n.includes('prama')) return 'prama';
     if (n.includes('simpel')) return 'simpel';
@@ -48,7 +53,8 @@ const ImportPage: React.FC = () => {
     if (n.includes('giro')) return 'giro';
     if (n.includes('amin') || n.includes('alamin')) return 'alamin';
     if (n.includes('taspen')) return 'taspen';
-    if (n === 'si' || n.includes('standing')) return 'si';
+    if (n.includes('buku tab') || n.includes('register buku')) return 'buku_tabungan';
+    if (n === 'si' || n.includes('si new') || n.includes('standing')) return 'si';
     return 'skip';
   };
 
@@ -80,9 +86,36 @@ const ImportPage: React.FC = () => {
     return '';
   };
 
+  const parseDate = (s: string): string => {
+    if (!s) return new Date().toISOString().slice(0, 10);
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    // Try DD/MM/YYYY
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+      const yr = m[3].length === 2 ? `20${m[3]}` : m[3];
+      return `${yr}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    }
+    return new Date().toISOString().slice(0, 10);
+  };
+
+  const detectBukuProduk = (s: string): CSBukuProduk | null => {
+    const n = (s || '').toLowerCase();
+    if (n.includes('simpeda ib') || n.includes('simpedaib')) return 'simpeda_ib';
+    if (n.includes('simpeda')) return 'simpeda';
+    if (n.includes('prama')) return 'prama';
+    if (n.includes('tabunganku')) return 'tabunganku';
+    if (n.includes('simpel')) return 'simpel';
+    if (n.includes('amin')) return 'alamin';
+    if (n.includes('giro')) return 'bilyet_giro';
+    if (n.includes('deposito')) return 'bilyet_deposito';
+    if (n.includes('cek')) return 'buku_cek';
+    return null;
+  };
+
   const handleImport = async () => {
     setImporting(true);
-    let totalCif = 0, totalRek = 0, skipped = 0;
+    let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, skipped = 0;
     try {
       const existingCif = await getCifList();
       const cifMap = new Map(existingCif.map((c) => [c.cif, c.id]));
@@ -92,8 +125,7 @@ const ImportPage: React.FC = () => {
       for (const [sheetName, rows] of Object.entries(sheets)) {
         if (mapping[sheetName] !== 'cif') continue;
         setProgress(`Import CIF: ${sheetName} (${rows.length} baris)`);
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
+        for (const row of rows) {
           const cif = pickField(row, ['CIF', 'NOMOR CIF', 'NO CIF']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
           if (!cif || !nama) { skipped++; continue; }
@@ -102,38 +134,31 @@ const ImportPage: React.FC = () => {
           try {
             await addCif({ nomor_urut: nomor, cif, nama, tanggal_input: new Date().toISOString().slice(0, 10), user_input: userName });
             totalCif++;
+            cifMap.set(cif, 'pending');
           } catch { skipped++; }
         }
       }
 
-      // Refresh CIF map
       const refreshedCif = await getCifList();
       const cifIdMap = new Map(refreshedCif.map((c) => [c.cif, c.id]));
 
       // 2) Import Rekening per produk
       for (const [sheetName, rows] of Object.entries(sheets)) {
         const kind = mapping[sheetName];
-        if (kind === 'cif' || kind === 'skip') continue;
+        if (!kind || kind === 'cif' || kind === 'skip' || kind === 'si' || kind === 'buku_tabungan') continue;
         const produk = kind as CSProduk;
         setProgress(`Import ${PRODUK_LABELS[produk]}: ${rows.length} baris`);
         let nomorCounter = 1;
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
+        for (const row of rows) {
           const norek = pickField(row, ['NOMOR REKENING', 'NO REKENING', 'REKENING', 'NO REK']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
           if (!norek || !nama) { skipped++; continue; }
           const cif = pickField(row, ['CIF', 'NOMOR CIF']);
-          const tgl = pickField(row, ['TANGGAL', 'TGL BUKA', 'TANGGAL BUKA']);
+          const tanggal_buka = parseDate(pickField(row, ['TANGGAL', 'TGL BUKA', 'TANGGAL BUKA']));
           const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++;
-          let tanggal_buka = new Date().toISOString().slice(0, 10);
-          if (tgl) {
-            const d = new Date(tgl);
-            if (!isNaN(d.getTime())) tanggal_buka = d.toISOString().slice(0, 10);
-          }
-          // Auto-create stub CIF if missing
           let cif_id: string | null = null;
           if (cif && cifIdMap.has(cif)) cif_id = cifIdMap.get(cif)!;
-          else if (cif && !cifIdMap.has(cif)) {
+          else if (cif) {
             try {
               await addCif({ nomor_urut: nextCifNomor++, cif, nama, tanggal_input: tanggal_buka, user_input: userName });
               totalCif++;
@@ -153,7 +178,61 @@ const ImportPage: React.FC = () => {
         }
       }
 
-      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${skipped} dilewati.` });
+      // 3) Import SI
+      for (const [sheetName, rows] of Object.entries(sheets)) {
+        if (mapping[sheetName] !== 'si') continue;
+        setProgress(`Import SI: ${rows.length} baris`);
+        let nomorCounter = 1;
+        for (const row of rows) {
+          const kode = pickField(row, ['KODE SI', 'KODE', 'NO SI']);
+          const debet = pickField(row, ['REKENING DEBET', 'REK DEBET', 'DEBET']);
+          const kredit = pickField(row, ['REKENING KREDIT', 'REK KREDIT', 'KREDIT']);
+          if (!kode || !debet || !kredit) { skipped++; continue; }
+          const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
+          const nominal = Number(pickField(row, ['NOMINAL', 'JUMLAH']).replace(/[^0-9.-]/g, '')) || 0;
+          const mulai = parseDate(pickField(row, ['TANGGAL MULAI', 'TGL MULAI', 'MULAI']));
+          const berakhirRaw = pickField(row, ['TANGGAL BERAKHIR', 'TGL BERAKHIR', 'BERAKHIR', 'TGL AKHIR']);
+          const status = (pickField(row, ['STATUS']) || 'aktif').toLowerCase();
+          const ket = pickField(row, ['KETERANGAN']);
+          try {
+            await addSi({
+              nomor_urut: Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++,
+              kode_si: kode, rekening_debet: debet, rekening_kredit: kredit,
+              nama_nasabah: nama || null, nominal,
+              tanggal_mulai: mulai, tanggal_berakhir: berakhirRaw ? parseDate(berakhirRaw) : null,
+              status, keterangan: ket || null, user_input: userName,
+            });
+            totalSi++;
+          } catch { skipped++; }
+        }
+      }
+
+      // 4) Import Buku Tabungan
+      for (const [sheetName, rows] of Object.entries(sheets)) {
+        if (mapping[sheetName] !== 'buku_tabungan') continue;
+        setProgress(`Import Buku Tabungan: ${rows.length} baris`);
+        for (const row of rows) {
+          const tipeRaw = pickField(row, ['TIPE', 'MUTASI', 'JENIS']).toLowerCase();
+          const tipe: 'masuk' | 'keluar' = tipeRaw.includes('keluar') ? 'keluar' : 'masuk';
+          const produk = detectBukuProduk(pickField(row, ['PRODUK', 'JENIS BUKU', 'JENIS']));
+          const jumlah = Number(pickField(row, ['JUMLAH', 'QTY'])) || 1;
+          const tanggal = parseDate(pickField(row, ['TANGGAL', 'TGL']));
+          try {
+            await addBuku({
+              tipe, produk, jumlah, tanggal,
+              cif: pickField(row, ['CIF']) || null,
+              nama: pickField(row, ['NAMA', 'NAMA NASABAH']) || null,
+              nomor_rekening: pickField(row, ['NOMOR REKENING', 'REKENING']) || null,
+              nomor_seri: pickField(row, ['NOMOR SERI', 'NO SERI', 'SERI']) || null,
+              keterangan: pickField(row, ['KETERANGAN']) || null,
+              user_input: userName,
+            });
+            totalBuku++;
+          } catch { skipped++; }
+        }
+      }
+
+      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${skipped} dilewati.` });
       setProgress('');
       setSheets({});
       setMapping({});
@@ -166,7 +245,7 @@ const ImportPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader title="Import Data CS" description="Upload file Excel lama untuk import CIF & rekening" />
+      <PageHeader title="Import Data CS" description="Upload file Excel lama untuk import CIF, rekening, SI & buku tabungan" />
       <Card className="p-6 mb-4">
         <Label>Upload File Excel (.xlsx / .xls)</Label>
         <div className="mt-2">
@@ -192,7 +271,7 @@ const ImportPage: React.FC = () => {
                   <TableCell><Badge variant="secondary">{rows.length}</Badge></TableCell>
                   <TableCell>
                     <Select value={mapping[name]} onValueChange={(v) => setMapping({ ...mapping, [name]: v as any })}>
-                      <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="skip">— Lewati —</SelectItem>
                         {(Object.keys(SHEET_LABELS) as SheetKind[]).map((k) => (
@@ -219,8 +298,13 @@ const ImportPage: React.FC = () => {
       )}
 
       <Card className="p-4 bg-muted/30">
-        <p className="text-sm">
-          <strong>Tips:</strong> Sheet untuk CIF diharapkan punya kolom <code>CIF</code> dan <code>NAMA</code>. Sheet rekening diharapkan punya kolom <code>NOMOR REKENING</code>, <code>NAMA</code>, dan opsional <code>CIF</code> + <code>TANGGAL</code>. Nomor rekening yang sudah ada akan dilewati otomatis.
+        <p className="text-sm space-y-1">
+          <strong>Tips kolom yang dikenali:</strong>
+          <br />• <strong>CIF</strong>: <code>CIF</code>, <code>NAMA</code>
+          <br />• <strong>Rekening (per produk)</strong>: <code>NOMOR REKENING</code>, <code>NAMA</code>, opsional <code>CIF</code> + <code>TANGGAL BUKA</code>
+          <br />• <strong>SI</strong>: <code>KODE SI</code>, <code>REKENING DEBET</code>, <code>REKENING KREDIT</code>, <code>NOMINAL</code>, <code>TANGGAL MULAI</code>, <code>TANGGAL BERAKHIR</code>, opsional <code>NAMA</code>, <code>STATUS</code>
+          <br />• <strong>Buku Tabungan</strong>: <code>TIPE</code> (masuk/keluar), <code>PRODUK</code>, <code>JUMLAH</code>, <code>TANGGAL</code>, opsional <code>NOMOR SERI</code>, <code>CIF</code>, <code>NAMA</code>, <code>NOMOR REKENING</code>
+          <br />Data yang sudah ada (CIF, rekening per produk, kode SI) akan dilewati otomatis untuk hindari duplikat.
         </p>
       </Card>
     </MainLayout>

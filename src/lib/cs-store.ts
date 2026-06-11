@@ -1,19 +1,32 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type CSProduk = 'simpeda' | 'prama' | 'simpel' | 'tabunganku' | 'giro' | 'alamin' | 'taspen' | 'si';
+export type CSProduk = 'simpeda' | 'simpeda_ib' | 'prama' | 'simpel' | 'tabunganku' | 'giro' | 'alamin' | 'taspen';
 export type CSJenisKartu = 'simpeda' | 'prama' | 'tabunganku';
 export type CSMutasiTipe = 'masuk' | 'keluar';
 export type CSDepositoStatus = 'aktif' | 'cair' | 'pindah';
+export type CSBukuProduk = 'simpeda' | 'simpeda_ib' | 'prama' | 'tabunganku' | 'simpel' | 'alamin' | 'bilyet_giro' | 'bilyet_deposito' | 'buku_cek';
 
 export const PRODUK_LABELS: Record<CSProduk, string> = {
   simpeda: 'Simpeda',
+  simpeda_ib: 'Simpeda IB',
   prama: 'Prama',
   simpel: 'Simpel',
   tabunganku: 'TabunganKu',
   giro: 'Giro',
   alamin: 'Al-Amin',
   taspen: 'Taspen',
-  si: 'SI (Standing Instruction)',
+};
+
+export const BUKU_PRODUK_LABELS: Record<CSBukuProduk, string> = {
+  simpeda: 'Simpeda',
+  simpeda_ib: 'Simpeda IB',
+  prama: 'Prama',
+  tabunganku: 'TabunganKu',
+  simpel: 'Simpel',
+  alamin: 'Al-Amin',
+  bilyet_giro: 'Bilyet Giro',
+  bilyet_deposito: 'Bilyet Deposito',
+  buku_cek: 'Buku Cek',
 };
 
 export const KARTU_LABELS: Record<CSJenisKartu, string> = {
@@ -42,6 +55,16 @@ export async function getCifList(): Promise<CSCif[]> {
 export async function getNextCifNomor(): Promise<number> {
   const { data } = await supabase.from('cs_cif').select('nomor_urut').order('nomor_urut', { ascending: false }).limit(1);
   return ((data?.[0]?.nomor_urut as number) || 0) + 1;
+}
+
+export async function getNextCifText(): Promise<string> {
+  const { data } = await supabase.from('cs_cif').select('cif').order('created_at', { ascending: false }).limit(1);
+  const last = data?.[0]?.cif as string | undefined;
+  if (!last) return '';
+  const m = String(last).match(/^(\D*)(\d+)$/);
+  if (!m) return '';
+  const inc = (BigInt(m[2]) + 1n).toString().padStart(m[2].length, '0');
+  return m[1] + inc;
 }
 
 export async function addCif(input: Omit<CSCif, 'id' | 'created_at'>) {
@@ -156,11 +179,13 @@ export function calcStokKartu(mutasi: CSKartuMutasi[]): Record<CSJenisKartu, num
 export interface CSBukuTabungan {
   id: string;
   tipe: CSMutasiTipe;
+  produk: CSBukuProduk | null;
   jumlah: number;
   tanggal: string;
   cif: string | null;
   nama: string | null;
   nomor_rekening: string | null;
+  nomor_seri: string | null;
   keterangan: string | null;
   user_input: string | null;
   created_at: string;
@@ -184,6 +209,49 @@ export async function updateBuku(id: string, input: Partial<CSBukuTabungan>) {
 
 export async function deleteBuku(id: string) {
   const { error } = await supabase.from('cs_buku_tabungan').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ============ Standing Instruction ============
+export interface CSSi {
+  id: string;
+  nomor_urut: number;
+  kode_si: string;
+  rekening_debet: string;
+  rekening_kredit: string;
+  nama_nasabah: string | null;
+  nominal: number;
+  tanggal_mulai: string;
+  tanggal_berakhir: string | null;
+  status: string;
+  keterangan: string | null;
+  user_input: string | null;
+  created_at: string;
+}
+
+export async function getSiList(): Promise<CSSi[]> {
+  const { data, error } = await supabase.from('cs_si').select('*').order('nomor_urut', { ascending: true });
+  if (error) throw error;
+  return (data || []) as CSSi[];
+}
+
+export async function getNextSiNomor(): Promise<number> {
+  const { data } = await supabase.from('cs_si').select('nomor_urut').order('nomor_urut', { ascending: false }).limit(1);
+  return ((data?.[0]?.nomor_urut as number) || 0) + 1;
+}
+
+export async function addSi(input: Omit<CSSi, 'id' | 'created_at'>) {
+  const { error } = await supabase.from('cs_si').insert(input);
+  if (error) throw error;
+}
+
+export async function updateSi(id: string, input: Partial<CSSi>) {
+  const { error } = await supabase.from('cs_si').update(input).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSi(id: string) {
+  const { error } = await supabase.from('cs_si').delete().eq('id', id);
   if (error) throw error;
 }
 
