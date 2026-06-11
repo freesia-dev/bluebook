@@ -62,6 +62,7 @@ const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPa
 const KalkulatorPromoPage = lazy(() => import("./pages/konfigurasi/KalkulatorPromoPage"));
 const CIFPage = lazy(() => import("./pages/cs/CIFPage"));
 const RekeningPage = lazy(() => import("./pages/cs/RekeningPage"));
+const SIPage = lazy(() => import("./pages/cs/SIPage"));
 const KartuATMPage = lazy(() => import("./pages/cs/KartuATMPage"));
 const BukuTabunganPage = lazy(() => import("./pages/cs/BukuTabunganPage"));
 const BilyetDepositoPage = lazy(() => import("./pages/cs/BilyetDepositoPage"));
