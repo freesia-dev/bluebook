@@ -431,6 +431,8 @@ export type Database = {
           keterangan: string | null
           nama: string | null
           nomor_rekening: string | null
+          nomor_seri: string | null
+          produk: Database["public"]["Enums"]["cs_buku_produk"] | null
           tanggal: string
           tipe: Database["public"]["Enums"]["cs_mutasi_tipe"]
           updated_at: string
@@ -444,6 +446,8 @@ export type Database = {
           keterangan?: string | null
           nama?: string | null
           nomor_rekening?: string | null
+          nomor_seri?: string | null
+          produk?: Database["public"]["Enums"]["cs_buku_produk"] | null
           tanggal?: string
           tipe: Database["public"]["Enums"]["cs_mutasi_tipe"]
           updated_at?: string
@@ -457,6 +461,8 @@ export type Database = {
           keterangan?: string | null
           nama?: string | null
           nomor_rekening?: string | null
+          nomor_seri?: string | null
+          produk?: Database["public"]["Enums"]["cs_buku_produk"] | null
           tanggal?: string
           tipe?: Database["public"]["Enums"]["cs_mutasi_tipe"]
           updated_at?: string
@@ -585,6 +591,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cs_si: {
+        Row: {
+          created_at: string
+          id: string
+          keterangan: string | null
+          kode_si: string
+          nama_nasabah: string | null
+          nominal: number
+          nomor_urut: number
+          rekening_debet: string
+          rekening_kredit: string
+          status: string
+          tanggal_berakhir: string | null
+          tanggal_mulai: string
+          user_input: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          kode_si: string
+          nama_nasabah?: string | null
+          nominal?: number
+          nomor_urut: number
+          rekening_debet: string
+          rekening_kredit: string
+          status?: string
+          tanggal_berakhir?: string | null
+          tanggal_mulai: string
+          user_input?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          kode_si?: string
+          nama_nasabah?: string | null
+          nominal?: number
+          nomor_urut?: number
+          rekening_debet?: string
+          rekening_kredit?: string
+          status?: string
+          tanggal_berakhir?: string | null
+          tanggal_mulai?: string
+          user_input?: string | null
+        }
+        Relationships: []
       }
       debitur_kontak: {
         Row: {
@@ -2069,6 +2123,16 @@ export type Database = {
         | "security"
         | "ob"
         | "team_leader_security"
+      cs_buku_produk:
+        | "simpeda"
+        | "simpeda_ib"
+        | "prama"
+        | "tabunganku"
+        | "simpel"
+        | "alamin"
+        | "bilyet_giro"
+        | "bilyet_deposito"
+        | "buku_cek"
       cs_deposito_status: "aktif" | "cair" | "pindah"
       cs_jenis_kartu: "simpeda" | "prama" | "tabunganku"
       cs_mutasi_tipe: "masuk" | "keluar"
@@ -2081,6 +2145,7 @@ export type Database = {
         | "alamin"
         | "taspen"
         | "si"
+        | "simpeda_ib"
       loan_skema: "anuitas" | "efektif" | "sliding"
     }
     CompositeTypes: {
@@ -2224,6 +2289,17 @@ export const Constants = {
         "ob",
         "team_leader_security",
       ],
+      cs_buku_produk: [
+        "simpeda",
+        "simpeda_ib",
+        "prama",
+        "tabunganku",
+        "simpel",
+        "alamin",
+        "bilyet_giro",
+        "bilyet_deposito",
+        "buku_cek",
+      ],
       cs_deposito_status: ["aktif", "cair", "pindah"],
       cs_jenis_kartu: ["simpeda", "prama", "tabunganku"],
       cs_mutasi_tipe: ["masuk", "keluar"],
@@ -2236,6 +2312,7 @@ export const Constants = {
         "alamin",
         "taspen",
         "si",
+        "simpeda_ib",
       ],
       loan_skema: ["anuitas", "efektif", "sliding"],
     },
