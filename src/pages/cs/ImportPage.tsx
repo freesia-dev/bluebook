@@ -298,7 +298,10 @@ const ImportPage: React.FC = () => {
         </Card>
       )}
 
+      <ResetPanel />
+
       <Card className="p-4 bg-muted/30">
+
         <p className="text-sm space-y-1">
           <strong>Tips kolom yang dikenali:</strong>
           <br />• <strong>CIF</strong>: <code>CIF</code>, <code>NAMA</code>
