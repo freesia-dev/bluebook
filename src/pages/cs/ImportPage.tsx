@@ -316,3 +316,67 @@ const ImportPage: React.FC = () => {
 };
 
 export default ImportPage;
+
+// ============ Reset Panel ============
+type ResetTarget = { key: string; label: string; fn: () => Promise<number> };
+const RESET_TARGETS: ResetTarget[] = [
+  { key: 'cif', label: 'CIF Nasabah', fn: wipeAllCif },
+  ...(Object.keys(PRODUK_LABELS) as CSProduk[]).map((p) => ({
+    key: `rek_${p}`,
+    label: `Rekening ${PRODUK_LABELS[p]}`,
+    fn: () => wipeRekeningByProduk(p),
+  })),
+  { key: 'si', label: 'Standing Instruction (SI)', fn: wipeAllSi },
+  { key: 'buku', label: 'Register Buku Tabungan', fn: wipeAllBuku },
+  { key: 'bilyet', label: 'Bilyet Deposito', fn: wipeAllBilyet },
+  { key: 'kartu', label: 'Mutasi Kartu ATM', fn: wipeAllKartuMutasi },
+];
+
+const ResetPanel: React.FC = () => {
+  const { toast } = useToast();
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const handleReset = async (t: ResetTarget) => {
+    setBusy(t.key);
+    try {
+      const n = await t.fn();
+      toast({ title: 'Berhasil dihapus', description: `${n} baris pada ${t.label} dihapus. Silakan re-import.` });
+    } catch (e: any) {
+      toast({ title: 'Gagal hapus', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card className="p-6 mb-4 border-destructive/30">
+      <h3 className="font-semibold mb-1 text-destructive flex items-center gap-2"><Trash2 className="h-4 w-4" /> Reset Data per Tabel/Produk</h3>
+      <p className="text-xs text-muted-foreground mb-3">Hapus semua data pada tabel/produk tertentu sebelum re-import. Berguna jika mapping import sebelumnya salah.</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {RESET_TARGETS.map((t) => (
+          <AlertDialog key={t.key}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={busy !== null} className="justify-start">
+                {busy === t.key ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <Trash2 className="h-3 w-3 mr-2" />}
+                {t.label}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Hapus semua data {t.label}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tindakan ini akan menghapus SELURUH baris pada <strong>{t.label}</strong> secara permanen.
+                  Tidak dapat dibatalkan. Lanjutkan?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleReset(t)} className="bg-destructive hover:bg-destructive/90">Hapus Semua</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ))}
+      </div>
+    </Card>
+  );
+};
