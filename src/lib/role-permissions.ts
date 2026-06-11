@@ -108,16 +108,16 @@ const NONE: RolePermissions = {
 
 
 export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
-  admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true, canCommentSecurityLog: true, canManageSecurityAudit: true },
+  admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true, canCommentSecurityLog: true, canManageSecurityAudit: true, customerService: true },
   user: { ...FULL, konfigurasi: false },
-  demo: { ...FULL, canEdit: false, konfigurasi: false },
-  pemimpin: { ...FULL, canEdit: false, konfigurasi: false, securityLog: true, canSignSecurityBA: true },
+  demo: { ...FULL, canEdit: false, konfigurasi: false, customerService: true },
+  pemimpin: { ...FULL, canEdit: false, konfigurasi: false, securityLog: true, canSignSecurityBA: true, customerService: true },
   meranti: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
   officer_rk: { ...FULL, konfigurasi: false },
   officer_kredit: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
   staff_admin_kcp: { ...FULL, konfigurasi: false, monitoringDashboardOnly: true, securityLog: true, canEditSecurityLog: true, canPrintSecurityBA: true },
   teller: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false },
-  cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false },
+  cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false, customerService: true, atmTelihan: false },
   security: { ...NONE, securityLog: true, canEditSecurityLog: true, canStartSecurityShift: true, canEdit: true },
   team_leader_security: { ...NONE, securityLog: true, canCommentSecurityLog: true, canEdit: true },
   ob: { ...NONE, comingSoonOB: true },
@@ -158,6 +158,7 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
   }
   if (pathname.startsWith('/security')) return p.securityLog;
   if (pathname.startsWith('/kalkulator')) return p.loanCalc;
+  if (pathname.startsWith('/cs')) return p.customerService;
   if (pathname.startsWith('/ob')) return p.comingSoonOB;
   return true;
 };
