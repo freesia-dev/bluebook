@@ -15,7 +15,8 @@ import {
   TrendingUp,
   Shield,
   Sparkles,
-  Calculator
+  Calculator,
+  Headphones
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -194,6 +195,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Konfigurasi ATM', href: '/atm-telihan/konfigurasi' },
   ];
 
+  const csItems: ChildItem[] = [
+    { label: 'CIF Nasabah', href: '/cs/cif' },
+    {
+      label: 'Register Rekening',
+      children: [
+        { label: 'Simpeda', href: '/cs/rekening/simpeda' },
+        { label: 'Prama', href: '/cs/rekening/prama' },
+        { label: 'Simpel', href: '/cs/rekening/simpel' },
+        { label: 'TabunganKu', href: '/cs/rekening/tabunganku' },
+        { label: 'Giro', href: '/cs/rekening/giro' },
+        { label: 'Al-Amin', href: '/cs/rekening/alamin' },
+        { label: 'Taspen', href: '/cs/rekening/taspen' },
+        { label: 'SI (Standing Instruction)', href: '/cs/rekening/si' },
+      ],
+    },
+    { label: 'Logbook Kartu ATM', href: '/cs/kartu-atm' },
+    { label: 'Register Buku Tabungan', href: '/cs/buku-tabungan' },
+    { label: 'Register Bilyet Deposito', href: '/cs/bilyet-deposito' },
+    ...(isAdmin ? [{ label: 'Import Data Lama', href: '/cs/import' }] : []),
+  ];
+
   const monitoringItemsFull = [
     { label: 'Upload Data', href: '/monitoring/upload' },
     { label: 'Dashboard', href: '/monitoring/dashboard' },
@@ -312,6 +334,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Banknote} 
                 label="ATM Telihan" 
                 children={atmTelihanItems}
+                onNavigate={onClose}
+              />
+            )}
+            {permissions.customerService && (
+              <NavItem
+                icon={Headphones}
+                label="Customer Service"
+                children={csItems}
                 onNavigate={onClose}
               />
             )}

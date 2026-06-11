@@ -371,6 +371,221 @@ export type Database = {
         }
         Relationships: []
       }
+      cs_bilyet_deposito: {
+        Row: {
+          cif: string | null
+          created_at: string
+          id: string
+          jangka_waktu_bulan: number | null
+          keterangan: string | null
+          nama: string
+          nominal: number
+          nomor_bilyet: string
+          nomor_urut: number
+          status: Database["public"]["Enums"]["cs_deposito_status"]
+          tanggal_jatuh_tempo: string | null
+          tanggal_terbit: string
+          updated_at: string
+          user_input: string | null
+        }
+        Insert: {
+          cif?: string | null
+          created_at?: string
+          id?: string
+          jangka_waktu_bulan?: number | null
+          keterangan?: string | null
+          nama: string
+          nominal?: number
+          nomor_bilyet: string
+          nomor_urut: number
+          status?: Database["public"]["Enums"]["cs_deposito_status"]
+          tanggal_jatuh_tempo?: string | null
+          tanggal_terbit?: string
+          updated_at?: string
+          user_input?: string | null
+        }
+        Update: {
+          cif?: string | null
+          created_at?: string
+          id?: string
+          jangka_waktu_bulan?: number | null
+          keterangan?: string | null
+          nama?: string
+          nominal?: number
+          nomor_bilyet?: string
+          nomor_urut?: number
+          status?: Database["public"]["Enums"]["cs_deposito_status"]
+          tanggal_jatuh_tempo?: string | null
+          tanggal_terbit?: string
+          updated_at?: string
+          user_input?: string | null
+        }
+        Relationships: []
+      }
+      cs_buku_tabungan: {
+        Row: {
+          cif: string | null
+          created_at: string
+          id: string
+          jumlah: number
+          keterangan: string | null
+          nama: string | null
+          nomor_rekening: string | null
+          tanggal: string
+          tipe: Database["public"]["Enums"]["cs_mutasi_tipe"]
+          updated_at: string
+          user_input: string | null
+        }
+        Insert: {
+          cif?: string | null
+          created_at?: string
+          id?: string
+          jumlah: number
+          keterangan?: string | null
+          nama?: string | null
+          nomor_rekening?: string | null
+          tanggal?: string
+          tipe: Database["public"]["Enums"]["cs_mutasi_tipe"]
+          updated_at?: string
+          user_input?: string | null
+        }
+        Update: {
+          cif?: string | null
+          created_at?: string
+          id?: string
+          jumlah?: number
+          keterangan?: string | null
+          nama?: string | null
+          nomor_rekening?: string | null
+          tanggal?: string
+          tipe?: Database["public"]["Enums"]["cs_mutasi_tipe"]
+          updated_at?: string
+          user_input?: string | null
+        }
+        Relationships: []
+      }
+      cs_cif: {
+        Row: {
+          cif: string
+          created_at: string
+          id: string
+          nama: string
+          nomor_urut: number
+          tanggal_input: string
+          updated_at: string
+          user_input: string | null
+        }
+        Insert: {
+          cif: string
+          created_at?: string
+          id?: string
+          nama: string
+          nomor_urut: number
+          tanggal_input?: string
+          updated_at?: string
+          user_input?: string | null
+        }
+        Update: {
+          cif?: string
+          created_at?: string
+          id?: string
+          nama?: string
+          nomor_urut?: number
+          tanggal_input?: string
+          updated_at?: string
+          user_input?: string | null
+        }
+        Relationships: []
+      }
+      cs_kartu_atm_mutasi: {
+        Row: {
+          created_at: string
+          id: string
+          jenis_kartu: Database["public"]["Enums"]["cs_jenis_kartu"]
+          jumlah: number
+          keterangan: string | null
+          tanggal: string
+          tipe: Database["public"]["Enums"]["cs_mutasi_tipe"]
+          updated_at: string
+          user_input: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jenis_kartu: Database["public"]["Enums"]["cs_jenis_kartu"]
+          jumlah: number
+          keterangan?: string | null
+          tanggal?: string
+          tipe: Database["public"]["Enums"]["cs_mutasi_tipe"]
+          updated_at?: string
+          user_input?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jenis_kartu?: Database["public"]["Enums"]["cs_jenis_kartu"]
+          jumlah?: number
+          keterangan?: string | null
+          tanggal?: string
+          tipe?: Database["public"]["Enums"]["cs_mutasi_tipe"]
+          updated_at?: string
+          user_input?: string | null
+        }
+        Relationships: []
+      }
+      cs_rekening: {
+        Row: {
+          cif: string | null
+          cif_id: string | null
+          created_at: string
+          id: string
+          keterangan: string | null
+          nama: string
+          nomor_rekening: string
+          nomor_urut: number
+          produk: Database["public"]["Enums"]["cs_produk_tabungan"]
+          tanggal_buka: string
+          updated_at: string
+          user_input: string | null
+        }
+        Insert: {
+          cif?: string | null
+          cif_id?: string | null
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          nama: string
+          nomor_rekening: string
+          nomor_urut: number
+          produk: Database["public"]["Enums"]["cs_produk_tabungan"]
+          tanggal_buka?: string
+          updated_at?: string
+          user_input?: string | null
+        }
+        Update: {
+          cif?: string | null
+          cif_id?: string | null
+          created_at?: string
+          id?: string
+          keterangan?: string | null
+          nama?: string
+          nomor_rekening?: string
+          nomor_urut?: number
+          produk?: Database["public"]["Enums"]["cs_produk_tabungan"]
+          tanggal_buka?: string
+          updated_at?: string
+          user_input?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cs_rekening_cif_id_fkey"
+            columns: ["cif_id"]
+            isOneToOne: false
+            referencedRelation: "cs_cif"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debitur_kontak: {
         Row: {
           catatan: string | null
@@ -1795,8 +2010,10 @@ export type Database = {
       can_access_security_log: { Args: never; Returns: boolean }
       can_comment_security_log: { Args: never; Returns: boolean }
       can_edit_security_log: { Args: never; Returns: boolean }
+      can_manage_cs: { Args: never; Returns: boolean }
       can_sign_security_ba: { Args: never; Returns: boolean }
       can_use_loan_calc: { Args: never; Returns: boolean }
+      can_view_cs: { Args: never; Returns: boolean }
       create_security_audit_token: {
         Args: {
           _catatan?: string
@@ -1852,6 +2069,18 @@ export type Database = {
         | "security"
         | "ob"
         | "team_leader_security"
+      cs_deposito_status: "aktif" | "cair" | "pindah"
+      cs_jenis_kartu: "simpeda" | "prama" | "tabunganku"
+      cs_mutasi_tipe: "masuk" | "keluar"
+      cs_produk_tabungan:
+        | "simpeda"
+        | "prama"
+        | "simpel"
+        | "tabunganku"
+        | "giro"
+        | "alamin"
+        | "taspen"
+        | "si"
       loan_skema: "anuitas" | "efektif" | "sliding"
     }
     CompositeTypes: {
@@ -1994,6 +2223,19 @@ export const Constants = {
         "security",
         "ob",
         "team_leader_security",
+      ],
+      cs_deposito_status: ["aktif", "cair", "pindah"],
+      cs_jenis_kartu: ["simpeda", "prama", "tabunganku"],
+      cs_mutasi_tipe: ["masuk", "keluar"],
+      cs_produk_tabungan: [
+        "simpeda",
+        "prama",
+        "simpel",
+        "tabunganku",
+        "giro",
+        "alamin",
+        "taspen",
+        "si",
       ],
       loan_skema: ["anuitas", "efektif", "sliding"],
     },
