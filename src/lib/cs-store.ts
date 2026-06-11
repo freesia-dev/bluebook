@@ -297,3 +297,40 @@ export async function deleteBilyet(id: string) {
   const { error } = await supabase.from('cs_bilyet_deposito').delete().eq('id', id);
   if (error) throw error;
 }
+
+// ============ Bulk Wipe (admin re-import helper) ============
+export async function wipeRekeningByProduk(produk: CSProduk): Promise<number> {
+  const { data, error } = await supabase.from('cs_rekening').delete().eq('produk', produk).select('id');
+  if (error) throw error;
+  return data?.length || 0;
+}
+
+export async function wipeAllCif(): Promise<number> {
+  const { data, error } = await supabase.from('cs_cif').delete().neq('id', '00000000-0000-0000-0000-000000000000').select('id');
+  if (error) throw error;
+  return data?.length || 0;
+}
+
+export async function wipeAllSi(): Promise<number> {
+  const { data, error } = await supabase.from('cs_si').delete().neq('id', '00000000-0000-0000-0000-000000000000').select('id');
+  if (error) throw error;
+  return data?.length || 0;
+}
+
+export async function wipeAllBuku(): Promise<number> {
+  const { data, error } = await supabase.from('cs_buku_tabungan').delete().neq('id', '00000000-0000-0000-0000-000000000000').select('id');
+  if (error) throw error;
+  return data?.length || 0;
+}
+
+export async function wipeAllKartuMutasi(): Promise<number> {
+  const { data, error } = await supabase.from('cs_kartu_atm_mutasi').delete().neq('id', '00000000-0000-0000-0000-000000000000').select('id');
+  if (error) throw error;
+  return data?.length || 0;
+}
+
+export async function wipeAllBilyet(): Promise<number> {
+  const { data, error } = await supabase.from('cs_bilyet_deposito').delete().neq('id', '00000000-0000-0000-0000-000000000000').select('id');
+  if (error) throw error;
+  return data?.length || 0;
+}
