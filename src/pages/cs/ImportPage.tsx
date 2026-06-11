@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addBuku, addCif, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSProduk, getCifList, PRODUK_LABELS } from '@/lib/cs-store';
+import { addBuku, addCif, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSProduk, getCifList, PRODUK_LABELS, wipeAllBilyet, wipeAllBuku, wipeAllCif, wipeAllKartuMutasi, wipeAllSi, wipeRekeningByProduk } from '@/lib/cs-store';
 import { Navigate } from 'react-router-dom';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 
 type SheetKind = 'cif' | CSProduk | 'si' | 'buku_tabungan';
