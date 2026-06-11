@@ -60,6 +60,14 @@ const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkul
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
 const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPage"));
 const KalkulatorPromoPage = lazy(() => import("./pages/konfigurasi/KalkulatorPromoPage"));
+const CIFPage = lazy(() => import("./pages/cs/CIFPage"));
+const RekeningPage = lazy(() => import("./pages/cs/RekeningPage"));
+const KartuATMPage = lazy(() => import("./pages/cs/KartuATMPage"));
+const BukuTabunganPage = lazy(() => import("./pages/cs/BukuTabunganPage"));
+const BilyetDepositoPage = lazy(() => import("./pages/cs/BilyetDepositoPage"));
+const ImportCSPage = lazy(() => import("./pages/cs/ImportPage"));
+
+
 
 
 // Minimal login loader (no layout needed)
@@ -256,6 +264,46 @@ const App = () => (
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
+            } />
+            {/* Customer Service */}
+            <Route path="/cs/cif" element={
+              <Suspense fallback={<TablePageSkeleton />}><CIFPage /></Suspense>
+            } />
+            <Route path="/cs/rekening/simpeda" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="simpeda" /></Suspense>
+            } />
+            <Route path="/cs/rekening/prama" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="prama" /></Suspense>
+            } />
+            <Route path="/cs/rekening/simpel" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="simpel" /></Suspense>
+            } />
+            <Route path="/cs/rekening/tabunganku" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="tabunganku" /></Suspense>
+            } />
+            <Route path="/cs/rekening/giro" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="giro" /></Suspense>
+            } />
+            <Route path="/cs/rekening/alamin" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="alamin" /></Suspense>
+            } />
+            <Route path="/cs/rekening/taspen" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="taspen" /></Suspense>
+            } />
+            <Route path="/cs/rekening/si" element={
+              <Suspense fallback={<TablePageSkeleton />}><RekeningPage produk="si" /></Suspense>
+            } />
+            <Route path="/cs/kartu-atm" element={
+              <Suspense fallback={<TablePageSkeleton />}><KartuATMPage /></Suspense>
+            } />
+            <Route path="/cs/buku-tabungan" element={
+              <Suspense fallback={<TablePageSkeleton />}><BukuTabunganPage /></Suspense>
+            } />
+            <Route path="/cs/bilyet-deposito" element={
+              <Suspense fallback={<TablePageSkeleton />}><BilyetDepositoPage /></Suspense>
+            } />
+            <Route path="/cs/import" element={
+              <Suspense fallback={<TablePageSkeleton />}><ImportCSPage /></Suspense>
             } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
