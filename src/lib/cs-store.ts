@@ -57,6 +57,16 @@ export async function getNextCifNomor(): Promise<number> {
   return ((data?.[0]?.nomor_urut as number) || 0) + 1;
 }
 
+export async function getNextCifText(): Promise<string> {
+  const { data } = await supabase.from('cs_cif').select('cif').order('created_at', { ascending: false }).limit(1);
+  const last = data?.[0]?.cif as string | undefined;
+  if (!last) return '';
+  const m = String(last).match(/^(\D*)(\d+)$/);
+  if (!m) return '';
+  const inc = (BigInt(m[2]) + 1n).toString().padStart(m[2].length, '0');
+  return m[1] + inc;
+}
+
 export async function addCif(input: Omit<CSCif, 'id' | 'created_at'>) {
   const { error } = await supabase.from('cs_cif').insert(input);
   if (error) throw error;
