@@ -337,6 +337,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onNavigate={onClose}
               />
             )}
+            {permissions.customerService && (
+              <NavItem
+                icon={Headphones}
+                label="Customer Service"
+                children={csItems}
+                onNavigate={onClose}
+              />
+            )}
             {permissions.monitoring && monitoringItems.length > 0 && (
               <NavItem 
                 icon={TrendingUp} 
