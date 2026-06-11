@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addBuku, CSBukuTabungan, CSMutasiTipe, deleteBuku, getBukuList, updateBuku } from '@/lib/cs-store';
+import { addBuku, BUKU_PRODUK_LABELS, CSBukuProduk, CSBukuTabungan, CSMutasiTipe, deleteBuku, getBukuList, updateBuku } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 
@@ -25,35 +25,42 @@ const BukuTabunganPage: React.FC = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<CSBukuTabungan | null>(null);
   const [form, setForm] = useState({
-    tipe: 'masuk' as CSMutasiTipe, jumlah: 1, tanggal: new Date().toISOString().slice(0, 10),
-    cif: '', nama: '', nomor_rekening: '', keterangan: '',
+    tipe: 'masuk' as CSMutasiTipe, produk: 'simpeda' as CSBukuProduk, jumlah: 1,
+    tanggal: new Date().toISOString().slice(0, 10),
+    cif: '', nama: '', nomor_rekening: '', nomor_seri: '', keterangan: '',
   });
 
   const load = async () => setData(await getBukuList());
   useEffect(() => { load(); }, []);
 
-  const sisa = useMemo(() => {
-    let s = 0;
-    data.forEach((r) => { s += r.tipe === 'masuk' ? r.jumlah : -r.jumlah; });
-    return s;
+  // Sisa per produk
+  const sisaPerProduk = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const r of data) {
+      const key = r.produk || 'lainnya';
+      acc[key] = (acc[key] || 0) + (r.tipe === 'masuk' ? r.jumlah : -r.jumlah);
+    }
+    return acc;
   }, [data]);
 
   const openAdd = () => {
-    setForm({ tipe: 'masuk', jumlah: 1, tanggal: new Date().toISOString().slice(0, 10), cif: '', nama: '', nomor_rekening: '', keterangan: '' });
+    setForm({ tipe: 'masuk', produk: 'simpeda', jumlah: 1, tanggal: new Date().toISOString().slice(0, 10), cif: '', nama: '', nomor_rekening: '', nomor_seri: '', keterangan: '' });
     setIsAddOpen(true);
   };
   const openEdit = (item: CSBukuTabungan) => {
     setSelected(item);
     setForm({
-      tipe: item.tipe, jumlah: item.jumlah, tanggal: item.tanggal,
-      cif: item.cif || '', nama: item.nama || '', nomor_rekening: item.nomor_rekening || '', keterangan: item.keterangan || '',
+      tipe: item.tipe, produk: (item.produk || 'simpeda') as CSBukuProduk, jumlah: item.jumlah, tanggal: item.tanggal,
+      cif: item.cif || '', nama: item.nama || '', nomor_rekening: item.nomor_rekening || '',
+      nomor_seri: item.nomor_seri || '', keterangan: item.keterangan || '',
     });
     setIsEditOpen(true);
   };
 
   const buildPayload = () => ({
-    tipe: form.tipe, jumlah: form.jumlah, tanggal: form.tanggal,
+    tipe: form.tipe, produk: form.produk, jumlah: form.jumlah, tanggal: form.tanggal,
     cif: form.cif || null, nama: form.nama || null, nomor_rekening: form.nomor_rekening || null,
+    nomor_seri: form.nomor_seri || null,
     keterangan: form.keterangan || null, user_input: userName,
   });
 
@@ -75,7 +82,9 @@ const BukuTabunganPage: React.FC = () => {
 
   const handleExport = () => {
     const ws = XLSX.utils.json_to_sheet(data.map((r) => ({
-      'Tanggal': r.tanggal, 'Tipe': r.tipe, 'Jumlah': r.jumlah, 'CIF': r.cif, 'Nama': r.nama, 'Rekening': r.nomor_rekening, 'Keterangan': r.keterangan, 'User': r.user_input,
+      'Tanggal': r.tanggal, 'Tipe': r.tipe, 'Produk': r.produk ? BUKU_PRODUK_LABELS[r.produk] : '',
+      'Jumlah': r.jumlah, 'Nomor Seri': r.nomor_seri, 'CIF': r.cif, 'Nama': r.nama,
+      'Rekening': r.nomor_rekening, 'Keterangan': r.keterangan, 'User': r.user_input,
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Buku Tabungan');
@@ -95,11 +104,25 @@ const BukuTabunganPage: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1"><Label>Tanggal</Label><Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} /></div>
+        <div className="space-y-1">
+          <Label>Produk</Label>
+          <Select value={form.produk} onValueChange={(v) => setForm({ ...form, produk: v as CSBukuProduk })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[]).map((k) => (
+                <SelectItem key={k} value={k}>{BUKU_PRODUK_LABELS[k]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className="space-y-1"><Label>Jumlah</Label><Input type="number" min={1} value={form.jumlah} onChange={(e) => setForm({ ...form, jumlah: Number(e.target.value) })} /></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1"><Label>Tanggal</Label><Input type="date" value={form.tanggal} onChange={(e) => setForm({ ...form, tanggal: e.target.value })} /></div>
+        <div className="space-y-1"><Label>Jumlah</Label><Input type="number" min={1} value={form.jumlah} onChange={(e) => setForm({ ...form, jumlah: Number(e.target.value) })} /></div>
+      </div>
       {form.tipe === 'keluar' && (
         <>
+          <div className="space-y-1"><Label>Nomor Seri Buku</Label><Input value={form.nomor_seri} onChange={(e) => setForm({ ...form, nomor_seri: e.target.value })} placeholder="Nomor seri fisik buku" /></div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1"><Label>CIF</Label><Input value={form.cif} onChange={(e) => setForm({ ...form, cif: e.target.value })} /></div>
             <div className="space-y-1"><Label>Nomor Rekening</Label><Input value={form.nomor_rekening} onChange={(e) => setForm({ ...form, nomor_rekening: e.target.value })} /></div>
@@ -113,10 +136,17 @@ const BukuTabunganPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader title="Register Buku Tabungan" description="Stok buku tabungan masuk dan keluar" />
-      <Card className="p-6 mb-4">
-        <div className="text-sm text-muted-foreground">Sisa Stok Buku Tabungan</div>
-        <div className="text-3xl font-bold mt-2">{sisa}</div>
+      <PageHeader title="Register Buku Tabungan" description="Stok buku tabungan masuk dan keluar per produk" />
+      <Card className="p-4 mb-4">
+        <div className="text-sm text-muted-foreground mb-2">Sisa Stok per Produk</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {(Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[]).map((k) => (
+            <div key={k} className="border rounded p-2">
+              <div className="text-xs text-muted-foreground">{BUKU_PRODUK_LABELS[k]}</div>
+              <div className="text-lg font-semibold">{sisaPerProduk[k] || 0}</div>
+            </div>
+          ))}
+        </div>
       </Card>
       <div className="flex gap-2 mb-4">
         <Button variant="outline" size="sm" onClick={handleExport}>
@@ -128,7 +158,9 @@ const BukuTabunganPage: React.FC = () => {
         columns={[
           { key: 'tanggal', header: 'Tanggal' },
           { key: 'tipe', header: 'Tipe', filterable: true, render: (r) => r.tipe === 'masuk' ? 'Masuk' : 'Keluar' },
+          { key: 'produk', header: 'Produk', filterable: true, render: (r) => r.produk ? BUKU_PRODUK_LABELS[r.produk] : '-' },
           { key: 'jumlah', header: 'Jumlah' },
+          { key: 'nomor_seri', header: 'No. Seri' },
           { key: 'cif', header: 'CIF', filterable: true },
           { key: 'nama', header: 'Nama' },
           { key: 'nomor_rekening', header: 'Rekening' },

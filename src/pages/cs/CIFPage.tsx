@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addCif, CSCif, deleteCif, getCifList, getNextCifNomor, updateCif } from '@/lib/cs-store';
+import { addCif, CSCif, deleteCif, getCifList, getNextCifNomor, getNextCifText, updateCif } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 
@@ -27,8 +27,8 @@ const CIFPage: React.FC = () => {
   useEffect(() => { load(); }, []);
 
   const openAdd = async () => {
-    const next = await getNextCifNomor();
-    setForm({ nomor_urut: next, cif: '', nama: '', tanggal_input: new Date().toISOString().slice(0, 10) });
+    const [next, nextCif] = await Promise.all([getNextCifNomor(), getNextCifText()]);
+    setForm({ nomor_urut: next, cif: nextCif, nama: '', tanggal_input: new Date().toISOString().slice(0, 10) });
     setIsAddOpen(true);
   };
 
@@ -107,7 +107,7 @@ const CIFPage: React.FC = () => {
           <DialogHeader><DialogTitle>Tambah CIF</DialogTitle></DialogHeader>
           <div className="space-y-3 py-3">
             <div className="space-y-1"><Label>Nomor Urut</Label><Input type="number" value={form.nomor_urut} onChange={(e) => setForm({ ...form, nomor_urut: Number(e.target.value) })} /></div>
-            <div className="space-y-1"><Label>CIF</Label><Input value={form.cif} onChange={(e) => setForm({ ...form, cif: e.target.value })} /></div>
+            <div className="space-y-1"><Label>CIF</Label><Input value={form.cif} onChange={(e) => setForm({ ...form, cif: e.target.value })} placeholder="Auto-suggest CIF terakhir +1, bisa diubah" /></div>
             <div className="space-y-1"><Label>Nama Nasabah</Label><Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} /></div>
             <div className="space-y-1"><Label>Tanggal Input</Label><Input type="date" value={form.tanggal_input} onChange={(e) => setForm({ ...form, tanggal_input: e.target.value })} /></div>
           </div>
