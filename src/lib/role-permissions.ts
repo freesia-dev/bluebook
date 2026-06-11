@@ -58,6 +58,8 @@ export interface RolePermissions {
   canManageSecurityAudit: boolean;
   /** Can use the Loan Calculator (everyone except security/ob/teller/cs). */
   loanCalc: boolean;
+  /** Customer Service modules (CIF, rekening, kartu ATM, buku tabungan, deposito). */
+  customerService: boolean;
   comingSoonOB: boolean;
 }
 
@@ -79,6 +81,7 @@ const FULL: RolePermissions = {
   canCommentSecurityLog: false,
   canManageSecurityAudit: false,
   loanCalc: true,
+  customerService: false,
   comingSoonOB: false,
 };
 
@@ -99,6 +102,7 @@ const NONE: RolePermissions = {
   canCommentSecurityLog: false,
   canManageSecurityAudit: false,
   loanCalc: false,
+  customerService: false,
   comingSoonOB: false,
 };
 
