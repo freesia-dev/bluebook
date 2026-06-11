@@ -179,11 +179,13 @@ export function calcStokKartu(mutasi: CSKartuMutasi[]): Record<CSJenisKartu, num
 export interface CSBukuTabungan {
   id: string;
   tipe: CSMutasiTipe;
+  produk: CSBukuProduk | null;
   jumlah: number;
   tanggal: string;
   cif: string | null;
   nama: string | null;
   nomor_rekening: string | null;
+  nomor_seri: string | null;
   keterangan: string | null;
   user_input: string | null;
   created_at: string;
@@ -207,6 +209,49 @@ export async function updateBuku(id: string, input: Partial<CSBukuTabungan>) {
 
 export async function deleteBuku(id: string) {
   const { error } = await supabase.from('cs_buku_tabungan').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ============ Standing Instruction ============
+export interface CSSi {
+  id: string;
+  nomor_urut: number;
+  kode_si: string;
+  rekening_debet: string;
+  rekening_kredit: string;
+  nama_nasabah: string | null;
+  nominal: number;
+  tanggal_mulai: string;
+  tanggal_berakhir: string | null;
+  status: string;
+  keterangan: string | null;
+  user_input: string | null;
+  created_at: string;
+}
+
+export async function getSiList(): Promise<CSSi[]> {
+  const { data, error } = await supabase.from('cs_si').select('*').order('nomor_urut', { ascending: true });
+  if (error) throw error;
+  return (data || []) as CSSi[];
+}
+
+export async function getNextSiNomor(): Promise<number> {
+  const { data } = await supabase.from('cs_si').select('nomor_urut').order('nomor_urut', { ascending: false }).limit(1);
+  return ((data?.[0]?.nomor_urut as number) || 0) + 1;
+}
+
+export async function addSi(input: Omit<CSSi, 'id' | 'created_at'>) {
+  const { error } = await supabase.from('cs_si').insert(input);
+  if (error) throw error;
+}
+
+export async function updateSi(id: string, input: Partial<CSSi>) {
+  const { error } = await supabase.from('cs_si').update(input).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSi(id: string) {
+  const { error } = await supabase.from('cs_si').delete().eq('id', id);
   if (error) throw error;
 }
 
