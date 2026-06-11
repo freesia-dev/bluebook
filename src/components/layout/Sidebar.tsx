@@ -210,6 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Taspen', href: '/cs/rekening/taspen' },
       ],
     },
+    { label: 'Standing Instruction (SI)', href: '/cs/si' },
     { label: 'Logbook Kartu ATM', href: '/cs/kartu-atm' },
     { label: 'Register Buku Tabungan', href: '/cs/buku-tabungan' },
     { label: 'Register Bilyet Deposito', href: '/cs/bilyet-deposito' },
