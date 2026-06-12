@@ -94,6 +94,45 @@ const BilyetDepositoPage: React.FC = () => {
     XLSX.writeFile(wb, 'Register_Bilyet_Deposito.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[], mode: ImportMode): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const existing = await getBilyetList();
+    const byNomor = new Map(existing.map((r) => [r.nomor_bilyet.trim(), r]));
+    let nextNo = (existing.reduce((m, r) => Math.max(m, r.nomor_urut), 0)) + 1;
+    const statusLookup: Record<string, CSDepositoStatus> = { aktif: 'aktif', cair: 'cair', pindah: 'pindah' };
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const nomor_bilyet = asString(pick(row, 'Nomor Bilyet'));
+        const nama = asString(pick(row, 'Nama', 'Nama Nasabah'));
+        if (!nomor_bilyet || !nama) { res.errors.push(`Baris ${i + 2}: Nomor Bilyet & Nama wajib`); continue; }
+        const statusRaw = asString(pick(row, 'Status')).toLowerCase();
+        const payload = {
+          nomor_urut: asNumber(pick(row, 'No', 'Nomor Urut')) || nextNo++,
+          nomor_bilyet,
+          cif: asString(pick(row, 'CIF')) || null,
+          nama,
+          nominal: asNumber(pick(row, 'Nominal')),
+          jangka_waktu_bulan: asNumber(pick(row, 'Jangka Waktu (bln)', 'Jangka Waktu', 'JW')) || null,
+          tanggal_terbit: asDate(pick(row, 'Tanggal Terbit', 'Terbit')),
+          tanggal_jatuh_tempo: asString(pick(row, 'Jatuh Tempo', 'Tanggal Jatuh Tempo')) ? asDate(pick(row, 'Jatuh Tempo', 'Tanggal Jatuh Tempo')) : null,
+          status: (statusLookup[statusRaw] || 'aktif') as CSDepositoStatus,
+          keterangan: asString(pick(row, 'Keterangan')) || null,
+          user_input: userName,
+        };
+        const dup = byNomor.get(nomor_bilyet);
+        if (dup && mode === 'skip') { res.skipped++; continue; }
+        if (dup && mode === 'update') { await updateBilyet(dup.id, payload); res.updated++; continue; }
+        await addBilyet(payload);
+        res.inserted++;
+        byNomor.set(nomor_bilyet, { ...(dup || {} as CSBilyet), ...payload } as CSBilyet);
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
