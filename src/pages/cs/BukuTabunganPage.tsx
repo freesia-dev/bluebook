@@ -188,6 +188,25 @@ const BukuTabunganPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_Buku_Tabungan"
+          sheetName="Buku Tabungan"
+          supportsDedupe={false}
+          columns={[
+            { header: 'Tanggal', example: '2024-01-15' },
+            { header: 'Tipe', example: 'masuk', required: true },
+            { header: 'Produk', example: 'Simpeda', required: true },
+            { header: 'Jumlah', example: 10, required: true },
+            { header: 'Nomor Seri', example: 'BTS-0001' },
+            { header: 'CIF', example: '1234567890' },
+            { header: 'Nama', example: 'BUDI SANTOSO' },
+            { header: 'Rekening', example: '0010203040' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes="Tipe: masuk (terima stok) atau keluar (ke nasabah). Produk: Simpeda, Simpeda IB, Prama, TabunganKu, Simpel, Al-Amin, Bilyet Giro, Bilyet Deposito, Buku Cek."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}
