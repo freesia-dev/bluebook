@@ -240,17 +240,19 @@ const ImportPage: React.FC = () => {
       // 2) Import Rekening per produk
       for (const [sheetName, rows] of Object.entries(sheets)) {
         const kind = mapping[sheetName];
-        if (!kind || kind === 'cif' || kind === 'skip' || kind === 'si' || kind === 'buku_tabungan') continue;
-        const produk = kind as CSProduk;
-        setProgress(`Import ${PRODUK_LABELS[produk]}: ${rows.length} baris`);
-        let nomorCounter = 1;
+        if (!kind || kind === 'cif' || kind === 'skip' || kind === 'si' || kind === 'buku_tabungan' || kind === 'kartu_atm' || kind === 'bilyet_deposito') continue;
+        const counters: Partial<Record<CSProduk, number>> = {};
+        setProgress(`Import rekening: ${sheetName} (${rows.length} baris)`);
         for (const row of rows) {
+          const produk = detectRekeningProduk(row, kind);
+          if (!produk) { skipped++; continue; }
+          counters[produk] = counters[produk] || 1;
           const norek = pickField(row, ['NOMOR REKENING', 'NO REKENING', 'REKENING', 'NO REK']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
           if (!norek || !nama) { skipped++; continue; }
           const cif = pickField(row, ['CIF', 'NOMOR CIF']);
           const tanggal_buka = parseDate(pickField(row, ['TANGGAL', 'TGL BUKA', 'TANGGAL BUKA']));
-          const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++;
+          const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || counters[produk]!++;
           let cif_id: string | null = null;
           if (cif && cifIdMap.has(cif)) cif_id = cifIdMap.get(cif)!;
           else if (cif) {
