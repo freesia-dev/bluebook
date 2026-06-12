@@ -10,9 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addRekening, CSProduk, CSRekening, deleteRekening, getCifList, getNextRekeningNomor, getNextRekeningNumber, getRekeningList, PRODUK_LABELS, updateRekening, CSCif } from '@/lib/cs-store';
+import { addRekening, CSProduk, CSRekening, deleteRekening, getCifList, getNextRekeningNomor, getNextRekeningNumber, getRekeningList, PRODUK_LABELS, updateRekening, CSCif, addCif } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
+import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 interface Props {
   produk: CSProduk;
