@@ -167,6 +167,21 @@ const KartuATMPage: React.FC = () => {
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" /> Export Excel
             </Button>
+            <CSImportButton
+              templateName="Template_Kartu_ATM"
+              sheetName="Mutasi Kartu"
+              supportsDedupe={false}
+              columns={[
+                { header: 'Tanggal', example: '2024-01-15' },
+                { header: 'Jenis Kartu', example: 'Simpeda', required: true },
+                { header: 'Tipe', example: 'masuk', required: true },
+                { header: 'Jumlah', example: 50, required: true },
+                { header: 'Keterangan', example: '' },
+              ]}
+              notes="Jenis Kartu: Simpeda / Prama / TabunganKu. Tipe: masuk atau keluar."
+              onImport={handleImport}
+              onDone={load}
+            />
           </div>
           <DataTable
             data={data}
