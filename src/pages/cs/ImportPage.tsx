@@ -7,18 +7,21 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addBuku, addCif, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSProduk, getCifList, PRODUK_LABELS, wipeAllBilyet, wipeAllBuku, wipeAllCif, wipeAllKartuMutasi, wipeAllSi, wipeRekeningByProduk } from '@/lib/cs-store';
+import { addBilyet, addBuku, addCif, addKartuMutasi, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSDepositoStatus, CSJenisKartu, CSProduk, getCifList, KARTU_LABELS, PRODUK_LABELS, wipeAllBilyet, wipeAllBuku, wipeAllCif, wipeAllKartuMutasi, wipeAllSi, wipeRekeningByProduk } from '@/lib/cs-store';
 import { Navigate } from 'react-router-dom';
-import { Upload, Loader2, Trash2 } from 'lucide-react';
+import { AlertCircle, Upload, Loader2, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 
-type SheetKind = 'cif' | CSProduk | 'si' | 'buku_tabungan';
+type SheetKind = 'cif' | 'rekening_auto' | CSProduk | 'si' | 'buku_tabungan' | 'kartu_atm' | 'bilyet_deposito';
 
 const SHEET_LABELS: Record<SheetKind, string> = {
   cif: 'CIF Nasabah',
+  rekening_auto: 'Rekening — Auto Produk per Baris',
   simpeda: 'Rekening Simpeda',
   simpeda_ib: 'Rekening Simpeda IB',
   prama: 'Rekening Prama',
@@ -29,9 +32,12 @@ const SHEET_LABELS: Record<SheetKind, string> = {
   taspen: 'Rekening Taspen',
   si: 'Standing Instruction (SI)',
   buku_tabungan: 'Register Buku Tabungan',
+  kartu_atm: 'Logbook Kartu ATM',
+  bilyet_deposito: 'Bilyet Deposito',
 };
 
 const BUKU_PRODUK_KEYS = Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[];
+const REKENING_PRODUK_KEYS = Object.keys(PRODUK_LABELS) as CSProduk[];
 
 const ImportPage: React.FC = () => {
   const { toast } = useToast();
