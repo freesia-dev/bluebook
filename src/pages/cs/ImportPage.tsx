@@ -556,6 +556,24 @@ const ImportPage: React.FC = () => {
         </Card>
       )}
 
+      {importReport && (
+        <Card className="p-6 mb-4 border-primary/30 bg-primary/5">
+          <h3 className="font-semibold mb-2">Hasil Import Terakhir</h3>
+          <p className="text-sm text-muted-foreground mb-3">{importReport.summary}</p>
+          {importReport.details.length > 0 && (
+            <div className="rounded-md border bg-background p-3">
+              <p className="text-sm font-medium mb-2">Contoh data yang dilewati:</p>
+              <ul className="text-xs text-muted-foreground space-y-1 max-h-48 overflow-auto">
+                {importReport.details.map((detail) => <li key={detail}>• {detail}</li>)}
+              </ul>
+              {importReport.skipped > importReport.details.length && (
+                <p className="text-xs text-muted-foreground mt-2">Dan {importReport.skipped - importReport.details.length} baris lain.</p>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
+
       <ResetPanel />
 
       <Card className="p-4 bg-muted/30">
