@@ -80,6 +80,36 @@ const KartuATMPage: React.FC = () => {
     XLSX.writeFile(wb, 'Logbook_Kartu_ATM.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[]): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const jenisLookup = new Map<string, CSJenisKartu>();
+    (['simpeda','prama','tabunganku'] as CSJenisKartu[]).forEach((k) => {
+      jenisLookup.set(k, k);
+      jenisLookup.set(KARTU_LABELS[k].toLowerCase(), k);
+    });
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const jenisRaw = asString(pick(row, 'Jenis Kartu')).toLowerCase();
+        const jenis_kartu = jenisLookup.get(jenisRaw);
+        if (!jenis_kartu) { res.errors.push(`Baris ${i + 2}: Jenis Kartu tidak dikenali`); continue; }
+        const tipeRaw = asString(pick(row, 'Tipe')).toLowerCase();
+        const tipe: CSMutasiTipe = tipeRaw.startsWith('kel') ? 'keluar' : 'masuk';
+        await addKartuMutasi({
+          jenis_kartu, tipe,
+          jumlah: asNumber(pick(row, 'Jumlah')) || 1,
+          tanggal: asDate(pick(row, 'Tanggal')),
+          keterangan: asString(pick(row, 'Keterangan')) || null,
+          user_input: userName,
+        });
+        res.inserted++;
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
