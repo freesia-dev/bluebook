@@ -171,6 +171,25 @@ const BilyetDepositoPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_Bilyet_Deposito"
+          sheetName="Bilyet Deposito"
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'Nomor Bilyet', example: 'BD-0001', required: true },
+            { header: 'CIF', example: '1234567890' },
+            { header: 'Nama', example: 'BUDI SANTOSO', required: true },
+            { header: 'Nominal', example: 10000000, required: true },
+            { header: 'Jangka Waktu (bln)', example: 12 },
+            { header: 'Tanggal Terbit', example: '2024-01-15' },
+            { header: 'Jatuh Tempo', example: '2025-01-15' },
+            { header: 'Status', example: 'aktif' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes="Nomor Bilyet wajib unik. Status: aktif / cair / pindah."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}
