@@ -138,6 +138,10 @@ const ImportPage: React.FC = () => {
 
   const parseDate = (s: string): string => {
     if (!s) return new Date().toISOString().slice(0, 10);
+    if (/^\d{5,6}$/.test(String(s))) {
+      const parsed = XLSX.SSF.parse_date_code(Number(s));
+      if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+    }
     const d = new Date(s);
     if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
     // Try DD/MM/YYYY
@@ -148,6 +152,8 @@ const ImportPage: React.FC = () => {
     }
     return new Date().toISOString().slice(0, 10);
   };
+
+  const parseMoney = (s: string): number => Number(String(s || '').replace(/[^0-9.-]/g, '')) || 0;
 
   const detectBukuProduk = (s: string): CSBukuProduk | null => {
     const n = (s || '').toLowerCase();
@@ -161,6 +167,41 @@ const ImportPage: React.FC = () => {
     if (n.includes('deposito')) return 'bilyet_deposito';
     if (n.includes('cek')) return 'buku_cek';
     return null;
+  };
+
+  const detectKartuJenis = (s: string): CSJenisKartu => {
+    const n = (s || '').toLowerCase();
+    if (n.includes('prama')) return 'prama';
+    if (n.includes('tabunganku') || n.includes('tabungan ku')) return 'tabunganku';
+    return 'simpeda';
+  };
+
+  const detectBilyetStatus = (s: string): CSDepositoStatus => {
+    const n = (s || '').toLowerCase();
+    if (n.includes('cair')) return 'cair';
+    if (n.includes('pindah')) return 'pindah';
+    return 'aktif';
+  };
+
+  const wipeMappedTargets = async () => {
+    const rekeningTargets = new Set<CSProduk>();
+    let cif = false, si = false, buku = false, kartu = false, bilyet = false;
+    Object.entries(sheets).forEach(([sheetName, rows]) => {
+      const kind = mapping[sheetName];
+      if (kind === 'cif') cif = true;
+      else if (kind === 'si') si = true;
+      else if (kind === 'buku_tabungan') buku = true;
+      else if (kind === 'kartu_atm') kartu = true;
+      else if (kind === 'bilyet_deposito') bilyet = true;
+      else if (kind === 'rekening_auto') rows.forEach((row) => { const p = detectRekeningProduk(row); if (p) rekeningTargets.add(p); });
+      else if (kind && REKENING_PRODUK_KEYS.includes(kind as CSProduk)) rekeningTargets.add(kind as CSProduk);
+    });
+    for (const p of rekeningTargets) await wipeRekeningByProduk(p);
+    if (si) await wipeAllSi();
+    if (buku) await wipeAllBuku();
+    if (kartu) await wipeAllKartuMutasi();
+    if (bilyet) await wipeAllBilyet();
+    if (cif) await wipeAllCif();
   };
 
   const handleImport = async () => {
