@@ -15,6 +15,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addBilyet, CSBilyet, CSDepositoStatus, deleteBilyet, getBilyetList, getNextBilyetNomor, updateBilyet } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
+import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const STATUS_LABELS: Record<CSDepositoStatus, string> = { aktif: 'Aktif', cair: 'Cair', pindah: 'Pindah' };
 
@@ -92,6 +94,45 @@ const BilyetDepositoPage: React.FC = () => {
     XLSX.writeFile(wb, 'Register_Bilyet_Deposito.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[], mode: ImportMode): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const existing = await getBilyetList();
+    const byNomor = new Map(existing.map((r) => [r.nomor_bilyet.trim(), r]));
+    let nextNo = (existing.reduce((m, r) => Math.max(m, r.nomor_urut), 0)) + 1;
+    const statusLookup: Record<string, CSDepositoStatus> = { aktif: 'aktif', cair: 'cair', pindah: 'pindah' };
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const nomor_bilyet = asString(pick(row, 'Nomor Bilyet'));
+        const nama = asString(pick(row, 'Nama', 'Nama Nasabah'));
+        if (!nomor_bilyet || !nama) { res.errors.push(`Baris ${i + 2}: Nomor Bilyet & Nama wajib`); continue; }
+        const statusRaw = asString(pick(row, 'Status')).toLowerCase();
+        const payload = {
+          nomor_urut: asNumber(pick(row, 'No', 'Nomor Urut')) || nextNo++,
+          nomor_bilyet,
+          cif: asString(pick(row, 'CIF')) || null,
+          nama,
+          nominal: asNumber(pick(row, 'Nominal')),
+          jangka_waktu_bulan: asNumber(pick(row, 'Jangka Waktu (bln)', 'Jangka Waktu', 'JW')) || null,
+          tanggal_terbit: asDate(pick(row, 'Tanggal Terbit', 'Terbit')),
+          tanggal_jatuh_tempo: asString(pick(row, 'Jatuh Tempo', 'Tanggal Jatuh Tempo')) ? asDate(pick(row, 'Jatuh Tempo', 'Tanggal Jatuh Tempo')) : null,
+          status: (statusLookup[statusRaw] || 'aktif') as CSDepositoStatus,
+          keterangan: asString(pick(row, 'Keterangan')) || null,
+          user_input: userName,
+        };
+        const dup = byNomor.get(nomor_bilyet);
+        if (dup && mode === 'skip') { res.skipped++; continue; }
+        if (dup && mode === 'update') { await updateBilyet(dup.id, payload); res.updated++; continue; }
+        await addBilyet(payload);
+        res.inserted++;
+        byNomor.set(nomor_bilyet, { ...(dup || {} as CSBilyet), ...payload } as CSBilyet);
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
@@ -130,6 +171,25 @@ const BilyetDepositoPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_Bilyet_Deposito"
+          sheetName="Bilyet Deposito"
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'Nomor Bilyet', example: 'BD-0001', required: true },
+            { header: 'CIF', example: '1234567890' },
+            { header: 'Nama', example: 'BUDI SANTOSO', required: true },
+            { header: 'Nominal', example: 10000000, required: true },
+            { header: 'Jangka Waktu (bln)', example: 12 },
+            { header: 'Tanggal Terbit', example: '2024-01-15' },
+            { header: 'Jatuh Tempo', example: '2025-01-15' },
+            { header: 'Status', example: 'aktif' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes="Nomor Bilyet wajib unik. Status: aktif / cair / pindah."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}

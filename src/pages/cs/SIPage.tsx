@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addSi, CSSi, deleteSi, getNextSiNomor, getSiList, updateSi } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
+import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const emptyForm = {
   nomor_urut: 1,
@@ -95,6 +97,42 @@ const SIPage: React.FC = () => {
     XLSX.writeFile(wb, 'Standing_Instruction.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[], mode: ImportMode): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const existing = await getSiList();
+    const byKode = new Map(existing.map((r) => [r.kode_si.trim(), r]));
+    let nextNo = (existing.reduce((m, r) => Math.max(m, r.nomor_urut), 0)) + 1;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const kode_si = asString(pick(row, 'Kode SI'));
+        const rekening_debet = asString(pick(row, 'Rekening Debet', 'Rek Debet'));
+        const rekening_kredit = asString(pick(row, 'Rekening Kredit', 'Rek Kredit'));
+        if (!kode_si || !rekening_debet || !rekening_kredit) { res.errors.push(`Baris ${i + 2}: Kode SI & Rekening Debet/Kredit wajib`); continue; }
+        const payload = {
+          nomor_urut: asNumber(pick(row, 'No', 'Nomor Urut')) || nextNo++,
+          kode_si, rekening_debet, rekening_kredit,
+          nama_nasabah: asString(pick(row, 'Nama', 'Nama Nasabah')) || null,
+          nominal: asNumber(pick(row, 'Nominal')),
+          tanggal_mulai: asDate(pick(row, 'Tanggal Mulai', 'Mulai')),
+          tanggal_berakhir: asString(pick(row, 'Tanggal Berakhir', 'Berakhir')) ? asDate(pick(row, 'Tanggal Berakhir', 'Berakhir')) : null,
+          status: asString(pick(row, 'Status')) || 'aktif',
+          keterangan: asString(pick(row, 'Keterangan')) || null,
+          user_input: userName,
+        };
+        const dup = byKode.get(kode_si);
+        if (dup && mode === 'skip') { res.skipped++; continue; }
+        if (dup && mode === 'update') { await updateSi(dup.id, payload); res.updated++; continue; }
+        await addSi(payload);
+        res.inserted++;
+        byKode.set(kode_si, { ...(dup || {} as CSSi), ...payload } as CSSi);
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
@@ -133,6 +171,25 @@ const SIPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_SI"
+          sheetName="SI"
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'Kode SI', example: 'SI-001', required: true },
+            { header: 'Rekening Debet', example: '0010203040', required: true },
+            { header: 'Rekening Kredit', example: '0010203050', required: true },
+            { header: 'Nama', example: 'BUDI SANTOSO' },
+            { header: 'Nominal', example: 500000 },
+            { header: 'Tanggal Mulai', example: '2024-01-01' },
+            { header: 'Tanggal Berakhir', example: '2025-12-31' },
+            { header: 'Status', example: 'aktif' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes="Kode SI wajib unik. Status: aktif / nonaktif / selesai."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}

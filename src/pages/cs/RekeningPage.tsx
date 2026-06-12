@@ -10,9 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addRekening, CSProduk, CSRekening, deleteRekening, getCifList, getNextRekeningNomor, getNextRekeningNumber, getRekeningList, PRODUK_LABELS, updateRekening, CSCif } from '@/lib/cs-store';
+import { addRekening, CSProduk, CSRekening, deleteRekening, getCifList, getNextRekeningNomor, getNextRekeningNumber, getRekeningList, PRODUK_LABELS, updateRekening, CSCif, addCif } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
+import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 interface Props {
   produk: CSProduk;
@@ -130,6 +132,55 @@ const RekeningPage: React.FC<Props> = ({ produk }) => {
     XLSX.writeFile(wb, `Rekening_${PRODUK_LABELS[produk].replace(/\s/g, '_')}.xlsx`);
   };
 
+  const handleImport = async (rows: Record<string, unknown>[], mode: ImportMode): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const [existing, allCif] = await Promise.all([getRekeningList(produk), getCifList()]);
+    const byRek = new Map(existing.map((r) => [r.nomor_rekening.trim(), r]));
+    const cifMap = new Map(allCif.map((c) => [c.cif.trim(), c]));
+    let nextNo = (existing.reduce((m, r) => Math.max(m, r.nomor_urut), 0)) + 1;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const nomor_rekening = asString(pick(row, 'Nomor Rekening', 'No Rekening', 'Norek'));
+        const nama = asString(pick(row, 'Nama', 'Nama Nasabah'));
+        if (!nomor_rekening || !nama) { res.errors.push(`Baris ${i + 2}: Nomor Rekening & Nama wajib`); continue; }
+        const cif = asString(pick(row, 'CIF'));
+        const tanggal_buka = asDate(pick(row, 'Tanggal Buka', 'Tanggal'));
+        const keterangan = asString(pick(row, 'Keterangan')) || null;
+        const nomor_urut = asNumber(pick(row, 'No', 'Nomor Urut')) || nextNo++;
+        // Auto-create CIF stub if missing
+        let cifMatch = cif ? cifMap.get(cif) : undefined;
+        if (cif && !cifMatch) {
+          try {
+            await addCif({ nomor_urut: 0, cif, nama, tanggal_input: tanggal_buka, user_input: userName });
+            const refreshed = await getCifList();
+            cifMatch = refreshed.find((c) => c.cif === cif);
+            if (cifMatch) cifMap.set(cif, cifMatch);
+          } catch { /* ignore; stub creation best-effort */ }
+        }
+        const dup = byRek.get(nomor_rekening);
+        if (dup && mode === 'skip') { res.skipped++; continue; }
+        const payload = {
+          produk, nomor_urut, nomor_rekening, cif: cif || null,
+          cif_id: cifMatch?.id || null, nama, tanggal_buka, keterangan,
+          user_input: userName,
+        };
+        if (dup && mode === 'update') {
+          await updateRekening(dup.id, payload);
+          res.updated++; continue;
+        }
+        await addRekening(payload);
+        res.inserted++;
+        byRek.set(nomor_rekening, { ...(dup || {} as CSRekening), ...payload } as CSRekening);
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
+
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
@@ -150,6 +201,21 @@ const RekeningPage: React.FC<Props> = ({ produk }) => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName={`Template_Rekening_${PRODUK_LABELS[produk].replace(/\s/g, '_')}`}
+          sheetName={`Rekening ${PRODUK_LABELS[produk]}`}
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'Nomor Rekening', example: '0010203040', required: true },
+            { header: 'CIF', example: '1234567890' },
+            { header: 'Nama', example: 'BUDI SANTOSO', required: true },
+            { header: 'Tanggal Buka', example: '2024-01-15' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes={`Khusus produk ${PRODUK_LABELS[produk]}. Nomor rekening wajib unik. CIF yang belum terdaftar akan otomatis dibuatkan stub di master CIF.`}
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}

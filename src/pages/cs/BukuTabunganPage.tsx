@@ -15,6 +15,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addBuku, BUKU_PRODUK_LABELS, CSBukuProduk, CSBukuTabungan, CSMutasiTipe, deleteBuku, getBukuList, updateBuku } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
+import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const BukuTabunganPage: React.FC = () => {
   const { toast } = useToast();
@@ -91,6 +93,40 @@ const BukuTabunganPage: React.FC = () => {
     XLSX.writeFile(wb, 'Register_Buku_Tabungan.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[]): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const produkLookup = new Map<string, CSBukuProduk>();
+    (Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[]).forEach((k) => {
+      produkLookup.set(k.toLowerCase(), k);
+      produkLookup.set(BUKU_PRODUK_LABELS[k].toLowerCase(), k);
+    });
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const tipeRaw = asString(pick(row, 'Tipe')).toLowerCase();
+        const tipe: CSMutasiTipe = tipeRaw.startsWith('kel') ? 'keluar' : 'masuk';
+        const produkRaw = asString(pick(row, 'Produk')).toLowerCase();
+        const produk = produkLookup.get(produkRaw) || null;
+        if (!produk) { res.errors.push(`Baris ${i + 2}: Produk tidak dikenali (${asString(pick(row, 'Produk'))})`); continue; }
+        const jumlah = asNumber(pick(row, 'Jumlah')) || 1;
+        const tanggal = asDate(pick(row, 'Tanggal'));
+        await addBuku({
+          tipe, produk, jumlah, tanggal,
+          cif: asString(pick(row, 'CIF')) || null,
+          nama: asString(pick(row, 'Nama')) || null,
+          nomor_rekening: asString(pick(row, 'Rekening', 'Nomor Rekening')) || null,
+          nomor_seri: asString(pick(row, 'Nomor Seri', 'No Seri')) || null,
+          keterangan: asString(pick(row, 'Keterangan')) || null,
+          user_input: userName,
+        });
+        res.inserted++;
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
@@ -152,6 +188,25 @@ const BukuTabunganPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_Buku_Tabungan"
+          sheetName="Buku Tabungan"
+          supportsDedupe={false}
+          columns={[
+            { header: 'Tanggal', example: '2024-01-15' },
+            { header: 'Tipe', example: 'masuk', required: true },
+            { header: 'Produk', example: 'Simpeda', required: true },
+            { header: 'Jumlah', example: 10, required: true },
+            { header: 'Nomor Seri', example: 'BTS-0001' },
+            { header: 'CIF', example: '1234567890' },
+            { header: 'Nama', example: 'BUDI SANTOSO' },
+            { header: 'Rekening', example: '0010203040' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes="Tipe: masuk (terima stok) atau keluar (ke nasabah). Produk: Simpeda, Simpeda IB, Prama, TabunganKu, Simpel, Al-Amin, Bilyet Giro, Bilyet Deposito, Buku Cek."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}

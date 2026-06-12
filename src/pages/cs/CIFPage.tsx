@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addCif, CSCif, deleteCif, getCifList, getNextCifNomor, getNextCifText, updateCif } from '@/lib/cs-store';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
+import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const CIFPage: React.FC = () => {
   const { toast } = useToast();
@@ -78,6 +80,35 @@ const CIFPage: React.FC = () => {
     XLSX.writeFile(wb, 'CIF_Nasabah.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[], mode: ImportMode): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const existing = await getCifList();
+    const byCif = new Map(existing.map((r) => [r.cif.trim(), r]));
+    let nextNo = (existing.reduce((m, r) => Math.max(m, r.nomor_urut), 0)) + 1;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const cif = asString(pick(row, 'CIF'));
+        const nama = asString(pick(row, 'Nama', 'Nama Nasabah'));
+        if (!cif || !nama) { res.errors.push(`Baris ${i + 2}: CIF & Nama wajib`); continue; }
+        const tanggal_input = asDate(pick(row, 'Tanggal Input', 'Tanggal'));
+        const nomor_urut = asNumber(pick(row, 'No', 'Nomor Urut')) || nextNo++;
+        const dup = byCif.get(cif);
+        if (dup && mode === 'skip') { res.skipped++; continue; }
+        if (dup && mode === 'update') {
+          await updateCif(dup.id, { nama, tanggal_input, nomor_urut });
+          res.updated++; continue;
+        }
+        await addCif({ nomor_urut, cif, nama, tanggal_input, user_input: userName });
+        res.inserted++;
+        byCif.set(cif, { ...(dup || {} as CSCif), nomor_urut, cif, nama, tanggal_input } as CSCif);
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   return (
     <MainLayout>
       <PageHeader title="CIF Nasabah" description="Master Customer Information File" />
@@ -85,6 +116,19 @@ const CIFPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_CIF"
+          sheetName="CIF"
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'CIF', example: '1234567890', required: true },
+            { header: 'Nama', example: 'BUDI SANTOSO', required: true },
+            { header: 'Tanggal Input', example: '2024-01-15' },
+          ]}
+          notes="CIF wajib unik. Mode 'Skip' melewati CIF yang sudah ada, 'Update' mengganti nama/tanggal."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}
