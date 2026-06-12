@@ -201,6 +201,21 @@ const RekeningPage: React.FC<Props> = ({ produk }) => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName={`Template_Rekening_${PRODUK_LABELS[produk].replace(/\s/g, '_')}`}
+          sheetName={`Rekening ${PRODUK_LABELS[produk]}`}
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'Nomor Rekening', example: '0010203040', required: true },
+            { header: 'CIF', example: '1234567890' },
+            { header: 'Nama', example: 'BUDI SANTOSO', required: true },
+            { header: 'Tanggal Buka', example: '2024-01-15' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes={`Khusus produk ${PRODUK_LABELS[produk]}. Nomor rekening wajib unik. CIF yang belum terdaftar akan otomatis dibuatkan stub di master CIF.`}
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}
