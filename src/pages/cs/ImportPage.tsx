@@ -7,18 +7,22 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { addBuku, addCif, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSProduk, getCifList, PRODUK_LABELS, wipeAllBilyet, wipeAllBuku, wipeAllCif, wipeAllKartuMutasi, wipeAllSi, wipeRekeningByProduk } from '@/lib/cs-store';
+import { addBilyet, addBuku, addCif, addKartuMutasi, addRekening, addSi, BUKU_PRODUK_LABELS, CSBukuProduk, CSDepositoStatus, CSJenisKartu, CSProduk, getCifList, KARTU_LABELS, PRODUK_LABELS, wipeAllBilyet, wipeAllBuku, wipeAllCif, wipeAllKartuMutasi, wipeAllSi, wipeRekeningByProduk } from '@/lib/cs-store';
 import { Navigate } from 'react-router-dom';
-import { Upload, Loader2, Trash2 } from 'lucide-react';
+import { AlertCircle, Upload, Loader2, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 
-type SheetKind = 'cif' | CSProduk | 'si' | 'buku_tabungan';
+type SheetKind = 'cif' | 'rekening_auto' | CSProduk | 'si' | 'buku_tabungan' | 'kartu_atm' | 'bilyet_deposito';
+type ExcelRow = Record<string, unknown>;
 
 const SHEET_LABELS: Record<SheetKind, string> = {
   cif: 'CIF Nasabah',
+  rekening_auto: 'Rekening — Auto Produk per Baris',
   simpeda: 'Rekening Simpeda',
   simpeda_ib: 'Rekening Simpeda IB',
   prama: 'Rekening Prama',
@@ -29,15 +33,21 @@ const SHEET_LABELS: Record<SheetKind, string> = {
   taspen: 'Rekening Taspen',
   si: 'Standing Instruction (SI)',
   buku_tabungan: 'Register Buku Tabungan',
+  kartu_atm: 'Logbook Kartu ATM',
+  bilyet_deposito: 'Bilyet Deposito',
 };
 
 const BUKU_PRODUK_KEYS = Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[];
+const REKENING_PRODUK_KEYS = Object.keys(PRODUK_LABELS) as CSProduk[];
+
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Terjadi kesalahan tidak dikenal';
 
 const ImportPage: React.FC = () => {
   const { toast } = useToast();
   const { isAdmin, userName } = useAuth();
-  const [sheets, setSheets] = useState<Record<string, any[]>>({});
+  const [sheets, setSheets] = useState<Record<string, ExcelRow[]>>({});
   const [mapping, setMapping] = useState<Record<string, SheetKind | 'skip'>>({});
+  const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<string>('');
 
@@ -46,6 +56,9 @@ const ImportPage: React.FC = () => {
   const detectKind = (name: string): SheetKind | 'skip' => {
     const n = name.toLowerCase();
     if (n.includes('cif') || n.includes('nasabah')) return 'cif';
+    if (n.includes('kartu') || n.includes('atm')) return 'kartu_atm';
+    if (n.includes('bilyet') && n.includes('deposito')) return 'bilyet_deposito';
+    if (n.includes('buku tab') || n.includes('register buku')) return 'buku_tabungan';
     if (n.includes('simpeda ib') || n.includes('simpeda_ib') || n.includes('simpedaib')) return 'simpeda_ib';
     if (n.includes('simpeda')) return 'simpeda';
     if (n.includes('prama')) return 'prama';
@@ -54,19 +67,58 @@ const ImportPage: React.FC = () => {
     if (n.includes('giro')) return 'giro';
     if (n.includes('amin') || n.includes('alamin')) return 'alamin';
     if (n.includes('taspen')) return 'taspen';
-    if (n.includes('buku tab') || n.includes('register buku')) return 'buku_tabungan';
+    if (n.includes('rekening') || n.includes('tabungan')) return 'rekening_auto';
     if (n === 'si' || n.includes('si new') || n.includes('standing')) return 'si';
     return 'skip';
+  };
+
+  const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const detectRekeningProduk = (row: ExcelRow, fallback?: SheetKind | 'skip'): CSProduk | null => {
+    if (fallback && REKENING_PRODUK_KEYS.includes(fallback as CSProduk)) return fallback as CSProduk;
+    const values = Object.entries(row)
+      .filter(([key]) => ['produk', 'jenis produk', 'jenis tabungan', 'jenis rekening', 'product', 'keterangan'].some((k) => normalize(key) === normalize(k)))
+      .map(([, value]) => normalize(value))
+      .join(' ');
+    const allText = `${values} ${normalize(Object.values(row).slice(0, 8).join(' '))}`;
+    if (allText.includes('simpedaib')) return 'simpeda_ib';
+    if (allText.includes('simpeda')) return 'simpeda';
+    if (allText.includes('prama')) return 'prama';
+    if (allText.includes('simpel')) return 'simpel';
+    if (allText.includes('tabunganku')) return 'tabunganku';
+    if (allText.includes('giro')) return 'giro';
+    if (allText.includes('alamin') || allText.includes('amin')) return 'alamin';
+    if (allText.includes('taspen')) return 'taspen';
+    return null;
+  };
+
+  const getImportStats = () => {
+    const stats: Record<string, number> = {};
+    let skippedSheets = 0;
+    Object.entries(sheets).forEach(([sheetName, rows]) => {
+      const kind = mapping[sheetName];
+      if (!kind || kind === 'skip') { skippedSheets++; return; }
+      if (kind === 'rekening_auto') {
+        rows.forEach((row) => {
+          const produk = detectRekeningProduk(row);
+          const key = produk ? `Rekening ${PRODUK_LABELS[produk]}` : 'Rekening belum terdeteksi';
+          stats[key] = (stats[key] || 0) + 1;
+        });
+        return;
+      }
+      stats[SHEET_LABELS[kind]] = (stats[SHEET_LABELS[kind]] || 0) + rows.length;
+    });
+    return { stats, skippedSheets };
   };
 
   const handleFile = async (file: File) => {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
-    const next: Record<string, any[]> = {};
+    const next: Record<string, ExcelRow[]> = {};
     const nextMap: Record<string, SheetKind | 'skip'> = {};
     for (const name of wb.SheetNames) {
       const ws = wb.Sheets[name];
-      const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as ExcelRow[];
       next[name] = json;
       nextMap[name] = detectKind(name);
     }
@@ -75,7 +127,7 @@ const ImportPage: React.FC = () => {
     toast({ title: 'File dibaca', description: `${wb.SheetNames.length} sheet terdeteksi.` });
   };
 
-  const pickField = (row: any, keys: string[]) => {
+  const pickField = (row: ExcelRow, keys: string[]) => {
     for (const k of keys) {
       for (const real of Object.keys(row)) {
         if (real.toLowerCase().replace(/[^a-z0-9]/g, '') === k.toLowerCase().replace(/[^a-z0-9]/g, '')) {
@@ -89,16 +141,22 @@ const ImportPage: React.FC = () => {
 
   const parseDate = (s: string): string => {
     if (!s) return new Date().toISOString().slice(0, 10);
+    if (/^\d{5,6}$/.test(String(s))) {
+      const parsed = XLSX.SSF.parse_date_code(Number(s));
+      if (parsed) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+    }
     const d = new Date(s);
     if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
     // Try DD/MM/YYYY
-    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
     if (m) {
       const yr = m[3].length === 2 ? `20${m[3]}` : m[3];
       return `${yr}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
     }
     return new Date().toISOString().slice(0, 10);
   };
+
+  const parseMoney = (s: string): number => Number(String(s || '').replace(/[^0-9.-]/g, '')) || 0;
 
   const detectBukuProduk = (s: string): CSBukuProduk | null => {
     const n = (s || '').toLowerCase();
@@ -114,10 +172,49 @@ const ImportPage: React.FC = () => {
     return null;
   };
 
+  const detectKartuJenis = (s: string): CSJenisKartu => {
+    const n = (s || '').toLowerCase();
+    if (n.includes('prama')) return 'prama';
+    if (n.includes('tabunganku') || n.includes('tabungan ku')) return 'tabunganku';
+    return 'simpeda';
+  };
+
+  const detectBilyetStatus = (s: string): CSDepositoStatus => {
+    const n = (s || '').toLowerCase();
+    if (n.includes('cair')) return 'cair';
+    if (n.includes('pindah')) return 'pindah';
+    return 'aktif';
+  };
+
+  const wipeMappedTargets = async () => {
+    const rekeningTargets = new Set<CSProduk>();
+    let cif = false, si = false, buku = false, kartu = false, bilyet = false;
+    Object.entries(sheets).forEach(([sheetName, rows]) => {
+      const kind = mapping[sheetName];
+      if (kind === 'cif') cif = true;
+      else if (kind === 'si') si = true;
+      else if (kind === 'buku_tabungan') buku = true;
+      else if (kind === 'kartu_atm') kartu = true;
+      else if (kind === 'bilyet_deposito') bilyet = true;
+      else if (kind === 'rekening_auto') rows.forEach((row) => { const p = detectRekeningProduk(row); if (p) rekeningTargets.add(p); });
+      else if (kind && REKENING_PRODUK_KEYS.includes(kind as CSProduk)) rekeningTargets.add(kind as CSProduk);
+    });
+    for (const p of rekeningTargets) await wipeRekeningByProduk(p);
+    if (si) await wipeAllSi();
+    if (buku) await wipeAllBuku();
+    if (kartu) await wipeAllKartuMutasi();
+    if (bilyet) await wipeAllBilyet();
+    if (cif) await wipeAllCif();
+  };
+
   const handleImport = async () => {
     setImporting(true);
-    let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, skipped = 0;
+    let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, totalKartu = 0, totalBilyet = 0, skipped = 0;
     try {
+      if (overwrite) {
+        setProgress('Menghapus data lama sesuai mapping...');
+        await wipeMappedTargets();
+      }
       const existingCif = await getCifList();
       const cifMap = new Map(existingCif.map((c) => [c.cif, c.id]));
       let nextCifNomor = existingCif.length > 0 ? Math.max(...existingCif.map((c) => c.nomor_urut)) + 1 : 1;
@@ -146,17 +243,19 @@ const ImportPage: React.FC = () => {
       // 2) Import Rekening per produk
       for (const [sheetName, rows] of Object.entries(sheets)) {
         const kind = mapping[sheetName];
-        if (!kind || kind === 'cif' || kind === 'skip' || kind === 'si' || kind === 'buku_tabungan') continue;
-        const produk = kind as CSProduk;
-        setProgress(`Import ${PRODUK_LABELS[produk]}: ${rows.length} baris`);
-        let nomorCounter = 1;
+        if (!kind || kind === 'cif' || kind === 'skip' || kind === 'si' || kind === 'buku_tabungan' || kind === 'kartu_atm' || kind === 'bilyet_deposito') continue;
+        const counters: Partial<Record<CSProduk, number>> = {};
+        setProgress(`Import rekening: ${sheetName} (${rows.length} baris)`);
         for (const row of rows) {
+          const produk = detectRekeningProduk(row, kind);
+          if (!produk) { skipped++; continue; }
+          counters[produk] = counters[produk] || 1;
           const norek = pickField(row, ['NOMOR REKENING', 'NO REKENING', 'REKENING', 'NO REK']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
           if (!norek || !nama) { skipped++; continue; }
           const cif = pickField(row, ['CIF', 'NOMOR CIF']);
           const tanggal_buka = parseDate(pickField(row, ['TANGGAL', 'TGL BUKA', 'TANGGAL BUKA']));
-          const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++;
+          const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || counters[produk]!++;
           let cif_id: string | null = null;
           if (cif && cifIdMap.has(cif)) cif_id = cifIdMap.get(cif)!;
           else if (cif) {
@@ -190,7 +289,7 @@ const ImportPage: React.FC = () => {
           const kredit = pickField(row, ['REKENING KREDIT', 'REK KREDIT', 'KREDIT']);
           if (!kode || !debet || !kredit) { skipped++; continue; }
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          const nominal = Number(pickField(row, ['NOMINAL', 'JUMLAH']).replace(/[^0-9.-]/g, '')) || 0;
+          const nominal = parseMoney(pickField(row, ['NOMINAL', 'JUMLAH']));
           const mulai = parseDate(pickField(row, ['TANGGAL MULAI', 'TGL MULAI', 'MULAI']));
           const berakhirRaw = pickField(row, ['TANGGAL BERAKHIR', 'TGL BERAKHIR', 'BERAKHIR', 'TGL AKHIR']);
           const status = (pickField(row, ['STATUS']) || 'aktif').toLowerCase();
@@ -233,16 +332,67 @@ const ImportPage: React.FC = () => {
         }
       }
 
-      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${skipped} dilewati.` });
+      // 5) Import Logbook Kartu ATM
+      for (const [sheetName, rows] of Object.entries(sheets)) {
+        if (mapping[sheetName] !== 'kartu_atm') continue;
+        setProgress(`Import Kartu ATM: ${rows.length} baris`);
+        for (const row of rows) {
+          const tipeRaw = pickField(row, ['TIPE', 'MUTASI', 'JENIS']).toLowerCase();
+          const tipe: 'masuk' | 'keluar' = tipeRaw.includes('keluar') ? 'keluar' : 'masuk';
+          const jenis_kartu = detectKartuJenis(pickField(row, ['JENIS KARTU', 'PRODUK', 'JENIS']));
+          const jumlah = Number(pickField(row, ['JUMLAH', 'QTY'])) || 1;
+          const tanggal = parseDate(pickField(row, ['TANGGAL', 'TGL']));
+          try {
+            await addKartuMutasi({
+              tipe, jenis_kartu, jumlah, tanggal,
+              keterangan: pickField(row, ['KETERANGAN']) || null,
+              user_input: userName,
+            });
+            totalKartu++;
+          } catch { skipped++; }
+        }
+      }
+
+      // 6) Import Bilyet Deposito
+      for (const [sheetName, rows] of Object.entries(sheets)) {
+        if (mapping[sheetName] !== 'bilyet_deposito') continue;
+        setProgress(`Import Bilyet Deposito: ${rows.length} baris`);
+        let nomorCounter = 1;
+        for (const row of rows) {
+          const nomor_bilyet = pickField(row, ['NOMOR BILYET', 'NO BILYET', 'BILYET']);
+          const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
+          if (!nomor_bilyet || !nama) { skipped++; continue; }
+          try {
+            await addBilyet({
+              nomor_urut: Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++,
+              nomor_bilyet,
+              cif: pickField(row, ['CIF', 'NOMOR CIF']) || null,
+              nama,
+              nominal: parseMoney(pickField(row, ['NOMINAL', 'JUMLAH'])),
+              jangka_waktu_bulan: Number(pickField(row, ['JANGKA WAKTU', 'TENOR', 'BULAN'])) || null,
+              tanggal_terbit: parseDate(pickField(row, ['TANGGAL TERBIT', 'TGL TERBIT', 'TANGGAL'])),
+              tanggal_jatuh_tempo: pickField(row, ['TANGGAL JATUH TEMPO', 'JATUH TEMPO', 'TGL JT']) ? parseDate(pickField(row, ['TANGGAL JATUH TEMPO', 'JATUH TEMPO', 'TGL JT'])) : null,
+              status: detectBilyetStatus(pickField(row, ['STATUS'])),
+              keterangan: pickField(row, ['KETERANGAN']) || null,
+              user_input: userName,
+            });
+            totalBilyet++;
+          } catch { skipped++; }
+        }
+      }
+
+      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${totalKartu} kartu ATM, ${totalBilyet} bilyet, ${skipped} dilewati.` });
       setProgress('');
       setSheets({});
       setMapping({});
-    } catch (e: any) {
-      toast({ title: 'Gagal import', description: e.message, variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({ title: 'Gagal import', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
       setImporting(false);
     }
   };
+
+  const { stats: importStats, skippedSheets } = getImportStats();
 
   return (
     <MainLayout>
@@ -263,6 +413,18 @@ const ImportPage: React.FC = () => {
       {Object.keys(sheets).length > 0 && (
         <Card className="p-6 mb-4">
           <h3 className="font-semibold mb-3">Mapping Sheet → Tabel Tujuan</h3>
+          <Alert className="mb-4 border-primary/30 bg-primary/5">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Preview sebelum import</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {Object.entries(importStats).map(([label, count]) => (
+                  <Badge key={label} variant={label.includes('belum') ? 'destructive' : 'secondary'}>{label}: {count}</Badge>
+                ))}
+                {skippedSheets > 0 && <Badge variant="outline">{skippedSheets} sheet dilewati</Badge>}
+              </div>
+            </AlertDescription>
+          </Alert>
           <Table>
             <TableHeader><TableRow><TableHead>Sheet</TableHead><TableHead>Baris</TableHead><TableHead>Tujuan</TableHead><TableHead>Preview Kolom</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -271,7 +433,7 @@ const ImportPage: React.FC = () => {
                   <TableCell className="font-medium">{name}</TableCell>
                   <TableCell><Badge variant="secondary">{rows.length}</Badge></TableCell>
                   <TableCell>
-                    <Select value={mapping[name]} onValueChange={(v) => setMapping({ ...mapping, [name]: v as any })}>
+                    <Select value={mapping[name]} onValueChange={(v) => setMapping({ ...mapping, [name]: v as SheetKind | 'skip' })}>
                       <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="skip">— Lewati —</SelectItem>
@@ -288,12 +450,21 @@ const ImportPage: React.FC = () => {
               ))}
             </TableBody>
           </Table>
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex flex-col gap-3">
+            <label className="flex items-start gap-2 text-sm">
+              <Checkbox checked={overwrite} onCheckedChange={(checked) => setOverwrite(checked === true)} disabled={importing} />
+              <span>
+                <strong>Overwrite data sesuai mapping</strong><br />
+                <span className="text-muted-foreground">Hapus data lama pada tabel/produk yang dipilih lalu import ulang. Pakai ini untuk memperbaiki 114 Giro yang salah mapping.</span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2">
             <Button onClick={handleImport} disabled={importing}>
               {importing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-              Mulai Import
+              {overwrite ? 'Overwrite & Import' : 'Mulai Import'}
             </Button>
             {progress && <span className="text-sm text-muted-foreground">{progress}</span>}
+            </div>
           </div>
         </Card>
       )}
@@ -306,8 +477,11 @@ const ImportPage: React.FC = () => {
           <strong>Tips kolom yang dikenali:</strong>
           <br />• <strong>CIF</strong>: <code>CIF</code>, <code>NAMA</code>
           <br />• <strong>Rekening (per produk)</strong>: <code>NOMOR REKENING</code>, <code>NAMA</code>, opsional <code>CIF</code> + <code>TANGGAL BUKA</code>
+          <br />• <strong>Rekening auto</strong>: jika 1 sheet campuran, pilih <code>Rekening — Auto Produk per Baris</code> dan pastikan ada kolom <code>PRODUK</code>/<code>JENIS REKENING</code>
           <br />• <strong>SI</strong>: <code>KODE SI</code>, <code>REKENING DEBET</code>, <code>REKENING KREDIT</code>, <code>NOMINAL</code>, <code>TANGGAL MULAI</code>, <code>TANGGAL BERAKHIR</code>, opsional <code>NAMA</code>, <code>STATUS</code>
           <br />• <strong>Buku Tabungan</strong>: <code>TIPE</code> (masuk/keluar), <code>PRODUK</code>, <code>JUMLAH</code>, <code>TANGGAL</code>, opsional <code>NOMOR SERI</code>, <code>CIF</code>, <code>NAMA</code>, <code>NOMOR REKENING</code>
+          <br />• <strong>Kartu ATM</strong>: <code>TIPE</code> (masuk/keluar), <code>JENIS KARTU</code>, <code>JUMLAH</code>, <code>TANGGAL</code>
+          <br />• <strong>Bilyet Deposito</strong>: <code>NOMOR BILYET</code>, <code>NAMA</code>, <code>NOMINAL</code>, <code>TANGGAL TERBIT</code>, opsional <code>JATUH TEMPO</code>
           <br />Data yang sudah ada (CIF, rekening per produk, kode SI) akan dilewati otomatis untuk hindari duplikat.
         </p>
       </Card>
@@ -341,8 +515,8 @@ const ResetPanel: React.FC = () => {
     try {
       const n = await t.fn();
       toast({ title: 'Berhasil dihapus', description: `${n} baris pada ${t.label} dihapus. Silakan re-import.` });
-    } catch (e: any) {
-      toast({ title: 'Gagal hapus', description: e.message, variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({ title: 'Gagal hapus', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
       setBusy(null);
     }
