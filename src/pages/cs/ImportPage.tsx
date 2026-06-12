@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import * as XLSX from 'xlsx';
 
 type SheetKind = 'cif' | 'rekening_auto' | CSProduk | 'si' | 'buku_tabungan' | 'kartu_atm' | 'bilyet_deposito';
+type ExcelRow = Record<string, unknown>;
 
 const SHEET_LABELS: Record<SheetKind, string> = {
   cif: 'CIF Nasabah',
@@ -39,10 +40,12 @@ const SHEET_LABELS: Record<SheetKind, string> = {
 const BUKU_PRODUK_KEYS = Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[];
 const REKENING_PRODUK_KEYS = Object.keys(PRODUK_LABELS) as CSProduk[];
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Terjadi kesalahan tidak dikenal';
+
 const ImportPage: React.FC = () => {
   const { toast } = useToast();
   const { isAdmin, userName } = useAuth();
-  const [sheets, setSheets] = useState<Record<string, any[]>>({});
+  const [sheets, setSheets] = useState<Record<string, ExcelRow[]>>({});
   const [mapping, setMapping] = useState<Record<string, SheetKind | 'skip'>>({});
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -71,7 +74,7 @@ const ImportPage: React.FC = () => {
 
   const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-  const detectRekeningProduk = (row: any, fallback?: SheetKind | 'skip'): CSProduk | null => {
+  const detectRekeningProduk = (row: ExcelRow, fallback?: SheetKind | 'skip'): CSProduk | null => {
     if (fallback && REKENING_PRODUK_KEYS.includes(fallback as CSProduk)) return fallback as CSProduk;
     const values = Object.entries(row)
       .filter(([key]) => ['produk', 'jenis produk', 'jenis tabungan', 'jenis rekening', 'product', 'keterangan'].some((k) => normalize(key) === normalize(k)))
@@ -115,7 +118,7 @@ const ImportPage: React.FC = () => {
     const nextMap: Record<string, SheetKind | 'skip'> = {};
     for (const name of wb.SheetNames) {
       const ws = wb.Sheets[name];
-      const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as ExcelRow[];
       next[name] = json;
       nextMap[name] = detectKind(name);
     }
@@ -124,7 +127,7 @@ const ImportPage: React.FC = () => {
     toast({ title: 'File dibaca', description: `${wb.SheetNames.length} sheet terdeteksi.` });
   };
 
-  const pickField = (row: any, keys: string[]) => {
+  const pickField = (row: ExcelRow, keys: string[]) => {
     for (const k of keys) {
       for (const real of Object.keys(row)) {
         if (real.toLowerCase().replace(/[^a-z0-9]/g, '') === k.toLowerCase().replace(/[^a-z0-9]/g, '')) {
@@ -145,7 +148,7 @@ const ImportPage: React.FC = () => {
     const d = new Date(s);
     if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
     // Try DD/MM/YYYY
-    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
     if (m) {
       const yr = m[3].length === 2 ? `20${m[3]}` : m[3];
       return `${yr}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
