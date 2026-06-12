@@ -19,6 +19,10 @@ import * as XLSX from 'xlsx';
 
 type SheetKind = 'cif' | 'rekening_auto' | CSProduk | 'si' | 'buku_tabungan' | 'kartu_atm' | 'bilyet_deposito';
 type ExcelRow = Record<string, unknown>;
+type ImportReport = { summary: string; skipped: number; details: string[] };
+
+const ROW_NUMBER_KEY = '__rowNumber';
+const GENERIC_LOOSE_KEYS = new Set(['no', 'nomor', 'urut', 'nama', 'jenis', 'produk', 'tanggal', 'tgl', 'rekening', 'debet', 'kredit']);
 
 const SHEET_LABELS: Record<SheetKind, string> = {
   cif: 'CIF Nasabah',
@@ -53,6 +57,8 @@ const ImportPage: React.FC = () => {
 
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
+  const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
   const detectKind = (name: string): SheetKind | 'skip' => {
     const n = name.toLowerCase();
     if (n.includes('cif') || n.includes('nasabah')) return 'cif';
@@ -72,7 +78,70 @@ const ImportPage: React.FC = () => {
     return 'skip';
   };
 
-  const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const aliasesMatch = (header: unknown, alias: string) => {
+    const h = normalize(header);
+    const a = normalize(alias);
+    if (!h || !a) return false;
+    if (h === a) return true;
+    return a.length >= 4 && !GENERIC_LOOSE_KEYS.has(a) && (h.includes(a) || a.includes(h));
+  };
+
+  const headerHas = (headers: string[], aliases: string[]) => headers.some((h) => aliases.some((a) => aliasesMatch(h, a)));
+
+  const headerGroups = [
+    ['CIF', 'NOMOR CIF', 'NO CIF', 'NO.CIF'],
+    ['NAMA', 'NAMA NASABAH', 'NAMA CUSTOMER', 'NAMA PEMILIK', 'NAMA REKENING'],
+    ['NOMOR REKENING', 'NO REKENING', 'NO. REKENING', 'REKENING', 'NO REK', 'NOREK'],
+    ['PRODUK', 'JENIS PRODUK', 'JENIS TABUNGAN', 'JENIS REKENING', 'PRODUCT'],
+    ['KODE SI', 'NO SI', 'REKENING DEBET', 'REKENING KREDIT'],
+    ['NOMOR SERI', 'NO SERI', 'SERI', 'JENIS BUKU'],
+    ['JENIS KARTU', 'KARTU ATM'],
+    ['NOMOR BILYET', 'NO BILYET', 'BILYET'],
+    ['TANGGAL', 'TGL', 'TANGGAL BUKA', 'TANGGAL MULAI', 'TANGGAL TERBIT'],
+  ];
+
+  const inferHeaderIndex = (matrix: unknown[][]) => {
+    let bestIndex = 0;
+    let bestScore = -1;
+    matrix.slice(0, 30).forEach((row, index) => {
+      const cells = row.map((cell) => String(cell ?? '').trim()).filter(Boolean);
+      const score = headerGroups.reduce((sum, aliases) => sum + (headerHas(cells, aliases) ? 1 : 0), 0);
+      if (score > bestScore) { bestScore = score; bestIndex = index; }
+    });
+    return bestScore >= 2 ? bestIndex : 0;
+  };
+
+  const extractSheetRows = (ws: XLSX.WorkSheet): ExcelRow[] => {
+    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false }) as unknown[][];
+    if (matrix.length === 0) return [];
+    const headerIndex = inferHeaderIndex(matrix);
+    const rawHeaders = matrix[headerIndex] || [];
+    const usedHeaders = new Map<string, number>();
+    const headers = rawHeaders.map((cell, index) => {
+      const base = String(cell || `Kolom ${index + 1}`).trim() || `Kolom ${index + 1}`;
+      const count = usedHeaders.get(base) || 0;
+      usedHeaders.set(base, count + 1);
+      return count === 0 ? base : `${base} ${count + 1}`;
+    });
+    return matrix.slice(headerIndex + 1).map((values, index) => {
+      const row: ExcelRow = { [ROW_NUMBER_KEY]: headerIndex + index + 2 };
+      headers.forEach((header, colIndex) => { row[header] = values[colIndex] ?? ''; });
+      return row;
+    }).filter((row) => Object.entries(row).some(([key, value]) => key !== ROW_NUMBER_KEY && String(value ?? '').trim() !== ''));
+  };
+
+  const detectKindFromRows = (name: string, rows: ExcelRow[]): SheetKind | 'skip' => {
+    const byName = detectKind(name);
+    if (byName !== 'skip') return byName;
+    const headers = rows[0] ? Object.keys(rows[0]).filter((key) => key !== ROW_NUMBER_KEY) : [];
+    if (headerHas(headers, ['KODE SI', 'REKENING DEBET', 'REKENING KREDIT'])) return 'si';
+    if (headerHas(headers, ['NOMOR BILYET', 'NO BILYET', 'BILYET'])) return 'bilyet_deposito';
+    if (headerHas(headers, ['NOMOR SERI', 'NO SERI', 'SERI', 'JENIS BUKU'])) return 'buku_tabungan';
+    if (headerHas(headers, ['JENIS KARTU', 'KARTU ATM'])) return 'kartu_atm';
+    if (headerHas(headers, ['NOMOR REKENING', 'NO REKENING', 'NO REK', 'NOREK'])) return 'rekening_auto';
+    if (headerHas(headers, ['CIF', 'NOMOR CIF', 'NO CIF']) && headerHas(headers, ['NAMA', 'NAMA NASABAH'])) return 'cif';
+    return 'skip';
+  };
 
   const detectRekeningProduk = (row: ExcelRow, fallback?: SheetKind | 'skip'): CSProduk | null => {
     if (fallback && REKENING_PRODUK_KEYS.includes(fallback as CSProduk)) return fallback as CSProduk;
@@ -118,22 +187,32 @@ const ImportPage: React.FC = () => {
     const nextMap: Record<string, SheetKind | 'skip'> = {};
     for (const name of wb.SheetNames) {
       const ws = wb.Sheets[name];
-      const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as ExcelRow[];
+      const json = extractSheetRows(ws);
       next[name] = json;
-      nextMap[name] = detectKind(name);
+      nextMap[name] = detectKindFromRows(name, json);
     }
+    setImportReport(null);
     setSheets(next);
     setMapping(nextMap);
     toast({ title: 'File dibaca', description: `${wb.SheetNames.length} sheet terdeteksi.` });
   };
 
   const pickField = (row: ExcelRow, keys: string[]) => {
+    const entries = Object.entries(row).filter(([real]) => real !== ROW_NUMBER_KEY);
+    const wanted = keys.map((k) => normalize(k));
     for (const k of keys) {
-      for (const real of Object.keys(row)) {
-        if (real.toLowerCase().replace(/[^a-z0-9]/g, '') === k.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+      for (const [real] of entries) {
+        if (normalize(real) === normalize(k)) {
           const v = row[real];
           if (v !== '' && v != null) return String(v).trim();
         }
+      }
+    }
+    const looseWanted = wanted.filter((k) => k.length >= 4 && !GENERIC_LOOSE_KEYS.has(k));
+    for (const [real, value] of entries) {
+      const realKey = normalize(real);
+      if (looseWanted.some((k) => realKey.includes(k) || k.includes(realKey))) {
+        if (value !== '' && value != null) return String(value).trim();
       }
     }
     return '';
