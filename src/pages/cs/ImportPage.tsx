@@ -133,8 +133,9 @@ const ImportPage: React.FC = () => {
 
   const detectKindFromRows = (name: string, rows: ExcelRow[]): SheetKind | 'skip' => {
     const byName = detectKind(name);
-    if (byName !== 'skip') return byName;
     const headers = rows[0] ? Object.keys(rows[0]).filter((key) => key !== ROW_NUMBER_KEY) : [];
+    if (byName === 'cif' && !normalize(name).includes('cif') && headerHas(headers, ['NOMOR REKENING', 'NO REKENING', 'NO REK', 'NOREK'])) return 'rekening_auto';
+    if (byName !== 'skip') return byName;
     if (headerHas(headers, ['KODE SI', 'REKENING DEBET', 'REKENING KREDIT'])) return 'si';
     if (headerHas(headers, ['NOMOR BILYET', 'NO BILYET', 'BILYET'])) return 'bilyet_deposito';
     if (headerHas(headers, ['NOMOR SERI', 'NO SERI', 'SERI', 'JENIS BUKU'])) return 'buku_tabungan';
