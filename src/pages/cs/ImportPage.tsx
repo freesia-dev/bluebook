@@ -114,7 +114,7 @@ const ImportPage: React.FC = () => {
   const handleFile = async (file: File) => {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
-    const next: Record<string, any[]> = {};
+    const next: Record<string, ExcelRow[]> = {};
     const nextMap: Record<string, SheetKind | 'skip'> = {};
     for (const name of wb.SheetNames) {
       const ws = wb.Sheets[name];
