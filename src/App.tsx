@@ -66,7 +66,7 @@ const SIPage = lazy(() => import("./pages/cs/SIPage"));
 const KartuATMPage = lazy(() => import("./pages/cs/KartuATMPage"));
 const BukuTabunganPage = lazy(() => import("./pages/cs/BukuTabunganPage"));
 const BilyetDepositoPage = lazy(() => import("./pages/cs/BilyetDepositoPage"));
-const ImportCSPage = lazy(() => import("./pages/cs/ImportPage"));
+
 
 
 
@@ -305,9 +305,6 @@ const App = () => (
             } />
             <Route path="/cs/bilyet-deposito" element={
               <Suspense fallback={<TablePageSkeleton />}><BilyetDepositoPage /></Suspense>
-            } />
-            <Route path="/cs/import" element={
-              <Suspense fallback={<TablePageSkeleton />}><ImportCSPage /></Suspense>
             } />
             <Route path="*" element={
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
