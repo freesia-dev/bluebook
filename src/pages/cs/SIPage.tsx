@@ -171,6 +171,25 @@ const SIPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" /> Export Excel
         </Button>
+        <CSImportButton
+          templateName="Template_SI"
+          sheetName="SI"
+          columns={[
+            { header: 'No', example: 1 },
+            { header: 'Kode SI', example: 'SI-001', required: true },
+            { header: 'Rekening Debet', example: '0010203040', required: true },
+            { header: 'Rekening Kredit', example: '0010203050', required: true },
+            { header: 'Nama', example: 'BUDI SANTOSO' },
+            { header: 'Nominal', example: 500000 },
+            { header: 'Tanggal Mulai', example: '2024-01-01' },
+            { header: 'Tanggal Berakhir', example: '2025-12-31' },
+            { header: 'Status', example: 'aktif' },
+            { header: 'Keterangan', example: '' },
+          ]}
+          notes="Kode SI wajib unik. Status: aktif / nonaktif / selesai."
+          onImport={handleImport}
+          onDone={load}
+        />
       </div>
       <DataTable
         data={data}
