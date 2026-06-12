@@ -19,6 +19,10 @@ import * as XLSX from 'xlsx';
 
 type SheetKind = 'cif' | 'rekening_auto' | CSProduk | 'si' | 'buku_tabungan' | 'kartu_atm' | 'bilyet_deposito';
 type ExcelRow = Record<string, unknown>;
+type ImportReport = { summary: string; skipped: number; details: string[] };
+
+const ROW_NUMBER_KEY = '__rowNumber';
+const GENERIC_LOOSE_KEYS = new Set(['no', 'nomor', 'urut', 'nama', 'jenis', 'produk', 'tanggal', 'tgl', 'rekening', 'debet', 'kredit']);
 
 const SHEET_LABELS: Record<SheetKind, string> = {
   cif: 'CIF Nasabah',
@@ -50,8 +54,11 @@ const ImportPage: React.FC = () => {
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<string>('');
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
 
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
+
+  const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   const detectKind = (name: string): SheetKind | 'skip' => {
     const n = name.toLowerCase();
@@ -72,7 +79,71 @@ const ImportPage: React.FC = () => {
     return 'skip';
   };
 
-  const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const aliasesMatch = (header: unknown, alias: string) => {
+    const h = normalize(header);
+    const a = normalize(alias);
+    if (!h || !a) return false;
+    if (h === a) return true;
+    return a.length >= 4 && !GENERIC_LOOSE_KEYS.has(a) && (h.includes(a) || a.includes(h));
+  };
+
+  const headerHas = (headers: string[], aliases: string[]) => headers.some((h) => aliases.some((a) => aliasesMatch(h, a)));
+
+  const headerGroups = [
+    ['CIF', 'NOMOR CIF', 'NO CIF', 'NO.CIF'],
+    ['NAMA', 'NAMA NASABAH', 'NAMA CUSTOMER', 'NAMA PEMILIK', 'NAMA REKENING'],
+    ['NOMOR REKENING', 'NO REKENING', 'NO. REKENING', 'REKENING', 'NO REK', 'NOREK'],
+    ['PRODUK', 'JENIS PRODUK', 'JENIS TABUNGAN', 'JENIS REKENING', 'PRODUCT'],
+    ['KODE SI', 'NO SI', 'REKENING DEBET', 'REKENING KREDIT'],
+    ['NOMOR SERI', 'NO SERI', 'SERI', 'JENIS BUKU'],
+    ['JENIS KARTU', 'KARTU ATM'],
+    ['NOMOR BILYET', 'NO BILYET', 'BILYET'],
+    ['TANGGAL', 'TGL', 'TANGGAL BUKA', 'TANGGAL MULAI', 'TANGGAL TERBIT'],
+  ];
+
+  const inferHeaderIndex = (matrix: unknown[][]) => {
+    let bestIndex = 0;
+    let bestScore = -1;
+    matrix.slice(0, 30).forEach((row, index) => {
+      const cells = row.map((cell) => String(cell ?? '').trim()).filter(Boolean);
+      const score = headerGroups.reduce((sum, aliases) => sum + (headerHas(cells, aliases) ? 1 : 0), 0);
+      if (score > bestScore) { bestScore = score; bestIndex = index; }
+    });
+    return bestScore >= 2 ? bestIndex : 0;
+  };
+
+  const extractSheetRows = (ws: XLSX.WorkSheet): ExcelRow[] => {
+    const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false }) as unknown[][];
+    if (matrix.length === 0) return [];
+    const headerIndex = inferHeaderIndex(matrix);
+    const rawHeaders = matrix[headerIndex] || [];
+    const usedHeaders = new Map<string, number>();
+    const headers = rawHeaders.map((cell, index) => {
+      const base = String(cell || `Kolom ${index + 1}`).trim() || `Kolom ${index + 1}`;
+      const count = usedHeaders.get(base) || 0;
+      usedHeaders.set(base, count + 1);
+      return count === 0 ? base : `${base} ${count + 1}`;
+    });
+    return matrix.slice(headerIndex + 1).map((values, index) => {
+      const row: ExcelRow = { [ROW_NUMBER_KEY]: headerIndex + index + 2 };
+      headers.forEach((header, colIndex) => { row[header] = values[colIndex] ?? ''; });
+      return row;
+    }).filter((row) => Object.entries(row).some(([key, value]) => key !== ROW_NUMBER_KEY && String(value ?? '').trim() !== ''));
+  };
+
+  const detectKindFromRows = (name: string, rows: ExcelRow[]): SheetKind | 'skip' => {
+    const byName = detectKind(name);
+    const headers = rows[0] ? Object.keys(rows[0]).filter((key) => key !== ROW_NUMBER_KEY) : [];
+    if (byName === 'cif' && !normalize(name).includes('cif') && headerHas(headers, ['NOMOR REKENING', 'NO REKENING', 'NO REK', 'NOREK'])) return 'rekening_auto';
+    if (byName !== 'skip') return byName;
+    if (headerHas(headers, ['KODE SI', 'REKENING DEBET', 'REKENING KREDIT'])) return 'si';
+    if (headerHas(headers, ['NOMOR BILYET', 'NO BILYET', 'BILYET'])) return 'bilyet_deposito';
+    if (headerHas(headers, ['NOMOR SERI', 'NO SERI', 'SERI', 'JENIS BUKU'])) return 'buku_tabungan';
+    if (headerHas(headers, ['JENIS KARTU', 'KARTU ATM'])) return 'kartu_atm';
+    if (headerHas(headers, ['NOMOR REKENING', 'NO REKENING', 'NO REK', 'NOREK'])) return 'rekening_auto';
+    if (headerHas(headers, ['CIF', 'NOMOR CIF', 'NO CIF']) && headerHas(headers, ['NAMA', 'NAMA NASABAH'])) return 'cif';
+    return 'skip';
+  };
 
   const detectRekeningProduk = (row: ExcelRow, fallback?: SheetKind | 'skip'): CSProduk | null => {
     if (fallback && REKENING_PRODUK_KEYS.includes(fallback as CSProduk)) return fallback as CSProduk;
@@ -118,22 +189,32 @@ const ImportPage: React.FC = () => {
     const nextMap: Record<string, SheetKind | 'skip'> = {};
     for (const name of wb.SheetNames) {
       const ws = wb.Sheets[name];
-      const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as ExcelRow[];
+      const json = extractSheetRows(ws);
       next[name] = json;
-      nextMap[name] = detectKind(name);
+      nextMap[name] = detectKindFromRows(name, json);
     }
+    setImportReport(null);
     setSheets(next);
     setMapping(nextMap);
     toast({ title: 'File dibaca', description: `${wb.SheetNames.length} sheet terdeteksi.` });
   };
 
   const pickField = (row: ExcelRow, keys: string[]) => {
+    const entries = Object.entries(row).filter(([real]) => real !== ROW_NUMBER_KEY);
+    const wanted = keys.map((k) => normalize(k));
     for (const k of keys) {
-      for (const real of Object.keys(row)) {
-        if (real.toLowerCase().replace(/[^a-z0-9]/g, '') === k.toLowerCase().replace(/[^a-z0-9]/g, '')) {
+      for (const [real] of entries) {
+        if (normalize(real) === normalize(k)) {
           const v = row[real];
           if (v !== '' && v != null) return String(v).trim();
         }
+      }
+    }
+    const looseWanted = wanted.filter((k) => k.length >= 4 && !GENERIC_LOOSE_KEYS.has(k));
+    for (const [real, value] of entries) {
+      const realKey = normalize(real);
+      if (looseWanted.some((k) => realKey.includes(k) || k.includes(realKey))) {
+        if (value !== '' && value != null) return String(value).trim();
       }
     }
     return '';
@@ -157,6 +238,12 @@ const ImportPage: React.FC = () => {
   };
 
   const parseMoney = (s: string): number => Number(String(s || '').replace(/[^0-9.-]/g, '')) || 0;
+
+  const rowLabel = (sheetName: string, row: ExcelRow) => `${sheetName} baris ${Number(row[ROW_NUMBER_KEY]) || '?'}`;
+
+  const addSkip = (details: string[], sheetName: string, row: ExcelRow, reason: string) => {
+    if (details.length < 30) details.push(`${rowLabel(sheetName, row)}: ${reason}`);
+  };
 
   const detectBukuProduk = (s: string): CSBukuProduk | null => {
     const n = (s || '').toLowerCase();
@@ -210,6 +297,7 @@ const ImportPage: React.FC = () => {
   const handleImport = async () => {
     setImporting(true);
     let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, totalKartu = 0, totalBilyet = 0, skipped = 0;
+    const skippedDetails: string[] = [];
     try {
       if (overwrite) {
         setProgress('Menghapus data lama sesuai mapping...');
@@ -226,14 +314,14 @@ const ImportPage: React.FC = () => {
         for (const row of rows) {
           const cif = pickField(row, ['CIF', 'NOMOR CIF', 'NO CIF']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          if (!cif || !nama) { skipped++; continue; }
-          if (cifMap.has(cif)) { skipped++; continue; }
+          if (!cif || !nama) { skipped++; addSkip(skippedDetails, sheetName, row, 'CIF/Nama kosong atau nama kolom belum cocok'); continue; }
+          if (cifMap.has(cif)) { skipped++; addSkip(skippedDetails, sheetName, row, `CIF ${cif} sudah ada`); continue; }
           const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nextCifNomor++;
           try {
             await addCif({ nomor_urut: nomor, cif, nama, tanggal_input: new Date().toISOString().slice(0, 10), user_input: userName });
             totalCif++;
             cifMap.set(cif, 'pending');
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -248,11 +336,11 @@ const ImportPage: React.FC = () => {
         setProgress(`Import rekening: ${sheetName} (${rows.length} baris)`);
         for (const row of rows) {
           const produk = detectRekeningProduk(row, kind);
-          if (!produk) { skipped++; continue; }
+          if (!produk) { skipped++; addSkip(skippedDetails, sheetName, row, 'Produk rekening tidak terdeteksi'); continue; }
           counters[produk] = counters[produk] || 1;
           const norek = pickField(row, ['NOMOR REKENING', 'NO REKENING', 'REKENING', 'NO REK']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          if (!norek || !nama) { skipped++; continue; }
+          if (!norek || !nama) { skipped++; addSkip(skippedDetails, sheetName, row, 'Nomor rekening/Nama kosong atau nama kolom belum cocok'); continue; }
           const cif = pickField(row, ['CIF', 'NOMOR CIF']);
           const tanggal_buka = parseDate(pickField(row, ['TANGGAL', 'TGL BUKA', 'TANGGAL BUKA']));
           const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || counters[produk]!++;
@@ -265,7 +353,7 @@ const ImportPage: React.FC = () => {
               const fresh = await getCifList();
               const found = fresh.find((c) => c.cif === cif);
               if (found) { cif_id = found.id; cifIdMap.set(cif, found.id); }
-            } catch { /* ignore */ }
+            } catch { /* ignore CIF auto-create */ }
           }
           try {
             await addRekening({
@@ -274,7 +362,7 @@ const ImportPage: React.FC = () => {
               keterangan: null, user_input: userName,
             });
             totalRek++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -287,7 +375,7 @@ const ImportPage: React.FC = () => {
           const kode = pickField(row, ['KODE SI', 'KODE', 'NO SI']);
           const debet = pickField(row, ['REKENING DEBET', 'REK DEBET', 'DEBET']);
           const kredit = pickField(row, ['REKENING KREDIT', 'REK KREDIT', 'KREDIT']);
-          if (!kode || !debet || !kredit) { skipped++; continue; }
+          if (!kode || !debet || !kredit) { skipped++; addSkip(skippedDetails, sheetName, row, 'Kode SI/Rekening debet/Rekening kredit kosong atau nama kolom belum cocok'); continue; }
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
           const nominal = parseMoney(pickField(row, ['NOMINAL', 'JUMLAH']));
           const mulai = parseDate(pickField(row, ['TANGGAL MULAI', 'TGL MULAI', 'MULAI']));
@@ -303,7 +391,7 @@ const ImportPage: React.FC = () => {
               status, keterangan: ket || null, user_input: userName,
             });
             totalSi++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -328,7 +416,7 @@ const ImportPage: React.FC = () => {
               user_input: userName,
             });
             totalBuku++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -349,7 +437,7 @@ const ImportPage: React.FC = () => {
               user_input: userName,
             });
             totalKartu++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -361,7 +449,7 @@ const ImportPage: React.FC = () => {
         for (const row of rows) {
           const nomor_bilyet = pickField(row, ['NOMOR BILYET', 'NO BILYET', 'BILYET']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          if (!nomor_bilyet || !nama) { skipped++; continue; }
+          if (!nomor_bilyet || !nama) { skipped++; addSkip(skippedDetails, sheetName, row, 'Nomor bilyet/Nama kosong atau nama kolom belum cocok'); continue; }
           try {
             await addBilyet({
               nomor_urut: Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++,
@@ -377,14 +465,14 @@ const ImportPage: React.FC = () => {
               user_input: userName,
             });
             totalBilyet++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
-      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${totalKartu} kartu ATM, ${totalBilyet} bilyet, ${skipped} dilewati.` });
+      const summary = `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${totalKartu} kartu ATM, ${totalBilyet} bilyet, ${skipped} dilewati.`;
+      setImportReport({ summary, skipped, details: skippedDetails });
+      toast({ title: 'Import selesai', description: summary });
       setProgress('');
-      setSheets({});
-      setMapping({});
     } catch (e: unknown) {
       toast({ title: 'Gagal import', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
@@ -466,6 +554,24 @@ const ImportPage: React.FC = () => {
             {progress && <span className="text-sm text-muted-foreground">{progress}</span>}
             </div>
           </div>
+        </Card>
+      )}
+
+      {importReport && (
+        <Card className="p-6 mb-4 border-primary/30 bg-primary/5">
+          <h3 className="font-semibold mb-2">Hasil Import Terakhir</h3>
+          <p className="text-sm text-muted-foreground mb-3">{importReport.summary}</p>
+          {importReport.details.length > 0 && (
+            <div className="rounded-md border bg-background p-3">
+              <p className="text-sm font-medium mb-2">Contoh data yang dilewati:</p>
+              <ul className="text-xs text-muted-foreground space-y-1 max-h-48 overflow-auto">
+                {importReport.details.map((detail) => <li key={detail}>• {detail}</li>)}
+              </ul>
+              {importReport.skipped > importReport.details.length && (
+                <p className="text-xs text-muted-foreground mt-2">Dan {importReport.skipped - importReport.details.length} baris lain.</p>
+              )}
+            </div>
+          )}
         </Card>
       )}
 
