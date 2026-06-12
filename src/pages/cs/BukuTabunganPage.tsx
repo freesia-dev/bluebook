@@ -93,6 +93,40 @@ const BukuTabunganPage: React.FC = () => {
     XLSX.writeFile(wb, 'Register_Buku_Tabungan.xlsx');
   };
 
+  const handleImport = async (rows: Record<string, unknown>[]): Promise<ImportResult> => {
+    const res: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+    const produkLookup = new Map<string, CSBukuProduk>();
+    (Object.keys(BUKU_PRODUK_LABELS) as CSBukuProduk[]).forEach((k) => {
+      produkLookup.set(k.toLowerCase(), k);
+      produkLookup.set(BUKU_PRODUK_LABELS[k].toLowerCase(), k);
+    });
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const tipeRaw = asString(pick(row, 'Tipe')).toLowerCase();
+        const tipe: CSMutasiTipe = tipeRaw.startsWith('kel') ? 'keluar' : 'masuk';
+        const produkRaw = asString(pick(row, 'Produk')).toLowerCase();
+        const produk = produkLookup.get(produkRaw) || null;
+        if (!produk) { res.errors.push(`Baris ${i + 2}: Produk tidak dikenali (${asString(pick(row, 'Produk'))})`); continue; }
+        const jumlah = asNumber(pick(row, 'Jumlah')) || 1;
+        const tanggal = asDate(pick(row, 'Tanggal'));
+        await addBuku({
+          tipe, produk, jumlah, tanggal,
+          cif: asString(pick(row, 'CIF')) || null,
+          nama: asString(pick(row, 'Nama')) || null,
+          nomor_rekening: asString(pick(row, 'Rekening', 'Nomor Rekening')) || null,
+          nomor_seri: asString(pick(row, 'Nomor Seri', 'No Seri')) || null,
+          keterangan: asString(pick(row, 'Keterangan')) || null,
+          user_input: userName,
+        });
+        res.inserted++;
+      } catch (e: unknown) {
+        res.errors.push(`Baris ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return res;
+  };
+
   const FormBody = (
     <div className="space-y-3 py-3">
       <div className="grid grid-cols-2 gap-3">
