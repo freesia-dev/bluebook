@@ -286,7 +286,7 @@ const ImportPage: React.FC = () => {
           const kredit = pickField(row, ['REKENING KREDIT', 'REK KREDIT', 'KREDIT']);
           if (!kode || !debet || !kredit) { skipped++; continue; }
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          const nominal = Number(pickField(row, ['NOMINAL', 'JUMLAH']).replace(/[^0-9.-]/g, '')) || 0;
+          const nominal = parseMoney(pickField(row, ['NOMINAL', 'JUMLAH']));
           const mulai = parseDate(pickField(row, ['TANGGAL MULAI', 'TGL MULAI', 'MULAI']));
           const berakhirRaw = pickField(row, ['TANGGAL BERAKHIR', 'TGL BERAKHIR', 'BERAKHIR', 'TGL AKHIR']);
           const status = (pickField(row, ['STATUS']) || 'aktif').toLowerCase();
@@ -329,7 +329,56 @@ const ImportPage: React.FC = () => {
         }
       }
 
-      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${skipped} dilewati.` });
+      // 5) Import Logbook Kartu ATM
+      for (const [sheetName, rows] of Object.entries(sheets)) {
+        if (mapping[sheetName] !== 'kartu_atm') continue;
+        setProgress(`Import Kartu ATM: ${rows.length} baris`);
+        for (const row of rows) {
+          const tipeRaw = pickField(row, ['TIPE', 'MUTASI', 'JENIS']).toLowerCase();
+          const tipe: 'masuk' | 'keluar' = tipeRaw.includes('keluar') ? 'keluar' : 'masuk';
+          const jenis_kartu = detectKartuJenis(pickField(row, ['JENIS KARTU', 'PRODUK', 'JENIS']));
+          const jumlah = Number(pickField(row, ['JUMLAH', 'QTY'])) || 1;
+          const tanggal = parseDate(pickField(row, ['TANGGAL', 'TGL']));
+          try {
+            await addKartuMutasi({
+              tipe, jenis_kartu, jumlah, tanggal,
+              keterangan: pickField(row, ['KETERANGAN']) || null,
+              user_input: userName,
+            });
+            totalKartu++;
+          } catch { skipped++; }
+        }
+      }
+
+      // 6) Import Bilyet Deposito
+      for (const [sheetName, rows] of Object.entries(sheets)) {
+        if (mapping[sheetName] !== 'bilyet_deposito') continue;
+        setProgress(`Import Bilyet Deposito: ${rows.length} baris`);
+        let nomorCounter = 1;
+        for (const row of rows) {
+          const nomor_bilyet = pickField(row, ['NOMOR BILYET', 'NO BILYET', 'BILYET']);
+          const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
+          if (!nomor_bilyet || !nama) { skipped++; continue; }
+          try {
+            await addBilyet({
+              nomor_urut: Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++,
+              nomor_bilyet,
+              cif: pickField(row, ['CIF', 'NOMOR CIF']) || null,
+              nama,
+              nominal: parseMoney(pickField(row, ['NOMINAL', 'JUMLAH'])),
+              jangka_waktu_bulan: Number(pickField(row, ['JANGKA WAKTU', 'TENOR', 'BULAN'])) || null,
+              tanggal_terbit: parseDate(pickField(row, ['TANGGAL TERBIT', 'TGL TERBIT', 'TANGGAL'])),
+              tanggal_jatuh_tempo: pickField(row, ['TANGGAL JATUH TEMPO', 'JATUH TEMPO', 'TGL JT']) ? parseDate(pickField(row, ['TANGGAL JATUH TEMPO', 'JATUH TEMPO', 'TGL JT'])) : null,
+              status: detectBilyetStatus(pickField(row, ['STATUS'])),
+              keterangan: pickField(row, ['KETERANGAN']) || null,
+              user_input: userName,
+            });
+            totalBilyet++;
+          } catch { skipped++; }
+        }
+      }
+
+      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${totalKartu} kartu ATM, ${totalBilyet} bilyet, ${skipped} dilewati.` });
       setProgress('');
       setSheets({});
       setMapping({});
