@@ -44,6 +44,7 @@ const ImportPage: React.FC = () => {
   const { isAdmin, userName } = useAuth();
   const [sheets, setSheets] = useState<Record<string, any[]>>({});
   const [mapping, setMapping] = useState<Record<string, SheetKind | 'skip'>>({});
+  const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<string>('');
 
@@ -52,6 +53,9 @@ const ImportPage: React.FC = () => {
   const detectKind = (name: string): SheetKind | 'skip' => {
     const n = name.toLowerCase();
     if (n.includes('cif') || n.includes('nasabah')) return 'cif';
+    if (n.includes('kartu') || n.includes('atm')) return 'kartu_atm';
+    if (n.includes('bilyet') && n.includes('deposito')) return 'bilyet_deposito';
+    if (n.includes('buku tab') || n.includes('register buku')) return 'buku_tabungan';
     if (n.includes('simpeda ib') || n.includes('simpeda_ib') || n.includes('simpedaib')) return 'simpeda_ib';
     if (n.includes('simpeda')) return 'simpeda';
     if (n.includes('prama')) return 'prama';
@@ -60,9 +64,48 @@ const ImportPage: React.FC = () => {
     if (n.includes('giro')) return 'giro';
     if (n.includes('amin') || n.includes('alamin')) return 'alamin';
     if (n.includes('taspen')) return 'taspen';
-    if (n.includes('buku tab') || n.includes('register buku')) return 'buku_tabungan';
+    if (n.includes('rekening') || n.includes('tabungan')) return 'rekening_auto';
     if (n === 'si' || n.includes('si new') || n.includes('standing')) return 'si';
     return 'skip';
+  };
+
+  const normalize = (value: unknown) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const detectRekeningProduk = (row: any, fallback?: SheetKind | 'skip'): CSProduk | null => {
+    if (fallback && REKENING_PRODUK_KEYS.includes(fallback as CSProduk)) return fallback as CSProduk;
+    const values = Object.entries(row)
+      .filter(([key]) => ['produk', 'jenis produk', 'jenis tabungan', 'jenis rekening', 'product', 'keterangan'].some((k) => normalize(key) === normalize(k)))
+      .map(([, value]) => normalize(value))
+      .join(' ');
+    const allText = `${values} ${normalize(Object.values(row).slice(0, 8).join(' '))}`;
+    if (allText.includes('simpedaib')) return 'simpeda_ib';
+    if (allText.includes('simpeda')) return 'simpeda';
+    if (allText.includes('prama')) return 'prama';
+    if (allText.includes('simpel')) return 'simpel';
+    if (allText.includes('tabunganku')) return 'tabunganku';
+    if (allText.includes('giro')) return 'giro';
+    if (allText.includes('alamin') || allText.includes('amin')) return 'alamin';
+    if (allText.includes('taspen')) return 'taspen';
+    return null;
+  };
+
+  const getImportStats = () => {
+    const stats: Record<string, number> = {};
+    let skippedSheets = 0;
+    Object.entries(sheets).forEach(([sheetName, rows]) => {
+      const kind = mapping[sheetName];
+      if (!kind || kind === 'skip') { skippedSheets++; return; }
+      if (kind === 'rekening_auto') {
+        rows.forEach((row) => {
+          const produk = detectRekeningProduk(row);
+          const key = produk ? `Rekening ${PRODUK_LABELS[produk]}` : 'Rekening belum terdeteksi';
+          stats[key] = (stats[key] || 0) + 1;
+        });
+        return;
+      }
+      stats[SHEET_LABELS[kind]] = (stats[SHEET_LABELS[kind]] || 0) + rows.length;
+    });
+    return { stats, skippedSheets };
   };
 
   const handleFile = async (file: File) => {
