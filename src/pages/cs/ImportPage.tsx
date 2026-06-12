@@ -206,8 +206,12 @@ const ImportPage: React.FC = () => {
 
   const handleImport = async () => {
     setImporting(true);
-    let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, skipped = 0;
+    let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, totalKartu = 0, totalBilyet = 0, skipped = 0;
     try {
+      if (overwrite) {
+        setProgress('Menghapus data lama sesuai mapping...');
+        await wipeMappedTargets();
+      }
       const existingCif = await getCifList();
       const cifMap = new Map(existingCif.map((c) => [c.cif, c.id]));
       let nextCifNomor = existingCif.length > 0 ? Math.max(...existingCif.map((c) => c.nomor_urut)) + 1 : 1;
