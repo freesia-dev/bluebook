@@ -389,6 +389,8 @@ const ImportPage: React.FC = () => {
     }
   };
 
+  const { stats: importStats, skippedSheets } = getImportStats();
+
   return (
     <MainLayout>
       <PageHeader title="Import Data CS" description="Upload file Excel lama untuk import CIF, rekening, SI & buku tabungan" />
@@ -408,6 +410,18 @@ const ImportPage: React.FC = () => {
       {Object.keys(sheets).length > 0 && (
         <Card className="p-6 mb-4">
           <h3 className="font-semibold mb-3">Mapping Sheet → Tabel Tujuan</h3>
+          <Alert className="mb-4 border-primary/30 bg-primary/5">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Preview sebelum import</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {Object.entries(importStats).map(([label, count]) => (
+                  <Badge key={label} variant={label.includes('belum') ? 'destructive' : 'secondary'}>{label}: {count}</Badge>
+                ))}
+                {skippedSheets > 0 && <Badge variant="outline">{skippedSheets} sheet dilewati</Badge>}
+              </div>
+            </AlertDescription>
+          </Alert>
           <Table>
             <TableHeader><TableRow><TableHead>Sheet</TableHead><TableHead>Baris</TableHead><TableHead>Tujuan</TableHead><TableHead>Preview Kolom</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -433,12 +447,21 @@ const ImportPage: React.FC = () => {
               ))}
             </TableBody>
           </Table>
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex flex-col gap-3">
+            <label className="flex items-start gap-2 text-sm">
+              <Checkbox checked={overwrite} onCheckedChange={(checked) => setOverwrite(checked === true)} disabled={importing} />
+              <span>
+                <strong>Overwrite data sesuai mapping</strong><br />
+                <span className="text-muted-foreground">Hapus data lama pada tabel/produk yang dipilih lalu import ulang. Pakai ini untuk memperbaiki 114 Giro yang salah mapping.</span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2">
             <Button onClick={handleImport} disabled={importing}>
               {importing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-              Mulai Import
+              {overwrite ? 'Overwrite & Import' : 'Mulai Import'}
             </Button>
             {progress && <span className="text-sm text-muted-foreground">{progress}</span>}
+            </div>
           </div>
         </Card>
       )}
@@ -451,8 +474,11 @@ const ImportPage: React.FC = () => {
           <strong>Tips kolom yang dikenali:</strong>
           <br />• <strong>CIF</strong>: <code>CIF</code>, <code>NAMA</code>
           <br />• <strong>Rekening (per produk)</strong>: <code>NOMOR REKENING</code>, <code>NAMA</code>, opsional <code>CIF</code> + <code>TANGGAL BUKA</code>
+          <br />• <strong>Rekening auto</strong>: jika 1 sheet campuran, pilih <code>Rekening — Auto Produk per Baris</code> dan pastikan ada kolom <code>PRODUK</code>/<code>JENIS REKENING</code>
           <br />• <strong>SI</strong>: <code>KODE SI</code>, <code>REKENING DEBET</code>, <code>REKENING KREDIT</code>, <code>NOMINAL</code>, <code>TANGGAL MULAI</code>, <code>TANGGAL BERAKHIR</code>, opsional <code>NAMA</code>, <code>STATUS</code>
           <br />• <strong>Buku Tabungan</strong>: <code>TIPE</code> (masuk/keluar), <code>PRODUK</code>, <code>JUMLAH</code>, <code>TANGGAL</code>, opsional <code>NOMOR SERI</code>, <code>CIF</code>, <code>NAMA</code>, <code>NOMOR REKENING</code>
+          <br />• <strong>Kartu ATM</strong>: <code>TIPE</code> (masuk/keluar), <code>JENIS KARTU</code>, <code>JUMLAH</code>, <code>TANGGAL</code>
+          <br />• <strong>Bilyet Deposito</strong>: <code>NOMOR BILYET</code>, <code>NAMA</code>, <code>NOMINAL</code>, <code>TANGGAL TERBIT</code>, opsional <code>JATUH TEMPO</code>
           <br />Data yang sudah ada (CIF, rekening per produk, kode SI) akan dilewati otomatis untuk hindari duplikat.
         </p>
       </Card>
