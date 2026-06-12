@@ -54,6 +54,7 @@ const ImportPage: React.FC = () => {
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<string>('');
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
 
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
@@ -237,6 +238,12 @@ const ImportPage: React.FC = () => {
 
   const parseMoney = (s: string): number => Number(String(s || '').replace(/[^0-9.-]/g, '')) || 0;
 
+  const rowLabel = (sheetName: string, row: ExcelRow) => `${sheetName} baris ${Number(row[ROW_NUMBER_KEY]) || '?'}`;
+
+  const addSkip = (details: string[], sheetName: string, row: ExcelRow, reason: string) => {
+    if (details.length < 30) details.push(`${rowLabel(sheetName, row)}: ${reason}`);
+  };
+
   const detectBukuProduk = (s: string): CSBukuProduk | null => {
     const n = (s || '').toLowerCase();
     if (n.includes('simpeda ib') || n.includes('simpedaib')) return 'simpeda_ib';
@@ -289,6 +296,7 @@ const ImportPage: React.FC = () => {
   const handleImport = async () => {
     setImporting(true);
     let totalCif = 0, totalRek = 0, totalSi = 0, totalBuku = 0, totalKartu = 0, totalBilyet = 0, skipped = 0;
+    const skippedDetails: string[] = [];
     try {
       if (overwrite) {
         setProgress('Menghapus data lama sesuai mapping...');
@@ -305,14 +313,14 @@ const ImportPage: React.FC = () => {
         for (const row of rows) {
           const cif = pickField(row, ['CIF', 'NOMOR CIF', 'NO CIF']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          if (!cif || !nama) { skipped++; continue; }
-          if (cifMap.has(cif)) { skipped++; continue; }
+          if (!cif || !nama) { skipped++; addSkip(skippedDetails, sheetName, row, 'CIF/Nama kosong atau nama kolom belum cocok'); continue; }
+          if (cifMap.has(cif)) { skipped++; addSkip(skippedDetails, sheetName, row, `CIF ${cif} sudah ada`); continue; }
           const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nextCifNomor++;
           try {
             await addCif({ nomor_urut: nomor, cif, nama, tanggal_input: new Date().toISOString().slice(0, 10), user_input: userName });
             totalCif++;
             cifMap.set(cif, 'pending');
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -327,11 +335,11 @@ const ImportPage: React.FC = () => {
         setProgress(`Import rekening: ${sheetName} (${rows.length} baris)`);
         for (const row of rows) {
           const produk = detectRekeningProduk(row, kind);
-          if (!produk) { skipped++; continue; }
+          if (!produk) { skipped++; addSkip(skippedDetails, sheetName, row, 'Produk rekening tidak terdeteksi'); continue; }
           counters[produk] = counters[produk] || 1;
           const norek = pickField(row, ['NOMOR REKENING', 'NO REKENING', 'REKENING', 'NO REK']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          if (!norek || !nama) { skipped++; continue; }
+          if (!norek || !nama) { skipped++; addSkip(skippedDetails, sheetName, row, 'Nomor rekening/Nama kosong atau nama kolom belum cocok'); continue; }
           const cif = pickField(row, ['CIF', 'NOMOR CIF']);
           const tanggal_buka = parseDate(pickField(row, ['TANGGAL', 'TGL BUKA', 'TANGGAL BUKA']));
           const nomor = Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || counters[produk]!++;
@@ -344,7 +352,7 @@ const ImportPage: React.FC = () => {
               const fresh = await getCifList();
               const found = fresh.find((c) => c.cif === cif);
               if (found) { cif_id = found.id; cifIdMap.set(cif, found.id); }
-            } catch { /* ignore */ }
+            } catch { /* ignore CIF auto-create */ }
           }
           try {
             await addRekening({
@@ -353,7 +361,7 @@ const ImportPage: React.FC = () => {
               keterangan: null, user_input: userName,
             });
             totalRek++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -366,7 +374,7 @@ const ImportPage: React.FC = () => {
           const kode = pickField(row, ['KODE SI', 'KODE', 'NO SI']);
           const debet = pickField(row, ['REKENING DEBET', 'REK DEBET', 'DEBET']);
           const kredit = pickField(row, ['REKENING KREDIT', 'REK KREDIT', 'KREDIT']);
-          if (!kode || !debet || !kredit) { skipped++; continue; }
+          if (!kode || !debet || !kredit) { skipped++; addSkip(skippedDetails, sheetName, row, 'Kode SI/Rekening debet/Rekening kredit kosong atau nama kolom belum cocok'); continue; }
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
           const nominal = parseMoney(pickField(row, ['NOMINAL', 'JUMLAH']));
           const mulai = parseDate(pickField(row, ['TANGGAL MULAI', 'TGL MULAI', 'MULAI']));
@@ -382,7 +390,7 @@ const ImportPage: React.FC = () => {
               status, keterangan: ket || null, user_input: userName,
             });
             totalSi++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -407,7 +415,7 @@ const ImportPage: React.FC = () => {
               user_input: userName,
             });
             totalBuku++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -428,7 +436,7 @@ const ImportPage: React.FC = () => {
               user_input: userName,
             });
             totalKartu++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
@@ -440,7 +448,7 @@ const ImportPage: React.FC = () => {
         for (const row of rows) {
           const nomor_bilyet = pickField(row, ['NOMOR BILYET', 'NO BILYET', 'BILYET']);
           const nama = pickField(row, ['NAMA', 'NAMA NASABAH']);
-          if (!nomor_bilyet || !nama) { skipped++; continue; }
+          if (!nomor_bilyet || !nama) { skipped++; addSkip(skippedDetails, sheetName, row, 'Nomor bilyet/Nama kosong atau nama kolom belum cocok'); continue; }
           try {
             await addBilyet({
               nomor_urut: Number(pickField(row, ['NO', 'NOMOR', 'URUT'])) || nomorCounter++,
@@ -456,14 +464,14 @@ const ImportPage: React.FC = () => {
               user_input: userName,
             });
             totalBilyet++;
-          } catch { skipped++; }
+          } catch (e: unknown) { skipped++; addSkip(skippedDetails, sheetName, row, getErrorMessage(e)); }
         }
       }
 
-      toast({ title: 'Import selesai', description: `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${totalKartu} kartu ATM, ${totalBilyet} bilyet, ${skipped} dilewati.` });
+      const summary = `${totalCif} CIF, ${totalRek} rekening, ${totalSi} SI, ${totalBuku} buku, ${totalKartu} kartu ATM, ${totalBilyet} bilyet, ${skipped} dilewati.`;
+      setImportReport({ summary, skipped, details: skippedDetails });
+      toast({ title: 'Import selesai', description: summary });
       setProgress('');
-      setSheets({});
-      setMapping({});
     } catch (e: unknown) {
       toast({ title: 'Gagal import', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
