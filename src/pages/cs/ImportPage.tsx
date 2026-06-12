@@ -385,8 +385,8 @@ const ImportPage: React.FC = () => {
       setProgress('');
       setSheets({});
       setMapping({});
-    } catch (e: any) {
-      toast({ title: 'Gagal import', description: e.message, variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({ title: 'Gagal import', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
       setImporting(false);
     }
@@ -433,7 +433,7 @@ const ImportPage: React.FC = () => {
                   <TableCell className="font-medium">{name}</TableCell>
                   <TableCell><Badge variant="secondary">{rows.length}</Badge></TableCell>
                   <TableCell>
-                    <Select value={mapping[name]} onValueChange={(v) => setMapping({ ...mapping, [name]: v as any })}>
+                    <Select value={mapping[name]} onValueChange={(v) => setMapping({ ...mapping, [name]: v as SheetKind | 'skip' })}>
                       <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="skip">— Lewati —</SelectItem>
@@ -515,8 +515,8 @@ const ResetPanel: React.FC = () => {
     try {
       const n = await t.fn();
       toast({ title: 'Berhasil dihapus', description: `${n} baris pada ${t.label} dihapus. Silakan re-import.` });
-    } catch (e: any) {
-      toast({ title: 'Gagal hapus', description: e.message, variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({ title: 'Gagal hapus', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
       setBusy(null);
     }
