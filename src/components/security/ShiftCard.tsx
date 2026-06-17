@@ -47,6 +47,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
   const [entryOpen, setEntryOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<SecurityLogEntry | null>(null);
   const [handoverOpen, setHandoverOpen] = useState(false);
+  const [editShiftOpen, setEditShiftOpen] = useState(false);
 
   const isMine = shift.nama_petugas && userRole !== 'pemimpin'; // pemimpin view-only
   const isActive = shift.status === 'aktif';
