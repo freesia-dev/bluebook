@@ -98,6 +98,11 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
             </>
           )}
           {isAdmin && (
+            <Button size="sm" variant="outline" className="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-800 text-white border-slate-700" onClick={() => setEditShiftOpen(true)}>
+              <Settings className="w-4 h-4 mr-1" />Edit Shift
+            </Button>
+          )}
+          {isAdmin && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" variant="outline" className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white border-red-600">
