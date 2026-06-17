@@ -234,6 +234,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
 
       <EntryDialog open={entryOpen} onOpenChange={setEntryOpen} shift={shift} entry={editEntry} />
       <HandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} shift={shift} />
+      {isAdmin && <EditShiftDialog open={editShiftOpen} onOpenChange={setEditShiftOpen} shift={shift} />}
     </Card>
   );
 };
