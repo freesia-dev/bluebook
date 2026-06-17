@@ -53,6 +53,32 @@ export const useDeleteShift = () => {
   });
 };
 
+export const useUpdateShift = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      tanggal?: string;
+      shift?: 'pagi' | 'sore' | 'malam';
+      nama_petugas?: string;
+      petugas_user_id?: string | null;
+      jam_mulai?: string;
+      jam_selesai?: string | null;
+      is_lembur?: boolean;
+      kondisi_akhir?: string | null;
+      serah_terima_ke_nama?: string | null;
+      catatan_serah_terima?: string | null;
+    }) => {
+      const { id, ...rest } = payload;
+      const { error } = await supabase.from('security_shift' as any).update(rest).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['security-shifts'] });
+    },
+  });
+};
+
 export type ShiftType = 'pagi' | 'sore' | 'malam';
 export type ShiftStatus = 'aktif' | 'selesai';
 export type EntryJenis = 'kejadian' | 'serah_terima' | 'mulai_shift' | 'akhir_shift';

@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { EntryDialog } from './EntryDialog';
 import { HandoverDialog } from './HandoverDialog';
-import { Plus, Pencil, Trash2, ArrowRightLeft, Video, ShieldCheck, Clock, Flag } from 'lucide-react';
+import { EditShiftDialog } from './EditShiftDialog';
+import { Plus, Pencil, Trash2, ArrowRightLeft, Video, ShieldCheck, Clock, Flag, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,6 +47,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
   const [entryOpen, setEntryOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<SecurityLogEntry | null>(null);
   const [handoverOpen, setHandoverOpen] = useState(false);
+  const [editShiftOpen, setEditShiftOpen] = useState(false);
 
   const isMine = shift.nama_petugas && userRole !== 'pemimpin'; // pemimpin view-only
   const isActive = shift.status === 'aktif';
@@ -94,6 +96,11 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
                 <ArrowRightLeft className="w-4 h-4 mr-1" />Akhiri & Serah Terima
               </Button>
             </>
+          )}
+          {isAdmin && (
+            <Button size="sm" variant="outline" className="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-800 text-white border-slate-700" onClick={() => setEditShiftOpen(true)}>
+              <Settings className="w-4 h-4 mr-1" />Edit Shift
+            </Button>
           )}
           {isAdmin && (
             <AlertDialog>
@@ -227,6 +234,7 @@ export const ShiftCard: React.FC<Props> = ({ shift, insidenOnly }) => {
 
       <EntryDialog open={entryOpen} onOpenChange={setEntryOpen} shift={shift} entry={editEntry} />
       <HandoverDialog open={handoverOpen} onOpenChange={setHandoverOpen} shift={shift} />
+      {isAdmin && <EditShiftDialog open={editShiftOpen} onOpenChange={setEditShiftOpen} shift={shift} />}
     </Card>
   );
 };
