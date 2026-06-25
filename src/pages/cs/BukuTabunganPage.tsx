@@ -16,6 +16,7 @@ import { addBuku, BUKU_PRODUK_LABELS, CSBukuProduk, CSBukuTabungan, CSMutasiTipe
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { CSDeleteAllButton } from '@/components/cs/CSDeleteAllButton';
 import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const BukuTabunganPage: React.FC = () => {
@@ -207,6 +208,7 @@ const BukuTabunganPage: React.FC = () => {
           onImport={handleImport}
           onDone={load}
         />
+        <CSDeleteAllButton table="cs_buku_tabungan" label="Register Buku Tabungan" onDone={load} />
       </div>
       <DataTable
         data={data}

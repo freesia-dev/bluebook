@@ -17,6 +17,7 @@ import { addKartuMutasi, calcStokKartu, CSJenisKartu, CSKartuMutasi, CSMutasiTip
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CSImportButton, ImportResult } from '@/components/cs/CSImportButton';
+import { CSDeleteAllButton } from '@/components/cs/CSDeleteAllButton';
 import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const KartuATMPage: React.FC = () => {
@@ -182,6 +183,7 @@ const KartuATMPage: React.FC = () => {
               onImport={handleImport}
               onDone={load}
             />
+            <CSDeleteAllButton table="cs_kartu_atm_mutasi" label="Mutasi Kartu ATM" onDone={load} />
           </div>
           <DataTable
             data={data}

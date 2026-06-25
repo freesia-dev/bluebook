@@ -14,6 +14,7 @@ import { addRekening, CSProduk, CSRekening, deleteRekening, getCifList, getNextR
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { CSDeleteAllButton } from '@/components/cs/CSDeleteAllButton';
 import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 interface Props {
@@ -214,6 +215,12 @@ const RekeningPage: React.FC<Props> = ({ produk }) => {
           ]}
           notes={`Khusus produk ${PRODUK_LABELS[produk]}. Nomor rekening wajib unik. CIF yang belum terdaftar akan otomatis dibuatkan stub di master CIF.`}
           onImport={handleImport}
+          onDone={load}
+        />
+        <CSDeleteAllButton
+          table="cs_rekening"
+          label={`Rekening ${PRODUK_LABELS[produk]}`}
+          filter={{ produk }}
           onDone={load}
         />
       </div>
