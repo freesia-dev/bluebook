@@ -16,6 +16,7 @@ import { addBilyet, CSBilyet, CSDepositoStatus, deleteBilyet, getBilyetList, get
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { CSDeleteAllButton } from '@/components/cs/CSDeleteAllButton';
 import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const STATUS_LABELS: Record<CSDepositoStatus, string> = { aktif: 'Aktif', cair: 'Cair', pindah: 'Pindah' };
@@ -190,6 +191,7 @@ const BilyetDepositoPage: React.FC = () => {
           onImport={handleImport}
           onDone={load}
         />
+        <CSDeleteAllButton table="cs_bilyet_deposito" label="Bilyet Deposito" onDone={load} />
       </div>
       <DataTable
         data={data}

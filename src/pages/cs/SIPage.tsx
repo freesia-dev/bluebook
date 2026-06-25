@@ -15,6 +15,7 @@ import { addSi, CSSi, deleteSi, getNextSiNomor, getSiList, updateSi } from '@/li
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { CSDeleteAllButton } from '@/components/cs/CSDeleteAllButton';
 import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const emptyForm = {
@@ -190,6 +191,7 @@ const SIPage: React.FC = () => {
           onImport={handleImport}
           onDone={load}
         />
+        <CSDeleteAllButton table="cs_si" label="Standing Instruction" onDone={load} />
       </div>
       <DataTable
         data={data}

@@ -13,6 +13,7 @@ import { addCif, CSCif, deleteCif, getCifList, getNextCifNomor, getNextCifText, 
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CSImportButton, ImportMode, ImportResult } from '@/components/cs/CSImportButton';
+import { CSDeleteAllButton } from '@/components/cs/CSDeleteAllButton';
 import { asDate, asNumber, asString, pick } from '@/lib/cs-import-helpers';
 
 const CIFPage: React.FC = () => {
@@ -129,6 +130,7 @@ const CIFPage: React.FC = () => {
           onImport={handleImport}
           onDone={load}
         />
+        <CSDeleteAllButton table="cs_cif" label="CIF Nasabah" onDone={load} />
       </div>
       <DataTable
         data={data}
