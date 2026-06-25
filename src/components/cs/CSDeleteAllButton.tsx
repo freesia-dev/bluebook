@@ -46,10 +46,10 @@ export const CSDeleteAllButton: React.FC<Props> = ({ table, label, onDone, filte
     }
     setLoading(true);
     try {
-      let q = supabase.from(table).delete().not('id', 'is', null);
-      if (filter) {
-        for (const [k, v] of Object.entries(filter)) q = q.eq(k, v);
-      }
+      const base: any = supabase.from(table).delete().not('id', 'is', null);
+      const q = filter
+        ? Object.entries(filter).reduce((acc: any, [k, v]) => acc.eq(k, v), base)
+        : base;
       const { error } = await q;
       if (error) throw error;
       toast({ title: 'Berhasil', description: `Semua data ${label} telah dihapus.` });
