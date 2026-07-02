@@ -1325,18 +1325,18 @@ const KalkulatorPage: React.FC = () => {
                   <hr className="my-2" />
                   <div className="text-xs uppercase text-muted-foreground font-semibold">Potongan di Muka</div>
                   <Row
-                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}${
+                    label={`Asuransi Jiwa${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ' (Pialang)'}${
                       cerdasResult && cerdasResult.skema !== 'top_up'
                         ? cerdasResult.selisihDebitur === 0
                           ? ' — GRATIS'
                           : ' — selisih'
                         : ''
                     }`}
-                    value={fmtRp(potongan.asuransi)}
+                    value={fmtRp(asuransiJiwaBeban)}
                   />
                   {cerdasResult && cerdasResult.skema !== 'top_up' && (
                     <div className="text-xs pl-3 -mt-1 space-y-0.5">
-                      <div className="text-muted-foreground">Premi aktual: {fmtRp(cerdasResult.premiAsuransiAktual)}</div>
+                      <div className="text-muted-foreground">Premi jiwa aktual: {fmtRp(cerdasResult.premiAsuransiAktual)}</div>
                       <div className="text-emerald-700 dark:text-emerald-400 font-medium">
                         Subsidi bank: − {fmtRp(cerdasResult.subsidiBank)} (cap {fmtRp(cerdasResult.capSubsidi)})
                       </div>
@@ -1347,6 +1347,8 @@ const KalkulatorPage: React.FC = () => {
                       ujroh net {fmtRp(alamin.ujrohNet)} · premi net {fmtRp(alamin.premiNet)}
                     </div>
                   )}
+                  <Row label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
+                  <Row label="Total Asuransi" value={fmtRp(potongan.asuransi)} />
                   <Row label="Provisi" value={fmtRp(potongan.provisi)} />
                   <Row label="Notaris" value={fmtRp(potongan.notaris)} />
                   <Row label="Perikatan" value={fmtRp(potongan.perikatan)} />
