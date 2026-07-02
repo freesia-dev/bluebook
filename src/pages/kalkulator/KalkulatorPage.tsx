@@ -1366,12 +1366,15 @@ const KalkulatorPage: React.FC = () => {
                   )}
                   <Row label="Dana Diterima" value={fmtRp(danaBersih)} strong highlight />
 
-                  <div className="grid grid-cols-2 gap-2 pt-3">
-                    <Button variant="outline" onClick={handleExportExcel}>
+                  <div className="grid grid-cols-3 gap-2 pt-3">
+                    <Button variant="outline" size="sm" onClick={handleExportExcel}>
                       <Download className="w-4 h-4 mr-1" /> Excel
                     </Button>
-                    <Button variant="outline" onClick={handleExportPdf}>
+                    <Button variant="outline" size="sm" onClick={handleExportPdf}>
                       <FileText className="w-4 h-4 mr-1" /> PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportJpg}>
+                      <ImageIcon className="w-4 h-4 mr-1" /> JPG
                     </Button>
                   </div>
                   {canEdit && (
