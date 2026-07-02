@@ -1451,6 +1451,89 @@ const KalkulatorPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* HIDDEN HD SUMMARY CARD — dipakai untuk export JPG (di-render off-screen) */}
+      <div style={{ position: 'fixed', left: '-10000px', top: 0, pointerEvents: 'none' }}>
+        {result && potongan && (
+          <div
+            ref={jpgCardRef}
+            style={{
+              width: 900,
+              padding: 40,
+              background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              color: '#0f172a',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20, borderBottom: '2px solid #003f7f' }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#003f7f', letterSpacing: -0.5 }}>Simulasi Kredit</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
+                  {selectedProduct?.nama || 'Produk Kredit'} · {namaDebitur || '—'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b' }}>Bankaltimtara</div>
+                <div style={{ fontSize: 12, color: '#003f7f', fontWeight: 600 }}>KCP Telihan</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
+              <JRow label="Skema" value={skema.toUpperCase()} />
+              {cerdasResult && (
+                <JRow label="✨ CERDAS" value={cerdasResult.skemaLabel} accent="#d97706" />
+              )}
+              <JRow label="Plafon" value={fmtRp(plafon)} />
+              <JRow label="Tenor" value={`${tenorBulan} bulan`} />
+              <JRow label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} accent={cerdasResult ? '#d97706' : undefined} />
+              {gaji > 0 && <JRow label="DSR" value={`${dsrPct.toFixed(1)}%`} />}
+            </div>
+
+            <div style={{ marginTop: 24, padding: 20, background: '#003f7f', color: '#fff', borderRadius: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.8 }}>Angsuran Pertama / Bulan</div>
+              <div style={{ fontSize: 36, fontWeight: 800, marginTop: 4 }}>{fmtRp(result.summary.angsuranPertama)}</div>
+              <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 12, opacity: 0.9 }}>
+                <span>Total Angsuran: <b>{fmtRp(result.summary.totalAngsuran)}</b></span>
+                <span>Total Bunga: <b>{fmtRp(result.summary.totalBunga)}</b></span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24 }}>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>Potongan di Muka</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <tbody>
+                  <JTr label={`Asuransi Jiwa (${asuransiProvider === 'alamin' ? 'Al-Amin' : 'Pialang'})`} value={fmtRp(asuransiJiwaBeban)} />
+                  {cerdasResult && cerdasResult.skema !== 'top_up' && (
+                    <>
+                      <JTrSub label="Premi aktual" value={fmtRp(cerdasResult.premiAsuransiAktual)} />
+                      <JTrSub label={`Subsidi bank (cap ${fmtRp(cerdasResult.capSubsidi)})`} value={`− ${fmtRp(cerdasResult.subsidiBank)}`} accent="#059669" />
+                    </>
+                  )}
+                  <JTr label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
+                  <JTr label="Provisi" value={fmtRp(potongan.provisi)} />
+                  <JTr label="Notaris" value={fmtRp(potongan.notaris)} />
+                  <JTr label="Perikatan" value={fmtRp(potongan.perikatan)} />
+                  <JTr label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
+                  <JTr label="Total Potongan" value={fmtRp(potongan.total)} bold />
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: 20, padding: 18, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.9 }}>Dana Diterima</div>
+                <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>{fmtRp(danaBersih)}</div>
+              </div>
+              <div style={{ fontSize: 40 }}>💰</div>
+            </div>
+
+            <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Simulasi · bukan dokumen perjanjian. Nilai dapat berubah sewaktu-waktu.</span>
+              <span>{new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} · AO: {namaAo || '-'}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </MainLayout>
   );
 };
