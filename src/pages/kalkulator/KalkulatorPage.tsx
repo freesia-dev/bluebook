@@ -42,7 +42,7 @@ import {
 } from '@/lib/cerdas-calc';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
-import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion, Sparkles, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
