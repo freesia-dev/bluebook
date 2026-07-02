@@ -46,9 +46,11 @@ import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldChe
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
 
+// 'manual' = Pialang Asuransi (nominal diinput manual); 'alamin' = perhitungan Al-Amin otomatis.
 type AsuransiProvider = 'manual' | 'alamin';
 
 const KalkulatorPage: React.FC = () => {
