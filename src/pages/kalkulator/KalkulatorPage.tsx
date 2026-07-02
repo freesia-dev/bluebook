@@ -1554,4 +1554,26 @@ const Row: React.FC<{ label: string; value: string; strong?: boolean; highlight?
   </div>
 );
 
+// ==== Helper components untuk kartu JPG (inline styles supaya kompatibel html2canvas) ====
+const JRow: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent }) => (
+  <div style={{ background: '#fff', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <span style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+    <span style={{ fontSize: 14, fontWeight: 700, color: accent ?? '#0f172a' }}>{value}</span>
+  </div>
+);
+
+const JTr: React.FC<{ label: string; value: string; bold?: boolean }> = ({ label, value, bold }) => (
+  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+    <td style={{ padding: '8px 0', color: bold ? '#0f172a' : '#475569', fontWeight: bold ? 700 : 400 }}>{label}</td>
+    <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: bold ? 700 : 500, color: '#0f172a' }}>{value}</td>
+  </tr>
+);
+
+const JTrSub: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent }) => (
+  <tr>
+    <td style={{ padding: '2px 0 6px 16px', fontSize: 12, color: '#64748b' }}>{label}</td>
+    <td style={{ padding: '2px 0 6px 0', fontSize: 12, textAlign: 'right', color: accent ?? '#64748b', fontWeight: accent ? 600 : 400 }}>{value}</td>
+  </tr>
+);
+
 export default KalkulatorPage;
