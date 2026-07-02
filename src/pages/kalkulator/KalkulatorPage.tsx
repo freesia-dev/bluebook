@@ -1179,84 +1179,109 @@ const KalkulatorPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-base">Asuransi</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Provider Asuransi</Label>
-                <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
-                  <SelectTrigger className="w-full md:w-80">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual (input nominal premi)</SelectItem>
-                    <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {asuransiProvider === 'manual' && (
-                <div>
-                  <Label>Nominal Premi Asuransi (Rp)</Label>
-                  <Input
-                    value={asuransiNominalStr}
-                    onChange={(e) => setAsuransiNominalStr(formatCurrencyInput(e.target.value))}
-                    placeholder="0"
-                    className="md:w-80"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Diambil dari quotation web pihak ketiga (input nominal langsung, bukan persen).
-                  </p>
-                </div>
-              )}
-
-              {asuransiProvider === 'alamin' && (
-                <div className="space-y-3">
-                  {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
-                    <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
-                    </p>
-                  )}
-                  {alamin ? (
-                    <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
-                        <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
-                        <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
-                        <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
-                        <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
-                        <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
-                        <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
-                        <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
-                      </div>
-                      {alamin.cappedToMin && (
-                        <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
-                      )}
+            <CardContent className="space-y-5">
+              {/* ==== Asuransi Jiwa (AJK) ==== */}
+              <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">Asuransi Jiwa (AJK)</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Kena subsidi Program CERDAS bila aktif.
                     </div>
-                  ) : (
-                    tanggalLahir && plafon > 0 && tenorBulan > 0 && (
-                      <p className="text-sm text-rose-600 flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
+                  </div>
+                  <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
+                    <SelectTrigger className="w-56">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Pialang Asuransi</SelectItem>
+                      <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {asuransiProvider === 'manual' && (
+                  <div>
+                    <Label>Premi Asuransi Jiwa (Rp) — Pialang</Label>
+                    <Input
+                      value={asuransiJiwaStr}
+                      onChange={(e) => setAsuransiJiwaStr(formatCurrencyInput(e.target.value))}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Nominal premi jiwa dari quotation Pialang Asuransi.
+                    </p>
+                  </div>
+                )}
+
+                {asuransiProvider === 'alamin' && (
+                  <div className="space-y-3">
+                    {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
+                      <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
                       </p>
-                    )
-                  )}
-                  {underwriting && (
-                    <div className="flex items-start gap-2">
-                      <Badge variant={uwBadgeVariant as any} className="gap-1">
-                        <UwIcon className="w-3 h-3" />
-                        {underwriting.kode}
-                      </Badge>
-                      <div className="text-sm">
-                        <div className="font-medium">{underwriting.keterangan}</div>
-                        <div className="text-xs text-muted-foreground">
-                          x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
-                          {!underwriting.xPlusNOk && ' — melebihi batas!'}
+                    )}
+                    {alamin ? (
+                      <div className="rounded-lg border bg-background p-4 space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
+                          <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                          <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
+                          <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
+                          <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
+                          <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
+                          <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
+                          <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
+                        </div>
+                        {alamin.cappedToMin && (
+                          <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
+                        )}
+                      </div>
+                    ) : (
+                      tanggalLahir && plafon > 0 && tenorBulan > 0 && (
+                        <p className="text-sm text-rose-600 flex items-center gap-1">
+                          <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
+                        </p>
+                      )
+                    )}
+                    {underwriting && (
+                      <div className="flex items-start gap-2">
+                        <Badge variant={uwBadgeVariant as any} className="gap-1">
+                          <UwIcon className="w-3 h-3" />
+                          {underwriting.kode}
+                        </Badge>
+                        <div className="text-sm">
+                          <div className="font-medium">{underwriting.keterangan}</div>
+                          <div className="text-xs text-muted-foreground">
+                            x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
+                            {!underwriting.xPlusNOk && ' — melebihi batas!'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ==== Asuransi Kredit ==== */}
+              <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
+                <div>
+                  <div className="text-sm font-semibold">Asuransi Kredit — Pialang Asuransi</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Nominal diisi manual. <strong>Tidak</strong> mendapatkan subsidi Program CERDAS.
+                  </div>
                 </div>
-              )}
+                <div>
+                  <Label>Premi Asuransi Kredit (Rp)</Label>
+                  <Input
+                    value={asuransiKreditStr}
+                    onChange={(e) => setAsuransiKreditStr(formatCurrencyInput(e.target.value))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
