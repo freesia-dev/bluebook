@@ -84,9 +84,10 @@ const KalkulatorPage: React.FC = () => {
   const [bunga, setBunga] = useState('');
   const [bungaMode, setBungaMode] = useState<'preset' | 'manual'>('preset');
 
-  // Asuransi
+  // Asuransi — dipisah 2: Kredit (kerugian, tanpa subsidi CERDAS) & Jiwa (AJK, kena subsidi CERDAS)
   const [asuransiProvider, setAsuransiProvider] = useState<AsuransiProvider>('manual');
-  const [asuransiNominalStr, setAsuransiNominalStr] = useState('');
+  const [asuransiJiwaStr, setAsuransiJiwaStr] = useState('');   // premi Asuransi Jiwa (manual/pialang) — dipakai jika provider = 'manual'
+  const [asuransiKreditStr, setAsuransiKreditStr] = useState(''); // premi Asuransi Kredit (selalu manual/pialang)
 
   const [provisi, setProvisi] = useState('0');
   const [provisiMode, setProvisiMode] = useState<'preset' | 'manual'>('preset');
