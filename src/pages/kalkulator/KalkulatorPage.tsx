@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,13 +42,15 @@ import {
 } from '@/lib/cerdas-calc';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
-import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion, Sparkles, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
 
+// 'manual' = Pialang Asuransi (nominal diinput manual); 'alamin' = perhitungan Al-Amin otomatis.
 type AsuransiProvider = 'manual' | 'alamin';
 
 const KalkulatorPage: React.FC = () => {
@@ -82,9 +84,10 @@ const KalkulatorPage: React.FC = () => {
   const [bunga, setBunga] = useState('');
   const [bungaMode, setBungaMode] = useState<'preset' | 'manual'>('preset');
 
-  // Asuransi
+  // Asuransi — dipisah 2: Kredit (kerugian, tanpa subsidi CERDAS) & Jiwa (AJK, kena subsidi CERDAS)
   const [asuransiProvider, setAsuransiProvider] = useState<AsuransiProvider>('manual');
-  const [asuransiNominalStr, setAsuransiNominalStr] = useState('');
+  const [asuransiJiwaStr, setAsuransiJiwaStr] = useState('');   // premi Asuransi Jiwa (manual/pialang) — dipakai jika provider = 'manual'
+  const [asuransiKreditStr, setAsuransiKreditStr] = useState(''); // premi Asuransi Kredit (selalu manual/pialang)
 
   const [provisi, setProvisi] = useState('0');
   const [provisiMode, setProvisiMode] = useState<'preset' | 'manual'>('preset');
@@ -152,29 +155,34 @@ const KalkulatorPage: React.FC = () => {
     return cekUnderwriting(umur, plafon, tenorBulan, alaminRules, alaminConfig?.x_plus_n_default);
   }, [asuransiProvider, alaminRules, umur, plafon, tenorBulan, alaminConfig]);
 
-  const premiAktual =
+  // Premi Asuransi Jiwa (AJK) — sumbernya Al-Amin atau input Pialang. INI YANG kena subsidi CERDAS.
+  const premiJiwaAktual =
     asuransiProvider === 'alamin'
       ? alamin?.premiGross ?? 0
-      : parseCurrencyValue(asuransiNominalStr);
+      : parseCurrencyValue(asuransiJiwaStr);
+  // Premi Asuransi Kredit — selalu input Pialang, TIDAK ada subsidi CERDAS.
+  const premiKredit = parseCurrencyValue(asuransiKreditStr);
 
-  // CERDAS apply (override bunga + provisi + asuransi nominal)
+  // CERDAS apply (subsidi khusus Asuransi Jiwa)
   const cerdasResult: CerdasApplyResult | null = useMemo(() => {
     if (!cerdasOn || !cerdasConfig) return null;
     return applyCerdas({
       skema: cerdasSkema,
       plafon,
-      premiAsuransiAktual: premiAktual,
+      premiAsuransiAktual: premiJiwaAktual,
       provisiPctAsli: provisiInput,
       cfg: cerdasConfig,
     });
-  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiAktual, provisiInput]);
+  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput]);
 
   const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
   const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
-  // Nominal asuransi yang masuk potongan: jika CERDAS subsidi AJK aktif, hanya selisih yang dibayar debitur
-  const asuransiNominal = cerdasResult
-    ? (cerdasResult.skema === 'top_up' ? premiAktual : cerdasResult.selisihDebitur)
-    : premiAktual;
+  // Beban asuransi jiwa yang dibayar debitur (setelah subsidi CERDAS, jika ada)
+  const asuransiJiwaBeban = cerdasResult
+    ? (cerdasResult.skema === 'top_up' ? premiJiwaAktual : cerdasResult.selisihDebitur)
+    : premiJiwaAktual;
+  // Total asuransi yang masuk potongan = Jiwa (setelah subsidi) + Kredit (tanpa subsidi)
+  const asuransiNominal = asuransiJiwaBeban + premiKredit;
 
   // Calculation
   const result = useMemo(() => {
@@ -297,8 +305,12 @@ const KalkulatorPage: React.FC = () => {
       ['Tenor (bulan)', tenorBulan],
       ['Tanggal Akad', tanggalAkad],
       ['Bunga p.a.', `${bungaPa}%`],
-      ['Provider Asuransi', asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Manual (input nominal)'],
-      ['Asuransi (Rp)', potongan.asuransi],
+      ['Sumber Asuransi Jiwa', asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Pialang Asuransi'],
+      ['Asuransi Jiwa — Premi Aktual (Rp)', premiJiwaAktual],
+      ['Asuransi Jiwa — Subsidi Bank (CERDAS)', cerdasResult && cerdasResult.skema !== 'top_up' ? cerdasResult.subsidiBank : 0],
+      ['Asuransi Jiwa — Beban Debitur (Rp)', asuransiJiwaBeban],
+      ['Asuransi Kredit — Pialang (Rp)', premiKredit],
+      ['Total Asuransi masuk potongan (Rp)', potongan.asuransi],
       ['Provisi', `${provisiPct}%`],
       ['Notaris', notaris],
       ['Perikatan', perikatan],
@@ -708,6 +720,28 @@ const KalkulatorPage: React.FC = () => {
 
     doc.save(`Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.pdf`);
   };
+
+  // ---- Export JPG (kartu ringkasan HD untuk dibagikan ke debitur) ----
+  const jpgCardRef = useRef<HTMLDivElement>(null);
+  const handleExportJpg = async () => {
+    if (!jpgCardRef.current) return;
+    try {
+      const canvas = await html2canvas(jpgCardRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+      });
+      const url = canvas.toDataURL('image/jpeg', 0.95);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.jpg`;
+      a.click();
+      toast({ title: 'Gambar simulasi diunduh' });
+    } catch (e: any) {
+      toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });
+    }
+  };
+
 
   const uwBadgeVariant = underwriting?.status === 'aman'
     ? 'success'
@@ -1171,84 +1205,109 @@ const KalkulatorPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-base">Asuransi</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Provider Asuransi</Label>
-                <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
-                  <SelectTrigger className="w-full md:w-80">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual (input nominal premi)</SelectItem>
-                    <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {asuransiProvider === 'manual' && (
-                <div>
-                  <Label>Nominal Premi Asuransi (Rp)</Label>
-                  <Input
-                    value={asuransiNominalStr}
-                    onChange={(e) => setAsuransiNominalStr(formatCurrencyInput(e.target.value))}
-                    placeholder="0"
-                    className="md:w-80"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Diambil dari quotation web pihak ketiga (input nominal langsung, bukan persen).
-                  </p>
-                </div>
-              )}
-
-              {asuransiProvider === 'alamin' && (
-                <div className="space-y-3">
-                  {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
-                    <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
-                    </p>
-                  )}
-                  {alamin ? (
-                    <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
-                        <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
-                        <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
-                        <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
-                        <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
-                        <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
-                        <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
-                        <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
-                      </div>
-                      {alamin.cappedToMin && (
-                        <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
-                      )}
+            <CardContent className="space-y-5">
+              {/* ==== Asuransi Jiwa (AJK) ==== */}
+              <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">Asuransi Jiwa (AJK)</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Kena subsidi Program CERDAS bila aktif.
                     </div>
-                  ) : (
-                    tanggalLahir && plafon > 0 && tenorBulan > 0 && (
-                      <p className="text-sm text-rose-600 flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
+                  </div>
+                  <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
+                    <SelectTrigger className="w-56">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Pialang Asuransi</SelectItem>
+                      <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {asuransiProvider === 'manual' && (
+                  <div>
+                    <Label>Premi Asuransi Jiwa (Rp) — Pialang</Label>
+                    <Input
+                      value={asuransiJiwaStr}
+                      onChange={(e) => setAsuransiJiwaStr(formatCurrencyInput(e.target.value))}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Nominal premi jiwa dari quotation Pialang Asuransi.
+                    </p>
+                  </div>
+                )}
+
+                {asuransiProvider === 'alamin' && (
+                  <div className="space-y-3">
+                    {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
+                      <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
                       </p>
-                    )
-                  )}
-                  {underwriting && (
-                    <div className="flex items-start gap-2">
-                      <Badge variant={uwBadgeVariant as any} className="gap-1">
-                        <UwIcon className="w-3 h-3" />
-                        {underwriting.kode}
-                      </Badge>
-                      <div className="text-sm">
-                        <div className="font-medium">{underwriting.keterangan}</div>
-                        <div className="text-xs text-muted-foreground">
-                          x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
-                          {!underwriting.xPlusNOk && ' — melebihi batas!'}
+                    )}
+                    {alamin ? (
+                      <div className="rounded-lg border bg-background p-4 space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
+                          <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                          <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
+                          <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
+                          <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
+                          <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
+                          <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
+                          <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
+                        </div>
+                        {alamin.cappedToMin && (
+                          <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
+                        )}
+                      </div>
+                    ) : (
+                      tanggalLahir && plafon > 0 && tenorBulan > 0 && (
+                        <p className="text-sm text-rose-600 flex items-center gap-1">
+                          <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
+                        </p>
+                      )
+                    )}
+                    {underwriting && (
+                      <div className="flex items-start gap-2">
+                        <Badge variant={uwBadgeVariant as any} className="gap-1">
+                          <UwIcon className="w-3 h-3" />
+                          {underwriting.kode}
+                        </Badge>
+                        <div className="text-sm">
+                          <div className="font-medium">{underwriting.keterangan}</div>
+                          <div className="text-xs text-muted-foreground">
+                            x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
+                            {!underwriting.xPlusNOk && ' — melebihi batas!'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ==== Asuransi Kredit ==== */}
+              <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
+                <div>
+                  <div className="text-sm font-semibold">Asuransi Kredit — Pialang Asuransi</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Nominal diisi manual. <strong>Tidak</strong> mendapatkan subsidi Program CERDAS.
+                  </div>
                 </div>
-              )}
+                <div>
+                  <Label>Premi Asuransi Kredit (Rp)</Label>
+                  <Input
+                    value={asuransiKreditStr}
+                    onChange={(e) => setAsuransiKreditStr(formatCurrencyInput(e.target.value))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -1292,18 +1351,18 @@ const KalkulatorPage: React.FC = () => {
                   <hr className="my-2" />
                   <div className="text-xs uppercase text-muted-foreground font-semibold">Potongan di Muka</div>
                   <Row
-                    label={`Asuransi${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ''}${
+                    label={`Asuransi Jiwa${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ' (Pialang)'}${
                       cerdasResult && cerdasResult.skema !== 'top_up'
                         ? cerdasResult.selisihDebitur === 0
                           ? ' — GRATIS'
                           : ' — selisih'
                         : ''
                     }`}
-                    value={fmtRp(potongan.asuransi)}
+                    value={fmtRp(asuransiJiwaBeban)}
                   />
                   {cerdasResult && cerdasResult.skema !== 'top_up' && (
                     <div className="text-xs pl-3 -mt-1 space-y-0.5">
-                      <div className="text-muted-foreground">Premi aktual: {fmtRp(cerdasResult.premiAsuransiAktual)}</div>
+                      <div className="text-muted-foreground">Premi jiwa aktual: {fmtRp(cerdasResult.premiAsuransiAktual)}</div>
                       <div className="text-emerald-700 dark:text-emerald-400 font-medium">
                         Subsidi bank: − {fmtRp(cerdasResult.subsidiBank)} (cap {fmtRp(cerdasResult.capSubsidi)})
                       </div>
@@ -1314,6 +1373,8 @@ const KalkulatorPage: React.FC = () => {
                       ujroh net {fmtRp(alamin.ujrohNet)} · premi net {fmtRp(alamin.premiNet)}
                     </div>
                   )}
+                  <Row label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
+                  <Row label="Total Asuransi" value={fmtRp(potongan.asuransi)} />
                   <Row label="Provisi" value={fmtRp(potongan.provisi)} />
                   <Row label="Notaris" value={fmtRp(potongan.notaris)} />
                   <Row label="Perikatan" value={fmtRp(potongan.perikatan)} />
@@ -1331,12 +1392,15 @@ const KalkulatorPage: React.FC = () => {
                   )}
                   <Row label="Dana Diterima" value={fmtRp(danaBersih)} strong highlight />
 
-                  <div className="grid grid-cols-2 gap-2 pt-3">
-                    <Button variant="outline" onClick={handleExportExcel}>
+                  <div className="grid grid-cols-3 gap-2 pt-3">
+                    <Button variant="outline" size="sm" onClick={handleExportExcel}>
                       <Download className="w-4 h-4 mr-1" /> Excel
                     </Button>
-                    <Button variant="outline" onClick={handleExportPdf}>
+                    <Button variant="outline" size="sm" onClick={handleExportPdf}>
                       <FileText className="w-4 h-4 mr-1" /> PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportJpg}>
+                      <ImageIcon className="w-4 h-4 mr-1" /> JPG
                     </Button>
                   </div>
                   {canEdit && (
@@ -1387,6 +1451,89 @@ const KalkulatorPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* HIDDEN HD SUMMARY CARD — dipakai untuk export JPG (di-render off-screen) */}
+      <div style={{ position: 'fixed', left: '-10000px', top: 0, pointerEvents: 'none' }}>
+        {result && potongan && (
+          <div
+            ref={jpgCardRef}
+            style={{
+              width: 900,
+              padding: 40,
+              background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              color: '#0f172a',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20, borderBottom: '2px solid #003f7f' }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#003f7f', letterSpacing: -0.5 }}>Simulasi Kredit</div>
+                <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
+                  {selectedProduct?.nama || 'Produk Kredit'} · {namaDebitur || '—'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b' }}>Bankaltimtara</div>
+                <div style={{ fontSize: 12, color: '#003f7f', fontWeight: 600 }}>KCP Telihan</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
+              <JRow label="Skema" value={skema.toUpperCase()} />
+              {cerdasResult && (
+                <JRow label="✨ CERDAS" value={cerdasResult.skemaLabel} accent="#d97706" />
+              )}
+              <JRow label="Plafon" value={fmtRp(plafon)} />
+              <JRow label="Tenor" value={`${tenorBulan} bulan`} />
+              <JRow label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} accent={cerdasResult ? '#d97706' : undefined} />
+              {gaji > 0 && <JRow label="DSR" value={`${dsrPct.toFixed(1)}%`} />}
+            </div>
+
+            <div style={{ marginTop: 24, padding: 20, background: '#003f7f', color: '#fff', borderRadius: 12 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.8 }}>Angsuran Pertama / Bulan</div>
+              <div style={{ fontSize: 36, fontWeight: 800, marginTop: 4 }}>{fmtRp(result.summary.angsuranPertama)}</div>
+              <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 12, opacity: 0.9 }}>
+                <span>Total Angsuran: <b>{fmtRp(result.summary.totalAngsuran)}</b></span>
+                <span>Total Bunga: <b>{fmtRp(result.summary.totalBunga)}</b></span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24 }}>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>Potongan di Muka</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <tbody>
+                  <JTr label={`Asuransi Jiwa (${asuransiProvider === 'alamin' ? 'Al-Amin' : 'Pialang'})`} value={fmtRp(asuransiJiwaBeban)} />
+                  {cerdasResult && cerdasResult.skema !== 'top_up' && (
+                    <>
+                      <JTrSub label="Premi aktual" value={fmtRp(cerdasResult.premiAsuransiAktual)} />
+                      <JTrSub label={`Subsidi bank (cap ${fmtRp(cerdasResult.capSubsidi)})`} value={`− ${fmtRp(cerdasResult.subsidiBank)}`} accent="#059669" />
+                    </>
+                  )}
+                  <JTr label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
+                  <JTr label="Provisi" value={fmtRp(potongan.provisi)} />
+                  <JTr label="Notaris" value={fmtRp(potongan.notaris)} />
+                  <JTr label="Perikatan" value={fmtRp(potongan.perikatan)} />
+                  <JTr label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
+                  <JTr label="Total Potongan" value={fmtRp(potongan.total)} bold />
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: 20, padding: 18, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.9 }}>Dana Diterima</div>
+                <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>{fmtRp(danaBersih)}</div>
+              </div>
+              <div style={{ fontSize: 40 }}>💰</div>
+            </div>
+
+            <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Simulasi · bukan dokumen perjanjian. Nilai dapat berubah sewaktu-waktu.</span>
+              <span>{new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} · AO: {namaAo || '-'}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </MainLayout>
   );
 };
@@ -1405,6 +1552,28 @@ const Row: React.FC<{ label: string; value: string; strong?: boolean; highlight?
     <span className="text-muted-foreground">{label}</span>
     <span className={strong ? 'font-semibold' : ''}>{value}</span>
   </div>
+);
+
+// ==== Helper components untuk kartu JPG (inline styles supaya kompatibel html2canvas) ====
+const JRow: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent }) => (
+  <div style={{ background: '#fff', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <span style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+    <span style={{ fontSize: 14, fontWeight: 700, color: accent ?? '#0f172a' }}>{value}</span>
+  </div>
+);
+
+const JTr: React.FC<{ label: string; value: string; bold?: boolean }> = ({ label, value, bold }) => (
+  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+    <td style={{ padding: '8px 0', color: bold ? '#0f172a' : '#475569', fontWeight: bold ? 700 : 400 }}>{label}</td>
+    <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: bold ? 700 : 500, color: '#0f172a' }}>{value}</td>
+  </tr>
+);
+
+const JTrSub: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent }) => (
+  <tr>
+    <td style={{ padding: '2px 0 6px 16px', fontSize: 12, color: '#64748b' }}>{label}</td>
+    <td style={{ padding: '2px 0 6px 0', fontSize: 12, textAlign: 'right', color: accent ?? '#64748b', fontWeight: accent ? 600 : 400 }}>{value}</td>
+  </tr>
 );
 
 export default KalkulatorPage;
