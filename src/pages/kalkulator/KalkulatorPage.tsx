@@ -155,29 +155,34 @@ const KalkulatorPage: React.FC = () => {
     return cekUnderwriting(umur, plafon, tenorBulan, alaminRules, alaminConfig?.x_plus_n_default);
   }, [asuransiProvider, alaminRules, umur, plafon, tenorBulan, alaminConfig]);
 
-  const premiAktual =
+  // Premi Asuransi Jiwa (AJK) — sumbernya Al-Amin atau input Pialang. INI YANG kena subsidi CERDAS.
+  const premiJiwaAktual =
     asuransiProvider === 'alamin'
       ? alamin?.premiGross ?? 0
-      : parseCurrencyValue(asuransiNominalStr);
+      : parseCurrencyValue(asuransiJiwaStr);
+  // Premi Asuransi Kredit — selalu input Pialang, TIDAK ada subsidi CERDAS.
+  const premiKredit = parseCurrencyValue(asuransiKreditStr);
 
-  // CERDAS apply (override bunga + provisi + asuransi nominal)
+  // CERDAS apply (subsidi khusus Asuransi Jiwa)
   const cerdasResult: CerdasApplyResult | null = useMemo(() => {
     if (!cerdasOn || !cerdasConfig) return null;
     return applyCerdas({
       skema: cerdasSkema,
       plafon,
-      premiAsuransiAktual: premiAktual,
+      premiAsuransiAktual: premiJiwaAktual,
       provisiPctAsli: provisiInput,
       cfg: cerdasConfig,
     });
-  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiAktual, provisiInput]);
+  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput]);
 
   const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
   const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
-  // Nominal asuransi yang masuk potongan: jika CERDAS subsidi AJK aktif, hanya selisih yang dibayar debitur
-  const asuransiNominal = cerdasResult
-    ? (cerdasResult.skema === 'top_up' ? premiAktual : cerdasResult.selisihDebitur)
-    : premiAktual;
+  // Beban asuransi jiwa yang dibayar debitur (setelah subsidi CERDAS, jika ada)
+  const asuransiJiwaBeban = cerdasResult
+    ? (cerdasResult.skema === 'top_up' ? premiJiwaAktual : cerdasResult.selisihDebitur)
+    : premiJiwaAktual;
+  // Total asuransi yang masuk potongan = Jiwa (setelah subsidi) + Kredit (tanpa subsidi)
+  const asuransiNominal = asuransiJiwaBeban + premiKredit;
 
   // Calculation
   const result = useMemo(() => {
