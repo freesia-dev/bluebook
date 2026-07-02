@@ -717,6 +717,28 @@ const KalkulatorPage: React.FC = () => {
     doc.save(`Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.pdf`);
   };
 
+  // ---- Export JPG (kartu ringkasan HD untuk dibagikan ke debitur) ----
+  const jpgCardRef = useRef<HTMLDivElement>(null);
+  const handleExportJpg = async () => {
+    if (!jpgCardRef.current) return;
+    try {
+      const canvas = await html2canvas(jpgCardRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+      });
+      const url = canvas.toDataURL('image/jpeg', 0.95);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.jpg`;
+      a.click();
+      toast({ title: 'Gambar simulasi diunduh' });
+    } catch (e: any) {
+      toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });
+    }
+  };
+
+
   const uwBadgeVariant = underwriting?.status === 'aman'
     ? 'success'
     : underwriting?.status === 'medis'
