@@ -1493,8 +1493,11 @@ const KalkulatorPage: React.FC = () => {
                     </Button>
                   </div>
                   {canEdit && (
-                    <Button className="w-full" onClick={handleSimpan} disabled={save.isPending}>
-                      <Save className="w-4 h-4 mr-2" /> {save.isPending ? 'Menyimpan...' : 'Simpan Simulasi'}
+                    <Button className="w-full" onClick={handleSimpan} disabled={save.isPending || update.isPending}>
+                      <Save className="w-4 h-4 mr-2" />
+                      {editId
+                        ? (update.isPending ? 'Memperbarui...' : 'Update Simulasi')
+                        : (save.isPending ? 'Menyimpan...' : 'Simpan Simulasi')}
                     </Button>
                   )}
                 </>
