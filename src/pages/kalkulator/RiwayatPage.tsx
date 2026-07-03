@@ -216,6 +216,8 @@ const RiwayatPage: React.FC = () => {
   const { toast } = useToast();
   const { canEdit } = useAuth();
   const [detail, setDetail] = useState<LoanSimulationRow | null>(null);
+  const [jpgTarget, setJpgTarget] = useState<LoanSimulationRow | null>(null);
+  const jpgRef = useRef<HTMLDivElement>(null);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus simulasi ini?')) return;
@@ -226,6 +228,29 @@ const RiwayatPage: React.FC = () => {
       toast({ title: 'Gagal hapus', description: e.message, variant: 'destructive' });
     }
   };
+
+  const handleExportJpg = async (s: LoanSimulationRow) => {
+    setJpgTarget(s);
+    // tunggu render
+    await new Promise((r) => setTimeout(r, 100));
+    if (!jpgRef.current) { setJpgTarget(null); return; }
+    try {
+      const canvas = await html2canvas(jpgRef.current, {
+        scale: 4, backgroundColor: '#ffffff', useCORS: true, imageTimeout: 0, logging: false,
+      });
+      const url = canvas.toDataURL('image/jpeg', 1.0);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.jpg`;
+      a.click();
+      toast({ title: 'Gambar simulasi diunduh' });
+    } catch (e: any) {
+      toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });
+    } finally {
+      setJpgTarget(null);
+    }
+  };
+
 
   return (
     <MainLayout>
