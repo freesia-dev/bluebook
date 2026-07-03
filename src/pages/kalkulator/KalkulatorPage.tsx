@@ -58,6 +58,8 @@ type AsuransiProvider = 'manual' | 'alamin';
 const KalkulatorPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editId = searchParams.get('edit') || undefined;
   const { canEdit } = useAuth();
   const { data: products = [] } = useLoanProducts(true);
   const { data: pensionRules = [] } = usePensionRules();
@@ -66,6 +68,8 @@ const KalkulatorPage: React.FC = () => {
   const { data: alaminConfig } = useAlaminConfig();
   const { data: cerdasConfig } = useCerdasConfig();
   const save = useSaveLoanSimulation();
+  const update = useUpdateLoanSimulation();
+  const { data: editRow } = useLoanSimulation(editId);
 
   // Debitur
   const [nomorKtp, setNomorKtp] = useState('');
