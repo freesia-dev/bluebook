@@ -11,11 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useLoanProducts,
   usePensionRules,
   useSaveLoanSimulation,
+  useLoanSimulation,
+  useUpdateLoanSimulation,
   PILIHAN_KARIR_DEFAULT,
 } from '@/hooks/use-loan-calc';
 import {
