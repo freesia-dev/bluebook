@@ -218,6 +218,41 @@ export const useSaveLoanSimulation = () => {
   });
 };
 
+export const useLoanSimulation = (id: string | undefined) =>
+  useQuery({
+    queryKey: ['loan-simulation', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('loan_simulation')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as LoanSimulationRow | null;
+    },
+  });
+
+export const useUpdateLoanSimulation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<LoanSimulationInput> }) => {
+      const { data, error } = await (supabase as any)
+        .from('loan_simulation')
+        .update(patch)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as LoanSimulationRow;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['loan-simulations'] });
+      qc.invalidateQueries({ queryKey: ['loan-simulation', v.id] });
+    },
+  });
+};
+
 export const useDeleteLoanSimulation = () => {
   const qc = useQueryClient();
   return useMutation({
