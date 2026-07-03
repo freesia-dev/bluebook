@@ -904,13 +904,27 @@ const KalkulatorPage: React.FC = () => {
                 <Input type="date" value={tanggalAkad} onChange={(e) => setTanggalAkad(e.target.value)} />
               </div>
               <div>
-                <Label>Gaji Bersih / Bulan</Label>
+                <Label>Gaji Pokok / Bulan</Label>
                 <Input
-                  value={gajiStr}
-                  onChange={(e) => setGajiStr(formatCurrencyInput(e.target.value))}
+                  value={gajiPokokStr}
+                  onChange={(e) => setGajiPokokStr(formatCurrencyInput(e.target.value))}
                   placeholder="0"
                 />
               </div>
+              <div>
+                <Label>Pendapatan Lainnya (TTP)</Label>
+                <Input
+                  value={ttpStr}
+                  onChange={(e) => setTtpStr(formatCurrencyInput(e.target.value))}
+                  placeholder="0"
+                />
+                {gaji > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total penghasilan: <b>{fmtRp(gaji)}</b>
+                  </p>
+                )}
+              </div>
+
 
               <div>
                 <Label className="flex items-center justify-between">
