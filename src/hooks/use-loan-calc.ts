@@ -45,19 +45,29 @@ export interface LoanSimulationRow {
   tenor_bulan: number;
   tanggal_akad: string | null;
   gaji: number;
+  gaji_pokok: number | null;
+  ttp: number | null;
   bunga_pa: number;
   asuransi_provider: string;
   asuransi_nominal: number;
   asuransi_pct: number;
+  asuransi_jiwa_beban: number | null;
+  premi_kredit: number | null;
   provisi_pct: number;
   biaya_notaris: number;
   biaya_perikatan: number;
   blokir_angsuran: number;
   ada_pelunasan: boolean;
   pelunasan_bulan_ke: number | null;
+  outstanding_pokok: number | null;
+  outstanding_bunga: number | null;
   nama_ao: string | null;
-  hasil_ringkasan: (CalcSummary & PotonganResult & { angsuranTengah?: number }) | null;
+  hasil_ringkasan: (CalcSummary & PotonganResult & { angsuranTengah?: number; cerdas?: any }) | null;
   tabel_angsuran: AmortRow[] | null;
+  cerdas_skema?: string | null;
+  cerdas_cap_subsidi?: number | null;
+  cerdas_subsidi_bank?: number | null;
+  cerdas_selisih_debitur?: number | null;
   created_by: string | null;
   created_by_nama: string | null;
   created_at: string;
@@ -205,6 +215,41 @@ export const useSaveLoanSimulation = () => {
       return data as LoanSimulationRow;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-simulations'] }),
+  });
+};
+
+export const useLoanSimulation = (id: string | undefined) =>
+  useQuery({
+    queryKey: ['loan-simulation', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('loan_simulation')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as LoanSimulationRow | null;
+    },
+  });
+
+export const useUpdateLoanSimulation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<LoanSimulationInput> }) => {
+      const { data, error } = await (supabase as any)
+        .from('loan_simulation')
+        .update(patch)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as LoanSimulationRow;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['loan-simulations'] });
+      qc.invalidateQueries({ queryKey: ['loan-simulation', v.id] });
+    },
   });
 };
 

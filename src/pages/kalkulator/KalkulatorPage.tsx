@@ -11,11 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useLoanProducts,
   usePensionRules,
   useSaveLoanSimulation,
+  useLoanSimulation,
+  useUpdateLoanSimulation,
   PILIHAN_KARIR_DEFAULT,
 } from '@/hooks/use-loan-calc';
 import {
@@ -56,6 +58,8 @@ type AsuransiProvider = 'manual' | 'alamin';
 const KalkulatorPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editId = searchParams.get('edit') || undefined;
   const { canEdit } = useAuth();
   const { data: products = [] } = useLoanProducts(true);
   const { data: pensionRules = [] } = usePensionRules();
@@ -64,6 +68,8 @@ const KalkulatorPage: React.FC = () => {
   const { data: alaminConfig } = useAlaminConfig();
   const { data: cerdasConfig } = useCerdasConfig();
   const save = useSaveLoanSimulation();
+  const update = useUpdateLoanSimulation();
+  const { data: editRow } = useLoanSimulation(editId);
 
   // Debitur
   const [nomorKtp, setNomorKtp] = useState('');
@@ -106,8 +112,13 @@ const KalkulatorPage: React.FC = () => {
 
   const selectedProduct = products.find((p) => p.id === productId);
 
+  const skipProductResetRef = useRef(false);
   useEffect(() => {
     if (!selectedProduct) return;
+    if (skipProductResetRef.current) {
+      skipProductResetRef.current = false;
+      return;
+    }
     setBungaMode('preset');
     setProvisiMode('preset');
     setBunga(selectedProduct.bunga_options[0]?.value?.toString() ?? '');
@@ -119,6 +130,48 @@ const KalkulatorPage: React.FC = () => {
       setAsuransiProvider('alamin');
     }
   }, [productId]); // eslint-disable-line
+
+  // Prefill state saat mode edit riwayat
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (!editRow || hydratedRef.current) return;
+    hydratedRef.current = true;
+    skipProductResetRef.current = true;
+    setNomorKtp(editRow.nomor_ktp || '');
+    setNamaDebitur(editRow.nama_debitur || '');
+    setTanggalLahir(editRow.tanggal_lahir || '');
+    setJenisKelamin((editRow.jenis_kelamin as 'L' | 'P' | '') || '');
+    setPekerjaan(editRow.pekerjaan || '');
+    setInstansi(editRow.instansi || '');
+    setPilihanKarir(editRow.pilihan_karir || '');
+    setNamaAo(editRow.nama_ao || '');
+    setProductId(editRow.product_id || '');
+    setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
+    setTenor(String(editRow.tenor_bulan || 0));
+    setTanggalAkad(editRow.tanggal_akad || new Date().toISOString().slice(0, 10));
+    const gp = editRow.gaji_pokok ?? editRow.gaji ?? 0;
+    const tt = editRow.ttp ?? 0;
+    setGajiPokokStr(gp ? formatCurrencyInput(String(gp)) : '');
+    setTtpStr(tt ? formatCurrencyInput(String(tt)) : '');
+    setBunga(String(editRow.bunga_pa ?? ''));
+    setBungaMode('manual');
+    setProvisi(String(editRow.provisi_pct ?? 0));
+    setProvisiMode('manual');
+    setAsuransiProvider((editRow.asuransi_provider as any) || 'manual');
+    setAsuransiJiwaStr(editRow.asuransi_jiwa_beban ? formatCurrencyInput(String(editRow.asuransi_jiwa_beban)) : '');
+    setAsuransiKreditStr(editRow.premi_kredit ? formatCurrencyInput(String(editRow.premi_kredit)) : '');
+    setNotarisStr(editRow.biaya_notaris ? formatCurrencyInput(String(editRow.biaya_notaris)) : '');
+    setPerikatanStr(editRow.biaya_perikatan ? formatCurrencyInput(String(editRow.biaya_perikatan)) : '');
+    setBlokir(String(editRow.blokir_angsuran ?? 0));
+    setAdaPelunasan(!!editRow.ada_pelunasan);
+    if (editRow.outstanding_pokok != null) setOutstandingPokok(String(editRow.outstanding_pokok));
+    if (editRow.outstanding_bunga != null) setOutstandingBunga(String(editRow.outstanding_bunga));
+    if (editRow.cerdas_skema) {
+      setCerdasOn(true);
+      setCerdasSkema(editRow.cerdas_skema as CerdasSkema);
+    }
+  }, [editRow]);
+
 
   const plafon = parseCurrencyValue(plafonStr);
   const gajiPokok = parseCurrencyValue(gajiPokokStr);
@@ -244,49 +297,59 @@ const KalkulatorPage: React.FC = () => {
       toast({ title: 'Lengkapi nama debitur & parameter pinjaman', variant: 'destructive' });
       return;
     }
+    const payload = {
+      nomor_ktp: nomorKtp || null,
+      nama_debitur: namaDebitur,
+      tanggal_lahir: tanggalLahir || null,
+      jenis_kelamin: jenisKelamin || null,
+      pekerjaan: pekerjaan || null,
+      instansi: instansi || null,
+      pilihan_karir: pilihanKarir || null,
+      product_id: productId || null,
+      product_nama: selectedProduct?.nama || null,
+      skema,
+      plafon,
+      tenor_bulan: tenorBulan,
+      tanggal_akad: tanggalAkad || null,
+      gaji,
+      gaji_pokok: gajiPokok,
+      ttp,
+      bunga_pa: bungaPa,
+      asuransi_provider: asuransiProvider,
+      asuransi_nominal: asuransiNominal,
+      asuransi_pct: 0,
+      asuransi_jiwa_beban: asuransiJiwaBeban,
+      premi_kredit: premiKredit,
+      provisi_pct: provisiPct,
+      biaya_notaris: notaris,
+      biaya_perikatan: perikatan,
+      blokir_angsuran: blokirN,
+      ada_pelunasan: adaPelunasan,
+      pelunasan_bulan_ke: null,
+      outstanding_pokok: adaPelunasan ? (parseInt(outstandingPokok) || 0) : null,
+      outstanding_bunga: adaPelunasan ? (parseInt(outstandingBunga) || 0) : null,
+      nama_ao: namaAo || null,
+      hasil_ringkasan: { ...result.summary, ...potongan, danaDiterima: danaBersih, cerdas: cerdasResult ?? null },
+      tabel_angsuran: result.rows,
+      cerdas_skema: cerdasResult ? cerdasResult.skema : null,
+      cerdas_cap_subsidi: cerdasResult ? cerdasResult.capSubsidi : null,
+      cerdas_subsidi_bank: cerdasResult ? cerdasResult.subsidiBank : null,
+      cerdas_selisih_debitur: cerdasResult ? cerdasResult.selisihDebitur : null,
+    } as any;
     try {
-      await save.mutateAsync({
-        nomor_ktp: nomorKtp || null,
-        nama_debitur: namaDebitur,
-        tanggal_lahir: tanggalLahir || null,
-        jenis_kelamin: jenisKelamin || null,
-        pekerjaan: pekerjaan || null,
-        instansi: instansi || null,
-        pilihan_karir: pilihanKarir || null,
-        product_id: productId || null,
-        product_nama: selectedProduct?.nama || null,
-        skema,
-        plafon,
-        tenor_bulan: tenorBulan,
-        tanggal_akad: tanggalAkad || null,
-        gaji,
-        bunga_pa: bungaPa,
-        asuransi_provider: asuransiProvider,
-        asuransi_nominal: asuransiNominal,
-        asuransi_pct: 0,
-        provisi_pct: provisiPct,
-        biaya_notaris: notaris,
-        biaya_perikatan: perikatan,
-        blokir_angsuran: blokirN,
-        ada_pelunasan: adaPelunasan,
-        pelunasan_bulan_ke: null,
-        nama_ao: namaAo || null,
-        hasil_ringkasan: { ...result.summary, ...potongan, danaDiterima: danaBersih, cerdas: cerdasResult ?? null },
-        tabel_angsuran: result.rows,
-        ...(cerdasResult
-          ? {
-              cerdas_skema: cerdasResult.skema,
-              cerdas_cap_subsidi: cerdasResult.capSubsidi,
-              cerdas_subsidi_bank: cerdasResult.subsidiBank,
-              cerdas_selisih_debitur: cerdasResult.selisihDebitur,
-            }
-          : {}),
-      } as any);
-      toast({ title: 'Simulasi tersimpan' });
+      if (editId) {
+        await update.mutateAsync({ id: editId, patch: payload });
+        toast({ title: 'Simulasi diperbarui' });
+        navigate('/kalkulator/riwayat');
+      } else {
+        await save.mutateAsync(payload);
+        toast({ title: 'Simulasi tersimpan' });
+      }
     } catch (e: any) {
       toast({ title: 'Gagal menyimpan', description: e.message, variant: 'destructive' });
     }
   };
+
 
   const handleExportExcel = () => {
     if (!result || !potongan) return;
@@ -763,12 +826,19 @@ const KalkulatorPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Kalkulator Konsumtif"
-        description="Hitung simulasi angsuran kredit konsumtif (anuitas / efektif) berdasarkan gaji & DSR"
+        title={editId ? 'Edit Simulasi Loan' : 'Kalkulator Konsumtif'}
+        description={editId ? 'Menyunting simulasi tersimpan — perubahan akan menimpa data lama.' : 'Hitung simulasi angsuran kredit konsumtif (anuitas / efektif) berdasarkan gaji & DSR'}
         actions={
-          <Button variant="outline" onClick={() => navigate('/kalkulator/riwayat')}>
-            <History className="w-4 h-4 mr-2" /> Riwayat
-          </Button>
+          <div className="flex gap-2">
+            {editId && (
+              <Button variant="ghost" onClick={() => { setSearchParams({}); navigate('/kalkulator/riwayat'); }}>
+                Batal Edit
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => navigate('/kalkulator/riwayat')}>
+              <History className="w-4 h-4 mr-2" /> Riwayat
+            </Button>
+          </div>
         }
       />
 
@@ -1423,8 +1493,11 @@ const KalkulatorPage: React.FC = () => {
                     </Button>
                   </div>
                   {canEdit && (
-                    <Button className="w-full" onClick={handleSimpan} disabled={save.isPending}>
-                      <Save className="w-4 h-4 mr-2" /> {save.isPending ? 'Menyimpan...' : 'Simpan Simulasi'}
+                    <Button className="w-full" onClick={handleSimpan} disabled={save.isPending || update.isPending}>
+                      <Save className="w-4 h-4 mr-2" />
+                      {editId
+                        ? (update.isPending ? 'Memperbarui...' : 'Update Simulasi')
+                        : (save.isPending ? 'Menyimpan...' : 'Simpan Simulasi')}
                     </Button>
                   )}
                 </>
