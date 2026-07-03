@@ -297,49 +297,59 @@ const KalkulatorPage: React.FC = () => {
       toast({ title: 'Lengkapi nama debitur & parameter pinjaman', variant: 'destructive' });
       return;
     }
+    const payload = {
+      nomor_ktp: nomorKtp || null,
+      nama_debitur: namaDebitur,
+      tanggal_lahir: tanggalLahir || null,
+      jenis_kelamin: jenisKelamin || null,
+      pekerjaan: pekerjaan || null,
+      instansi: instansi || null,
+      pilihan_karir: pilihanKarir || null,
+      product_id: productId || null,
+      product_nama: selectedProduct?.nama || null,
+      skema,
+      plafon,
+      tenor_bulan: tenorBulan,
+      tanggal_akad: tanggalAkad || null,
+      gaji,
+      gaji_pokok: gajiPokok,
+      ttp,
+      bunga_pa: bungaPa,
+      asuransi_provider: asuransiProvider,
+      asuransi_nominal: asuransiNominal,
+      asuransi_pct: 0,
+      asuransi_jiwa_beban: asuransiJiwaBeban,
+      premi_kredit: premiKredit,
+      provisi_pct: provisiPct,
+      biaya_notaris: notaris,
+      biaya_perikatan: perikatan,
+      blokir_angsuran: blokirN,
+      ada_pelunasan: adaPelunasan,
+      pelunasan_bulan_ke: null,
+      outstanding_pokok: adaPelunasan ? (parseInt(outstandingPokok) || 0) : null,
+      outstanding_bunga: adaPelunasan ? (parseInt(outstandingBunga) || 0) : null,
+      nama_ao: namaAo || null,
+      hasil_ringkasan: { ...result.summary, ...potongan, danaDiterima: danaBersih, cerdas: cerdasResult ?? null },
+      tabel_angsuran: result.rows,
+      cerdas_skema: cerdasResult ? cerdasResult.skema : null,
+      cerdas_cap_subsidi: cerdasResult ? cerdasResult.capSubsidi : null,
+      cerdas_subsidi_bank: cerdasResult ? cerdasResult.subsidiBank : null,
+      cerdas_selisih_debitur: cerdasResult ? cerdasResult.selisihDebitur : null,
+    } as any;
     try {
-      await save.mutateAsync({
-        nomor_ktp: nomorKtp || null,
-        nama_debitur: namaDebitur,
-        tanggal_lahir: tanggalLahir || null,
-        jenis_kelamin: jenisKelamin || null,
-        pekerjaan: pekerjaan || null,
-        instansi: instansi || null,
-        pilihan_karir: pilihanKarir || null,
-        product_id: productId || null,
-        product_nama: selectedProduct?.nama || null,
-        skema,
-        plafon,
-        tenor_bulan: tenorBulan,
-        tanggal_akad: tanggalAkad || null,
-        gaji,
-        bunga_pa: bungaPa,
-        asuransi_provider: asuransiProvider,
-        asuransi_nominal: asuransiNominal,
-        asuransi_pct: 0,
-        provisi_pct: provisiPct,
-        biaya_notaris: notaris,
-        biaya_perikatan: perikatan,
-        blokir_angsuran: blokirN,
-        ada_pelunasan: adaPelunasan,
-        pelunasan_bulan_ke: null,
-        nama_ao: namaAo || null,
-        hasil_ringkasan: { ...result.summary, ...potongan, danaDiterima: danaBersih, cerdas: cerdasResult ?? null },
-        tabel_angsuran: result.rows,
-        ...(cerdasResult
-          ? {
-              cerdas_skema: cerdasResult.skema,
-              cerdas_cap_subsidi: cerdasResult.capSubsidi,
-              cerdas_subsidi_bank: cerdasResult.subsidiBank,
-              cerdas_selisih_debitur: cerdasResult.selisihDebitur,
-            }
-          : {}),
-      } as any);
-      toast({ title: 'Simulasi tersimpan' });
+      if (editId) {
+        await update.mutateAsync({ id: editId, patch: payload });
+        toast({ title: 'Simulasi diperbarui' });
+        navigate('/kalkulator/riwayat');
+      } else {
+        await save.mutateAsync(payload);
+        toast({ title: 'Simulasi tersimpan' });
+      }
     } catch (e: any) {
       toast({ title: 'Gagal menyimpan', description: e.message, variant: 'destructive' });
     }
   };
+
 
   const handleExportExcel = () => {
     if (!result || !potongan) return;
