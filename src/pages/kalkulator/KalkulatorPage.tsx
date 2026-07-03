@@ -80,7 +80,8 @@ const KalkulatorPage: React.FC = () => {
   const [plafonStr, setPlafonStr] = useState('');
   const [tenor, setTenor] = useState('60');
   const [tanggalAkad, setTanggalAkad] = useState(() => new Date().toISOString().slice(0, 10));
-  const [gajiStr, setGajiStr] = useState('');
+  const [gajiPokokStr, setGajiPokokStr] = useState('');
+  const [ttpStr, setTtpStr] = useState('');
   const [bunga, setBunga] = useState('');
   const [bungaMode, setBungaMode] = useState<'preset' | 'manual'>('preset');
 
