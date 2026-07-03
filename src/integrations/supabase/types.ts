@@ -966,6 +966,7 @@ export type Database = {
       loan_simulation: {
         Row: {
           ada_pelunasan: boolean
+          asuransi_jiwa_beban: number | null
           asuransi_nominal: number
           asuransi_pct: number
           asuransi_provider: string
@@ -981,6 +982,7 @@ export type Database = {
           created_by: string | null
           created_by_nama: string | null
           gaji: number
+          gaji_pokok: number | null
           hasil_ringkasan: Json | null
           id: string
           instansi: string | null
@@ -988,10 +990,13 @@ export type Database = {
           nama_ao: string | null
           nama_debitur: string
           nomor_ktp: string | null
+          outstanding_bunga: number | null
+          outstanding_pokok: number | null
           pekerjaan: string | null
           pelunasan_bulan_ke: number | null
           pilihan_karir: string | null
           plafon: number
+          premi_kredit: number | null
           product_id: string | null
           product_nama: string | null
           provisi_pct: number
@@ -1000,10 +1005,12 @@ export type Database = {
           tanggal_akad: string | null
           tanggal_lahir: string | null
           tenor_bulan: number
+          ttp: number | null
           updated_at: string
         }
         Insert: {
           ada_pelunasan?: boolean
+          asuransi_jiwa_beban?: number | null
           asuransi_nominal?: number
           asuransi_pct?: number
           asuransi_provider?: string
@@ -1019,6 +1026,7 @@ export type Database = {
           created_by?: string | null
           created_by_nama?: string | null
           gaji?: number
+          gaji_pokok?: number | null
           hasil_ringkasan?: Json | null
           id?: string
           instansi?: string | null
@@ -1026,10 +1034,13 @@ export type Database = {
           nama_ao?: string | null
           nama_debitur: string
           nomor_ktp?: string | null
+          outstanding_bunga?: number | null
+          outstanding_pokok?: number | null
           pekerjaan?: string | null
           pelunasan_bulan_ke?: number | null
           pilihan_karir?: string | null
           plafon?: number
+          premi_kredit?: number | null
           product_id?: string | null
           product_nama?: string | null
           provisi_pct?: number
@@ -1038,10 +1049,12 @@ export type Database = {
           tanggal_akad?: string | null
           tanggal_lahir?: string | null
           tenor_bulan?: number
+          ttp?: number | null
           updated_at?: string
         }
         Update: {
           ada_pelunasan?: boolean
+          asuransi_jiwa_beban?: number | null
           asuransi_nominal?: number
           asuransi_pct?: number
           asuransi_provider?: string
@@ -1057,6 +1070,7 @@ export type Database = {
           created_by?: string | null
           created_by_nama?: string | null
           gaji?: number
+          gaji_pokok?: number | null
           hasil_ringkasan?: Json | null
           id?: string
           instansi?: string | null
@@ -1064,10 +1078,13 @@ export type Database = {
           nama_ao?: string | null
           nama_debitur?: string
           nomor_ktp?: string | null
+          outstanding_bunga?: number | null
+          outstanding_pokok?: number | null
           pekerjaan?: string | null
           pelunasan_bulan_ke?: number | null
           pilihan_karir?: string | null
           plafon?: number
+          premi_kredit?: number | null
           product_id?: string | null
           product_nama?: string | null
           provisi_pct?: number
@@ -1076,6 +1093,7 @@ export type Database = {
           tanggal_akad?: string | null
           tanggal_lahir?: string | null
           tenor_bulan?: number
+          ttp?: number | null
           updated_at?: string
         }
         Relationships: [
