@@ -730,11 +730,13 @@ const KalkulatorPage: React.FC = () => {
     if (!jpgCardRef.current) return;
     try {
       const canvas = await html2canvas(jpgCardRef.current, {
-        scale: 2,
+        scale: 4,
         backgroundColor: '#ffffff',
         useCORS: true,
+        imageTimeout: 0,
+        logging: false,
       });
-      const url = canvas.toDataURL('image/jpeg', 0.95);
+      const url = canvas.toDataURL('image/jpeg', 1.0);
       const a = document.createElement('a');
       a.href = url;
       a.download = `Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.jpg`;
