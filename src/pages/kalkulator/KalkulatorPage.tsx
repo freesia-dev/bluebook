@@ -1508,7 +1508,18 @@ const KalkulatorPage: React.FC = () => {
               {gaji > 0 && <JRow label="DSR" value={`${dsrPct.toFixed(1)}%`} />}
             </div>
 
-            <div style={{ marginTop: 24, padding: 20, background: '#003f7f', color: '#fff', borderRadius: 12 }}>
+            {gaji > 0 && (
+              <div style={{ marginTop: 16, padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, marginBottom: 6 }}>Penghasilan Debitur</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: 13 }}>
+                  <div><div style={{ color: '#64748b', fontSize: 11 }}>Gaji Pokok</div><div style={{ fontWeight: 600 }}>{fmtRp(gajiPokok)}</div></div>
+                  <div><div style={{ color: '#64748b', fontSize: 11 }}>TTP / Lainnya</div><div style={{ fontWeight: 600 }}>{fmtRp(ttp)}</div></div>
+                  <div><div style={{ color: '#64748b', fontSize: 11 }}>Total</div><div style={{ fontWeight: 700, color: '#003f7f' }}>{fmtRp(gaji)}</div></div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 20, padding: 20, background: '#003f7f', color: '#fff', borderRadius: 12 }}>
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.8 }}>Angsuran Pertama / Bulan</div>
               <div style={{ fontSize: 36, fontWeight: 800, marginTop: 4 }}>{fmtRp(result.summary.angsuranPertama)}</div>
               <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 12, opacity: 0.9 }}>
@@ -1538,13 +1549,30 @@ const KalkulatorPage: React.FC = () => {
               </table>
             </div>
 
+            {pelunasan && (
+              <div style={{ marginTop: 20, padding: 16, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10 }}>
+                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: '#92400e', fontWeight: 700, marginBottom: 6 }}>Top Up / Pelunasan</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <tbody>
+                    <JTr label="Outstanding Pokok" value={fmtRp(pelunasan.sisaPokok)} />
+                    <JTr label="Bunga Berjalan" value={fmtRp(pelunasan.bungaBerjalan)} />
+                    <JTr label="Total Pelunasan" value={fmtRp(pelunasan.totalPelunasan)} bold />
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div style={{ marginTop: 20, padding: 18, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.9 }}>Dana Diterima</div>
                 <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>{fmtRp(danaBersih)}</div>
+                {pelunasan && (
+                  <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>setelah pelunasan {fmtRp(pelunasan.totalPelunasan)}</div>
+                )}
               </div>
               <div style={{ fontSize: 40 }}>💰</div>
             </div>
+
 
             <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
               <span>Simulasi · bukan dokumen perjanjian. Nilai dapat berubah sewaktu-waktu.</span>
