@@ -308,6 +308,14 @@ const RiwayatPage: React.FC = () => {
                     <Button size="icon" variant="ghost" onClick={() => setDetail(s)} title="Lihat detail">
                       <Eye className="w-4 h-4" />
                     </Button>
+                    {canEdit && (
+                      <Button size="icon" variant="ghost" onClick={() => navigate(`/kalkulator?edit=${s.id}`)} title="Edit simulasi">
+                        <Pencil className="w-4 h-4 text-blue-600" />
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={() => handleExportJpg(s)} title="Export JPG">
+                      <ImageIcon className="w-4 h-4 text-amber-600" />
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => exportRowToExcel(s)} title="Export Excel">
                       <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                     </Button>
