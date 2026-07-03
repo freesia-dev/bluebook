@@ -826,12 +826,19 @@ const KalkulatorPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Kalkulator Konsumtif"
-        description="Hitung simulasi angsuran kredit konsumtif (anuitas / efektif) berdasarkan gaji & DSR"
+        title={editId ? 'Edit Simulasi Loan' : 'Kalkulator Konsumtif'}
+        description={editId ? 'Menyunting simulasi tersimpan — perubahan akan menimpa data lama.' : 'Hitung simulasi angsuran kredit konsumtif (anuitas / efektif) berdasarkan gaji & DSR'}
         actions={
-          <Button variant="outline" onClick={() => navigate('/kalkulator/riwayat')}>
-            <History className="w-4 h-4 mr-2" /> Riwayat
-          </Button>
+          <div className="flex gap-2">
+            {editId && (
+              <Button variant="ghost" onClick={() => { setSearchParams({}); navigate('/kalkulator/riwayat'); }}>
+                Batal Edit
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => navigate('/kalkulator/riwayat')}>
+              <History className="w-4 h-4 mr-2" /> Riwayat
+            </Button>
+          </div>
         }
       />
 
