@@ -121,7 +121,9 @@ const KalkulatorPage: React.FC = () => {
   }, [productId]); // eslint-disable-line
 
   const plafon = parseCurrencyValue(plafonStr);
-  const gaji = parseCurrencyValue(gajiStr);
+  const gajiPokok = parseCurrencyValue(gajiPokokStr);
+  const ttp = parseCurrencyValue(ttpStr);
+  const gaji = gajiPokok + ttp;
   const notaris = parseCurrencyValue(notarisStr);
   const perikatan = parseCurrencyValue(perikatanStr);
   const tenorBulan = parseInt(tenor) || 0;
