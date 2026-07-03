@@ -112,8 +112,13 @@ const KalkulatorPage: React.FC = () => {
 
   const selectedProduct = products.find((p) => p.id === productId);
 
+  const skipProductResetRef = useRef(false);
   useEffect(() => {
     if (!selectedProduct) return;
+    if (skipProductResetRef.current) {
+      skipProductResetRef.current = false;
+      return;
+    }
     setBungaMode('preset');
     setProvisiMode('preset');
     setBunga(selectedProduct.bunga_options[0]?.value?.toString() ?? '');
@@ -125,6 +130,48 @@ const KalkulatorPage: React.FC = () => {
       setAsuransiProvider('alamin');
     }
   }, [productId]); // eslint-disable-line
+
+  // Prefill state saat mode edit riwayat
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (!editRow || hydratedRef.current) return;
+    hydratedRef.current = true;
+    skipProductResetRef.current = true;
+    setNomorKtp(editRow.nomor_ktp || '');
+    setNamaDebitur(editRow.nama_debitur || '');
+    setTanggalLahir(editRow.tanggal_lahir || '');
+    setJenisKelamin((editRow.jenis_kelamin as 'L' | 'P' | '') || '');
+    setPekerjaan(editRow.pekerjaan || '');
+    setInstansi(editRow.instansi || '');
+    setPilihanKarir(editRow.pilihan_karir || '');
+    setNamaAo(editRow.nama_ao || '');
+    setProductId(editRow.product_id || '');
+    setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
+    setTenor(String(editRow.tenor_bulan || 0));
+    setTanggalAkad(editRow.tanggal_akad || new Date().toISOString().slice(0, 10));
+    const gp = editRow.gaji_pokok ?? editRow.gaji ?? 0;
+    const tt = editRow.ttp ?? 0;
+    setGajiPokokStr(gp ? formatCurrencyInput(String(gp)) : '');
+    setTtpStr(tt ? formatCurrencyInput(String(tt)) : '');
+    setBunga(String(editRow.bunga_pa ?? ''));
+    setBungaMode('manual');
+    setProvisi(String(editRow.provisi_pct ?? 0));
+    setProvisiMode('manual');
+    setAsuransiProvider((editRow.asuransi_provider as any) || 'manual');
+    setAsuransiJiwaStr(editRow.asuransi_jiwa_beban ? formatCurrencyInput(String(editRow.asuransi_jiwa_beban)) : '');
+    setAsuransiKreditStr(editRow.premi_kredit ? formatCurrencyInput(String(editRow.premi_kredit)) : '');
+    setNotarisStr(editRow.biaya_notaris ? formatCurrencyInput(String(editRow.biaya_notaris)) : '');
+    setPerikatanStr(editRow.biaya_perikatan ? formatCurrencyInput(String(editRow.biaya_perikatan)) : '');
+    setBlokir(String(editRow.blokir_angsuran ?? 0));
+    setAdaPelunasan(!!editRow.ada_pelunasan);
+    if (editRow.outstanding_pokok != null) setOutstandingPokok(String(editRow.outstanding_pokok));
+    if (editRow.outstanding_bunga != null) setOutstandingBunga(String(editRow.outstanding_bunga));
+    if (editRow.cerdas_skema) {
+      setCerdasOn(true);
+      setCerdasSkema(editRow.cerdas_skema as CerdasSkema);
+    }
+  }, [editRow]);
+
 
   const plafon = parseCurrencyValue(plafonStr);
   const gajiPokok = parseCurrencyValue(gajiPokokStr);
