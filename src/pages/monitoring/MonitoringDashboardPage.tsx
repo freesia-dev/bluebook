@@ -511,18 +511,18 @@ const MonitoringDashboardPage: React.FC = () => {
             <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                <CardTitle className="text-base">Fasilitas Baru Ditutup / Dilunasi</CardTitle>
+                <CardTitle className="text-base">Fasilitas Ditutup / Dilunasi Bulan Berjalan</CardTitle>
               </div>
-              {prevUploadInfo && selectedUploadInfo && (
+              {selectedUploadInfo && (
                 <p className="text-[11px] text-muted-foreground">
-                  {format(new Date(prevUploadInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })} → {format(new Date(selectedUploadInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })}
+                  Periode: 01 {format(new Date(selectedUploadInfo.jobdate), 'MMM yyyy', { locale: idLocale })} – {format(new Date(selectedUploadInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })}
                 </p>
               )}
             </CardHeader>
             <CardContent className="px-2 sm:px-6">
               {!baruLunas.available ? (
                 <p className="text-sm text-muted-foreground text-center py-6">
-                  Tidak ada MLF sebelumnya untuk dibandingkan. Upload minimal 2 periode MLF.
+                  Belum ada baseline MLF sebelum awal bulan {selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'MMMM yyyy', { locale: idLocale }) : ''}. Upload MLF bulan sebelumnya untuk mendeteksi fasilitas yang ditutup.
                 </p>
               ) : (
                 <>
