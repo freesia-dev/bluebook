@@ -426,6 +426,159 @@ const MonitoringDashboardPage: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Baru Cair Bulan Berjalan */}
+          <Card className="mb-6 border-border/60">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <CardTitle className="text-base">Fasilitas Baru Cair Bulan Berjalan</CardTitle>
+              </div>
+              {selectedUploadInfo && (
+                <p className="text-[11px] text-muted-foreground">
+                  Periode: 01 {format(new Date(selectedUploadInfo.jobdate), 'MMM yyyy', { locale: idLocale })} – {format(new Date(selectedUploadInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })}
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+              {!baruCair.available ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Belum ada baseline MLF sebelum awal bulan {selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'MMMM yyyy', { locale: idLocale }) : ''}. Upload MLF bulan sebelumnya untuk mendeteksi fasilitas baru cair.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 px-2 sm:px-0">
+                    <div className="rounded-lg border border-emerald-500/30 p-3 bg-emerald-500/5">
+                      <p className="text-[10px] uppercase text-muted-foreground">Jumlah Fasilitas</p>
+                      <p className="text-sm font-semibold mt-1">{fmtNum(baruCair.items.length)}</p>
+                    </div>
+                    <div className="rounded-lg border border-emerald-500/30 p-3 bg-emerald-500/5">
+                      <p className="text-[10px] uppercase text-muted-foreground">Total Plafon</p>
+                      <p className="text-sm font-semibold mt-1">{fmtIDR(baruCair.plafon)}</p>
+                    </div>
+                    <div className="rounded-lg border border-emerald-500/30 p-3 bg-emerald-500/5 col-span-2 sm:col-span-1">
+                      <p className="text-[10px] uppercase text-muted-foreground">Total Outstanding</p>
+                      <p className="text-sm font-semibold mt-1">{fmtIDR(baruCair.baki)}</p>
+                    </div>
+                  </div>
+                  <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No Rekening</TableHead>
+                        <TableHead>Nama Debitur</TableHead>
+                        <TableHead>Produk</TableHead>
+                        <TableHead className="text-center">KOL</TableHead>
+                        <TableHead className="text-right">Plafon</TableHead>
+                        <TableHead className="text-right">Outstanding</TableHead>
+                        <TableHead>AO</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {baruCair.items.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                            Tidak ada fasilitas baru cair pada periode ini.
+                          </TableCell>
+                        </TableRow>
+                      ) : baruCair.items.map((d) => (
+                        <TableRow key={d.id}>
+                          <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
+                          <TableCell className="font-medium">{d.l0name}</TableCell>
+                          <TableCell className="text-xs">{d.lytitl}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
+                              {kolDisplay(d.kol)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{fmtIDR(Number(d.pla) || 0)}</TableCell>
+                          <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
+                          <TableCell className="text-xs">{d.l0usid}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {monthBaselineInfo && (
+                    <p className="text-[11px] text-muted-foreground mt-3 px-2">
+                      Baseline pembanding: MLF <strong>{format(new Date(monthBaselineInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })}</strong> (upload terakhir sebelum awal bulan).
+                    </p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Baru Lunas / Ditutup */}
+          <Card className="mb-6 border-border/60">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                <CardTitle className="text-base">Fasilitas Baru Ditutup / Dilunasi</CardTitle>
+              </div>
+              {prevUploadInfo && selectedUploadInfo && (
+                <p className="text-[11px] text-muted-foreground">
+                  {format(new Date(prevUploadInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })} → {format(new Date(selectedUploadInfo.jobdate), 'dd MMM yyyy', { locale: idLocale })}
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+              {!baruLunas.available ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Tidak ada MLF sebelumnya untuk dibandingkan. Upload minimal 2 periode MLF.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 mb-4 px-2 sm:px-0">
+                    <div className="rounded-lg border border-blue-500/30 p-3 bg-blue-500/5">
+                      <p className="text-[10px] uppercase text-muted-foreground">Jumlah Fasilitas</p>
+                      <p className="text-sm font-semibold mt-1">{fmtNum(baruLunas.items.length)}</p>
+                    </div>
+                    <div className="rounded-lg border border-blue-500/30 p-3 bg-blue-500/5">
+                      <p className="text-[10px] uppercase text-muted-foreground">OS Terakhir Sebelum Lunas</p>
+                      <p className="text-sm font-semibold mt-1">{fmtIDR(baruLunas.baki)}</p>
+                    </div>
+                  </div>
+                  <Table className="[&_th]:whitespace-nowrap [&_td]:whitespace-nowrap text-xs sm:text-sm">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No Rekening</TableHead>
+                        <TableHead>Nama Debitur</TableHead>
+                        <TableHead>Produk</TableHead>
+                        <TableHead className="text-center">KOL Terakhir</TableHead>
+                        <TableHead className="text-right">Plafon</TableHead>
+                        <TableHead className="text-right">OS Terakhir</TableHead>
+                        <TableHead>AO</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {baruLunas.items.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                            Tidak ada fasilitas yang ditutup pada periode ini.
+                          </TableCell>
+                        </TableRow>
+                      ) : baruLunas.items.map((d) => (
+                        <TableRow key={d.id}>
+                          <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
+                          <TableCell className="font-medium">{d.l0name}</TableCell>
+                          <TableCell className="text-xs">{d.lytitl}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
+                              {kolDisplay(d.kol)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{fmtIDR(Number(d.pla) || 0)}</TableCell>
+                          <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
+                          <TableCell className="text-xs">{d.l0usid}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+
+
           {/* AO breakdown */}
           {stats.aoData.length > 0 && (
             <Card className="mb-6">
