@@ -151,14 +151,14 @@ const MonitoringDashboardPage: React.FC = () => {
   }, [allRows, baselineRows, selectedUploadInfo, monthBaselineUploadId]);
 
   const baruLunas = useMemo(() => {
-    if (!selectedUploadInfo || !prevUploadId) return { items: [], baki: 0, available: false };
+    if (!selectedUploadInfo || !monthBaselineUploadId) return { items: [], baki: 0, available: false };
     const currentSet = new Set(allRows.map(r => r.l0lnno).filter(Boolean) as string[]);
-    const items = prevRows
+    const items = baselineRows
       .filter(r => r.l0lnno && !currentSet.has(r.l0lnno))
       .sort((a, b) => (Number(b.baki) || 0) - (Number(a.baki) || 0));
     const baki = items.reduce((s, r) => s + (Number(r.baki) || 0), 0);
     return { items, baki, available: true };
-  }, [allRows, prevRows, selectedUploadInfo, prevUploadId]);
+  }, [allRows, baselineRows, selectedUploadInfo, monthBaselineUploadId]);
 
 
 
