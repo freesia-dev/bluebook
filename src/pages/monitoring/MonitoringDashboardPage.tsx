@@ -119,6 +119,49 @@ const MonitoringDashboardPage: React.FC = () => {
 
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
 
+  // Determine previous uploads for "baru cair" & "baru lunas"
+  const { prevUploadId, monthBaselineUploadId, monthBaselineInfo, prevUploadInfo } = useMemo(() => {
+    if (!selectedUploadInfo) return { prevUploadId: undefined, monthBaselineUploadId: undefined, monthBaselineInfo: undefined, prevUploadInfo: undefined };
+    const selDate = new Date(selectedUploadInfo.jobdate);
+    const monthStart = new Date(selDate.getFullYear(), selDate.getMonth(), 1);
+    // Uploads sorted desc by jobdate already
+    const earlier = uploads.filter(u => new Date(u.jobdate) < selDate);
+    const prev = earlier[0]; // nearest previous
+    const baseline = earlier.find(u => new Date(u.jobdate) < monthStart);
+    return {
+      prevUploadId: prev?.id,
+      monthBaselineUploadId: baseline?.id,
+      prevUploadInfo: prev,
+      monthBaselineInfo: baseline,
+    };
+  }, [uploads, selectedUploadInfo]);
+
+  const { data: prevRows = [] } = useMLFData143(prevUploadId);
+  const { data: baselineRows = [] } = useMLFData143(monthBaselineUploadId);
+
+  const baruCair = useMemo(() => {
+    if (!selectedUploadInfo || !monthBaselineUploadId) return { items: [], baki: 0, plafon: 0, available: false };
+    const baselineSet = new Set(baselineRows.map(r => r.l0lnno).filter(Boolean) as string[]);
+    const items = allRows
+      .filter(r => r.l0lnno && !baselineSet.has(r.l0lnno))
+      .sort((a, b) => (Number(b.pla) || 0) - (Number(a.pla) || 0));
+    const baki = items.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+    const plafon = items.reduce((s, r) => s + (Number(r.pla) || 0), 0);
+    return { items, baki, plafon, available: true };
+  }, [allRows, baselineRows, selectedUploadInfo, monthBaselineUploadId]);
+
+  const baruLunas = useMemo(() => {
+    if (!selectedUploadInfo || !prevUploadId) return { items: [], baki: 0, available: false };
+    const currentSet = new Set(allRows.map(r => r.l0lnno).filter(Boolean) as string[]);
+    const items = prevRows
+      .filter(r => r.l0lnno && !currentSet.has(r.l0lnno))
+      .sort((a, b) => (Number(b.baki) || 0) - (Number(a.baki) || 0));
+    const baki = items.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+    return { items, baki, available: true };
+  }, [allRows, prevRows, selectedUploadInfo, prevUploadId]);
+
+
+
   const akanLunas = useMemo(() => {
     if (!selectedUploadInfo) return { items: [], total: 0, baki: 0, rangeLabel: '' };
     const job = new Date(selectedUploadInfo.jobdate);
