@@ -1,1 +1,4 @@
 project_id = "xcoonownhvsnsljxwumi"
+
+[functions.biru-chat]
+verify_jwt = true
