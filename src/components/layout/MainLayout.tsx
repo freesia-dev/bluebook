@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { isRouteAllowed } from '@/lib/role-permissions';
+import { BiruAssistant } from '@/components/biru/BiruAssistant';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -87,6 +88,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {children}
         </div>
       </main>
+      <BiruAssistant />
     </div>
   );
 };
