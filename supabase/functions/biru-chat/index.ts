@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         "X-Lovable-AIG-SDK": "raw-fetch",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         stream: true,
         messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
       }),
