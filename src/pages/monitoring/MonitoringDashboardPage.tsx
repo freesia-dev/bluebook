@@ -254,7 +254,7 @@ const MonitoringDashboardPage: React.FC = () => {
           {selectedUploadInfo && (
             <div className="lg:text-right text-xs text-muted-foreground">
               <p>Total baris (semua cabang): <strong className="text-foreground">{fmtNum(selectedUploadInfo.total_rows)}</strong></p>
-              <p>Filter cabang: <strong className="text-foreground">143 - CAPEM TELIHAN BONTANG</strong></p>
+              <p>Filter cabang: <strong className="text-foreground">{selectedBranch}{selectedBranchInfo ? ` - ${selectedBranchInfo.name}` : ''}</strong></p>
             </div>
           )}
         </CardContent>
