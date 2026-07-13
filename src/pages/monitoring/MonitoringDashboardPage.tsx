@@ -15,9 +15,17 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+const BRANCH_OPTIONS = [
+  { code: '008', name: 'KANTOR CABANG BONTANG' },
+  { code: '118', name: 'CAPEM MARANGKAYU BONTANG' },
+  { code: '143', name: 'CAPEM TELIHAN BONTANG' },
+  { code: '185', name: 'KCP LOK TUAN BTG' },
+];
+
 const MonitoringDashboardPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
+  const [selectedBranch, setSelectedBranch] = useState<string>('143');
   const [includeEkstrakom, setIncludeEkstrakom] = useState(false);
   const [lunasRange, setLunasRange] = useState<'bulan' | '3bulan'>('bulan');
 
@@ -25,7 +33,7 @@ const MonitoringDashboardPage: React.FC = () => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
   }, [uploads, selectedUpload]);
 
-  const { data: allRows = [] } = useMLFData143(selectedUpload);
+  const { data: allRows = [] } = useMLFDataByBranch(selectedUpload, selectedBranch);
   const rows = useMemo(
     () => (includeEkstrakom ? allRows : allRows.filter((r) => (Number(r.kol) || 0) !== 0)),
     [allRows, includeEkstrakom]
