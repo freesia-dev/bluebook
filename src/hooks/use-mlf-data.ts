@@ -47,9 +47,10 @@ export const useMLFUploads = () => {
   });
 };
 
-export const useMLFData143 = (uploadId?: string) => {
+export const useMLFDataByBranch = (uploadId?: string, branchCode?: string) => {
+  const brcd = branchCode || '143';
   return useQuery({
-    queryKey: ['mlf-data-143', uploadId],
+    queryKey: ['mlf-data-by-branch', uploadId, brcd],
     queryFn: async () => {
       if (!uploadId) return [];
       const all: MLFRow[] = [];
@@ -60,7 +61,7 @@ export const useMLFData143 = (uploadId?: string) => {
           .from('mlf_data')
           .select('*')
           .eq('upload_id', uploadId)
-          .eq('brcd', '143')
+          .eq('brcd', brcd)
           .range(from, from + PAGE - 1);
         if (error) throw error;
         const chunk = (data || []) as MLFRow[];
@@ -74,3 +75,6 @@ export const useMLFData143 = (uploadId?: string) => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+/** @deprecated use useMLFDataByBranch(uploadId, '143') */
+export const useMLFData143 = (uploadId?: string) => useMLFDataByBranch(uploadId, '143');
