@@ -144,8 +144,7 @@ const MonitoringDashboardPage: React.FC = () => {
     };
   }, [uploads, selectedUploadInfo]);
 
-  const { data: prevRows = [] } = useMLFData143(prevUploadId);
-  const { data: baselineRows = [] } = useMLFData143(monthBaselineUploadId);
+  const { data: baselineRows = [] } = useMLFDataByBranch(monthBaselineUploadId, selectedBranch);
 
   const baruCair = useMemo(() => {
     if (!selectedUploadInfo || !monthBaselineUploadId) return { items: [], baki: 0, plafon: 0, available: false };
