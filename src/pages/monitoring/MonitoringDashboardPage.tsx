@@ -196,11 +196,13 @@ const MonitoringDashboardPage: React.FC = () => {
   const nplLevel = stats.nplRatio < 2 ? 'good' : stats.nplRatio < 5 ? 'warn' : 'bad';
   const nplColor = nplLevel === 'good' ? 'from-emerald-500 to-teal-600' : nplLevel === 'warn' ? 'from-amber-500 to-orange-600' : 'from-rose-500 to-red-600';
 
+  const selectedBranchInfo = BRANCH_OPTIONS.find((b) => b.code === selectedBranch);
+
   return (
     <MainLayout>
       <PageHeader
         title="Dashboard Monitoring KKR & NPL"
-        description="Rangkuman pengolahan data Master Loan Filter — Cabang 143 (CAPEM TELIHAN BONTANG)"
+        description={`Rangkuman pengolahan data Master Loan Filter — Cabang ${selectedBranch}${selectedBranchInfo ? ` (${selectedBranchInfo.name})` : ''}`}
       />
 
       {/* Controls bar */}
