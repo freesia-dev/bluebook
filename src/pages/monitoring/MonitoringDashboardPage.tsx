@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMLFUploads, useMLFData143 } from '@/hooks/use-mlf-data';
+import { useMLFUploads, useMLFDataByBranch } from '@/hooks/use-mlf-data';
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -15,9 +15,17 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+const BRANCH_OPTIONS = [
+  { code: '008', name: 'KANTOR CABANG BONTANG' },
+  { code: '118', name: 'CAPEM MARANGKAYU BONTANG' },
+  { code: '143', name: 'CAPEM TELIHAN BONTANG' },
+  { code: '185', name: 'KCP LOK TUAN BTG' },
+];
+
 const MonitoringDashboardPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
+  const [selectedBranch, setSelectedBranch] = useState<string>('143');
   const [includeEkstrakom, setIncludeEkstrakom] = useState(false);
   const [lunasRange, setLunasRange] = useState<'bulan' | '3bulan'>('bulan');
 
@@ -25,7 +33,7 @@ const MonitoringDashboardPage: React.FC = () => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
   }, [uploads, selectedUpload]);
 
-  const { data: allRows = [] } = useMLFData143(selectedUpload);
+  const { data: allRows = [] } = useMLFDataByBranch(selectedUpload, selectedBranch);
   const rows = useMemo(
     () => (includeEkstrakom ? allRows : allRows.filter((r) => (Number(r.kol) || 0) !== 0)),
     [allRows, includeEkstrakom]
@@ -136,8 +144,7 @@ const MonitoringDashboardPage: React.FC = () => {
     };
   }, [uploads, selectedUploadInfo]);
 
-  const { data: prevRows = [] } = useMLFData143(prevUploadId);
-  const { data: baselineRows = [] } = useMLFData143(monthBaselineUploadId);
+  const { data: baselineRows = [] } = useMLFDataByBranch(monthBaselineUploadId, selectedBranch);
 
   const baruCair = useMemo(() => {
     if (!selectedUploadInfo || !monthBaselineUploadId) return { items: [], baki: 0, plafon: 0, available: false };
@@ -189,11 +196,13 @@ const MonitoringDashboardPage: React.FC = () => {
   const nplLevel = stats.nplRatio < 2 ? 'good' : stats.nplRatio < 5 ? 'warn' : 'bad';
   const nplColor = nplLevel === 'good' ? 'from-emerald-500 to-teal-600' : nplLevel === 'warn' ? 'from-amber-500 to-orange-600' : 'from-rose-500 to-red-600';
 
+  const selectedBranchInfo = BRANCH_OPTIONS.find((b) => b.code === selectedBranch);
+
   return (
     <MainLayout>
       <PageHeader
         title="Dashboard Monitoring KKR & NPL"
-        description="Rangkuman pengolahan data Master Loan Filter — Cabang 143 (CAPEM TELIHAN BONTANG)"
+        description={`Rangkuman pengolahan data Master Loan Filter — Cabang ${selectedBranch}${selectedBranchInfo ? ` (${selectedBranchInfo.name})` : ''}`}
       />
 
       {/* Controls bar */}
@@ -217,6 +226,21 @@ const MonitoringDashboardPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-full sm:w-auto min-w-0">
+              <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Cabang</p>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="w-full sm:w-[260px] bg-background/80 backdrop-blur">
+                  <SelectValue placeholder="Pilih cabang" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BRANCH_OPTIONS.map((b) => (
+                    <SelectItem key={b.code} value={b.code}>
+                      {b.code} — {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-background/70 backdrop-blur">
               <Switch id="ekstrakom-toggle" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
               <Label htmlFor="ekstrakom-toggle" className="cursor-pointer min-w-0 flex-1">
@@ -230,7 +254,7 @@ const MonitoringDashboardPage: React.FC = () => {
           {selectedUploadInfo && (
             <div className="lg:text-right text-xs text-muted-foreground">
               <p>Total baris (semua cabang): <strong className="text-foreground">{fmtNum(selectedUploadInfo.total_rows)}</strong></p>
-              <p>Filter cabang: <strong className="text-foreground">143 - CAPEM TELIHAN BONTANG</strong></p>
+              <p>Filter cabang: <strong className="text-foreground">{selectedBranch}{selectedBranchInfo ? ` - ${selectedBranchInfo.name}` : ''}</strong></p>
             </div>
           )}
         </CardContent>
