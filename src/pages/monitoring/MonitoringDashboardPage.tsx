@@ -226,6 +226,21 @@ const MonitoringDashboardPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-full sm:w-auto min-w-0">
+              <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Cabang</p>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="w-full sm:w-[260px] bg-background/80 backdrop-blur">
+                  <SelectValue placeholder="Pilih cabang" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BRANCH_OPTIONS.map((b) => (
+                    <SelectItem key={b.code} value={b.code}>
+                      {b.code} — {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-background/70 backdrop-blur">
               <Switch id="ekstrakom-toggle" checked={includeEkstrakom} onCheckedChange={setIncludeEkstrakom} />
               <Label htmlFor="ekstrakom-toggle" className="cursor-pointer min-w-0 flex-1">
