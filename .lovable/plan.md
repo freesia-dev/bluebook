@@ -1,101 +1,66 @@
-## Customer Service (CS) — Modul Baru
+## Tujuan
+Tambah **Pusat Notifikasi** (lonceng 🔔 di header) yang otomatis mengumpulkan hal-hal penting yang perlu diperhatikan user, dan setiap notifikasi bisa diklik untuk langsung diarahkan ke halaman/aksi yang tepat.
 
-Grup menu baru di sidebar khusus role `cs` (+ `admin`), berisi master CIF, register rekening per produk tabungan, logbook kartu ATM, register buku tabungan, register bilyet deposito, dan import data lama dari Excel.
+## Sumber notifikasi (Phase 1)
+Semua dihitung real-time dari data yang sudah ada — **tidak perlu tabel baru**.
 
-### Sidebar — Grup "Customer Service" (icon Headphones)
-Visible hanya untuk `cs` & `admin`.
+| Kategori | Kondisi | Deep link |
+|---|---|---|
+| 🔴 NPL tinggi | Jumlah debitur `kol >= 3` di snapshot MLF terbaru untuk cabang user | `/monitoring/dashboard` |
+| 🟠 Debitur DPK banyak tunggakan | `kol == 2` & `tunggakan > 0`, top 5 | `/monitoring/kontak-debitur?filter=tunggakan` |
+| 🟢 Prospek baru (baru lunas / KOL membaik) | Diff snapshot terbaru vs bulan sebelumnya | `/monitoring/dashboard#prospek` |
+| 📅 Kredit akan jatuh tempo | `date1` dalam 30 hari ke depan | `/monitoring/dashboard#akan-lunas` |
+| 📥 Data MLF baru diupload | Ada `mlf_uploads` baru dalam 24 jam | `/monitoring/upload` |
+| ✉️ Surat masuk baru | `surat_masuk` dibuat dalam 24 jam terakhir | `/surat-masuk` |
+| 👤 User pending approval (admin only) | `profiles.status = 'pending'` | `/konfigurasi/users` |
+| 💳 ATM selisih belum selesai | `selisih_atm.status = 'Belum Diselesaikan'` | `/atm-telihan/penyelesaian` |
+| 🛡️ Shift security belum ditutup | `security_shift.status = 'aktif'` melebihi jam selesai | `/security/log` |
+| 📝 Reminder WA gagal | `wa_reminder_log.status != 'sent'` dalam 24 jam | `/monitoring/reminder-tunggakan` |
 
-- CIF Nasabah → `/cs/cif`
-- Register Rekening (sub-menu per produk):
-  - Simpeda → `/cs/rekening/simpeda`
-  - Prama → `/cs/rekening/prama`
-  - Simpel → `/cs/rekening/simpel`
-  - TabunganKu → `/cs/rekening/tabunganku`
-  - Giro → `/cs/rekening/giro`
-  - Al-Amin → `/cs/rekening/alamin`
-  - Taspen → `/cs/rekening/taspen`
-  - SI (Standing Instruction) → `/cs/rekening/si`
-- Logbook Kartu ATM → `/cs/kartu-atm`
-- Register Buku Tabungan → `/cs/buku-tabungan`
-- Register Bilyet Deposito → `/cs/bilyet-deposito`
-- Import Data Lama (admin only) → `/cs/import`
+Kategori difilter otomatis sesuai role (mis. admin dapat semua, `cs` tidak dapat notifikasi monitoring, dsb).
 
-### Modul 1 — CIF Nasabah
-- Tabel: nomor urut (auto-suggest, bisa lompat / override), CIF (unik), nama, tanggal input, user input.
-- Form input: auto-suggest nomor berikutnya dari max+1, bisa diubah manual (validasi CIF unik saja, nomor boleh lompat).
-- Search by CIF/nama, sort terbaru/terlama, filter, export Excel.
-- Backdating: field tanggal input bisa diisi tanggal lampau.
+## UX
+1. **Icon lonceng** di header (samping ThemeToggle) dengan badge angka unread (merah, animasi pulse kalau > 0).
+2. Klik lonceng → **Popover dropdown** (w-96) berisi list notifikasi terurut prioritas (merah > oranye > hijau > info), tiap item:
+   - Icon warna kategori
+   - Judul singkat + jumlah (mis. "12 debitur NPL perlu ditindaklanjuti")
+   - Deskripsi 1 baris (mis. "Cabang 143 · snapshot 10 Jul 2026")
+   - Waktu relatif ("2 jam lalu")
+   - Chevron kanan → klik = navigate ke deep link + tandai read
+3. Header popover: judul "Notifikasi" · tombol "Tandai semua dibaca" · link "Pengaturan".
+4. Footer: link "Lihat semua" → halaman `/notifikasi` (full page list, opsional Phase 1).
+5. **Persisten dismiss**: state read/dismissed disimpan di `localStorage` per-user (key `biru-notif-read-<userId>`) — cukup untuk Phase 1, tidak perlu tabel DB.
+6. Auto-refresh tiap 60 detik (React Query `refetchInterval`).
+7. **BIRU integration** (bonus kecil): kalau ada notifikasi merah, tombol "Tanya BIRU cara menangani ini" di item — buka BIRU dengan pre-filled prompt.
 
-### Modul 2 — Register Rekening per Produk (8 produk)
-Satu halaman generic `RekeningPage` dengan param produk. Tiap baris:
-nomor urut (auto-suggest, boleh lompat) · nomor rekening (unik per produk) · CIF (autocomplete dari CIF Nasabah, kalau belum ada bisa quick-create) · nama nasabah · tanggal buka · keterangan · user input.
+## Deep-link handler
+Beberapa target butuh state pre-filled saat halaman terbuka. Pakai **URL query params** dan **hash** yang sudah didukung:
+- `?filter=tunggakan` di KontakDebitur → auto-toggle switch "hanya tunggakan".
+- `#prospek` / `#akan-lunas` di dashboard → auto-scroll ke section.
 
-- Prefix nomor rekening: ikut data lama (tidak di-hardcode). Saat import, format apa adanya dari Excel; saat input baru, auto-suggest = nomor rekening terakhir + 1 (string increment), user bisa override.
-- Backdating tanggal buka.
-- Export Excel per produk.
+Halaman yang perlu edit sudah minimal (baca query param di `useEffect` awal).
 
-### Modul 3 — Logbook Kartu ATM
-- 2 tab: **Stok Saat Ini** (Simpeda / Prama / TabunganKu, dihitung dari mutasi) & **Mutasi** (masuk / keluar, jenis kartu, jumlah, keterangan, user, tanggal).
-- Export Excel.
+## File yang diubah / ditambah
 
-### Modul 4 — Register Buku Tabungan
-- 2 tab: **Masuk** (stok kosong yang diterima) & **Keluar** (diberikan ke nasabah, link CIF + rekening).
-- Auto-hitung sisa stok.
-
-### Modul 5 — Register Bilyet Deposito Keluar
-- Nomor bilyet, CIF, nama, nominal, jangka waktu, tanggal terbit, tanggal jatuh tempo, status (aktif / cair / pindah), keterangan.
-- Filter status & export Excel.
-
-### Modul 6 — Import Data Lama (admin only)
-- Upload `.xlsx`, parse via `xlsx` di browser.
-- Auto-detect sheet (CIF, SIMPEDA, PRAMA, SIMPEL, TABUNGANKU, GIRO, AL-AMIN, TASPEN, SI).
-- Preview 50 baris pertama tiap sheet, mapping kolom, lalu batch insert.
-- Dedupe: CIF by `cif`; rekening by `(produk, nomor_rekening)`.
-- Kalau CIF di register belum ada di master, auto-buat stub CIF.
-
-### Database (migration baru)
-
-Enums:
-- `cs_produk_tabungan`: simpeda, prama, simpel, tabunganku, giro, alamin, taspen, si
-- `cs_jenis_kartu`: simpeda, prama, tabunganku
-- `cs_mutasi_tipe`: masuk, keluar
-- `cs_deposito_status`: aktif, cair, pindah
-
-Tables (semua dengan trigger `log_activity`, RLS role `cs`/`admin` only):
-- `cs_cif` — nomor_urut int, cif text unique, nama text, tanggal_input date, user_input
-- `cs_rekening` — produk enum, nomor_urut int, nomor_rekening text, cif_id fk → cs_cif, nama, tanggal_buka date, keterangan, user_input; UNIQUE(produk, nomor_rekening)
-- `cs_kartu_atm_mutasi` — jenis_kartu enum, tipe enum, jumlah int, tanggal, keterangan, user_input
-- `cs_buku_tabungan` — tipe enum (masuk/keluar), jumlah int, tanggal, cif_id nullable, nomor_rekening nullable, keterangan, user_input
-- `cs_bilyet_deposito` — nomor_bilyet text unique, cif_id fk, nama, nominal numeric, jangka_waktu_bulan int, tanggal_terbit date, tanggal_jatuh_tempo date, status enum, keterangan, user_input
-
-GRANTs `authenticated` + `service_role`. RLS: only `cs`/`admin` boleh CRUD; demo/pemimpin read-only.
-
-### Role permissions
-- Tambah flag `customerService` di `src/lib/role-permissions.ts`, true untuk `cs` & `admin`.
-- Tambah role enum `cs` (sudah ada di `can_use_loan_calc`), pastikan label di `ROLE_LABELS`.
-
-### File changes ringkas
 **Baru:**
-- `src/pages/cs/CIFPage.tsx`
-- `src/pages/cs/RekeningPage.tsx` (generic, param produk)
-- `src/pages/cs/KartuATMPage.tsx`
-- `src/pages/cs/BukuTabunganPage.tsx`
-- `src/pages/cs/BilyetDepositoPage.tsx`
-- `src/pages/cs/ImportPage.tsx`
-- `src/hooks/use-cs-data.ts`
-- `src/lib/cs-store.ts`
+- `src/hooks/use-notifications.ts` — hitung semua notifikasi (React Query, refetchInterval 60s), gabung dengan read-state dari localStorage.
+- `src/components/notifications/NotificationBell.tsx` — icon + badge + popover.
+- `src/components/notifications/NotificationItem.tsx` — 1 row.
+- `src/lib/notification-sources.ts` — pure functions per-sumber (input: data yang sudah di-fetch, output: `Notification[]`). Mudah ditest & ditambah source baru.
 
-**Edit:**
-- `src/App.tsx` — 12 route baru
-- `src/components/layout/Sidebar.tsx` — grup CS
-- `src/lib/role-permissions.ts` — flag `customerService`
-- `src/components/search/GlobalSearch.tsx` — index modul baru
-- `src/pages/Panduan.tsx` — section panduan CS
+**Diedit:**
+- `src/components/layout/MainLayout.tsx` — sisipkan `<NotificationBell />` di header.
+- `src/pages/monitoring/KontakDebiturPage.tsx` — baca `?filter=tunggakan` untuk auto-set switch.
+- `src/pages/monitoring/MonitoringDashboardPage.tsx` — tambah `id="prospek"` / `id="akan-lunas"` pada section terkait untuk hash scroll.
 
-### Out of scope (Phase 1)
-- Recycle bin & soft-delete untuk tabel CS
-- BA printing untuk modul CS
-- Notifikasi otomatis deposito jatuh tempo
-- Workflow approval
+## Yang tidak masuk Phase 1
+- Push notification browser (Web Push) — bisa nanti pakai skill PWA jika user mau.
+- Notifikasi email/WA.
+- Tabel `notifications` di DB + realtime — sekarang derivasi client-side sudah cukup dan hemat.
+- Halaman `/notifikasi` full page (link "Lihat semua" bisa disembunyikan dulu).
+- Pengaturan per-user (mute kategori tertentu).
 
-Phase 2 nanti bisa ditambah kalau sudah jalan.
+## Teknis singkat
+- Semua sumber dihitung dari hook yang sudah ada (`useMLFUploads`, `useMLFDataByBranch`, `useDebiturKontak`, dsb) — jadi tidak menambah beban query signifikan; cukup subscribe ke query yang memang sudah aktif.
+- Prioritas: `critical` (merah) > `warning` (oranye) > `success` (hijau) > `info` (biru).
+- Total ditampilkan maksimal 20 item; jika lebih, ada "+ N lainnya".
