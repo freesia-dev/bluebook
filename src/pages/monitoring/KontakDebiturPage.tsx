@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +33,14 @@ const KontakDebiturPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [onlyNoHp, setOnlyNoHp] = useState(false);
   const [onlyTunggakan, setOnlyTunggakan] = useState(false);
+
+  // Deep-link filter from notifikasi (mis. /monitoring/kontak?filter=tunggakan)
+  const [sp] = useSearchParams();
+  useEffect(() => {
+    const f = sp.get('filter');
+    if (f === 'tunggakan') setOnlyTunggakan(true);
+    if (f === 'no-hp') setOnlyNoHp(true);
+  }, [sp]);
 
   // edit buffer
   const [edits, setEdits] = useState<Record<string, string>>({});
