@@ -375,7 +375,7 @@ const MonitoringDashboardPage: React.FC = () => {
           </div>
 
           {/* Loan akan lunas */}
-          <Card className="mb-6 border-border/60">
+          <Card id="akan-lunas" className="mb-6 border-border/60 scroll-mt-24">
             <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <CalendarClock className="w-4 h-4 text-primary" />

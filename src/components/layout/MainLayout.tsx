@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { isRouteAllowed } from '@/lib/role-permissions';
 import { BiruAssistant } from '@/components/biru/BiruAssistant';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -67,6 +68,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
         <div className="flex items-center gap-2">
           <GlobalSearch />
+          <NotificationBell />
           <ThemeToggle />
         </div>
       </header>
