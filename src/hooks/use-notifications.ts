@@ -51,15 +51,15 @@ async function buildNotifications(opts: {
       const [{ count: nplCount }, { count: dpkCount }, { count: alCount }] =
         await Promise.all([
           sb.from('mlf_data').select('id', { count: 'exact', head: true })
-            .eq('upload_id', upload.id).gte('kol', 3),
+            .eq('upload_id', upload.id).eq('brcd', '143').gte('kol', 3),
           sb.from('mlf_data').select('id', { count: 'exact', head: true })
-            .eq('upload_id', upload.id).eq('kol', 2).gt('tungpk', 0),
+            .eq('upload_id', upload.id).eq('brcd', '143').eq('kol', 2).gt('tungpk', 0),
           (async () => {
             const today = new Date().toISOString().slice(0, 10);
             const in30 = new Date(Date.now() + 30 * 24 * 3600 * 1000)
               .toISOString().slice(0, 10);
             return sb.from('mlf_data').select('id', { count: 'exact', head: true })
-              .eq('upload_id', upload.id).gte('date1', today).lte('date1', in30);
+              .eq('upload_id', upload.id).eq('brcd', '143').gte('date1', today).lte('date1', in30);
           })(),
         ]);
 
