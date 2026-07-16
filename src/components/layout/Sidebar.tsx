@@ -219,12 +219,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const monitoringItemsFull = [
     { label: 'Upload Data', href: '/monitoring/upload' },
     { label: 'Dashboard', href: '/monitoring/dashboard' },
+    { label: 'Kredit Produktif Unit', href: '/monitoring/kredit-produktif' },
     { label: 'Export PDF', href: '/monitoring/export-pdf' },
     { label: 'Kontak Debitur', href: '/monitoring/kontak' },
     { label: 'Reminder Tunggakan', href: '/monitoring/reminder' },
   ];
   const monitoringItems = permissions.monitoringDashboardOnly
-    ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard')
+    ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard' || m.href === '/monitoring/kredit-produktif')
     : monitoringItemsFull;
 
   const konfigurasiItems = isAdmin
@@ -348,7 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {permissions.monitoring && monitoringItems.length > 0 && (
               <NavItem 
                 icon={TrendingUp} 
-                label="Monitoring KKR & NPL" 
+                label="Loan Monitoring" 
                 children={monitoringItems}
                 onNavigate={onClose}
               />
