@@ -1,66 +1,70 @@
-## Tujuan
-Tambah **Pusat Notifikasi** (lonceng 🔔 di header) yang otomatis mengumpulkan hal-hal penting yang perlu diperhatikan user, dan setiap notifikasi bisa diklik untuk langsung diarahkan ke halaman/aksi yang tepat.
+## Konfirmasi dari file yang di-upload
+File `MLF_KUR_ULM_30-06-2026.xlsx` sudah diperiksa. Kolom `L0NARR` (di aplikasi = `l0narr`) berisi nomor PK dengan pola:
+- `.../ULM-TLH/YYYY` → **Meranti** (KUR ULM)
+- `.../BPD-TLH/YYYY` → **Telihan** (default)
 
-## Sumber notifikasi (Phase 1)
-Semua dihitung real-time dari data yang sudah ada — **tidak perlu tabel baru**.
+**Pengecualian format lama (5 PK BPD-TLH tapi milik Meranti)** — hard-coded whitelist berdasarkan `l0lnno`:
 
-| Kategori | Kondisi | Deep link |
+| l0lnno | Nama | Nomor PK |
 |---|---|---|
-| 🔴 NPL tinggi | Jumlah debitur `kol >= 3` di snapshot MLF terbaru untuk cabang user | `/monitoring/dashboard` |
-| 🟠 Debitur DPK banyak tunggakan | `kol == 2` & `tunggakan > 0`, top 5 | `/monitoring/kontak-debitur?filter=tunggakan` |
-| 🟢 Prospek baru (baru lunas / KOL membaik) | Diff snapshot terbaru vs bulan sebelumnya | `/monitoring/dashboard#prospek` |
-| 📅 Kredit akan jatuh tempo | `date1` dalam 30 hari ke depan | `/monitoring/dashboard#akan-lunas` |
-| 📥 Data MLF baru diupload | Ada `mlf_uploads` baru dalam 24 jam | `/monitoring/upload` |
-| ✉️ Surat masuk baru | `surat_masuk` dibuat dalam 24 jam terakhir | `/surat-masuk` |
-| 👤 User pending approval (admin only) | `profiles.status = 'pending'` | `/konfigurasi/users` |
-| 💳 ATM selisih belum selesai | `selisih_atm.status = 'Belum Diselesaikan'` | `/atm-telihan/penyelesaian` |
-| 🛡️ Shift security belum ditutup | `security_shift.status = 'aktif'` melebihi jam selesai | `/security/log` |
-| 📝 Reminder WA gagal | `wa_reminder_log.status != 'sent'` dalam 24 jam | `/monitoring/reminder-tunggakan` |
+| 14306737 | SULIS | 087/886/59/6500/BPD-TLH/2023 |
+| 14306741 | BAHARUDDIN | 101/886/59/6500/BPD-TLH/2023 |
+| 14306742 | TASNADI | 102/886/59/1171/BPD-TLH/2023 |
+| 14306744 | YANA | 113/886/59/8900/BPD-TLH/2023 |
+| 14306753 | WINDI | 004/886/59/1160/BPD-TLH/2024 |
 
-Kategori difilter otomatis sesuai role (mis. admin dapat semua, `cs` tidak dapat notifikasi monitoring, dsb).
+Jika kedepannya ada penambahan/pengurangan whitelist, cukup edit array di `src/lib/produktif-utils.ts`.
 
-## UX
-1. **Icon lonceng** di header (samping ThemeToggle) dengan badge angka unread (merah, animasi pulse kalau > 0).
-2. Klik lonceng → **Popover dropdown** (w-96) berisi list notifikasi terurut prioritas (merah > oranye > hijau > info), tiap item:
-   - Icon warna kategori
-   - Judul singkat + jumlah (mis. "12 debitur NPL perlu ditindaklanjuti")
-   - Deskripsi 1 baris (mis. "Cabang 143 · snapshot 10 Jul 2026")
-   - Waktu relatif ("2 jam lalu")
-   - Chevron kanan → klik = navigate ke deep link + tandai read
-3. Header popover: judul "Notifikasi" · tombol "Tandai semua dibaca" · link "Pengaturan".
-4. Footer: link "Lihat semua" → halaman `/notifikasi` (full page list, opsional Phase 1).
-5. **Persisten dismiss**: state read/dismissed disimpan di `localStorage` per-user (key `biru-notif-read-<userId>`) — cukup untuk Phase 1, tidak perlu tabel DB.
-6. Auto-refresh tiap 60 detik (React Query `refetchInterval`).
-7. **BIRU integration** (bonus kecil): kalau ada notifikasi merah, tombol "Tanya BIRU cara menangani ini" di item — buka BIRU dengan pre-filled prompt.
+## 1. Rename menu group
+Sidebar: label `"Monitoring KKR & NPL"` → `"Loan Monitoring"` (di `src/components/layout/Sidebar.tsx`).
 
-## Deep-link handler
-Beberapa target butuh state pre-filled saat halaman terbuka. Pakai **URL query params** dan **hash** yang sudah didukung:
-- `?filter=tunggakan` di KontakDebitur → auto-toggle switch "hanya tunggakan".
-- `#prospek` / `#akan-lunas` di dashboard → auto-scroll ke section.
+## 2. Halaman baru: Kredit Produktif Unit
 
-Halaman yang perlu edit sudah minimal (baca query param di `useEffect` awal).
+Route `/monitoring/kredit-produktif` → `src/pages/monitoring/KreditProduktifPage.tsx`, ditambahkan ke sidebar Loan Monitoring dan `src/App.tsx`. Menghormati `permissions.monitoringDashboardOnly`.
 
-## File yang diubah / ditambah
+### Sumber data
+- `useMLFUploads()` + `useMLFDataByBranch(uploadId, '143')`.
+- Filter Produktif: `group2 IN ('Kredit Modal Kerja', 'Kredit Investasi')`.
+- Penentuan unit dari `l0lnno` + `l0narr`:
+  1. Kalau `l0lnno` ada di whitelist Meranti → **Meranti**.
+  2. Kalau `l0narr` mengandung `/ULM-TLH/` → **Meranti**.
+  3. Kalau `l0narr` mengandung `/BPD-TLH/` → **Telihan**.
+  4. Selain itu → bucket `Tanpa Unit` (info).
 
-**Baru:**
-- `src/hooks/use-notifications.ts` — hitung semua notifikasi (React Query, refetchInterval 60s), gabung dengan read-state dari localStorage.
-- `src/components/notifications/NotificationBell.tsx` — icon + badge + popover.
-- `src/components/notifications/NotificationItem.tsx` — 1 row.
-- `src/lib/notification-sources.ts` — pure functions per-sumber (input: data yang sudah di-fetch, output: `Notification[]`). Mudah ditest & ditambah source baru.
+### Kolom baru: Angsuran Pokok
+Kolom baru pada tabel debitur & export:
+- **Jangka Waktu (bulan)** = selisih bulan antara `date` (tanggal mulai) dan `date1` (jatuh tempo), dibulatkan.
+- **Angsuran Pokok / bulan** = `pla / jangkaWaktuBulan` (dibulatkan ke rupiah terdekat, `-` bila jangka waktu 0).
 
-**Diedit:**
-- `src/components/layout/MainLayout.tsx` — sisipkan `<NotificationBell />` di header.
-- `src/pages/monitoring/KontakDebiturPage.tsx` — baca `?filter=tunggakan` untuk auto-set switch.
-- `src/pages/monitoring/MonitoringDashboardPage.tsx` — tambah `id="prospek"` / `id="akan-lunas"` pada section terkait untuk hash scroll.
+Ditampilkan sebagai 2 kolom terpisah agar user bisa verifikasi hitungannya.
 
-## Yang tidak masuk Phase 1
-- Push notification browser (Web Push) — bisa nanti pakai skill PWA jika user mau.
-- Notifikasi email/WA.
-- Tabel `notifications` di DB + realtime — sekarang derivasi client-side sudah cukup dan hemat.
-- Halaman `/notifikasi` full page (link "Lihat semua" bisa disembunyikan dulu).
-- Pengaturan per-user (mute kategori tertentu).
+### Layout
+Card "Kredit Produktif Unit" berisi:
+- Header controls: pilih periode MLF + toggle "Sertakan Ekstrakomtabel" (default off).
+- Bar chart mini perbandingan Telihan vs Meranti (debitur, outstanding, NPL%, tunggakan, **total angsuran pokok/bulan**).
+- Tabs `Telihan` | `Meranti`. Setiap tab menampilkan:
+  - Stat row: total debitur, plafon, outstanding, tunggakan, NPL%, **total angsuran pokok/bulan**.
+  - Breakdown Modal Kerja vs Investasi.
+  - Distribusi KOL (badge warna + count).
+  - Tabel debitur (search + filter KOL + sort): No, Nomor Loan, Nama, Nomor PK, Produk, Jenis, Plafon, Outstanding, Tunggakan, **Jangka Waktu (bln)**, **Angsuran Pokok/bln**, KOL, AO, Jatuh Tempo. Baris KOL ≥ 3 di-highlight rose.
+  - Tombol **Export Excel** & **Export PDF**.
 
-## Teknis singkat
-- Semua sumber dihitung dari hook yang sudah ada (`useMLFUploads`, `useMLFDataByBranch`, `useDebiturKontak`, dsb) — jadi tidak menambah beban query signifikan; cukup subscribe ke query yang memang sudah aktif.
-- Prioritas: `critical` (merah) > `warning` (oranye) > `success` (hijau) > `info` (biru).
-- Total ditampilkan maksimal 20 item; jika lebih, ada "+ N lainnya".
+### Export
+- Excel: `xlsx`, 1 sheet per tab, header + total baris bawah termasuk total angsuran pokok/bulan.
+- PDF: `jspdf` + `jspdf-autotable`, landscape A4, kop mirip monitoring lain, ringkasan + tabel.
+
+## 3. Tambahan
+- ✅ Bar chart perbandingan Telihan vs Meranti.
+- ✅ Highlight baris KOL ≥ 3 + quick-link ke Kontak Debitur.
+- ✅ KPI ringkas share Telihan/Meranti.
+
+## Technical
+- File baru: `src/pages/monitoring/KreditProduktifPage.tsx`, helper `src/lib/produktif-utils.ts` berisi:
+  - `MERANTI_OVERRIDE_L0LNNO: Set<string>` (5 nomor loan di atas).
+  - `getUnit(row)` → `'telihan' | 'meranti' | 'unknown'`.
+  - `getJangkaWaktuBulan(row)`, `getAngsuranPokok(row)`.
+  - Aggregator per unit / KOL / jenis; builder Excel & PDF.
+- Reuse: `useMLFUploads`, `useMLFDataByBranch('143')`, `fmtIDR`, `fmtNum`, `KOL_LABEL`, `KOL_COLOR`.
+- Router: satu entry baru di `src/App.tsx`.
+- Sidebar: tambah item + ganti label group.
+- Tidak ada perubahan schema DB. File Excel referensi tidak disimpan ke repo.

@@ -42,6 +42,7 @@ const PenyelesaianSelisihPage = lazy(() => import("./pages/atm-telihan/Penyelesa
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const UploadDataPage = lazy(() => import("./pages/monitoring/UploadDataPage"));
 const MonitoringDashboardPage = lazy(() => import("./pages/monitoring/MonitoringDashboardPage"));
+const KreditProduktifPage = lazy(() => import("./pages/monitoring/KreditProduktifPage"));
 const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
 const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPage"));
 const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
@@ -202,6 +203,10 @@ const App = () => (
             <Route path="/monitoring/dashboard" element={
               <Suspense fallback={<DashboardSkeleton />}><MonitoringDashboardPage /></Suspense>
             } />
+            <Route path="/monitoring/kredit-produktif" element={
+              <Suspense fallback={<TablePageSkeleton />}><KreditProduktifPage /></Suspense>
+            } />
+
             <Route path="/monitoring/export-pdf" element={
               <Suspense fallback={<GenericPageSkeleton />}><ExportPDFPage /></Suspense>
             } />
