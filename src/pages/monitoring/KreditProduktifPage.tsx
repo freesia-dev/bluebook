@@ -436,6 +436,12 @@ const KreditProduktifPage: React.FC = () => {
         </Card>
       ) : (
         <>
+          {missingDate && (
+            <div className="mb-4 p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 text-sm text-amber-900 dark:text-amber-100">
+              <strong>Perhatian:</strong> File MLF pada periode ini belum memiliki kolom <code className="px-1 rounded bg-amber-100 dark:bg-amber-900/40">DATE</code> (tanggal mulai kredit), sehingga <em>Jangka Waktu</em> dan <em>Angsuran Pokok/bulan</em> tidak dapat dihitung. Silakan upload ulang file MLF (kolom DATE akan otomatis terbaca).
+            </div>
+          )}
+
           {/* KPI comparison */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
             <MiniKPI icon={Users} title="Telihan" primary={fmtNum(telihanAgg.count)} sub={`${shareTelihan.toFixed(1)}% · OS ${fmtIDR(telihanAgg.baki)}`} tone="blue" />
