@@ -167,22 +167,7 @@ const KreditProduktifPage: React.FC = () => {
   const shareMeranti = totalProduktif > 0 ? (merantiAgg.count / totalProduktif) * 100 : 0;
 
   // ================= EXPORT =================
-  const buildExportRows = () => filteredRows.map((r, idx) => ({
-    'No': idx + 1,
-    'Nomor Loan': r.l0lnno || '-',
-    'Nama Debitur': r.l0name || '-',
-    'Nomor PK': r.l0narr || '-',
-    'Produk': r.lytitl || '-',
-    'Jenis': jenisProduktif(r),
-    'Plafon': Number(r.pla) || 0,
-    'Outstanding': Number(r.baki) || 0,
-    'Tunggakan': (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0),
-    'Jangka Waktu (bln)': r._jw,
-    'Angsuran Pokok/bln': r._angsuran,
-    'KOL': kolDisplay(Number(r.kol) || 0),
-    'AO': r.l0usid || '-',
-    'Jatuh Tempo': r.date1 ? format(new Date(r.date1), 'dd/MM/yyyy') : '-',
-  }));
+
 
   const handleExportExcel = () => {
     const IDR_FMT = '_-"Rp"* #,##0_-;[Red]-"Rp"* #,##0_-;_-"Rp"* "-"_-;_-@_-';
