@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMLFUploads, useMLFDataByBranch } from '@/hooks/use-mlf-data';
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
+import { getUnit, isProduktif, UNIT_LABEL } from '@/lib/produktif-utils';
 import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
