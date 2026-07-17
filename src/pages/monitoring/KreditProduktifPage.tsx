@@ -181,24 +181,85 @@ const KreditProduktifPage: React.FC = () => {
   }));
 
   const handleExportExcel = () => {
-    const rows = buildExportRows();
-    const totalRow = {
-      'No': '',
-      'Nomor Loan': '',
-      'Nama Debitur': `TOTAL (${rows.length} debitur)`,
-      'Nomor PK': '',
-      'Produk': '',
-      'Jenis': '',
-      'Plafon': rows.reduce((s, r) => s + (r['Plafon'] as number), 0),
-      'Outstanding': rows.reduce((s, r) => s + (r['Outstanding'] as number), 0),
-      'Tunggakan': rows.reduce((s, r) => s + (r['Tunggakan'] as number), 0),
-      'Jangka Waktu (bln)': '',
-      'Angsuran Pokok/bln': rows.reduce((s, r) => s + (r['Angsuran Pokok/bln'] as number), 0),
-      'KOL': '',
-      'AO': '',
-      'Jatuh Tempo': '',
-    };
-    const ws = XLSX.utils.json_to_sheet([...rows, totalRow]);
+    const IDR_FMT = '_-"Rp"* #,##0_-;[Red]-"Rp"* #,##0_-;_-"Rp"* "-"_-;_-@_-';
+    const NUM_FMT = '#,##0';
+    const headers = [
+      'No', 'Nomor Loan', 'Nama Debitur', 'Nomor PK', 'Produk', 'Jenis',
+      'Plafon', 'Outstanding', 'Tunggakan', 'Jangka Waktu (bln)',
+      'Angsuran Pokok/bln', 'KOL', 'AO', 'Tanggal Mulai', 'Jatuh Tempo',
+    ];
+    const bodyRows = filteredRows.map((r, idx) => [
+      idx + 1,
+      r.l0lnno || '-',
+      r.l0name || '-',
+      r.l0narr || '-',
+      r.lytitl || '-',
+      jenisProduktif(r),
+      Number(r.pla) || 0,
+      Number(r.baki) || 0,
+      (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0),
+      r._jw || 0,
+      r._angsuran || 0,
+      kolDisplay(Number(r.kol) || 0),
+      r.l0usid || '-',
+      (r as any).date ? format(new Date((r as any).date), 'dd/MM/yyyy') : '-',
+      r.date1 ? format(new Date(r.date1), 'dd/MM/yyyy') : '-',
+    ]);
+    const totalRow = [
+      '', '', `TOTAL (${bodyRows.length} debitur)`, '', '', '',
+      bodyRows.reduce((s, r) => s + (r[6] as number), 0),
+      bodyRows.reduce((s, r) => s + (r[7] as number), 0),
+      bodyRows.reduce((s, r) => s + (r[8] as number), 0),
+      '',
+      bodyRows.reduce((s, r) => s + (r[10] as number), 0),
+      '', '', '', '',
+    ];
+    const titleRow = [`Laporan Kredit Produktif - Unit ${UNIT_LABEL[activeUnit]}`];
+    const periodeRow = [`Periode MLF: ${selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-'}`];
+    const aoa = [titleRow, periodeRow, [], headers, ...bodyRows, totalRow];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 5 }, { wch: 12 }, { wch: 30 }, { wch: 32 }, { wch: 26 }, { wch: 12 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 18 },
+      { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 12 },
+    ];
+    // Merged title
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
+    ];
+
+    const range = XLSX.utils.decode_range(ws['!ref']!);
+    const headerRowIdx = 3;
+    const totalRowIdx = 4 + bodyRows.length;
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[addr];
+        if (!cell) continue;
+        // Title
+        if (R === 0) {
+          cell.s = { font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '003F7F' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+        } else if (R === 1) {
+          cell.s = { font: { italic: true, sz: 10, color: { rgb: '555555' } }, alignment: { horizontal: 'center' } };
+        } else if (R === headerRowIdx) {
+          cell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '003F7F' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } } } };
+        } else if (R === totalRowIdx) {
+          cell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'F1F5F9' } }, border: { top: { style: 'medium', color: { rgb: '000000' } } } };
+          if ([6, 7, 8, 10].includes(C)) cell.z = IDR_FMT;
+        } else if (R > headerRowIdx && R < totalRowIdx) {
+          // Data rows
+          if ([6, 7, 8, 10].includes(C)) { cell.z = IDR_FMT; cell.t = 'n'; }
+          if (C === 9) { cell.z = NUM_FMT; cell.t = 'n'; }
+          if (C === 0) cell.s = { alignment: { horizontal: 'center' } };
+          if (C === 11) cell.s = { alignment: { horizontal: 'center' }, font: { bold: true } };
+        }
+      }
+    }
+    ws['!rows'] = [{ hpt: 22 }, { hpt: 18 }, { hpt: 6 }, { hpt: 30 }];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `Kredit Produktif ${UNIT_LABEL[activeUnit]}`);
     const dateStr = selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'yyyyMMdd') : format(new Date(), 'yyyyMMdd');
