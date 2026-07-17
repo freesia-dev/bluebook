@@ -80,6 +80,7 @@ const UploadDataPage: React.FC = () => {
         group1: findIdx('group1', 'GROUP1'),
         group2: findIdx('group2', 'GROUP2'),
         l0usid: findIdx('L0USID'),
+        date: findIdx('DATE', 'TGL', 'TANGGAL', 'STARTDATE', 'TGLMULAI'),
         date1: findIdx('DATE1'),
       };
 
@@ -145,6 +146,7 @@ const UploadDataPage: React.FC = () => {
         group1: toStr(at(row, idx.group1)),
         group2: toStr(at(row, idx.group2)),
         l0usid: toStr(at(row, idx.l0usid)),
+        date: toDateISO(at(row, idx.date)),
         date1: toDateISO(at(row, idx.date1)),
       }));
 

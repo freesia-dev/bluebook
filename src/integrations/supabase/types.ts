@@ -1113,6 +1113,7 @@ export type Database = {
           brname: string | null
           cad: number | null
           created_at: string
+          date: string | null
           date1: string | null
           ecname: string | null
           group1: string | null
@@ -1136,6 +1137,7 @@ export type Database = {
           brname?: string | null
           cad?: number | null
           created_at?: string
+          date?: string | null
           date1?: string | null
           ecname?: string | null
           group1?: string | null
@@ -1159,6 +1161,7 @@ export type Database = {
           brname?: string | null
           cad?: number | null
           created_at?: string
+          date?: string | null
           date1?: string | null
           ecname?: string | null
           group1?: string | null

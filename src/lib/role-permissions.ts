@@ -150,7 +150,9 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
   if (pathname.startsWith('/atm-telihan')) return p.atmTelihan;
   if (pathname.startsWith('/monitoring')) {
     if (!p.monitoring) return false;
-    if (p.monitoringDashboardOnly) return pathname === '/monitoring/dashboard';
+    if (p.monitoringDashboardOnly) {
+      return pathname === '/monitoring/dashboard' || pathname === '/monitoring/kredit-produktif';
+    }
     return true;
   }
   if (pathname.startsWith('/konfigurasi') || pathname === '/activity-log' || pathname === '/recycle-bin') {
