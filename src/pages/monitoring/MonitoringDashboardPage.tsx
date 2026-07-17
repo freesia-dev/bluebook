@@ -314,6 +314,53 @@ const MonitoringDashboardPage: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Unit split — hanya untuk Capem 143 */}
+          {selectedBranch === '143' && (() => {
+            const produktif = rows.filter(isProduktif);
+            const groups = { telihan: [] as typeof rows, meranti: [] as typeof rows, unknown: [] as typeof rows };
+            produktif.forEach((r) => { groups[getUnit(r)].push(r); });
+            const sum = (arr: typeof rows, key: 'pla' | 'baki') => arr.reduce((s, r) => s + (Number(r[key]) || 0), 0);
+            const total = produktif.length || 1;
+            if (produktif.length === 0) return null;
+            return (
+              <Card className="mb-6 border-border/60">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Kredit Produktif — Telihan vs Meranti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {(['telihan', 'meranti', 'unknown'] as const).map((u) => {
+                    const arr = groups[u];
+                    const tone = u === 'telihan' ? 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:border-blue-900 dark:text-blue-100'
+                      : u === 'meranti' ? 'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-100'
+                      : 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/30 dark:border-amber-900 dark:text-amber-100';
+                    const pct = (arr.length / total) * 100;
+                    return (
+                      <div key={u} className={cn('rounded-lg border p-4', tone)}>
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge className={cn(
+                            u === 'telihan' && 'bg-blue-600',
+                            u === 'meranti' && 'bg-emerald-600',
+                            u === 'unknown' && 'bg-amber-600',
+                            'text-white'
+                          )}>
+                            {UNIT_LABEL[u]}
+                          </Badge>
+                          <span className="text-xs font-medium">{pct.toFixed(1)}%</span>
+                        </div>
+                        <p className="text-2xl font-bold">{fmtNum(arr.length)} <span className="text-sm font-normal opacity-80">debitur</span></p>
+                        <p className="text-xs mt-1 opacity-80">Plafon {fmtIDR(sum(arr, 'pla'))}</p>
+                        <p className="text-xs opacity-80">Outstanding {fmtIDR(sum(arr, 'baki'))}</p>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             <Card className="relative overflow-hidden">
