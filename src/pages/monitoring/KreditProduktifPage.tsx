@@ -110,6 +110,10 @@ const KreditProduktifPage: React.FC = () => {
   const telihanRows = useMemo(() => produktifRows.filter((r) => r._unit === 'telihan'), [produktifRows]);
   const merantiRows = useMemo(() => produktifRows.filter((r) => r._unit === 'meranti'), [produktifRows]);
   const unknownRows = useMemo(() => produktifRows.filter((r) => r._unit === 'unknown'), [produktifRows]);
+  const missingDate = useMemo(
+    () => produktifRows.length > 0 && produktifRows.every((r) => !(r as any).date),
+    [produktifRows],
+  );
 
   const telihanAgg = useMemo(() => aggregate(telihanRows), [telihanRows]);
   const merantiAgg = useMemo(() => aggregate(merantiRows), [merantiRows]);
