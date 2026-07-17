@@ -80,6 +80,7 @@ const UploadDataPage: React.FC = () => {
         group1: findIdx('group1', 'GROUP1'),
         group2: findIdx('group2', 'GROUP2'),
         l0usid: findIdx('L0USID'),
+        date: findIdx('DATE', 'TGL', 'TANGGAL', 'STARTDATE', 'TGLMULAI'),
         date1: findIdx('DATE1'),
       };
 
