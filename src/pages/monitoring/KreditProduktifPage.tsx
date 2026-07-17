@@ -444,8 +444,8 @@ const KreditProduktifPage: React.FC = () => {
 
           {/* KPI comparison */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-            <MiniKPI icon={Users} title="Telihan" primary={fmtNum(telihanAgg.count)} sub={`${shareTelihan.toFixed(1)}% · OS ${fmtIDR(telihanAgg.baki)}`} tone="blue" />
-            <MiniKPI icon={Users} title="Meranti" primary={fmtNum(merantiAgg.count)} sub={`${shareMeranti.toFixed(1)}% · OS ${fmtIDR(merantiAgg.baki)}`} tone="emerald" />
+            <MiniKPI icon={Users} title="Telihan" primary={fmtNum(telihanAgg.count)} sub={`${shareTelihan.toFixed(1)}% · OS ${fmtIDR(telihanAgg.baki)} · Angs/bln ${fmtIDR(telihanAgg.angsuran)}`} tone="blue" />
+            <MiniKPI icon={Users} title="Meranti" primary={fmtNum(merantiAgg.count)} sub={`${shareMeranti.toFixed(1)}% · OS ${fmtIDR(merantiAgg.baki)} · Angs/bln ${fmtIDR(merantiAgg.angsuran)}`} tone="emerald" />
             <MiniKPI icon={TrendingUp} title="Perbandingan NPL" primary={`${nplRatioTelihan.toFixed(2)}% vs ${nplRatioMeranti.toFixed(2)}%`} sub={`Telihan vs Meranti · ${unknownRows.length} tanpa unit`} tone="amber" />
           </div>
 
