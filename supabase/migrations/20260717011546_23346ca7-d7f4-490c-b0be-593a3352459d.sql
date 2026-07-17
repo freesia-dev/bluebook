@@ -1,0 +1,1 @@
+ALTER TABLE public.mlf_data ADD COLUMN IF NOT EXISTS date DATE;
