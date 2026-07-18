@@ -203,51 +203,73 @@ const KreditProduktifPage: React.FC = () => {
       bodyRows.reduce((s, r) => s + (r[10] as number), 0),
       '', '', '', '',
     ];
-    const titleRow = [`Laporan Kredit Produktif - Unit ${UNIT_LABEL[activeUnit]}`];
-    const periodeRow = [`Periode MLF: ${selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-'}`];
-    const aoa = [titleRow, periodeRow, [], headers, ...bodyRows, totalRow];
+    const unitFill = activeUnit === 'telihan' ? '2563EB' : '059669';
+    const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
+    const titleRow = [`LAPORAN KREDIT PRODUKTIF — UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`];
+    const periodeRow = [`Capem 143 Telihan  ·  Periode MLF: ${selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-'}  ·  Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`];
+    const ringkasanHead = ['RINGKASAN', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+    const ringkasanRows = [
+      ['Total Debitur', aggForActive.count, '', 'Modal Kerja', aggForActive.modalKerja, '', 'Investasi', aggForActive.investasi, '', 'Angs. Pokok/bln', aggForActive.angsuran, '', 'NPL %', `${nplPct.toFixed(2)}%`, ''],
+      ['Total Plafon', aggForActive.plafon, '', 'Total Outstanding', aggForActive.baki, '', 'Total Tunggakan', aggForActive.tunggakan, '', 'NPL Outstanding', aggForActive.npl, '', 'NPL Debitur', aggForActive.nplCount, ''],
+    ];
+    const aoa = [titleRow, periodeRow, [], ringkasanHead, ...ringkasanRows, [], headers, ...bodyRows, totalRow];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
 
     // Column widths
     ws['!cols'] = [
-      { wch: 5 }, { wch: 12 }, { wch: 30 }, { wch: 32 }, { wch: 26 }, { wch: 12 },
-      { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 18 },
-      { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 12 },
+      { wch: 5 }, { wch: 14 }, { wch: 30 }, { wch: 32 }, { wch: 26 }, { wch: 12 },
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 20 },
+      { wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
     ];
-    // Merged title
+    // Merges
     ws['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
       { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 14 } },
     ];
 
     const range = XLSX.utils.decode_range(ws['!ref']!);
-    const headerRowIdx = 3;
-    const totalRowIdx = 4 + bodyRows.length;
+    const headerRowIdx = 7; // title(0)+periode(1)+gap(2)+ringkasanHead(3)+ring1(4)+ring2(5)+gap(6)+header(7)
+    const totalRowIdx = headerRowIdx + 1 + bodyRows.length;
     for (let R = range.s.r; R <= range.e.r; R++) {
       for (let C = range.s.c; C <= range.e.c; C++) {
         const addr = XLSX.utils.encode_cell({ r: R, c: C });
         const cell = ws[addr];
         if (!cell) continue;
-        // Title
         if (R === 0) {
-          cell.s = { font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '003F7F' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+          cell.s = { font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: unitFill } }, alignment: { horizontal: 'center', vertical: 'center' } };
         } else if (R === 1) {
-          cell.s = { font: { italic: true, sz: 10, color: { rgb: '555555' } }, alignment: { horizontal: 'center' } };
+          cell.s = { font: { italic: true, sz: 10, color: { rgb: '555555' } }, alignment: { horizontal: 'center' }, fill: { fgColor: { rgb: 'F1F5F9' } } };
+        } else if (R === 3) {
+          cell.s = { font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '475569' } }, alignment: { horizontal: 'left' } };
+        } else if (R === 4 || R === 5) {
+          // Ringkasan label/value styling
+          const isLabel = [0, 3, 6, 9, 12].includes(C);
+          const isValue = [1, 4, 7, 10, 13].includes(C);
+          if (isLabel) cell.s = { font: { bold: true, sz: 9, color: { rgb: '475569' } }, fill: { fgColor: { rgb: 'F8FAFC' } }, border: { top: { style: 'thin', color: { rgb: 'CBD5E1' } }, bottom: { style: 'thin', color: { rgb: 'CBD5E1' } }, left: { style: 'thin', color: { rgb: 'CBD5E1' } } } };
+          if (isValue) {
+            cell.s = { font: { bold: true, sz: 10, color: { rgb: '0F172A' } }, fill: { fgColor: { rgb: 'F8FAFC' } }, alignment: { horizontal: 'right' }, border: { top: { style: 'thin', color: { rgb: 'CBD5E1' } }, bottom: { style: 'thin', color: { rgb: 'CBD5E1' } }, right: { style: 'thin', color: { rgb: 'CBD5E1' } } } };
+            if (typeof cell.v === 'number' && cell.v > 1000) { cell.z = IDR_FMT; cell.t = 'n'; }
+            else if (typeof cell.v === 'number') { cell.z = NUM_FMT; cell.t = 'n'; }
+          }
         } else if (R === headerRowIdx) {
-          cell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '003F7F' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } } } };
+          cell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: unitFill } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } } } };
         } else if (R === totalRowIdx) {
-          cell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'F1F5F9' } }, border: { top: { style: 'medium', color: { rgb: '000000' } } } };
+          cell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'E2E8F0' } }, border: { top: { style: 'medium', color: { rgb: '000000' } } } };
           if ([6, 7, 8, 10].includes(C)) cell.z = IDR_FMT;
         } else if (R > headerRowIdx && R < totalRowIdx) {
-          // Data rows
           if ([6, 7, 8, 10].includes(C)) { cell.z = IDR_FMT; cell.t = 'n'; }
           if (C === 9) { cell.z = NUM_FMT; cell.t = 'n'; }
           if (C === 0) cell.s = { alignment: { horizontal: 'center' } };
           if (C === 11) cell.s = { alignment: { horizontal: 'center' }, font: { bold: true } };
+          // Zebra
+          if ((R - headerRowIdx) % 2 === 0 && !cell.s) cell.s = { fill: { fgColor: { rgb: 'F8FAFC' } } };
         }
       }
     }
-    ws['!rows'] = [{ hpt: 22 }, { hpt: 18 }, { hpt: 6 }, { hpt: 30 }];
+    ws['!rows'] = [{ hpt: 24 }, { hpt: 18 }, { hpt: 6 }, { hpt: 18 }, { hpt: 20 }, { hpt: 20 }, { hpt: 6 }, { hpt: 30 }];
+    // Freeze header
+    ws['!freeze'] = { xSplit: 0, ySplit: headerRowIdx + 1 };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, `Kredit Produktif ${UNIT_LABEL[activeUnit]}`);
@@ -295,23 +317,39 @@ const KreditProduktifPage: React.FC = () => {
     doc.text(`Capem 143 Telihan · Periode MLF: ${periode}`, pageW / 2, y + 5, { align: 'center' });
     doc.text(`Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`, pageW / 2, y + 9.5, { align: 'center' });
 
+    // Unit banner
+    const unitColor: [number, number, number] = activeUnit === 'telihan' ? [37, 99, 235] : [5, 150, 105];
+    doc.setFillColor(...unitColor);
+    doc.roundedRect(marginX, 42, 52, 8, 1.5, 1.5, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(`UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`, marginX + 26, 47.5, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+
     // Ringkasan
-    y = 45;
+    y = 54;
+    const kolDist = [0, 1, 2, 3, 4, 5]
+      .map((k) => (aggForActive.kolCounts[k] ? `KOL ${kolDisplay(k)}: ${fmtNum(aggForActive.kolCounts[k])}` : null))
+      .filter(Boolean)
+      .join('   ·   ');
+    const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
     const summary = [
-      ['Total Debitur', fmtNum(aggForActive.count)],
+      ['Total Debitur', `${fmtNum(aggForActive.count)}   (Modal Kerja: ${fmtNum(aggForActive.modalKerja)} · Investasi: ${fmtNum(aggForActive.investasi)})`],
       ['Total Plafon', fmtIDR(aggForActive.plafon)],
       ['Total Outstanding', fmtIDR(aggForActive.baki)],
       ['Total Tunggakan', fmtIDR(aggForActive.tunggakan)],
-      ['NPL (KOL 3-5)', `${fmtNum(aggForActive.nplCount)} debitur · ${fmtIDR(aggForActive.npl)}`],
+      ['NPL (KOL 3-5)', `${fmtNum(aggForActive.nplCount)} debitur · ${fmtIDR(aggForActive.npl)} · ${nplPct.toFixed(2)}%`],
       ['Total Angsuran Pokok/bulan', fmtIDR(aggForActive.angsuran)],
+      ['Distribusi KOL', kolDist || '-'],
     ];
     autoTable(doc, {
       startY: y,
       body: summary,
-      theme: 'plain',
-      styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.5 },
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 2 },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60, textColor: [70, 70, 70] },
+        0: { fontStyle: 'bold', cellWidth: 60, textColor: [70, 70, 70], fillColor: [241, 245, 249] },
         1: { textColor: [0, 0, 0] },
       },
       margin: { left: marginX, right: marginX },
@@ -458,7 +496,21 @@ const KreditProduktifPage: React.FC = () => {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <CardTitle className="text-base">Detail Debitur Kredit Produktif</CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base">Detail Debitur Kredit Produktif</CardTitle>
+                  <Badge className={cn(
+                    'text-white',
+                    activeUnit === 'telihan' ? 'bg-blue-600 hover:bg-blue-600' : 'bg-emerald-600 hover:bg-emerald-600'
+                  )}>
+                    Unit {UNIT_LABEL[activeUnit]}
+                  </Badge>
+                  <Badge variant="outline" className="font-mono">
+                    {fmtNum(filteredRows.length)} / {fmtNum(aggForActive.count)} debitur
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Angs. Pokok/bln: {fmtIDR(aggForActive.angsuran)}
+                  </Badge>
+                </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={handleExportExcel}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel

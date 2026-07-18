@@ -16,6 +16,15 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+// Badge kecil Telihan/Meranti berdasarkan Nomor PK (hanya relevan untuk Capem 143)
+const UnitBadge: React.FC<{ row: any; show: boolean }> = ({ row, show }) => {
+  if (!show) return null;
+  const u = getUnit(row);
+  if (u === 'telihan') return <Badge className="bg-blue-600 hover:bg-blue-600 text-white text-[10px] px-1.5 py-0">Telihan</Badge>;
+  if (u === 'meranti') return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0">Meranti</Badge>;
+  return <Badge variant="outline" className="text-[10px] px-1.5 py-0">—</Badge>;
+};
+
 const BRANCH_OPTIONS = [
   { code: '008', name: 'KANTOR CABANG BONTANG' },
   { code: '118', name: 'CAPEM MARANGKAYU BONTANG' },
@@ -460,6 +469,7 @@ const MonitoringDashboardPage: React.FC = () => {
                     <TableHead>Jatuh Tempo</TableHead>
                     <TableHead>No Rekening</TableHead>
                     <TableHead>Nama Debitur</TableHead>
+                    {selectedBranch === '143' && <TableHead>Unit</TableHead>}
                     <TableHead>Produk</TableHead>
                     <TableHead className="text-center">KOL</TableHead>
                     <TableHead className="text-right">Outstanding</TableHead>
@@ -469,7 +479,7 @@ const MonitoringDashboardPage: React.FC = () => {
                 <TableBody>
                   {akanLunas.items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={selectedBranch === '143' ? 8 : 7} className="text-center text-muted-foreground py-6">
                         Tidak ada loan yang akan lunas pada periode ini.
                       </TableCell>
                     </TableRow>
@@ -478,6 +488,7 @@ const MonitoringDashboardPage: React.FC = () => {
                       <TableCell className="font-medium">{format(d._due, 'dd MMM yyyy', { locale: idLocale })}</TableCell>
                       <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
                       <TableCell className="font-medium">{d.l0name}</TableCell>
+                      {selectedBranch === '143' && <TableCell><UnitBadge row={d} show /></TableCell>}
                       <TableCell className="text-xs">{d.lytitl}</TableCell>
                       <TableCell className="text-center">
                         <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
@@ -537,6 +548,7 @@ const MonitoringDashboardPage: React.FC = () => {
                       <TableRow>
                         <TableHead>No Rekening</TableHead>
                         <TableHead>Nama Debitur</TableHead>
+                        {selectedBranch === '143' && <TableHead>Unit</TableHead>}
                         <TableHead>Produk</TableHead>
                         <TableHead className="text-center">KOL</TableHead>
                         <TableHead className="text-right">Plafon</TableHead>
@@ -547,7 +559,7 @@ const MonitoringDashboardPage: React.FC = () => {
                     <TableBody>
                       {baruCair.items.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                          <TableCell colSpan={selectedBranch === '143' ? 8 : 7} className="text-center text-muted-foreground py-6">
                             Tidak ada fasilitas baru cair pada periode ini.
                           </TableCell>
                         </TableRow>
@@ -555,6 +567,7 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableRow key={d.id}>
                           <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
                           <TableCell className="font-medium">{d.l0name}</TableCell>
+                          {selectedBranch === '143' && <TableCell><UnitBadge row={d} show /></TableCell>}
                           <TableCell className="text-xs">{d.lytitl}</TableCell>
                           <TableCell className="text-center">
                             <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
@@ -613,6 +626,7 @@ const MonitoringDashboardPage: React.FC = () => {
                       <TableRow>
                         <TableHead>No Rekening</TableHead>
                         <TableHead>Nama Debitur</TableHead>
+                        {selectedBranch === '143' && <TableHead>Unit</TableHead>}
                         <TableHead>Produk</TableHead>
                         <TableHead className="text-center">KOL Terakhir</TableHead>
                         <TableHead className="text-right">Plafon</TableHead>
@@ -623,7 +637,7 @@ const MonitoringDashboardPage: React.FC = () => {
                     <TableBody>
                       {baruLunas.items.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                          <TableCell colSpan={selectedBranch === '143' ? 8 : 7} className="text-center text-muted-foreground py-6">
                             Tidak ada fasilitas yang ditutup pada periode ini.
                           </TableCell>
                         </TableRow>
@@ -631,6 +645,7 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableRow key={d.id}>
                           <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
                           <TableCell className="font-medium">{d.l0name}</TableCell>
+                          {selectedBranch === '143' && <TableCell><UnitBadge row={d} show /></TableCell>}
                           <TableCell className="text-xs">{d.lytitl}</TableCell>
                           <TableCell className="text-center">
                             <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
@@ -704,6 +719,7 @@ const MonitoringDashboardPage: React.FC = () => {
                   <TableRow>
                     <TableHead>No Rekening</TableHead>
                     <TableHead>Nama Debitur</TableHead>
+                    {selectedBranch === '143' && <TableHead>Unit</TableHead>}
                     <TableHead>Produk</TableHead>
                     <TableHead className="text-center">KOL</TableHead>
                     <TableHead className="text-right">Outstanding</TableHead>
@@ -714,7 +730,7 @@ const MonitoringDashboardPage: React.FC = () => {
                 <TableBody>
                   {stats.topDebitur.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={selectedBranch === '143' ? 8 : 7} className="text-center text-muted-foreground py-6">
                         Tidak ada debitur dengan tunggakan berjalan.
                       </TableCell>
                     </TableRow>
@@ -723,6 +739,7 @@ const MonitoringDashboardPage: React.FC = () => {
                       <TableRow key={d.id}>
                         <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
                         <TableCell className="font-medium">{d.l0name}</TableCell>
+                        {selectedBranch === '143' && <TableCell><UnitBadge row={d} show /></TableCell>}
                         <TableCell className="text-xs">{d.lytitl}</TableCell>
                         <TableCell className="text-center">
                           <Badge style={{ backgroundColor: KOL_COLOR[Number(d.kol) || 0] || '#94a3b8', color: 'white' }}>
