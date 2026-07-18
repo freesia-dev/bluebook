@@ -295,23 +295,39 @@ const KreditProduktifPage: React.FC = () => {
     doc.text(`Capem 143 Telihan · Periode MLF: ${periode}`, pageW / 2, y + 5, { align: 'center' });
     doc.text(`Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`, pageW / 2, y + 9.5, { align: 'center' });
 
+    // Unit banner
+    const unitColor: [number, number, number] = activeUnit === 'telihan' ? [37, 99, 235] : [5, 150, 105];
+    doc.setFillColor(...unitColor);
+    doc.roundedRect(marginX, 42, 52, 8, 1.5, 1.5, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(`UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`, marginX + 26, 47.5, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+
     // Ringkasan
-    y = 45;
+    y = 54;
+    const kolDist = [0, 1, 2, 3, 4, 5]
+      .map((k) => (aggForActive.kolCounts[k] ? `KOL ${kolDisplay(k)}: ${fmtNum(aggForActive.kolCounts[k])}` : null))
+      .filter(Boolean)
+      .join('   ·   ');
+    const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
     const summary = [
-      ['Total Debitur', fmtNum(aggForActive.count)],
+      ['Total Debitur', `${fmtNum(aggForActive.count)}   (Modal Kerja: ${fmtNum(aggForActive.modalKerja)} · Investasi: ${fmtNum(aggForActive.investasi)})`],
       ['Total Plafon', fmtIDR(aggForActive.plafon)],
       ['Total Outstanding', fmtIDR(aggForActive.baki)],
       ['Total Tunggakan', fmtIDR(aggForActive.tunggakan)],
-      ['NPL (KOL 3-5)', `${fmtNum(aggForActive.nplCount)} debitur · ${fmtIDR(aggForActive.npl)}`],
+      ['NPL (KOL 3-5)', `${fmtNum(aggForActive.nplCount)} debitur · ${fmtIDR(aggForActive.npl)} · ${nplPct.toFixed(2)}%`],
       ['Total Angsuran Pokok/bulan', fmtIDR(aggForActive.angsuran)],
+      ['Distribusi KOL', kolDist || '-'],
     ];
     autoTable(doc, {
       startY: y,
       body: summary,
-      theme: 'plain',
-      styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.5 },
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 2 },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60, textColor: [70, 70, 70] },
+        0: { fontStyle: 'bold', cellWidth: 60, textColor: [70, 70, 70], fillColor: [241, 245, 249] },
         1: { textColor: [0, 0, 0] },
       },
       margin: { left: marginX, right: marginX },
