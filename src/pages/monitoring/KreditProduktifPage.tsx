@@ -458,7 +458,21 @@ const KreditProduktifPage: React.FC = () => {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <CardTitle className="text-base">Detail Debitur Kredit Produktif</CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base">Detail Debitur Kredit Produktif</CardTitle>
+                  <Badge className={cn(
+                    'text-white',
+                    activeUnit === 'telihan' ? 'bg-blue-600 hover:bg-blue-600' : 'bg-emerald-600 hover:bg-emerald-600'
+                  )}>
+                    Unit {UNIT_LABEL[activeUnit]}
+                  </Badge>
+                  <Badge variant="outline" className="font-mono">
+                    {fmtNum(filteredRows.length)} / {fmtNum(aggForActive.count)} debitur
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Angs. Pokok/bln: {fmtIDR(aggForActive.angsuran)}
+                  </Badge>
+                </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={handleExportExcel}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel
