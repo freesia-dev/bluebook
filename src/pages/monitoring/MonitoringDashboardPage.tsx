@@ -16,6 +16,15 @@ import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+// Badge kecil Telihan/Meranti berdasarkan Nomor PK (hanya relevan untuk Capem 143)
+const UnitBadge: React.FC<{ row: any; show: boolean }> = ({ row, show }) => {
+  if (!show) return null;
+  const u = getUnit(row);
+  if (u === 'telihan') return <Badge className="bg-blue-600 hover:bg-blue-600 text-white text-[10px] px-1.5 py-0">Telihan</Badge>;
+  if (u === 'meranti') return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0">Meranti</Badge>;
+  return <Badge variant="outline" className="text-[10px] px-1.5 py-0">—</Badge>;
+};
+
 const BRANCH_OPTIONS = [
   { code: '008', name: 'KANTOR CABANG BONTANG' },
   { code: '118', name: 'CAPEM MARANGKAYU BONTANG' },
