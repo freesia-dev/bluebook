@@ -87,6 +87,7 @@ const FULL: RolePermissions = {
   loanCalc: true,
   customerService: false,
   comingSoonOB: false,
+  canUpload: true,
 };
 
 const NONE: RolePermissions = {
@@ -108,13 +109,15 @@ const NONE: RolePermissions = {
   loanCalc: false,
   customerService: false,
   comingSoonOB: false,
+  canUpload: false,
 };
 
 
 export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
   admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true, canCommentSecurityLog: true, canManageSecurityAudit: true, customerService: true },
   user: { ...FULL, konfigurasi: false },
-  demo: { ...FULL, canEdit: false, konfigurasi: false, customerService: true },
+  demo: { ...FULL, canEdit: false, konfigurasi: false, customerService: true, securityLog: true, canUpload: false },
+  kic: { ...FULL, canEdit: false, konfigurasi: false, customerService: true, securityLog: true, canUpload: false },
   pemimpin: { ...FULL, canEdit: false, konfigurasi: false, securityLog: true, canSignSecurityBA: true, customerService: true },
   meranti: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
   officer_rk: { ...FULL, konfigurasi: false },
