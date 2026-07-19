@@ -63,6 +63,8 @@ export interface RolePermissions {
   /** Customer Service modules (CIF, rekening, kartu ATM, buku tabungan, deposito). */
   customerService: boolean;
   comingSoonOB: boolean;
+  /** Can upload data files (MLF upload). */
+  canUpload: boolean;
 }
 
 
