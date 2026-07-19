@@ -261,20 +261,23 @@ const UsersPage: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              openEditDialog(item);
-            }}
+            onClick={(e) => { e.stopPropagation(); openViewDialog(item); }}
+            title="Lihat Detail"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); openEditDialog(item); }}
+            title="Edit Role"
           >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              openResetPasswordDialog(item);
-            }}
+            onClick={(e) => { e.stopPropagation(); openResetPasswordDialog(item); }}
             title="Reset Password"
           >
             <KeyRound className="h-4 w-4" />
