@@ -546,6 +546,39 @@ const UsersPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Detail Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Detail User</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2 text-sm">
+            {viewLoading && <div className="text-muted-foreground">Memuat detail...</div>}
+            {!viewLoading && viewDetail && (
+              <>
+                <div><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{selectedItem?.nama || '-'}</span></div>
+                <div><span className="text-muted-foreground">Email:</span> <span className="font-medium">{String(viewDetail.email ?? '-')}</span></div>
+                <div><span className="text-muted-foreground">Telepon:</span> <span className="font-medium">{String(viewDetail.phone ?? '-')}</span></div>
+                <div><span className="text-muted-foreground">Role:</span> <Badge className="ml-1">{ROLE_LABELS[selectedItem?.role as AppRole] ?? selectedItem?.role}</Badge></div>
+                <div><span className="text-muted-foreground">User ID:</span> <span className="font-mono text-xs">{selectedItem?.userId}</span></div>
+                <div><span className="text-muted-foreground">Email Terverifikasi:</span> <span className="font-medium">{viewDetail.email_confirmed_at ? new Date(String(viewDetail.email_confirmed_at)).toLocaleString('id-ID') : 'Belum'}</span></div>
+                <div><span className="text-muted-foreground">Login Terakhir:</span> <span className="font-medium">{viewDetail.last_sign_in_at ? new Date(String(viewDetail.last_sign_in_at)).toLocaleString('id-ID') : '-'}</span></div>
+                <div><span className="text-muted-foreground">Terdaftar:</span> <span className="font-medium">{viewDetail.created_at ? new Date(String(viewDetail.created_at)).toLocaleString('id-ID') : '-'}</span></div>
+                <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
+                  Password tersimpan dalam bentuk terenkripsi (hash) di sistem dan tidak dapat ditampilkan/dilihat oleh siapapun — termasuk admin. Jika user lupa password, gunakan tombol <strong>Reset Password</strong> untuk mengatur password baru.
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewOpen(false)}>Tutup</Button>
+            {selectedItem && (
+              <Button onClick={() => { setIsViewOpen(false); openResetPasswordDialog(selectedItem); }} className="gap-2">
+                <KeyRound className="w-4 h-4" /> Reset Password
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
