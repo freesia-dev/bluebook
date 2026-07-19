@@ -5,6 +5,7 @@ export type AppRole =
   | 'admin'
   | 'user'
   | 'demo'
+  | 'kic'
   | 'meranti'
   | 'officer_rk'
   | 'officer_kredit'
@@ -20,6 +21,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   admin: 'Admin (IT)',
   user: 'User',
   demo: 'Demo (View Only)',
+  kic: 'KIC (Kontrol Internal Cabang)',
   meranti: 'Meranti',
   officer_rk: 'Officer Relationship Kredit',
   officer_kredit: 'Officer Kredit',
