@@ -5,6 +5,7 @@ export type AppRole =
   | 'admin'
   | 'user'
   | 'demo'
+  | 'kic'
   | 'meranti'
   | 'officer_rk'
   | 'officer_kredit'
@@ -20,6 +21,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   admin: 'Admin (IT)',
   user: 'User',
   demo: 'Demo (View Only)',
+  kic: 'KIC (Kontrol Internal Cabang)',
   meranti: 'Meranti',
   officer_rk: 'Officer Relationship Kredit',
   officer_kredit: 'Officer Kredit',
@@ -61,6 +63,8 @@ export interface RolePermissions {
   /** Customer Service modules (CIF, rekening, kartu ATM, buku tabungan, deposito). */
   customerService: boolean;
   comingSoonOB: boolean;
+  /** Can upload data files (MLF upload). */
+  canUpload: boolean;
 }
 
 
@@ -83,6 +87,7 @@ const FULL: RolePermissions = {
   loanCalc: true,
   customerService: false,
   comingSoonOB: false,
+  canUpload: true,
 };
 
 const NONE: RolePermissions = {
@@ -104,13 +109,15 @@ const NONE: RolePermissions = {
   loanCalc: false,
   customerService: false,
   comingSoonOB: false,
+  canUpload: false,
 };
 
 
 export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
   admin: { ...FULL, securityLog: true, canSignSecurityBA: true, canEditSecurityLog: true, canPrintSecurityBA: true, canStartSecurityShift: true, canCommentSecurityLog: true, canManageSecurityAudit: true, customerService: true },
   user: { ...FULL, konfigurasi: false },
-  demo: { ...FULL, canEdit: false, konfigurasi: false, customerService: true },
+  demo: { ...FULL, canEdit: false, konfigurasi: false, customerService: true, securityLog: true, canUpload: false },
+  kic: { ...FULL, canEdit: false, konfigurasi: false, customerService: true, securityLog: true, canUpload: false },
   pemimpin: { ...FULL, canEdit: false, konfigurasi: false, securityLog: true, canSignSecurityBA: true, customerService: true },
   meranti: { ...FULL, konfigurasi: false, atmTelihan: false, monitoringDashboardOnly: true },
   officer_rk: { ...FULL, konfigurasi: false },
@@ -150,6 +157,7 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
   if (pathname.startsWith('/atm-telihan')) return p.atmTelihan;
   if (pathname.startsWith('/monitoring')) {
     if (!p.monitoring) return false;
+    if (pathname === '/monitoring/upload' && !p.canUpload) return false;
     if (p.monitoringDashboardOnly) {
       return pathname === '/monitoring/dashboard' || pathname === '/monitoring/kredit-produktif';
     }

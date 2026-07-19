@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, KeyRound, Check, X, UserPlus } from 'lucide-react';
+import { Pencil, KeyRound, Check, X, UserPlus, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -26,7 +26,7 @@ import {
 import { ROLE_LABELS, AppRole } from '@/lib/role-permissions';
 
 const ROLE_OPTIONS: AppRole[] = [
-  'user', 'admin', 'demo', 'meranti', 'officer_rk', 'officer_kredit',
+  'user', 'admin', 'demo', 'kic', 'meranti', 'officer_rk', 'officer_kredit',
   'staff_admin_kcp', 'pemimpin', 'teller', 'cs', 'security', 'team_leader_security', 'ob',
 ];
 
@@ -53,6 +53,9 @@ const UsersPage: React.FC = () => {
   const [editFormData, setEditFormData] = useState({ role: 'user' as AppRole });
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewDetail, setViewDetail] = useState<Record<string, unknown> | null>(null);
   
   // Create user form
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
@@ -191,6 +194,26 @@ const UsersPage: React.FC = () => {
     setIsEditOpen(true);
   };
 
+  const openViewDialog = async (item: UserRoleDisplay) => {
+    setSelectedItem(item);
+    setViewDetail(null);
+    setIsViewOpen(true);
+    setViewLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-get-user', {
+        body: { userId: item.userId }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setViewDetail(data);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Gagal memuat detail user.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
   const openResetPasswordDialog = (item: UserRoleDisplay) => {
     setSelectedItem(item);
     setNewPassword('');
@@ -238,20 +261,23 @@ const UsersPage: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              openEditDialog(item);
-            }}
+            onClick={(e) => { e.stopPropagation(); openViewDialog(item); }}
+            title="Lihat Detail"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); openEditDialog(item); }}
+            title="Edit Role"
           >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              openResetPasswordDialog(item);
-            }}
+            onClick={(e) => { e.stopPropagation(); openResetPasswordDialog(item); }}
             title="Reset Password"
           >
             <KeyRound className="h-4 w-4" />
@@ -517,6 +543,39 @@ const UsersPage: React.FC = () => {
             <Button onClick={handleCreateUser} disabled={isCreatingUser}>
               {isCreatingUser ? 'Membuat...' : 'Buat User'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Detail Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Detail User</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2 text-sm">
+            {viewLoading && <div className="text-muted-foreground">Memuat detail...</div>}
+            {!viewLoading && viewDetail && (
+              <>
+                <div><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{selectedItem?.nama || '-'}</span></div>
+                <div><span className="text-muted-foreground">Email:</span> <span className="font-medium">{String(viewDetail.email ?? '-')}</span></div>
+                <div><span className="text-muted-foreground">Telepon:</span> <span className="font-medium">{String(viewDetail.phone ?? '-')}</span></div>
+                <div><span className="text-muted-foreground">Role:</span> <Badge className="ml-1">{ROLE_LABELS[selectedItem?.role as AppRole] ?? selectedItem?.role}</Badge></div>
+                <div><span className="text-muted-foreground">User ID:</span> <span className="font-mono text-xs">{selectedItem?.userId}</span></div>
+                <div><span className="text-muted-foreground">Email Terverifikasi:</span> <span className="font-medium">{viewDetail.email_confirmed_at ? new Date(String(viewDetail.email_confirmed_at)).toLocaleString('id-ID') : 'Belum'}</span></div>
+                <div><span className="text-muted-foreground">Login Terakhir:</span> <span className="font-medium">{viewDetail.last_sign_in_at ? new Date(String(viewDetail.last_sign_in_at)).toLocaleString('id-ID') : '-'}</span></div>
+                <div><span className="text-muted-foreground">Terdaftar:</span> <span className="font-medium">{viewDetail.created_at ? new Date(String(viewDetail.created_at)).toLocaleString('id-ID') : '-'}</span></div>
+                <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400">
+                  Password tersimpan dalam bentuk terenkripsi (hash) di sistem dan tidak dapat ditampilkan/dilihat oleh siapapun — termasuk admin. Jika user lupa password, gunakan tombol <strong>Reset Password</strong> untuk mengatur password baru.
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewOpen(false)}>Tutup</Button>
+            {selectedItem && (
+              <Button onClick={() => { setIsViewOpen(false); openResetPasswordDialog(selectedItem); }} className="gap-2">
+                <KeyRound className="w-4 h-4" /> Reset Password
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

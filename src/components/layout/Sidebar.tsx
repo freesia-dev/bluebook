@@ -224,9 +224,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Kontak Debitur', href: '/monitoring/kontak' },
     { label: 'Reminder Tunggakan', href: '/monitoring/reminder' },
   ];
-  const monitoringItems = permissions.monitoringDashboardOnly
+  const monitoringItems = (permissions.monitoringDashboardOnly
     ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard' || m.href === '/monitoring/kredit-produktif')
-    : monitoringItemsFull;
+    : monitoringItemsFull
+  ).filter((m) => m.href !== '/monitoring/upload' || permissions.canUpload);
 
   const konfigurasiItems = isAdmin
     ? [
