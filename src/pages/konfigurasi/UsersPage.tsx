@@ -194,6 +194,26 @@ const UsersPage: React.FC = () => {
     setIsEditOpen(true);
   };
 
+  const openViewDialog = async (item: UserRoleDisplay) => {
+    setSelectedItem(item);
+    setViewDetail(null);
+    setIsViewOpen(true);
+    setViewLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-get-user', {
+        body: { userId: item.userId }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setViewDetail(data);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Gagal memuat detail user.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
   const openResetPasswordDialog = (item: UserRoleDisplay) => {
     setSelectedItem(item);
     setNewPassword('');
