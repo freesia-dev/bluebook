@@ -53,6 +53,9 @@ const UsersPage: React.FC = () => {
   const [editFormData, setEditFormData] = useState({ role: 'user' as AppRole });
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewDetail, setViewDetail] = useState<Record<string, unknown> | null>(null);
   
   // Create user form
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
