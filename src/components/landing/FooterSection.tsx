@@ -7,7 +7,7 @@ const FooterSection = () => {
         <div className="flex flex-col items-center text-center">
           {/* Logo and name */}
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 rounded-xl bg-white/10 p-3 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-xl bg-white p-2 flex items-center justify-center shadow-lg">
               <img 
                 src={logo} 
                 alt="Bluebook Logo" 
