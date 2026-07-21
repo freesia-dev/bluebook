@@ -29,15 +29,15 @@ const FinalCTASection = () => {
 
           {/* Main heading */}
           <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Menuju Transformasi Digital dengan{" "}
+            Digitalisasi Operasional Kantor dalam{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-amber-300">
-              Bluebook!
+              Satu Portal
             </span>
           </h2>
 
           <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Akses sistem sekarang untuk mengelola administrasi dan agenda kredit 
-            KCP Telihan secara digital dan terintegrasi.
+            Akses Bluebook untuk menjalankan administrasi, agenda kredit, dan pelaporan
+            operasional KCP Telihan secara terintegrasi.
           </p>
 
           {/* CTA Button - Centered */}

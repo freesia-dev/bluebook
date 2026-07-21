@@ -12,6 +12,10 @@ import {
   Zap,
   BarChart3,
   Smartphone,
+  Bot,
+  UserSquare,
+  Bell,
+  LineChart,
 } from "lucide-react";
 
 const FeaturesSection = () => {
@@ -19,84 +23,112 @@ const FeaturesSection = () => {
     {
       icon: Mail,
       title: "Manajemen Surat",
-      description: "Surat masuk & keluar dengan auto-numbering, upload lampiran, dan pencarian cepat.",
+      description: "Registrasi surat masuk dan keluar dengan penomoran otomatis, unggah lampiran, serta pencarian arsip yang cepat.",
       gradient: "from-blue-500 to-cyan-500",
       tag: "Arsip Digital",
     },
     {
       icon: CreditCard,
       title: "Agenda Kredit",
-      description: "SPPK, PK, KK/MPAK, dan Nomor Loan untuk KCP Telihan dan Unit Meranti dalam satu tempat.",
+      description: "Pengelolaan SPPK, PK, KK/MPAK, dan Nomor Loan terintegrasi untuk KCP Telihan dan Unit Meranti.",
       gradient: "from-brand-secondary to-amber-500",
-      tag: "Multi-Cabang",
+      tag: "Multi-Unit",
     },
     {
       icon: Calculator,
       title: "Simulasi Kredit",
-      description: "Kalkulator Konsumtif & Produktif lengkap dengan Program CERDAS dan promo bunga.",
+      description: "Kalkulator Konsumtif dan Produktif dengan Program CERDAS, promo bunga, serta ekspor hasil simulasi.",
       gradient: "from-violet-500 to-purple-500",
       tag: "Konsumtif & Produktif",
     },
     {
       icon: Banknote,
-      title: "ATM Telihan",
-      description: "Catat pengisian, selesaikan selisih kas, dan cetak Berita Acara otomatis.",
+      title: "Operasional ATM",
+      description: "Pencatatan pengisian kas, penyelesaian selisih, dan pembuatan Berita Acara siap cetak.",
       gradient: "from-teal-500 to-emerald-500",
       tag: "Berita Acara Otomatis",
     },
     {
       icon: TrendingUp,
-      title: "Monitoring KKR & NPL",
-      description: "Upload data, dashboard real-time, kontak debitur, dan reminder tunggakan via WhatsApp.",
+      title: "Loan Monitoring",
+      description: "Dashboard KKR dan NPL berbasis data MLF, filter cabang, pemantauan fasilitas cair dan lunas bulan berjalan.",
       gradient: "from-rose-500 to-red-500",
-      tag: "Real-time",
+      tag: "Berbasis MLF",
+    },
+    {
+      icon: LineChart,
+      title: "Kredit Produktif",
+      description: "Pemisahan portofolio Telihan dan Meranti berdasarkan format PK, lengkap dengan ekspor Excel dan PDF terformat.",
+      gradient: "from-emerald-500 to-teal-600",
+      tag: "Telihan & Meranti",
+    },
+    {
+      icon: UserSquare,
+      title: "Customer Service",
+      description: "Logbook Kartu ATM, Buku Tabungan, Bilyet Deposito, CIF, Nomor Rekening, dan SI autodebet dalam satu grup menu.",
+      gradient: "from-cyan-500 to-blue-500",
+      tag: "6 Submenu",
     },
     {
       icon: Shield,
       title: "Log Security",
-      description: "Shift handover, kondisi kantor, audit publik, dan Berita Acara Harian satpam.",
+      description: "Shift handover, kondisi kantor, audit publik satpam, dan Berita Acara Harian dengan bulk print.",
       gradient: "from-slate-600 to-slate-800",
       tag: "Audit Trail",
     },
     {
       icon: FileSearch,
       title: "SLIK OJK",
-      description: "Permohonan SLIK OJK per user input dengan workflow setujui/tolak dan laporan PDF.",
+      description: "Permohonan SLIK per user dengan alur setuju/tolak dan laporan PDF yang terpisah per pengguna.",
       gradient: "from-indigo-500 to-blue-600",
       tag: "Per User Input",
     },
     {
-      icon: Archive,
-      title: "Activity Log & Recycle Bin",
-      description: "Audit trail lengkap untuk setiap perubahan, plus pemulihan data yang terhapus.",
+      icon: Bot,
+      title: "Asisten BIRU",
+      description: "Asisten AI internal untuk tanya jawab operasional dan pencarian data debitur lintas modul.",
+      gradient: "from-violet-500 to-purple-600",
+      tag: "AI Assistant",
+    },
+    {
+      icon: Bell,
+      title: "Pusat Notifikasi",
+      description: "Notifikasi berbasis peran dan cabang, dengan deep-link langsung ke tindakan yang perlu diambil.",
       gradient: "from-amber-500 to-orange-500",
-      tag: "Soft Delete",
+      tag: "Role-Based",
     },
     {
       icon: Users,
-      title: "Role-Based Access",
-      description: "Admin, User, dan Demo dengan persetujuan admin sebelum akun aktif.",
+      title: "Manajemen Peran",
+      description: "Admin, User, KIC, dan Demo dengan alur persetujuan admin serta hak akses granular per modul.",
       gradient: "from-purple-500 to-pink-500",
       tag: "Approval Workflow",
     },
     {
       icon: Zap,
       title: "Global Search",
-      description: "Tekan Ctrl+K untuk mencari surat, kredit, debitur, atau modul apapun dalam hitungan detik.",
+      description: "Tekan Ctrl+K untuk mencari surat, kredit, debitur, atau modul apa pun dari mana saja.",
       gradient: "from-yellow-500 to-amber-500",
       tag: "Ctrl + K",
     },
     {
       icon: BarChart3,
       title: "Dashboard Real-time",
-      description: "Statistik live dengan Supabase Realtime — angka berubah otomatis tanpa refresh.",
+      description: "Statistik operasional yang diperbarui otomatis melalui langganan realtime pada basis data.",
       gradient: "from-green-500 to-emerald-500",
       tag: "Live Update",
     },
     {
+      icon: Archive,
+      title: "Activity Log & Recycle Bin",
+      description: "Jejak audit lengkap untuk setiap perubahan data dan pemulihan entri yang terhapus.",
+      gradient: "from-amber-500 to-yellow-500",
+      tag: "Soft Delete",
+    },
+    {
       icon: Smartphone,
-      title: "PWA — Install di HP",
-      description: "Pasang di Android, iOS, atau Desktop. Cepat, ringan, dan bisa diakses sebagai aplikasi.",
+      title: "PWA Installable",
+      description: "Dapat dipasang sebagai aplikasi di Android, iOS, dan Desktop dengan performa ringan.",
       gradient: "from-brand-primary to-blue-600",
       tag: "Installable",
     },
@@ -120,8 +152,8 @@ const FeaturesSection = () => {
             </span>
           </h2>
           <p className="text-lg text-slate-600 leading-relaxed">
-            Dari surat-menyurat sampai monitoring NPL, dari simulasi kredit sampai BA ATM — Bluebook
-            menyatukan operasional harian KCP Telihan dan Unit Meranti dalam satu sistem yang ringan dan cepat.
+            Modul operasional harian KCP Telihan dan Unit Meranti dikelola dalam satu portal terintegrasi
+            dengan penomoran otomatis, jejak audit, dan pelaporan siap cetak.
           </p>
         </div>
 
@@ -159,9 +191,9 @@ const FeaturesSection = () => {
         {/* Stats strip */}
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {[
-            { value: "12+", label: "Modul Aktif" },
+            { value: "15+", label: "Modul Aktif" },
             { value: "2", label: "Unit Terintegrasi" },
-            { value: "Real-time", label: "Dashboard Live" },
+            { value: "AI", label: "Asisten BIRU" },
             { value: "PWA", label: "Installable" },
           ].map((stat, i) => (
             <div

@@ -5,25 +5,30 @@ import {
   Flame, Instagram, Linkedin,
   Mail, CreditCard, Banknote, Calculator, TrendingUp, Shield,
   FileSearch, Archive, Users, Zap, BarChart3, Smartphone, Sparkles,
+  Bot, UserSquare, Bell, LineChart,
 } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
 
 const modules = [
-  { icon: Mail, title: 'Manajemen Surat', description: 'Surat masuk & keluar dengan auto-numbering dan lampiran.', color: 'from-blue-500 to-cyan-500' },
-  { icon: CreditCard, title: 'Agenda Kredit', description: 'SPPK, PK, KK/MPAK, Nomor Loan — Telihan & Meranti.', color: 'from-amber-500 to-orange-500' },
-  { icon: Calculator, title: 'Simulasi Kredit', description: 'Kalkulator Konsumtif, Produktif, & Program CERDAS.', color: 'from-violet-500 to-purple-500' },
-  { icon: Banknote, title: 'ATM Telihan', description: 'Pengisian, selisih, dan Berita Acara otomatis.', color: 'from-teal-500 to-emerald-500' },
-  { icon: TrendingUp, title: 'Monitoring KKR & NPL', description: 'Dashboard NPL, kontak debitur, reminder WhatsApp.', color: 'from-rose-500 to-red-500' },
-  { icon: Shield, title: 'Log Security', description: 'Shift, handover, BA Harian, dan audit publik satpam.', color: 'from-slate-600 to-slate-800' },
-  { icon: FileSearch, title: 'SLIK OJK', description: 'Workflow setujui/tolak dengan laporan PDF per user.', color: 'from-indigo-500 to-blue-600' },
-  { icon: Archive, title: 'Activity Log & Recycle Bin', description: 'Audit trail penuh dan pemulihan data terhapus.', color: 'from-amber-500 to-yellow-500' },
+  { icon: Mail, title: 'Manajemen Surat', description: 'Registrasi surat masuk dan keluar dengan penomoran otomatis dan lampiran.', color: 'from-blue-500 to-cyan-500' },
+  { icon: CreditCard, title: 'Agenda Kredit', description: 'Pengelolaan SPPK, PK, KK/MPAK, dan Nomor Loan — Telihan & Meranti.', color: 'from-amber-500 to-orange-500' },
+  { icon: Calculator, title: 'Simulasi Kredit', description: 'Kalkulator Konsumtif, Produktif, Program CERDAS, serta ekspor hasil.', color: 'from-violet-500 to-purple-500' },
+  { icon: Banknote, title: 'Operasional ATM', description: 'Pencatatan pengisian, penyelesaian selisih, dan Berita Acara siap cetak.', color: 'from-teal-500 to-emerald-500' },
+  { icon: TrendingUp, title: 'Loan Monitoring', description: 'Dashboard KKR dan NPL berbasis MLF dengan filter cabang serta pantauan bulan berjalan.', color: 'from-rose-500 to-red-500' },
+  { icon: LineChart, title: 'Kredit Produktif', description: 'Pemisahan portofolio Telihan dan Meranti berdasarkan format PK, siap ekspor.', color: 'from-emerald-500 to-teal-600' },
+  { icon: UserSquare, title: 'Customer Service', description: 'Logbook Kartu ATM, Buku Tabungan, Bilyet Deposito, CIF, Rekening, dan SI.', color: 'from-cyan-500 to-blue-500' },
+  { icon: Shield, title: 'Log Security', description: 'Shift, handover, BA Harian, bulk print, dan audit publik satpam.', color: 'from-slate-600 to-slate-800' },
+  { icon: FileSearch, title: 'SLIK OJK', description: 'Permohonan per user dengan alur setuju/tolak dan laporan PDF terpisah.', color: 'from-indigo-500 to-blue-600' },
+  { icon: Bot, title: 'Asisten BIRU', description: 'Asisten AI internal untuk tanya jawab operasional dan pencarian data debitur.', color: 'from-violet-500 to-purple-600' },
+  { icon: Bell, title: 'Pusat Notifikasi', description: 'Notifikasi berbasis peran dan cabang dengan deep-link ke tindakan terkait.', color: 'from-amber-500 to-orange-500' },
+  { icon: Archive, title: 'Activity Log & Recycle Bin', description: 'Jejak audit menyeluruh dan pemulihan data yang terhapus.', color: 'from-amber-500 to-yellow-500' },
 ];
 
 const platformPerks = [
-  { icon: Users, label: 'Role-Based Access', desc: 'Admin, User, Demo dengan persetujuan admin' },
-  { icon: Zap, label: 'Global Search (Ctrl+K)', desc: 'Cari modul apapun dalam hitungan detik' },
-  { icon: BarChart3, label: 'Dashboard Real-time', desc: 'Angka berubah otomatis tanpa refresh' },
-  { icon: Smartphone, label: 'PWA Installable', desc: 'Pasang di Android, iOS, atau Desktop' },
+  { icon: Users, label: 'Role-Based Access', desc: 'Admin, User, KIC, dan Demo dengan persetujuan admin' },
+  { icon: Zap, label: 'Global Search (Ctrl+K)', desc: 'Cari modul dan data dalam hitungan detik' },
+  { icon: BarChart3, label: 'Dashboard Real-time', desc: 'Statistik diperbarui otomatis tanpa refresh' },
+  { icon: Smartphone, label: 'PWA Installable', desc: 'Dapat dipasang di Android, iOS, dan Desktop' },
 ];
 
 const About: React.FC = () => {
@@ -59,10 +64,11 @@ const About: React.FC = () => {
               "In Bluebook we Trust!"
             </p>
             <p className="max-w-2xl mx-auto text-blue-100/90 leading-relaxed">
-              <strong className="text-white">Digital Logbook</strong> resmi untuk{' '}
-              <strong className="text-white">Bankaltimtara KCP Telihan dan Unit Meranti</strong>. Menyatukan
-              surat-menyurat, agenda kredit, simulasi, ATM, monitoring NPL, security, dan SLIK OJK
-              dalam satu portal yang cepat, aman, dan mudah diaudit.
+              <strong className="text-white">Digital Logbook</strong> internal untuk{' '}
+              <strong className="text-white">Bankaltimtara KCP Telihan dan Unit Meranti</strong>. Portal
+              terpusat untuk administrasi surat, agenda kredit, simulasi pinjaman, operasional ATM,
+              monitoring kredit, layanan Customer Service, log security, dan SLIK OJK — dilengkapi
+              asisten AI, notifikasi berbasis peran, serta jejak audit yang menyeluruh.
             </p>
           </div>
         </div>

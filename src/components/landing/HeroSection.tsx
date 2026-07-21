@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock, Download } from "lucide-react";
+import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock, Download, Bot } from "lucide-react";
 import logo from "@/assets/logo_bluebook.png";
 
 const HeroSection = () => {
   const navigate = useNavigate();
 
   const featureIcons = [
-    { icon: FileText, label: "Surat Digital", color: "from-blue-500 to-cyan-500" },
+    { icon: FileText, label: "Manajemen Surat", color: "from-blue-500 to-cyan-500" },
     { icon: CalendarCheck, label: "Agenda Kredit", color: "from-brand-secondary to-amber-500" },
+    { icon: Bot, label: "Asisten BIRU", color: "from-violet-500 to-purple-500" },
     { icon: ShieldCheck, label: "Akses Berbasis Peran", color: "from-green-500 to-emerald-500" },
   ];
 
@@ -31,7 +32,7 @@ const HeroSection = () => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10">
               <Sparkles className="w-4 h-4 text-brand-secondary" />
-              <span className="text-sm text-white/80">Sistem Resmi Internal Bankaltimtara</span>
+              <span className="text-sm text-white/80">Sistem Administrasi Internal Bankaltimtara</span>
             </div>
 
             {/* Main heading */}
@@ -47,17 +48,17 @@ const HeroSection = () => {
               </p>
             </div>
 
-            {/* Improved Value Proposition */}
+            {/* Value proposition */}
             <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
-              Satu portal untuk surat, agenda kredit, simulasi, ATM, monitoring NPL, dan security — <span className="text-brand-secondary font-medium">tanpa Excel, tanpa kertas, tanpa ribet.</span>
+              Portal terpusat untuk administrasi surat, agenda kredit, simulasi pinjaman, operasional ATM, monitoring kredit, layanan Customer Service, hingga log security — <span className="text-brand-secondary font-medium">terstandar, terdokumentasi, dan siap audit.</span>
             </p>
 
             {/* Supporting bullets */}
             <ul className="space-y-3">
               {[
-                "12+ modul aktif untuk KCP Telihan dan Unit Meranti",
-                "Dashboard real-time, global search (Ctrl+K), audit trail",
-                "Installable sebagai aplikasi (PWA) di HP & Desktop",
+                "15+ modul operasional untuk KCP Telihan dan Unit Meranti",
+                "Asisten AI BIRU, notifikasi berbasis peran, dan global search (Ctrl+K)",
+                "Dashboard real-time, activity log, recycle bin, dan PWA installable",
               ].map((item, index) => (
                 <li key={index} className="flex items-center gap-3 text-slate-300">
                   <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -104,7 +105,7 @@ const HeroSection = () => {
               </Button>
             </div>
 
-            {/* Enhanced Trust badges */}
+            {/* Trust badges */}
             <div className="flex flex-col gap-3 pt-4">
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
@@ -114,7 +115,7 @@ const HeroSection = () => {
                     </div>
                   ))}
                 </div>
-                <span className="text-sm text-slate-400">Digunakan oleh Sekretaris, Penyelia, IT & Admin KCP Telihan</span>
+                <span className="text-sm text-slate-400">Digunakan internal KCP Telihan</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
