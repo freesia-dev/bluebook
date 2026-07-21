@@ -64,10 +64,11 @@ const About: React.FC = () => {
               "In Bluebook we Trust!"
             </p>
             <p className="max-w-2xl mx-auto text-blue-100/90 leading-relaxed">
-              <strong className="text-white">Digital Logbook</strong> resmi untuk{' '}
-              <strong className="text-white">Bankaltimtara KCP Telihan dan Unit Meranti</strong>. Menyatukan
-              surat-menyurat, agenda kredit, simulasi, ATM, monitoring NPL, security, dan SLIK OJK
-              dalam satu portal yang cepat, aman, dan mudah diaudit.
+              <strong className="text-white">Digital Logbook</strong> internal untuk{' '}
+              <strong className="text-white">Bankaltimtara KCP Telihan dan Unit Meranti</strong>. Portal
+              terpusat untuk administrasi surat, agenda kredit, simulasi pinjaman, operasional ATM,
+              monitoring kredit, layanan Customer Service, log security, dan SLIK OJK — dilengkapi
+              asisten AI, notifikasi berbasis peran, serta jejak audit yang menyeluruh.
             </p>
           </div>
         </div>
