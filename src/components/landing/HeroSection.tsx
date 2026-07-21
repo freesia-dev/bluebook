@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock, Download } from "lucide-react";
+import { ArrowRight, FileText, CalendarCheck, ShieldCheck, Sparkles, Lock, Download, Bot } from "lucide-react";
 import logo from "@/assets/logo_bluebook.png";
 
 const HeroSection = () => {
