@@ -191,9 +191,9 @@ const FeaturesSection = () => {
         {/* Stats strip */}
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {[
-            { value: "12+", label: "Modul Aktif" },
+            { value: "15+", label: "Modul Aktif" },
             { value: "2", label: "Unit Terintegrasi" },
-            { value: "Real-time", label: "Dashboard Live" },
+            { value: "AI", label: "Asisten BIRU" },
             { value: "PWA", label: "Installable" },
           ].map((stat, i) => (
             <div
