@@ -12,6 +12,10 @@ import {
   Zap,
   BarChart3,
   Smartphone,
+  Bot,
+  UserSquare,
+  Bell,
+  LineChart,
 } from "lucide-react";
 
 const FeaturesSection = () => {
