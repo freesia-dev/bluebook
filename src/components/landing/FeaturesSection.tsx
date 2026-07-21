@@ -152,8 +152,8 @@ const FeaturesSection = () => {
             </span>
           </h2>
           <p className="text-lg text-slate-600 leading-relaxed">
-            Dari surat-menyurat sampai monitoring NPL, dari simulasi kredit sampai BA ATM — Bluebook
-            menyatukan operasional harian KCP Telihan dan Unit Meranti dalam satu sistem yang ringan dan cepat.
+            Modul operasional harian KCP Telihan dan Unit Meranti dikelola dalam satu portal terintegrasi
+            dengan penomoran otomatis, jejak audit, dan pelaporan siap cetak.
           </p>
         </div>
 
