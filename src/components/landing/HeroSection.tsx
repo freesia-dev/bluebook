@@ -105,7 +105,7 @@ const HeroSection = () => {
               </Button>
             </div>
 
-            {/* Enhanced Trust badges */}
+            {/* Trust badges */}
             <div className="flex flex-col gap-3 pt-4">
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
@@ -115,7 +115,7 @@ const HeroSection = () => {
                     </div>
                   ))}
                 </div>
-                <span className="text-sm text-slate-400">Digunakan oleh Sekretaris, Penyelia, IT & Admin KCP Telihan</span>
+                <span className="text-sm text-slate-400">Digunakan internal KCP Telihan</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
