@@ -4,24 +4,24 @@ const ExplainerSection = () => {
   const steps = [
     {
       number: "01",
-      title: "Login ke Sistem",
+      title: "Autentikasi & Otorisasi",
       description:
-        "Masuk dengan akun yang disetujui admin. Sistem otomatis mengenali role dan menampilkan modul sesuai hak akses Anda.",
-      highlights: ["Approval Workflow", "Role-based Access", "Auto Logout 1 Jam"],
+        "Login dengan akun yang telah disetujui admin. Sistem menyesuaikan tampilan menu dan hak akses berdasarkan peran pengguna.",
+      highlights: ["Approval Workflow", "Role-Based Access", "Auto Logout 1 Jam"],
     },
     {
       number: "02",
-      title: "Kerjakan Modul Harian",
+      title: "Operasional Harian",
       description:
-        "Input surat, kelola agenda kredit, simulasikan pinjaman, catat pengisian ATM, pantau NPL, atau jalankan shift security — semua di satu tempat.",
-      highlights: ["Auto-numbering", "Cetak Berita Acara", "Reminder WhatsApp"],
+        "Registrasi surat, kelola agenda kredit, jalankan simulasi, catat pengisian ATM, pantau NPL, dan operasikan modul Customer Service serta Security dari satu portal.",
+      highlights: ["Auto-Numbering", "Berita Acara Siap Cetak", "Notifikasi Berbasis Peran"],
     },
     {
       number: "03",
-      title: "Pantau & Laporkan",
+      title: "Pelaporan & Audit",
       description:
-        "Dashboard real-time, global search (Ctrl+K), export Excel/PDF, activity log, dan recycle bin untuk audit penuh dan ketenangan pikiran.",
-      highlights: ["Realtime Stats", "Audit Trail", "Recycle Bin"],
+        "Dashboard real-time, ekspor Excel dan PDF terformat, global search (Ctrl+K), activity log, serta recycle bin untuk memastikan setiap transaksi terdokumentasi.",
+      highlights: ["Realtime Statistik", "Audit Trail", "Recycle Bin"],
     },
   ];
 
@@ -37,13 +37,13 @@ const ExplainerSection = () => {
             ALUR PENGGUNAAN
           </span>
           <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
-            Dari Login Sampai{" "}
+            Alur Kerja yang{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-amber-400">
-              Laporan Selesai
+              Terstandar
             </span>
           </h2>
           <p className="text-lg text-slate-300 leading-relaxed">
-            Tiga langkah sederhana — sisanya ditangani sistem.
+            Tiga tahap operasional yang terdokumentasi dari otentikasi hingga pelaporan.
           </p>
         </div>
 
