@@ -7,8 +7,9 @@ const HeroSection = () => {
   const navigate = useNavigate();
 
   const featureIcons = [
-    { icon: FileText, label: "Surat Digital", color: "from-blue-500 to-cyan-500" },
+    { icon: FileText, label: "Manajemen Surat", color: "from-blue-500 to-cyan-500" },
     { icon: CalendarCheck, label: "Agenda Kredit", color: "from-brand-secondary to-amber-500" },
+    { icon: Bot, label: "Asisten BIRU", color: "from-violet-500 to-purple-500" },
     { icon: ShieldCheck, label: "Akses Berbasis Peran", color: "from-green-500 to-emerald-500" },
   ];
 
