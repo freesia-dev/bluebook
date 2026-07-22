@@ -235,6 +235,18 @@ const KalkulatorPage: React.FC = () => {
   // CERDAS apply (subsidi khusus Asuransi Jiwa)
   const cerdasResult: CerdasApplyResult | null = useMemo(() => {
     if (!cerdasOn || !cerdasConfig) return null;
+    const savedCerdas = (editRow?.hasil_ringkasan as any)?.cerdas;
+    if (editRow && savedCerdas) {
+      const savedSkema = (savedCerdas.skema ?? editRow.cerdas_skema) as CerdasSkema | null;
+      const savedPremiAktual = Number(savedCerdas.premiAsuransiAktual ?? 0);
+      const savedProvisiAwal = Number(savedCerdas.provisiPctAsli ?? provisiInput);
+      const sameSavedInput =
+        savedSkema === cerdasSkema &&
+        plafon === editRow.plafon &&
+        Math.abs(premiJiwaAktual - savedPremiAktual) < 1 &&
+        Math.abs(provisiInput - savedProvisiAwal) < 0.0001;
+      if (sameSavedInput) return savedCerdas as CerdasApplyResult;
+    }
     return applyCerdas({
       skema: cerdasSkema,
       plafon,
@@ -242,7 +254,7 @@ const KalkulatorPage: React.FC = () => {
       provisiPctAsli: provisiInput,
       cfg: cerdasConfig,
     });
-  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput]);
+  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput, editRow]);
 
   const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
   const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
