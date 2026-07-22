@@ -155,10 +155,23 @@ const KalkulatorPage: React.FC = () => {
     setTtpStr(tt ? formatCurrencyInput(String(tt)) : '');
     setBunga(String(editRow.bunga_pa ?? ''));
     setBungaMode('manual');
-    setProvisi(String(editRow.provisi_pct ?? 0));
+    const savedCerdas = (editRow.hasil_ringkasan as any)?.cerdas;
+    const savedCerdasSkema = (savedCerdas?.skema ?? editRow.cerdas_skema) as CerdasSkema | null;
+    const savedDiskonProvisi = Number(savedCerdas?.diskonProvisiPct ?? 0);
+    const provisiAwal = savedCerdasSkema === 'top_up' && savedDiskonProvisi > 0
+      ? Number(savedCerdas?.provisiPctAsli ?? ((editRow.provisi_pct ?? 0) / (1 - savedDiskonProvisi / 100)))
+      : Number(editRow.provisi_pct ?? 0);
+    setProvisi(String(Number.isFinite(provisiAwal) ? provisiAwal : editRow.provisi_pct ?? 0));
     setProvisiMode('manual');
     setAsuransiProvider((editRow.asuransi_provider as any) || 'manual');
-    setAsuransiJiwaStr(editRow.asuransi_jiwa_beban ? formatCurrencyInput(String(editRow.asuransi_jiwa_beban)) : '');
+    const savedSubsidiJiwa = savedCerdasSkema && savedCerdasSkema !== 'top_up'
+      ? Number(savedCerdas?.subsidiBank ?? editRow.cerdas_subsidi_bank ?? 0)
+      : 0;
+    const savedPremiJiwaAktual = Number(
+      savedCerdas?.premiAsuransiAktual ??
+      ((editRow.asuransi_jiwa_beban ?? Math.max((editRow.asuransi_nominal ?? 0) - (editRow.premi_kredit ?? 0), 0)) + savedSubsidiJiwa)
+    );
+    setAsuransiJiwaStr(savedPremiJiwaAktual ? formatCurrencyInput(String(savedPremiJiwaAktual)) : '');
     setAsuransiKreditStr(editRow.premi_kredit ? formatCurrencyInput(String(editRow.premi_kredit)) : '');
     setNotarisStr(editRow.biaya_notaris ? formatCurrencyInput(String(editRow.biaya_notaris)) : '');
     setPerikatanStr(editRow.biaya_perikatan ? formatCurrencyInput(String(editRow.biaya_perikatan)) : '');
@@ -222,6 +235,18 @@ const KalkulatorPage: React.FC = () => {
   // CERDAS apply (subsidi khusus Asuransi Jiwa)
   const cerdasResult: CerdasApplyResult | null = useMemo(() => {
     if (!cerdasOn || !cerdasConfig) return null;
+    const savedCerdas = (editRow?.hasil_ringkasan as any)?.cerdas;
+    if (editRow && savedCerdas) {
+      const savedSkema = (savedCerdas.skema ?? editRow.cerdas_skema) as CerdasSkema | null;
+      const savedPremiAktual = Number(savedCerdas.premiAsuransiAktual ?? 0);
+      const savedProvisiAwal = Number(savedCerdas.provisiPctAsli ?? provisiInput);
+      const sameSavedInput =
+        savedSkema === cerdasSkema &&
+        plafon === editRow.plafon &&
+        Math.abs(premiJiwaAktual - savedPremiAktual) < 1 &&
+        Math.abs(provisiInput - savedProvisiAwal) < 0.0001;
+      if (sameSavedInput) return savedCerdas as CerdasApplyResult;
+    }
     return applyCerdas({
       skema: cerdasSkema,
       plafon,
@@ -229,7 +254,7 @@ const KalkulatorPage: React.FC = () => {
       provisiPctAsli: provisiInput,
       cfg: cerdasConfig,
     });
-  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput]);
+  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput, editRow]);
 
   const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
   const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
@@ -329,7 +354,12 @@ const KalkulatorPage: React.FC = () => {
       outstanding_pokok: adaPelunasan ? (parseInt(outstandingPokok) || 0) : null,
       outstanding_bunga: adaPelunasan ? (parseInt(outstandingBunga) || 0) : null,
       nama_ao: namaAo || null,
-      hasil_ringkasan: { ...result.summary, ...potongan, danaDiterima: danaBersih, cerdas: cerdasResult ?? null },
+      hasil_ringkasan: {
+        ...result.summary,
+        ...potongan,
+        danaDiterima: danaBersih,
+        cerdas: cerdasResult ? { ...cerdasResult, provisiPctAsli: provisiInput, bungaPctAsli: bungaInput } : null,
+      },
       tabel_angsuran: result.rows,
       cerdas_skema: cerdasResult ? cerdasResult.skema : null,
       cerdas_cap_subsidi: cerdasResult ? cerdasResult.capSubsidi : null,
