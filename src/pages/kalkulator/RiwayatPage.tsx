@@ -17,9 +17,47 @@ import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
 
+const toNumber = (value: unknown, fallback = 0) => {
+  const n = Number(value ?? fallback);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const getCerdas = (s: LoanSimulationRow) => (s.hasil_ringkasan as any)?.cerdas ?? null;
+
+const getCerdasLabel = (s: LoanSimulationRow) => {
+  const cerdas = getCerdas(s);
+  if (cerdas?.skemaLabel) return cerdas.skemaLabel;
+  if (!s.cerdas_skema) return null;
+  return String(s.cerdas_skema).replace(/_/g, ' ').toUpperCase();
+};
+
+const getInsuranceBreakdown = (s: LoanSimulationRow) => {
+  const r: any = s.hasil_ringkasan || {};
+  const cerdas = getCerdas(s);
+  const premiKredit = toNumber(s.premi_kredit);
+  const totalAsuransi = toNumber(r.asuransi, toNumber(s.asuransi_nominal, toNumber(s.asuransi_jiwa_beban) + premiKredit));
+  const asuransiJiwaBeban = toNumber(s.asuransi_jiwa_beban, Math.max(totalAsuransi - premiKredit, 0));
+  const subsidiBank = cerdas && cerdas.skema !== 'top_up'
+    ? toNumber(cerdas.subsidiBank, toNumber(s.cerdas_subsidi_bank))
+    : 0;
+  const premiJiwaAktual = toNumber(cerdas?.premiAsuransiAktual, asuransiJiwaBeban + subsidiBank);
+
+  return { premiJiwaAktual, subsidiBank, asuransiJiwaBeban, premiKredit, totalAsuransi };
+};
+
+const getPelunasanBreakdown = (s: LoanSimulationRow) => {
+  const outPokok = toNumber(s.outstanding_pokok);
+  const outBunga = toNumber(s.outstanding_bunga);
+  return { outPokok, outBunga, totalPelunasan: outPokok + outBunga };
+};
+
 const exportRowToExcel = (s: LoanSimulationRow) => {
   const wb = XLSX.utils.book_new();
   const r = s.hasil_ringkasan || ({} as any);
+  const cerdasLabel = getCerdasLabel(s);
+  const cerdas = getCerdas(s);
+  const ins = getInsuranceBreakdown(s);
+  const pelunasan = getPelunasanBreakdown(s);
   const ringkasan: any[][] = [
     ['SIMULASI ANGSURAN KREDIT'],
     ['Dicetak', new Date().toLocaleString('id-ID')],
@@ -40,9 +78,17 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     ['Tenor (bulan)', s.tenor_bulan],
     ['Tanggal Akad', s.tanggal_akad || '-'],
     ['Bunga p.a.', `${s.bunga_pa}%`],
-    ['Gaji', s.gaji],
+    ['Program CERDAS', cerdasLabel || '-'],
+    ['Gaji Pokok', s.gaji_pokok ?? s.gaji ?? 0],
+    ['TTP / Pendapatan Lainnya', s.ttp ?? 0],
+    ['Total Penghasilan', s.gaji],
     ['Provisi', `${s.provisi_pct}%`],
-    ['Asuransi', s.asuransi_nominal],
+    ['Sumber Asuransi Jiwa', s.asuransi_provider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Pialang Asuransi'],
+    ['Asuransi Jiwa — Premi Aktual', ins.premiJiwaAktual],
+    ['Asuransi Jiwa — Subsidi Bank (CERDAS)', ins.subsidiBank],
+    ['Asuransi Jiwa — Beban Debitur', ins.asuransiJiwaBeban],
+    ['Asuransi Kredit — Pialang', ins.premiKredit],
+    ['Total Asuransi Masuk Potongan', ins.totalAsuransi],
     ['Biaya Notaris', s.biaya_notaris],
     ['Biaya Perikatan', s.biaya_perikatan],
     ['Blokir Angsuran', s.blokir_angsuran],
@@ -53,9 +99,32 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     ['Angsuran Terakhir', r.angsuranTerakhir ?? 0],
     ['Total Angsuran', r.totalAngsuran ?? 0],
     ['Total Bunga', r.totalBunga ?? 0],
+    ['Provisi', r.provisi ?? 0],
+    ['Notaris', r.notaris ?? s.biaya_notaris],
+    ['Perikatan', r.perikatan ?? s.biaya_perikatan],
+    ['Blokir Angsuran', r.blokir ?? 0],
     ['Total Potongan di Muka', r.total ?? 0],
     ['Dana Diterima', r.danaDiterima ?? 0],
   ];
+  if (s.ada_pelunasan && pelunasan.totalPelunasan > 0) {
+    ringkasan.push(
+      [],
+      ['— TOP UP / PELUNASAN —'],
+      ['Outstanding Pokok', pelunasan.outPokok],
+      ['Outstanding Bunga', pelunasan.outBunga],
+      ['Total Pelunasan', pelunasan.totalPelunasan],
+    );
+  }
+  if (cerdas) {
+    ringkasan.push(
+      [],
+      ['— PROGRAM CERDAS —'],
+      ['Skema', cerdasLabel || '-'],
+      ['Cap Subsidi', toNumber(cerdas.capSubsidi, toNumber(s.cerdas_cap_subsidi))],
+      ['Subsidi Bank', ins.subsidiBank],
+      ['Beban Debitur', toNumber(cerdas.selisihDebitur, toNumber(s.cerdas_selisih_debitur))],
+    );
+  }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), 'Ringkasan');
 
   if (s.tabel_angsuran && s.tabel_angsuran.length) {
@@ -126,6 +195,10 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
   doc.text(`Disimpan: ${new Date(s.created_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}`, pageW / 2, y, { align: 'center' });
 
   const r = s.hasil_ringkasan || ({} as any);
+  const cerdasLabel = getCerdasLabel(s);
+  const cerdas = getCerdas(s);
+  const ins = getInsuranceBreakdown(s);
+  const pelunasan = getPelunasanBreakdown(s);
 
   y += 4;
   autoTable(doc, {
@@ -150,28 +223,53 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
       ['Jenis Kelamin', ':', s.jenis_kelamin === 'L' ? 'Laki-laki' : s.jenis_kelamin === 'P' ? 'Perempuan' : '-', 'Plafon', ':', fmtRp(s.plafon)],
       ['Tgl Lahir', ':', s.tanggal_lahir ? new Date(s.tanggal_lahir).toLocaleDateString('id-ID') : '-', 'Tenor', ':', `${s.tenor_bulan} bulan`],
       ['Pekerjaan', ':', s.pekerjaan || '-', 'Tanggal Akad', ':', s.tanggal_akad ? new Date(s.tanggal_akad).toLocaleDateString('id-ID') : '-'],
-      ['Instansi', ':', s.instansi || '-', 'Bunga p.a.', ':', `${s.bunga_pa}%`],
-      ['Pilihan Karir', ':', s.pilihan_karir || '-', 'Gaji', ':', fmtRp(s.gaji)],
-      ['AO', ':', s.nama_ao || '-', 'Provisi', ':', `${s.provisi_pct}%`],
+      ['Instansi', ':', s.instansi || '-', 'Bunga p.a.', ':', `${s.bunga_pa}%${cerdasLabel ? ' (CERDAS)' : ''}`],
+      ['Pilihan Karir', ':', s.pilihan_karir || '-', 'Gaji Pokok', ':', fmtRp(s.gaji_pokok ?? s.gaji ?? 0)],
+      ['AO', ':', s.nama_ao || '-', 'TTP / Lainnya', ':', fmtRp(s.ttp ?? 0)],
+      ['CERDAS', ':', cerdasLabel || '-', 'Total Penghasilan', ':', fmtRp(s.gaji)],
+      ['', '', '', 'Provisi', ':', `${s.provisi_pct}%`],
     ],
     margin: { left: M, right: M },
   });
 
   let yy = (doc as any).lastAutoTable.finalY + 4;
+  const summaryRows: any[] = [
+    ['Angsuran Pertama', fmtNumber(r.angsuranPertama ?? 0)],
+    ['Angsuran Terakhir', fmtNumber(r.angsuranTerakhir ?? 0)],
+    ['Total Angsuran', fmtNumber(r.totalAngsuran ?? 0)],
+    ['Total Bunga', fmtNumber(r.totalBunga ?? 0)],
+    [`Asuransi Jiwa (${s.asuransi_provider === 'alamin' ? 'Al-Amin' : 'Pialang'})`, fmtNumber(ins.asuransiJiwaBeban)],
+  ];
+  if (cerdas && cerdas.skema !== 'top_up') {
+    summaryRows.push(
+      ['Premi Jiwa Aktual', fmtNumber(ins.premiJiwaAktual)],
+      ['Subsidi Bank CERDAS', `(${fmtNumber(ins.subsidiBank)})`],
+    );
+  }
+  summaryRows.push(
+    ['Asuransi Kredit (Pialang)', fmtNumber(ins.premiKredit)],
+    ['Total Asuransi Masuk Potongan', fmtNumber(ins.totalAsuransi)],
+    ['Provisi', fmtNumber(r.provisi ?? 0)],
+    ['Notaris', fmtNumber(r.notaris ?? s.biaya_notaris)],
+    ['Perikatan', fmtNumber(r.perikatan ?? s.biaya_perikatan)],
+    ['Blokir Angsuran', fmtNumber(r.blokir ?? 0)],
+    ['Total Potongan di Muka', fmtNumber(r.total ?? 0)],
+  );
+  if (s.ada_pelunasan && pelunasan.totalPelunasan > 0) {
+    summaryRows.push(
+      ['Outstanding Pokok', fmtNumber(pelunasan.outPokok)],
+      ['Outstanding Bunga', fmtNumber(pelunasan.outBunga)],
+      ['Total Pelunasan', fmtNumber(pelunasan.totalPelunasan)],
+    );
+  }
+  summaryRows.push([
+    { content: 'DANA DITERIMA DEBITUR', styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
+    { content: fmtNumber(r.danaDiterima ?? 0), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
+  ]);
   autoTable(doc, {
     startY: yy,
     head: [['Ringkasan', 'Nilai (Rp)']],
-    body: [
-      ['Angsuran Pertama', fmtNumber(r.angsuranPertama ?? 0)],
-      ['Angsuran Terakhir', fmtNumber(r.angsuranTerakhir ?? 0)],
-      ['Total Angsuran', fmtNumber(r.totalAngsuran ?? 0)],
-      ['Total Bunga', fmtNumber(r.totalBunga ?? 0)],
-      ['Total Potongan di Muka', fmtNumber(r.total ?? 0)],
-      [
-        { content: 'DANA DITERIMA DEBITUR', styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255 } },
-        { content: fmtNumber(r.danaDiterima ?? 0), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
-      ],
-    ],
+    body: summaryRows,
     styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
     headStyles: { fillColor: BRAND_BLUE, textColor: 255 },
     columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 50, halign: 'right' } },
@@ -409,11 +507,10 @@ const RiwayatPage: React.FC = () => {
           const gp = s.gaji_pokok ?? s.gaji ?? 0;
           const tt = s.ttp ?? 0;
           const total = gp + tt;
-          const asuransiJiwa = s.asuransi_jiwa_beban ?? s.asuransi_nominal ?? 0;
-          const premiKredit = s.premi_kredit ?? 0;
-          const outPokok = s.outstanding_pokok ?? 0;
-          const outBunga = s.outstanding_bunga ?? 0;
-          const totalPelunasan = outPokok + outBunga;
+          const cerdas = getCerdas(s);
+          const cerdasLabel = getCerdasLabel(s);
+          const ins = getInsuranceBreakdown(s);
+          const { outPokok, outBunga, totalPelunasan } = getPelunasanBreakdown(s);
           const danaDiterima = r.danaDiterima ?? 0;
           const row = (l: string, v: string, bold = false) => (
             <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -434,7 +531,13 @@ const RiwayatPage: React.FC = () => {
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
-                {[['Skema', s.skema.toUpperCase()], ['Plafon', fmtRp(s.plafon)], ['Tenor', `${s.tenor_bulan} bulan`], ['Bunga p.a.', `${s.bunga_pa}%${s.cerdas_skema ? ' (CERDAS)' : ''}`]].map(([l, v]) => (
+                {[
+                  ['Skema', s.skema.toUpperCase()],
+                  ...(cerdasLabel ? [['✨ CERDAS', cerdasLabel]] : []),
+                  ['Plafon', fmtRp(s.plafon)],
+                  ['Tenor', `${s.tenor_bulan} bulan`],
+                  ['Bunga p.a.', `${s.bunga_pa}%${cerdasLabel ? ' (promo)' : ''}`],
+                ].map(([l, v]) => (
                   <div key={l} style={{ background: '#fff', padding: '10px 14px', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{l}</span>
                     <span style={{ fontSize: 14, fontWeight: 700 }}>{v}</span>
@@ -463,8 +566,15 @@ const RiwayatPage: React.FC = () => {
                 <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>Potongan di Muka</div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                   <tbody>
-                    {row(`Asuransi Jiwa (${s.asuransi_provider === 'alamin' ? 'Al-Amin' : 'Pialang'})`, fmtRp(asuransiJiwa))}
-                    {row('Asuransi Kredit (Pialang)', fmtRp(premiKredit))}
+                    {row(`Asuransi Jiwa (${s.asuransi_provider === 'alamin' ? 'Al-Amin' : 'Pialang'})`, fmtRp(ins.asuransiJiwaBeban))}
+                    {cerdas && cerdas.skema !== 'top_up' && (
+                      <>
+                        {row('Premi jiwa aktual', fmtRp(ins.premiJiwaAktual))}
+                        {row(`Subsidi bank (cap ${fmtRp(toNumber(cerdas.capSubsidi, s.cerdas_cap_subsidi ?? 0))})`, `− ${fmtRp(ins.subsidiBank)}`)}
+                      </>
+                    )}
+                    {row('Asuransi Kredit (Pialang)', fmtRp(ins.premiKredit))}
+                    {row('Total Asuransi', fmtRp(ins.totalAsuransi))}
                     {row('Provisi', fmtRp(r.provisi ?? 0))}
                     {row('Notaris', fmtRp(r.notaris ?? s.biaya_notaris))}
                     {row('Perikatan', fmtRp(r.perikatan ?? s.biaya_perikatan))}
@@ -489,6 +599,9 @@ const RiwayatPage: React.FC = () => {
                 <div>
                   <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.9 }}>Dana Diterima</div>
                   <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>{fmtRp(danaDiterima)}</div>
+                  {s.ada_pelunasan && totalPelunasan > 0 && (
+                    <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>setelah pelunasan {fmtRp(totalPelunasan)}</div>
+                  )}
                 </div>
                 <div style={{ fontSize: 40 }}>💰</div>
               </div>
