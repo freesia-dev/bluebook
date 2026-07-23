@@ -1,4 +1,4 @@
-# Bluebook
+# Bluebook by Haris Fadilah
 
 Aplikasi web untuk mendukung administrasi dan pengelolaan data operasional secara terstruktur, modern, dan responsif.
 
