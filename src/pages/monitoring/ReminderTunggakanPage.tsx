@@ -342,7 +342,7 @@ const ReminderTunggakanPage: React.FC = () => {
                                 <TooltipContent>{format(new Date(c.lastSent), 'dd MMM yyyy HH:mm', { locale: idLocale })}</TooltipContent>
                               </Tooltip>
                             ) : <span className="text-muted-foreground">—</span>}
-                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] ml-auto" title="Buat Call Memo" onClick={() => { setMemoPrefillL0lnno(c.l0lnno); setMemoDialogOpen(true); }}>
+                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] ml-auto" title="Buat Call Memo" disabled={!canEdit} onClick={() => { setMemoPrefillL0lnno(c.l0lnno); setMemoDialogOpen(true); }}>
                               <ClipboardList className="w-3 h-3" />
                             </Button>
                           </div>
