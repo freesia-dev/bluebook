@@ -28,8 +28,12 @@ import { id as idLocale } from 'date-fns/locale';
 import { Send, Plus, Edit3, MessageCircle, Phone, FileText, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Lock } from 'lucide-react';
 
 const ReminderTunggakanPage: React.FC = () => {
+  const { canEdit } = useAuth();
   const { data: uploads = [] } = useMLFUploads();
   const [uploadId, setUploadId] = useState<string | undefined>();
   useEffect(() => { if (!uploadId && uploads.length > 0) setUploadId(uploads[0].id); }, [uploads, uploadId]);
