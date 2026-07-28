@@ -213,6 +213,15 @@ const ReminderTunggakanPage: React.FC = () => {
         description="Kirim reminder WhatsApp & catat Call Memo penagihan kredit"
       />
 
+      {!canEdit && (
+        <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+          <Lock className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-600 dark:text-amber-400">
+            Mode <strong>View Only</strong> — Anda dapat melihat data reminder & call memo, namun tidak dapat mengirim pesan, menyimpan kontak, atau mengubah template.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs defaultValue="reminder" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="reminder"><MessageCircle className="w-4 h-4 mr-1" />Kirim Reminder</TabsTrigger>
