@@ -2144,6 +2144,7 @@ export type Database = {
         | "security"
         | "ob"
         | "team_leader_security"
+        | "kic"
       cs_buku_produk:
         | "simpeda"
         | "simpeda_ib"
@@ -2309,6 +2310,7 @@ export const Constants = {
         "security",
         "ob",
         "team_leader_security",
+        "kic",
       ],
       cs_buku_produk: [
         "simpeda",

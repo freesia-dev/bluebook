@@ -28,8 +28,12 @@ import { id as idLocale } from 'date-fns/locale';
 import { Send, Plus, Edit3, MessageCircle, Phone, FileText, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Lock } from 'lucide-react';
 
 const ReminderTunggakanPage: React.FC = () => {
+  const { canEdit } = useAuth();
   const { data: uploads = [] } = useMLFUploads();
   const [uploadId, setUploadId] = useState<string | undefined>();
   useEffect(() => { if (!uploadId && uploads.length > 0) setUploadId(uploads[0].id); }, [uploads, uploadId]);
@@ -160,6 +164,7 @@ const ReminderTunggakanPage: React.FC = () => {
   // quick fill phone
   const [quickFill, setQuickFill] = useState<{ l0lnno: string; nama: string; value: string } | null>(null);
   const handleQuickSave = async () => {
+    if (!canEdit) { toast.error('Mode View Only — Anda tidak dapat menyimpan data'); return; }
     if (!quickFill) return;
     if (!isValidPhoneID(quickFill.value)) {
       toast.error('Nomor HP tidak valid');
@@ -181,6 +186,7 @@ const ReminderTunggakanPage: React.FC = () => {
   }) : '';
 
   const handleStartQueue = () => {
+    if (!canEdit) { toast.error('Mode View Only — Anda tidak dapat mengirim reminder'); return; }
     if (selected.size === 0) { toast.error('Pilih minimal 1 debitur'); return; }
     if (!effectiveTpl) { toast.error('Template pesan kosong'); return; }
     const items: QueueItem[] = candidates
@@ -208,6 +214,15 @@ const ReminderTunggakanPage: React.FC = () => {
         title="Reminder & Penagihan Tunggakan"
         description="Kirim reminder WhatsApp & catat Call Memo penagihan kredit"
       />
+
+      {!canEdit && (
+        <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+          <Lock className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-600 dark:text-amber-400">
+            Mode <strong>View Only</strong> — Anda dapat melihat data reminder & call memo, namun tidak dapat mengirim pesan, menyimpan kontak, atau mengubah template.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="reminder" className="w-full">
         <TabsList className="mb-4">
@@ -316,7 +331,7 @@ const ReminderTunggakanPage: React.FC = () => {
                           {hasHp ? (
                             <span className="font-mono text-xs flex items-center gap-1"><Phone className="w-3 h-3" />{formatPhoneDisplay(c.no_hp)}</span>
                           ) : (
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setQuickFill({ l0lnno: c.l0lnno, nama: c.nama, value: '' })}>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!canEdit} onClick={() => setQuickFill({ l0lnno: c.l0lnno, nama: c.nama, value: '' })}>
                               <Plus className="w-3 h-3 mr-1" />Isi HP
                             </Button>
                           )}
@@ -329,7 +344,7 @@ const ReminderTunggakanPage: React.FC = () => {
                                 <TooltipContent>{format(new Date(c.lastSent), 'dd MMM yyyy HH:mm', { locale: idLocale })}</TooltipContent>
                               </Tooltip>
                             ) : <span className="text-muted-foreground">—</span>}
-                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] ml-auto" title="Buat Call Memo" onClick={() => { setMemoPrefillL0lnno(c.l0lnno); setMemoDialogOpen(true); }}>
+                            <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] ml-auto" title="Buat Call Memo" disabled={!canEdit} onClick={() => { setMemoPrefillL0lnno(c.l0lnno); setMemoDialogOpen(true); }}>
                               <ClipboardList className="w-3 h-3" />
                             </Button>
                           </div>
@@ -352,7 +367,7 @@ const ReminderTunggakanPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2"><FileText className="w-4 h-4" />Template Pesan</span>
-                <Button size="sm" variant="ghost" onClick={() => { setEditingTpl(null); setEditTplOpen(true); }}><Plus className="w-3 h-3 mr-1" />Baru</Button>
+                <Button size="sm" variant="ghost" disabled={!canEdit} onClick={() => { setEditingTpl(null); setEditTplOpen(true); }}><Plus className="w-3 h-3 mr-1" />Baru</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -363,7 +378,7 @@ const ReminderTunggakanPage: React.FC = () => {
                 </SelectContent>
               </Select>
               {currentTpl && (
-                <Button size="sm" variant="outline" className="w-full" onClick={() => { setEditingTpl(currentTpl); setEditTplOpen(true); }}>
+                <Button size="sm" variant="outline" className="w-full" disabled={!canEdit} onClick={() => { setEditingTpl(currentTpl); setEditTplOpen(true); }}>
                   <Edit3 className="w-3 h-3 mr-1" />Edit template "{currentTpl.nama_template}"
                 </Button>
               )}
@@ -405,7 +420,7 @@ const ReminderTunggakanPage: React.FC = () => {
                   </Tooltip>
                 </div>
               </div>
-              <Button onClick={handleStartQueue} disabled={selected.size === 0} className="w-full bg-emerald-600 hover:bg-emerald-700">
+              <Button onClick={handleStartQueue} disabled={!canEdit || selected.size === 0} className="w-full bg-emerald-600 hover:bg-emerald-700">
                 <Send className="w-4 h-4 mr-2" />Kirim Reminder ({selected.size})
               </Button>
               <Link to="/monitoring/kontak" className="block text-center text-xs text-primary hover:underline">
