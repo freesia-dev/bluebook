@@ -164,6 +164,7 @@ const ReminderTunggakanPage: React.FC = () => {
   // quick fill phone
   const [quickFill, setQuickFill] = useState<{ l0lnno: string; nama: string; value: string } | null>(null);
   const handleQuickSave = async () => {
+    if (!canEdit) { toast.error('Mode View Only — Anda tidak dapat menyimpan data'); return; }
     if (!quickFill) return;
     if (!isValidPhoneID(quickFill.value)) {
       toast.error('Nomor HP tidak valid');
