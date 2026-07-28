@@ -365,7 +365,7 @@ const ReminderTunggakanPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-base flex items-center justify-between">
                 <span className="flex items-center gap-2"><FileText className="w-4 h-4" />Template Pesan</span>
-                <Button size="sm" variant="ghost" onClick={() => { setEditingTpl(null); setEditTplOpen(true); }}><Plus className="w-3 h-3 mr-1" />Baru</Button>
+                <Button size="sm" variant="ghost" disabled={!canEdit} onClick={() => { setEditingTpl(null); setEditTplOpen(true); }}><Plus className="w-3 h-3 mr-1" />Baru</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
