@@ -376,7 +376,7 @@ const ReminderTunggakanPage: React.FC = () => {
                 </SelectContent>
               </Select>
               {currentTpl && (
-                <Button size="sm" variant="outline" className="w-full" onClick={() => { setEditingTpl(currentTpl); setEditTplOpen(true); }}>
+                <Button size="sm" variant="outline" className="w-full" disabled={!canEdit} onClick={() => { setEditingTpl(currentTpl); setEditTplOpen(true); }}>
                   <Edit3 className="w-3 h-3 mr-1" />Edit template "{currentTpl.nama_template}"
                 </Button>
               )}
