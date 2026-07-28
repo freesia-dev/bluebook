@@ -329,7 +329,7 @@ const ReminderTunggakanPage: React.FC = () => {
                           {hasHp ? (
                             <span className="font-mono text-xs flex items-center gap-1"><Phone className="w-3 h-3" />{formatPhoneDisplay(c.no_hp)}</span>
                           ) : (
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setQuickFill({ l0lnno: c.l0lnno, nama: c.nama, value: '' })}>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!canEdit} onClick={() => setQuickFill({ l0lnno: c.l0lnno, nama: c.nama, value: '' })}>
                               <Plus className="w-3 h-3 mr-1" />Isi HP
                             </Button>
                           )}
