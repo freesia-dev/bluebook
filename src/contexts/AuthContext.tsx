@@ -174,6 +174,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const userName = user?.user_metadata?.nama || user?.email?.split('@')[0] || 'User';
   const permissions = getPermissions(role);
   const isAdmin = role === 'admin';
+  if (typeof window !== 'undefined') (window as any).__BLUEBOOK_IS_ADMIN__ = isAdmin;
   const isDemo = role === 'demo';
   const canEdit = permissions.canEdit;
 
