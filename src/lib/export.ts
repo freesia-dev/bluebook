@@ -2,8 +2,23 @@ import * as XLSX from 'xlsx';
 import { 
   getSuratMasuk, getSuratKeluar, getSPPK, getPK, getKKMPAK 
 } from './supabase-store';
+import { toast } from 'sonner';
+
+export const isExportAllowed = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return !!(window as any).__BLUEBOOK_IS_ADMIN__;
+};
+
+const guardExport = (): boolean => {
+  if (!isExportAllowed()) {
+    try { toast.error('Export dibatasi', { description: 'Hanya role Admin yang dapat mengunduh/export data.' }); } catch {}
+    return false;
+  }
+  return true;
+};
 
 export const exportToExcel = (data: any[], filename: string, sheetName: string = 'Sheet1') => {
+  if (!guardExport()) return;
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
@@ -11,6 +26,7 @@ export const exportToExcel = (data: any[], filename: string, sheetName: string =
 };
 
 export const exportAllTables = async () => {
+  if (!guardExport()) return;
   const workbook = XLSX.utils.book_new();
   
   try {
