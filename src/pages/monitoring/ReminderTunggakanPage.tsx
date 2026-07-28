@@ -418,7 +418,7 @@ const ReminderTunggakanPage: React.FC = () => {
                   </Tooltip>
                 </div>
               </div>
-              <Button onClick={handleStartQueue} disabled={selected.size === 0} className="w-full bg-emerald-600 hover:bg-emerald-700">
+              <Button onClick={handleStartQueue} disabled={!canEdit || selected.size === 0} className="w-full bg-emerald-600 hover:bg-emerald-700">
                 <Send className="w-4 h-4 mr-2" />Kirim Reminder ({selected.size})
               </Button>
               <Link to="/monitoring/kontak" className="block text-center text-xs text-primary hover:underline">
