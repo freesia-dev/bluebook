@@ -186,6 +186,7 @@ const ReminderTunggakanPage: React.FC = () => {
   }) : '';
 
   const handleStartQueue = () => {
+    if (!canEdit) { toast.error('Mode View Only — Anda tidak dapat mengirim reminder'); return; }
     if (selected.size === 0) { toast.error('Pilih minimal 1 debitur'); return; }
     if (!effectiveTpl) { toast.error('Template pesan kosong'); return; }
     const items: QueueItem[] = candidates
