@@ -29,6 +29,7 @@ const AgendaKreditPage = lazy(() => import("./pages/agenda-kredit/AgendaKreditPa
 const NomorLoanPage = lazy(() => import("./pages/agenda-kredit/NomorLoanPage"));
 const RecycleBinPage = lazy(() => import("./pages/RecycleBinPage"));
 const UsersPage = lazy(() => import("./pages/konfigurasi/UsersPage"));
+const OnlineUsersPage = lazy(() => import("./pages/konfigurasi/OnlineUsersPage"));
 const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const About = lazy(() => import("./pages/About"));
 const Panduan = lazy(() => import("./pages/Panduan"));
