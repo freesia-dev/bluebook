@@ -43,6 +43,11 @@ const loadImageBase64 = async (url: string): Promise<string> => {
   });
 };
 
+const hexToRgbLocal = (hex: string): [number, number, number] => {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+};
+
 interface UnitAgg {
   count: number;
   plafon: number;
