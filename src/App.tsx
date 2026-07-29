@@ -163,6 +163,9 @@ const App = () => (
             <Route path="/konfigurasi/users" element={
               <Suspense fallback={<TablePageSkeleton />}><UsersPage /></Suspense>
             } />
+            <Route path="/konfigurasi/online-users" element={
+              <Suspense fallback={<TablePageSkeleton />}><OnlineUsersPage /></Suspense>
+            } />
             <Route path="/konfigurasi/jenis-kredit" element={
               <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="jenis-kredit" /></Suspense>
             } />
