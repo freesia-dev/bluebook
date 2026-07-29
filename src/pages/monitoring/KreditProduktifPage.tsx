@@ -43,6 +43,11 @@ const loadImageBase64 = async (url: string): Promise<string> => {
   });
 };
 
+const hexToRgbLocal = (hex: string): [number, number, number] => {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+};
+
 interface UnitAgg {
   count: number;
   plafon: number;
@@ -282,80 +287,191 @@ const KreditProduktifPage: React.FC = () => {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const marginX = 10;
+    const unitColor: [number, number, number] = activeUnit === 'telihan' ? [37, 99, 235] : [5, 150, 105];
+    const unitColorSoft: [number, number, number] = activeUnit === 'telihan' ? [219, 234, 254] : [209, 250, 229];
 
-    // Kop
-    let y = 10;
+    // ===== Modern header band (gradient-ish two-tone) =====
+    doc.setFillColor(15, 27, 61); // navy
+    doc.rect(0, 0, pageW, 26, 'F');
+    doc.setFillColor(unitColor[0], unitColor[1], unitColor[2]);
+    doc.rect(0, 26, pageW, 2.4, 'F');
+    doc.setFillColor(245, 158, 11); // amber accent
+    doc.rect(0, 28.4, pageW, 0.8, 'F');
+
     try {
       const logoB64 = await loadImageBase64(logoUrl);
-      doc.addImage(logoB64, 'PNG', marginX, y + 2, 28, 14);
+      // white rounded badge behind logo
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(marginX, 5, 22, 16, 2, 2, 'F');
+      doc.addImage(logoB64, 'PNG', marginX + 2, 6.5, 18, 13);
     } catch { /* ignore */ }
-    const textX = marginX + 33;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(0, 63, 127);
-    doc.text('PT. BPD Kalimantan Timur & Kalimantan Utara', textX, y + 5);
-    doc.setFontSize(10.5);
-    doc.text('Kantor Cabang Pembantu Telihan', textX, y + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(60, 60, 60);
-    doc.text('Jl. Letjend S. Parman No. 14–15, Bontang 75383  ·  Telp. 0548-26567', textX, y + 14.5);
-    doc.setDrawColor(0, 63, 127); doc.setLineWidth(0.9);
-    doc.line(marginX, y + 21, pageW - marginX, y + 21);
-    doc.setDrawColor(245, 130, 32); doc.setLineWidth(0.4);
-    doc.line(marginX, y + 22, pageW - marginX, y + 22);
 
-    y = 30;
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text(`LAPORAN KREDIT PRODUKTIF - UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`, pageW / 2, y, { align: 'center' });
+    doc.text('LAPORAN KREDIT PRODUKTIF', marginX + 26, 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(90, 90, 90);
-    const periode = selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-';
-    doc.text(`Capem 143 Telihan · Periode MLF: ${periode}`, pageW / 2, y + 5, { align: 'center' });
-    doc.text(`Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`, pageW / 2, y + 9.5, { align: 'center' });
+    doc.setTextColor(203, 213, 225);
+    doc.text('Bankaltimtara · KCP Telihan dan Unit Meranti · Bluebook Telihan', marginX + 26, 17.5);
 
-    // Unit banner
-    const unitColor: [number, number, number] = activeUnit === 'telihan' ? [37, 99, 235] : [5, 150, 105];
-    doc.setFillColor(...unitColor);
-    doc.roundedRect(marginX, 42, 52, 8, 1.5, 1.5, 'F');
+    // Right side: unit chip + period
+    const chipW = 46, chipH = 8;
+    doc.setFillColor(unitColor[0], unitColor[1], unitColor[2]);
+    doc.roundedRect(pageW - marginX - chipW, 6, chipW, chipH, 1.5, 1.5, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(`UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`, marginX + 26, 47.5, { align: 'center' });
-    doc.setTextColor(0, 0, 0);
+    doc.text(`UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`, pageW - marginX - chipW / 2, 11.5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(203, 213, 225);
+    const periode = selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-';
+    doc.text(`Periode MLF: ${periode}`, pageW - marginX, 19, { align: 'right' });
+    doc.text(`Dicetak ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`, pageW - marginX, 23, { align: 'right' });
 
-    // Ringkasan
-    y = 54;
-    const kolDist = [0, 1, 2, 3, 4, 5]
-      .map((k) => (aggForActive.kolCounts[k] ? `KOL ${kolDisplay(k)}: ${fmtNum(aggForActive.kolCounts[k])}` : null))
-      .filter(Boolean)
-      .join('   ·   ');
+    // ===== KPI Cards (4 columns) =====
+    let y = 35;
     const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
-    const summary = [
-      ['Total Debitur', `${fmtNum(aggForActive.count)}   (Modal Kerja: ${fmtNum(aggForActive.modalKerja)} · Investasi: ${fmtNum(aggForActive.investasi)})`],
-      ['Total Plafon', fmtIDR(aggForActive.plafon)],
-      ['Total Outstanding', fmtIDR(aggForActive.baki)],
-      ['Total Tunggakan', fmtIDR(aggForActive.tunggakan)],
-      ['NPL (KOL 3-5)', `${fmtNum(aggForActive.nplCount)} debitur · ${fmtIDR(aggForActive.npl)} · ${nplPct.toFixed(2)}%`],
-      ['Total Angsuran Pokok/bulan', fmtIDR(aggForActive.angsuran)],
-      ['Distribusi KOL', kolDist || '-'],
-    ];
-    autoTable(doc, {
-      startY: y,
-      body: summary,
-      theme: 'grid',
-      styles: { font: 'helvetica', fontSize: 9, cellPadding: 2 },
-      columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60, textColor: [70, 70, 70], fillColor: [241, 245, 249] },
-        1: { textColor: [0, 0, 0] },
-      },
-      margin: { left: marginX, right: marginX },
-    });
+    const tungPct = aggForActive.baki > 0 ? (aggForActive.tunggakan / aggForActive.baki) * 100 : 0;
+    const otherUnitAgg = activeUnit === 'telihan' ? merantiAgg : telihanAgg;
+    const share = totalProduktif > 0 ? (aggForActive.count / totalProduktif) * 100 : 0;
 
-    const startY = (doc as any).lastAutoTable.finalY + 4;
+    const kpis: Array<{ label: string; value: string; sub: string; accent: [number, number, number] }> = [
+      { label: 'Total Debitur Produktif', value: fmtNum(aggForActive.count), sub: `${share.toFixed(1)}% dari total · MK ${aggForActive.modalKerja} · Inv ${aggForActive.investasi}`, accent: [59, 130, 246] },
+      { label: 'Total Outstanding', value: fmtIDR(aggForActive.baki), sub: `Plafon ${fmtIDR(aggForActive.plafon)}`, accent: [16, 185, 129] },
+      { label: 'Rasio NPL (KOL 3-5)', value: `${nplPct.toFixed(2)}%`, sub: `${fmtNum(aggForActive.nplCount)} debitur · ${fmtIDR(aggForActive.npl)}`, accent: [239, 68, 68] },
+      { label: 'Tunggakan Berjalan', value: fmtIDR(aggForActive.tunggakan), sub: `${tungPct.toFixed(2)}% dari OS · Angs/bln ${fmtIDR(aggForActive.angsuran)}`, accent: [245, 158, 11] },
+    ];
+    const gap = 4;
+    const cardW = (pageW - marginX * 2 - gap * 3) / 4;
+    const cardH = 22;
+    kpis.forEach((k, i) => {
+      const x = marginX + i * (cardW + gap);
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(x, y, cardW, cardH, 2, 2, 'FD');
+      doc.setFillColor(k.accent[0], k.accent[1], k.accent[2]);
+      doc.roundedRect(x, y, 2.2, cardH, 1, 1, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(k.label, x + 5, y + 5);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 27, 61);
+      doc.text(k.value, x + 5, y + 12);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(100, 116, 139);
+      const subLines = doc.splitTextToSize(k.sub, cardW - 8);
+      doc.text(subLines, x + 5, y + 17);
+    });
+    y += cardH + 6;
+
+    // ===== KOL Distribution mini bar chart =====
+    const drawSectionLabel = (label: string, yy: number) => {
+      doc.setFillColor(unitColor[0], unitColor[1], unitColor[2]);
+      doc.rect(marginX, yy, 2.5, 5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(15, 27, 61);
+      doc.text(label, marginX + 5, yy + 4);
+      return yy + 7;
+    };
+
+    y = drawSectionLabel('Distribusi Kolektibilitas', y);
+
+    const kolEntries = [0, 1, 2, 3, 4, 5]
+      .map((k) => ({ k, count: aggForActive.kolCounts[k] || 0 }))
+      .filter((d) => d.count > 0);
+    const maxKol = Math.max(...kolEntries.map((d) => d.count), 1);
+    const kolAreaW = pageW - marginX * 2;
+    const barSlot = 8;
+    kolEntries.forEach((d, i) => {
+      const ry = y + i * barSlot;
+      const color = hexToRgbLocal((KOL_COLOR[d.k] || '#94a3b8').replace('#', ''));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`KOL ${kolDisplay(d.k)}`, marginX, ry + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text(KOL_LABEL[d.k] || '-', marginX + 14, ry + 5);
+      const barX = marginX + 55;
+      const barMaxW = kolAreaW - 55 - 40;
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(barX, ry + 1.5, barMaxW, 4, 1, 1, 'F');
+      doc.setFillColor(color[0], color[1], color[2]);
+      doc.roundedRect(barX, ry + 1.5, Math.max((d.count / maxKol) * barMaxW, 0.5), 4, 1, 1, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      doc.text(`${fmtNum(d.count)} debitur`, barX + barMaxW + 2, ry + 5);
+    });
+    y += kolEntries.length * barSlot + 4;
+
+    // ===== Comparison strip =====
+    y = drawSectionLabel('Perbandingan Antar Unit', y);
+    doc.setFillColor(unitColorSoft[0], unitColorSoft[1], unitColorSoft[2]);
+    doc.roundedRect(marginX, y, pageW - marginX * 2, 14, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 27, 61);
+    const otherLabel = activeUnit === 'telihan' ? 'Meranti' : 'Telihan';
+    const currentLabel = UNIT_LABEL[activeUnit];
+    const otherNplPct = otherUnitAgg.baki > 0 ? (otherUnitAgg.npl / otherUnitAgg.baki) * 100 : 0;
+    const line1 = `${currentLabel}: ${fmtNum(aggForActive.count)} debitur · OS ${fmtIDR(aggForActive.baki)} · NPL ${nplPct.toFixed(2)}% · Angs/bln ${fmtIDR(aggForActive.angsuran)}`;
+    const line2 = `${otherLabel}:  ${fmtNum(otherUnitAgg.count)} debitur · OS ${fmtIDR(otherUnitAgg.baki)} · NPL ${otherNplPct.toFixed(2)}% · Angs/bln ${fmtIDR(otherUnitAgg.angsuran)}`;
+    doc.text(line1, marginX + 4, y + 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(51, 65, 85);
+    doc.text(line2, marginX + 4, y + 11);
+    y += 18;
+
+    // ===== Top 5 Debitur Tunggakan Terbesar =====
+    const topTung = [...filteredRows]
+      .map((r) => ({ ...r, _tung: (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0) }))
+      .filter((r) => r._tung > 0)
+      .sort((a, b) => b._tung - a._tung)
+      .slice(0, 5);
+    if (topTung.length > 0) {
+      y = drawSectionLabel('Top 5 Debitur — Tunggakan Terbesar', y);
+      autoTable(doc, {
+        startY: y,
+        head: [['#', 'Nama Debitur', 'Nomor Loan', 'Jenis', 'KOL', 'Outstanding', 'Tunggakan']],
+        body: topTung.map((r, i) => [
+          String(i + 1),
+          r.l0name || '-',
+          r.l0lnno || '-',
+          jenisProduktif(r),
+          kolDisplay(Number(r.kol) || 0),
+          fmtIDR(Number(r.baki) || 0),
+          fmtIDR(r._tung),
+        ]),
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.8 },
+        headStyles: { fillColor: unitColor, textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 8 },
+          4: { halign: 'center', cellWidth: 10, fontStyle: 'bold' },
+          5: { halign: 'right' },
+          6: { halign: 'right', textColor: [180, 83, 9], fontStyle: 'bold' },
+        },
+        margin: { left: marginX, right: marginX },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
+
+    // ===== Full detail table (new page) =====
+    doc.addPage();
+    doc.setFillColor(15, 27, 61);
+    doc.rect(0, 0, pageW, 12, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`Detail Debitur Kredit Produktif — Unit ${UNIT_LABEL[activeUnit]} (${fmtNum(filteredRows.length)} debitur)`, marginX, 8);
 
     const body = filteredRows.map((r, idx) => [
       String(idx + 1),
@@ -373,11 +489,11 @@ const KreditProduktifPage: React.FC = () => {
     ]);
 
     autoTable(doc, {
-      startY,
+      startY: 16,
       head: [['No', 'Nomor Loan', 'Nama', 'Nomor PK', 'Jenis', 'Plafon', 'Outstanding', 'Tunggakan', 'JW (bln)', 'Angs. Pokok/bln', 'KOL', 'Jatuh Tempo']],
       body: body.length ? body : [['—', '—', '—', 'Tidak ada data', '—', '—', '—', '—', '—', '—', '—', '—']],
       styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak' },
-      headStyles: { fillColor: [0, 63, 127], textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+      headStyles: { fillColor: unitColor, textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
         0: { halign: 'center', cellWidth: 8 },
@@ -393,7 +509,7 @@ const KreditProduktifPage: React.FC = () => {
         10: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
         11: { cellWidth: 18, halign: 'center' },
       },
-      margin: { left: marginX, right: marginX },
+      margin: { left: marginX, right: marginX, top: 16 },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 10) {
           const v = Number(data.cell.raw === 'E' ? 0 : data.cell.raw);
@@ -401,18 +517,20 @@ const KreditProduktifPage: React.FC = () => {
           else if (v === 2) { data.cell.styles.textColor = [180, 83, 9]; }
         }
       },
-      didDrawPage: () => {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(120, 120, 120);
-        doc.text(
-          `Bluebook Telihan · Laporan Kredit Produktif ${UNIT_LABEL[activeUnit]} · Halaman ${currentPage} dari ${pageCount}`,
-          pageW / 2, pageH - 6, { align: 'center' },
-        );
-      },
     });
+
+    // ===== Footer on every page =====
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setDrawColor(226, 232, 240);
+      doc.line(marginX, pageH - 9, pageW - marginX, pageH - 9);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(120, 120, 120);
+      doc.text('Bluebook Telihan · Loan Monitoring · Confidential', marginX, pageH - 5);
+      doc.text(`Halaman ${p} dari ${pageCount}`, pageW - marginX, pageH - 5, { align: 'right' });
+    }
 
     const dateStr = selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'yyyyMMdd') : format(new Date(), 'yyyyMMdd');
     doc.save(`Kredit_Produktif_${UNIT_LABEL[activeUnit]}_${dateStr}.pdf`);

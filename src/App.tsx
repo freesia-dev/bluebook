@@ -29,6 +29,7 @@ const AgendaKreditPage = lazy(() => import("./pages/agenda-kredit/AgendaKreditPa
 const NomorLoanPage = lazy(() => import("./pages/agenda-kredit/NomorLoanPage"));
 const RecycleBinPage = lazy(() => import("./pages/RecycleBinPage"));
 const UsersPage = lazy(() => import("./pages/konfigurasi/UsersPage"));
+const OnlineUsersPage = lazy(() => import("./pages/konfigurasi/OnlineUsersPage"));
 const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const About = lazy(() => import("./pages/About"));
 const Panduan = lazy(() => import("./pages/Panduan"));
@@ -161,6 +162,9 @@ const App = () => (
             } />
             <Route path="/konfigurasi/users" element={
               <Suspense fallback={<TablePageSkeleton />}><UsersPage /></Suspense>
+            } />
+            <Route path="/konfigurasi/online-users" element={
+              <Suspense fallback={<TablePageSkeleton />}><OnlineUsersPage /></Suspense>
             } />
             <Route path="/konfigurasi/jenis-kredit" element={
               <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="jenis-kredit" /></Suspense>

@@ -20,12 +20,12 @@ const modules = [
   { icon: Shield, title: 'Log Security', description: 'Shift, handover, BA Harian, bulk print, dan audit publik satpam.', color: 'from-slate-600 to-slate-800' },
   { icon: FileSearch, title: 'SLIK OJK', description: 'Permohonan per user dengan alur setuju/tolak dan laporan PDF terpisah.', color: 'from-indigo-500 to-blue-600' },
   { icon: Bot, title: 'Asisten BIRU', description: 'Asisten AI internal untuk tanya jawab operasional dan pencarian data debitur.', color: 'from-violet-500 to-purple-600' },
-  { icon: Bell, title: 'Pusat Notifikasi', description: 'Notifikasi berbasis peran dan cabang dengan deep-link ke tindakan terkait.', color: 'from-amber-500 to-orange-500' },
+  { icon: Bell, title: 'Pusat Notifikasi', description: 'Notifikasi disesuaikan dengan Hak Akses per Role User dan cabang, lengkap dengan deep-link ke tindakan terkait.', color: 'from-amber-500 to-orange-500' },
   { icon: Archive, title: 'Activity Log & Recycle Bin', description: 'Jejak audit menyeluruh dan pemulihan data yang terhapus.', color: 'from-amber-500 to-yellow-500' },
 ];
 
 const platformPerks = [
-  { icon: Users, label: 'Role-Based Access', desc: 'Admin, User, KIC, dan Demo dengan persetujuan admin' },
+  { icon: Users, label: 'Hak Akses sesuai Role User', desc: 'Admin, User, KIC, dan Demo dengan persetujuan admin' },
   { icon: Zap, label: 'Global Search (Ctrl+K)', desc: 'Cari modul dan data dalam hitungan detik' },
   { icon: BarChart3, label: 'Dashboard Real-time', desc: 'Statistik diperbarui otomatis tanpa refresh' },
   { icon: Smartphone, label: 'PWA Installable', desc: 'Dapat dipasang di Android, iOS, dan Desktop' },
@@ -68,7 +68,7 @@ const About: React.FC = () => {
               <strong className="text-white">Bankaltimtara KCP Telihan dan Unit Meranti</strong>. Portal
               terpusat untuk administrasi surat, agenda kredit, simulasi pinjaman, operasional ATM,
               monitoring kredit, layanan Customer Service, log security, dan SLIK OJK — dilengkapi
-              asisten AI, notifikasi berbasis peran, serta jejak audit yang menyeluruh.
+              asisten AI BIRU, notifikasi sesuai Role User, serta jejak audit yang menyeluruh.
             </p>
           </div>
         </div>

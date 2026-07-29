@@ -93,7 +93,7 @@ const FeaturesSection = () => {
     {
       icon: Bell,
       title: "Pusat Notifikasi",
-      description: "Notifikasi berbasis peran dan cabang, dengan deep-link langsung ke tindakan yang perlu diambil.",
+      description: "Notifikasi disesuaikan dengan Hak Akses per Role User dan cabang, dengan deep-link langsung ke tindakan yang perlu diambil.",
       gradient: "from-amber-500 to-orange-500",
       tag: "Role-Based",
     },

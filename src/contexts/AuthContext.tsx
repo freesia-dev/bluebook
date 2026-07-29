@@ -180,6 +180,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   usePrefetchData(!!session && isApproved);
 
+  // ── Realtime presence: broadcast this user's online status + listen for admin force-logout ──
+  useEffect(() => {
+    if (!user || !isApproved) return;
+    const channel = supabase.channel('online-users', {
+      config: { presence: { key: user.id }, broadcast: { self: false } },
+    });
+
+    channel.on('broadcast', { event: 'force-logout' }, (payload) => {
+      const targetId = (payload as any)?.payload?.userId;
+      if (targetId === user.id) {
+        supabase.auth.signOut().finally(() => {
+          try {
+            window.alert('Sesi Anda dihentikan paksa oleh administrator.');
+          } catch { /* noop */ }
+          window.location.href = '/login';
+        });
+      }
+    });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({
+          user_id: user.id,
+          email: user.email,
+          nama: userName,
+          role,
+          online_at: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+        });
+      }
+    });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, isApproved, role, userName]);
+
   return (
     <AuthContext.Provider value={{
       user,
