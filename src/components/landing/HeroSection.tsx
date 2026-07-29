@@ -10,7 +10,7 @@ const HeroSection = () => {
     { icon: FileText, label: "Manajemen Surat", color: "from-blue-500 to-cyan-500" },
     { icon: CalendarCheck, label: "Agenda Kredit", color: "from-brand-secondary to-amber-500" },
     { icon: Bot, label: "Asisten BIRU", color: "from-violet-500 to-purple-500" },
-    { icon: ShieldCheck, label: "Akses Berbasis Peran", color: "from-green-500 to-emerald-500" },
+    { icon: ShieldCheck, label: "Hak Akses sesuai Role User", color: "from-green-500 to-emerald-500" },
   ];
 
   return (
@@ -57,7 +57,7 @@ const HeroSection = () => {
             <ul className="space-y-3">
               {[
                 "15+ modul operasional untuk KCP Telihan dan Unit Meranti",
-                "Asisten AI BIRU, notifikasi berbasis peran, dan global search (Ctrl+K)",
+                "Asisten AI BIRU, notifikasi sesuai Role User, dan global search (Ctrl+K)",
                 "Dashboard real-time, activity log, recycle bin, dan PWA installable",
               ].map((item, index) => (
                 <li key={index} className="flex items-center gap-3 text-slate-300">

@@ -7,14 +7,14 @@ const ExplainerSection = () => {
       title: "Autentikasi & Otorisasi",
       description:
         "Login dengan akun yang telah disetujui admin. Sistem menyesuaikan tampilan menu dan hak akses berdasarkan peran pengguna.",
-      highlights: ["Approval Workflow", "Role-Based Access", "Auto Logout 1 Jam"],
+      highlights: ["Approval Workflow", "Hak Akses sesuai Role User", "Auto Logout 1 Jam"],
     },
     {
       number: "02",
       title: "Operasional Harian",
       description:
         "Registrasi surat, kelola agenda kredit, jalankan simulasi, catat pengisian ATM, pantau NPL, dan operasikan modul Customer Service serta Security dari satu portal.",
-      highlights: ["Auto-Numbering", "Berita Acara Siap Cetak", "Notifikasi Berbasis Peran"],
+      highlights: ["Auto-Numbering", "Berita Acara Siap Cetak", "Notifikasi sesuai Role User"],
     },
     {
       number: "03",
