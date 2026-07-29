@@ -232,6 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const konfigurasiItems = isAdmin
     ? [
         { label: 'Pengaturan User', href: '/konfigurasi/users' },
+        { label: 'User Online (Realtime)', href: '/konfigurasi/online-users' },
         { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
         { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
         { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
