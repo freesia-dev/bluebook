@@ -293,7 +293,7 @@ const KreditProduktifPage: React.FC = () => {
     // ===== Modern header band (gradient-ish two-tone) =====
     doc.setFillColor(15, 27, 61); // navy
     doc.rect(0, 0, pageW, 26, 'F');
-    doc.setFillColor(...unitColor);
+    doc.setFillColor(unitColor[0], unitColor[1], unitColor[2]);
     doc.rect(0, 26, pageW, 2.4, 'F');
     doc.setFillColor(245, 158, 11); // amber accent
     doc.rect(0, 28.4, pageW, 0.8, 'F');
@@ -317,7 +317,7 @@ const KreditProduktifPage: React.FC = () => {
 
     // Right side: unit chip + period
     const chipW = 46, chipH = 8;
-    doc.setFillColor(...unitColor);
+    doc.setFillColor(unitColor[0], unitColor[1], unitColor[2]);
     doc.roundedRect(pageW - marginX - chipW, 6, chipW, chipH, 1.5, 1.5, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
@@ -351,7 +351,7 @@ const KreditProduktifPage: React.FC = () => {
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(x, y, cardW, cardH, 2, 2, 'FD');
-      doc.setFillColor(...k.accent);
+      doc.setFillColor(k.accent[0], k.accent[1], k.accent[2]);
       doc.roundedRect(x, y, 2.2, cardH, 1, 1, 'F');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
@@ -371,7 +371,7 @@ const KreditProduktifPage: React.FC = () => {
 
     // ===== KOL Distribution mini bar chart =====
     const drawSectionLabel = (label: string, yy: number) => {
-      doc.setFillColor(...unitColor);
+      doc.setFillColor(unitColor[0], unitColor[1], unitColor[2]);
       doc.rect(marginX, yy, 2.5, 5, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
@@ -402,7 +402,7 @@ const KreditProduktifPage: React.FC = () => {
       const barMaxW = kolAreaW - 55 - 40;
       doc.setFillColor(241, 245, 249);
       doc.roundedRect(barX, ry + 1.5, barMaxW, 4, 1, 1, 'F');
-      doc.setFillColor(...color);
+      doc.setFillColor(color[0], color[1], color[2]);
       doc.roundedRect(barX, ry + 1.5, Math.max((d.count / maxKol) * barMaxW, 0.5), 4, 1, 1, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
@@ -413,7 +413,7 @@ const KreditProduktifPage: React.FC = () => {
 
     // ===== Comparison strip =====
     y = drawSectionLabel('Perbandingan Antar Unit', y);
-    doc.setFillColor(...unitColorSoft);
+    doc.setFillColor(unitColorSoft[0], unitColorSoft[1], unitColorSoft[2]);
     doc.roundedRect(marginX, y, pageW - marginX * 2, 14, 2, 2, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
