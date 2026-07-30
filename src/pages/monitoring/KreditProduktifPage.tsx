@@ -728,13 +728,14 @@ const KreditProduktifPage: React.FC = () => {
                             <TableBody>
                               {filteredRows.length === 0 ? (
                                 <TableRow>
-                                  <TableCell colSpan={15} className="text-center text-muted-foreground py-8">
+                                  <TableCell colSpan={17} className="text-center text-muted-foreground py-8">
                                     {isLoading ? 'Memuat data...' : 'Tidak ada debitur produktif untuk unit ini.'}
                                   </TableCell>
                                 </TableRow>
                               ) : filteredRows.map((r, idx) => {
                                 const kol = Number(r.kol) || 0;
                                 const tung = (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+                                const ar = arrearsMap?.get(r.l0lnno || '');
                                 return (
                                   <TableRow key={r.id} className={cn(kol >= 3 && 'bg-rose-50/50 dark:bg-rose-950/20')}>
                                     <TableCell>{idx + 1}</TableCell>
@@ -748,11 +749,38 @@ const KreditProduktifPage: React.FC = () => {
                                     <TableCell className="text-right">{fmtIDR(Number(r.pla) || 0)}</TableCell>
                                     <TableCell className="text-right">{fmtIDR(Number(r.baki) || 0)}</TableCell>
                                     <TableCell className={cn('text-right', tung > 0 && 'text-amber-700 font-medium')}>{fmtIDR(tung)}</TableCell>
+                                    <TableCell className="text-center">
+                                      {tung > 0 && ar?.hariTunggak !== null && ar?.hariTunggak !== undefined ? (
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            'text-xs',
+                                            ar.hariTunggak > 90 ? 'border-rose-500 text-rose-600' :
+                                            ar.hariTunggak > 30 ? 'border-amber-500 text-amber-600' :
+                                            'border-slate-300 text-slate-600',
+                                          )}
+                                          title={ar.hariTunggakMinimal ? 'Tunggakan sudah ada sejak data MLF paling awal — angka minimal' : undefined}
+                                        >
+                                          {fmtHariTunggak(ar)} hari
+                                        </Badge>
+                                      ) : (
+                                        <span className="text-muted-foreground text-xs">—</span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-xs whitespace-nowrap">
+                                      {ar?.lastPaymentDate ? (
+                                        <span title={ar.recentPayments.map((p) => `${format(new Date(p.jobdate), 'dd/MM/yyyy')} · ${fmtIDR(p.amount)}`).join('\n')}>
+                                          <span className="font-medium">{format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy')}</span>
+                                          <span className="block text-emerald-600 font-medium">{fmtIDR(ar.lastPaymentAmount)}</span>
+                                        </span>
+                                      ) : <span className="text-muted-foreground">—</span>}
+                                    </TableCell>
                                     <TableCell className="text-center">{r._jw || '-'}</TableCell>
                                     <TableCell className="text-right font-medium">{r._angsuran ? fmtIDR(r._angsuran) : '-'}</TableCell>
                                     <TableCell className="text-center">
                                       <Badge style={{ backgroundColor: KOL_COLOR[kol], color: 'white' }}>{kolDisplay(kol)}</Badge>
                                     </TableCell>
+
                                     <TableCell className="text-xs">{r.l0usid || '-'}</TableCell>
                                     <TableCell className="text-xs">{r.date1 ? format(new Date(r.date1), 'dd/MM/yy') : '-'}</TableCell>
                                     <TableCell>
