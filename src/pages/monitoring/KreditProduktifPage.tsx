@@ -277,10 +277,12 @@ const KreditProduktifPage: React.FC = () => {
           cell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: unitFill } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } } } };
         } else if (R === totalRowIdx) {
           cell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'E2E8F0' } }, border: { top: { style: 'medium', color: { rgb: '000000' } } } };
-          if ([6, 7, 8, 10].includes(C)) cell.z = IDR_FMT;
+          if ([6, 7, 8, 10, 17].includes(C)) cell.z = IDR_FMT;
         } else if (R > headerRowIdx && R < totalRowIdx) {
           if ([6, 7, 8, 10].includes(C)) { cell.z = IDR_FMT; cell.t = 'n'; }
+          if (C === 17 && typeof cell.v === 'number') { cell.z = IDR_FMT; cell.t = 'n'; }
           if (C === 9) { cell.z = NUM_FMT; cell.t = 'n'; }
+
           if (C === 0) cell.s = { alignment: { horizontal: 'center' } };
           if (C === 11) cell.s = { alignment: { horizontal: 'center' }, font: { bold: true } };
           // Zebra
