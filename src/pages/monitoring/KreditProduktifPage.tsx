@@ -100,6 +100,8 @@ const KreditProduktifPage: React.FC = () => {
 
   const { data: allRows = [], isLoading } = useMLFDataByBranch(selectedUpload, '143');
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
+  const { data: arrearsMap } = useMLFArrears('143', selectedUploadInfo?.jobdate);
+
 
   // Enrich + filter Produktif
   const produktifRows = useMemo(() => {
