@@ -226,10 +226,10 @@ const KreditProduktifPage: React.FC = () => {
     const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
     const titleRow = [`LAPORAN KREDIT PRODUKTIF — UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`];
     const periodeRow = [`Capem 143 Telihan  ·  Periode MLF: ${selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-'}  ·  Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`];
-    const ringkasanHead = ['RINGKASAN', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+    const ringkasanHead = ['RINGKASAN', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
     const ringkasanRows = [
-      ['Total Debitur', aggForActive.count, '', 'Modal Kerja', aggForActive.modalKerja, '', 'Investasi', aggForActive.investasi, '', 'Angs. Pokok/bln', aggForActive.angsuran, '', 'NPL %', `${nplPct.toFixed(2)}%`, ''],
-      ['Total Plafon', aggForActive.plafon, '', 'Total Outstanding', aggForActive.baki, '', 'Total Tunggakan', aggForActive.tunggakan, '', 'NPL Outstanding', aggForActive.npl, '', 'NPL Debitur', aggForActive.nplCount, ''],
+      ['Total Debitur', aggForActive.count, '', 'Modal Kerja', aggForActive.modalKerja, '', 'Investasi', aggForActive.investasi, '', 'Angs. Pokok/bln', aggForActive.angsuran, '', 'NPL %', `${nplPct.toFixed(2)}%`, '', '', '', ''],
+      ['Total Plafon', aggForActive.plafon, '', 'Total Outstanding', aggForActive.baki, '', 'Total Tunggakan', aggForActive.tunggakan, '', 'NPL Outstanding', aggForActive.npl, '', 'NPL Debitur', aggForActive.nplCount, '', '', '', ''],
     ];
     const aoa = [titleRow, periodeRow, [], ringkasanHead, ...ringkasanRows, [], headers, ...bodyRows, totalRow];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -239,13 +239,15 @@ const KreditProduktifPage: React.FC = () => {
       { wch: 5 }, { wch: 14 }, { wch: 30 }, { wch: 32 }, { wch: 26 }, { wch: 12 },
       { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 20 },
       { wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 18 }, { wch: 22 },
     ];
     // Merges
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 14 } },
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 17 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 17 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 17 } },
     ];
+
 
     const range = XLSX.utils.decode_range(ws['!ref']!);
     const headerRowIdx = 7; // title(0)+periode(1)+gap(2)+ringkasanHead(3)+ring1(4)+ring2(5)+gap(6)+header(7)
