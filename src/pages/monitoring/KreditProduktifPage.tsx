@@ -714,6 +714,8 @@ const KreditProduktifPage: React.FC = () => {
                                 <TableHead className="text-right">Plafon</TableHead>
                                 <TableHead className="text-right">Outstanding</TableHead>
                                 <TableHead className="text-right">Tunggakan</TableHead>
+                                <TableHead className="text-center">Hari Tunggak</TableHead>
+                                <TableHead>Bayar Terakhir</TableHead>
                                 <TableHead className="text-center">JW (bln)</TableHead>
                                 <TableHead className="text-right">Angs. Pokok/bln</TableHead>
                                 <TableHead className="text-center">KOL</TableHead>
@@ -721,6 +723,7 @@ const KreditProduktifPage: React.FC = () => {
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead className="w-10"></TableHead>
                               </TableRow>
+
                             </TableHeader>
                             <TableBody>
                               {filteredRows.length === 0 ? (
