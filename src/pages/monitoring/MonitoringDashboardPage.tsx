@@ -724,18 +724,22 @@ const MonitoringDashboardPage: React.FC = () => {
                     <TableHead className="text-center">KOL</TableHead>
                     <TableHead className="text-right">Outstanding</TableHead>
                     <TableHead className="text-right">Tunggakan</TableHead>
+                    <TableHead className="text-center">Hari Tunggak</TableHead>
+                    <TableHead>Bayar Terakhir</TableHead>
                     <TableHead>AO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {stats.topDebitur.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={selectedBranch === '143' ? 8 : 7} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={selectedBranch === '143' ? 10 : 9} className="text-center text-muted-foreground py-6">
                         Tidak ada debitur dengan tunggakan berjalan.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    stats.topDebitur.map((d) => (
+                    stats.topDebitur.map((d) => {
+                      const ar = arrearsMap?.get(d.l0lnno || '');
+                      return (
                       <TableRow key={d.id}>
                         <TableCell className="font-mono text-xs">{d.l0lnno}</TableCell>
                         <TableCell className="font-medium">{d.l0name}</TableCell>
@@ -748,9 +752,26 @@ const MonitoringDashboardPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
                         <TableCell className="text-right font-semibold text-amber-600">{fmtIDR(d.tunggakan)}</TableCell>
+                        <TableCell className="text-center text-xs">
+                          {ar?.hariTunggak != null ? (
+                            <Badge variant="outline" className={ar.hariTunggak > 90 ? 'border-rose-500 text-rose-600' : ar.hariTunggak > 30 ? 'border-amber-500 text-amber-600' : ''}>
+                              {fmtHariTunggak(ar)} hari
+                            </Badge>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {ar?.lastPaymentDate ? (
+                            <>
+                              <span className="font-medium">{format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy')}</span>
+                              <span className="block text-emerald-600 font-medium">{fmtIDR(ar.lastPaymentAmount)}</span>
+                            </>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         <TableCell className="text-xs">{d.l0usid}</TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
+
                   )}
                 </TableBody>
               </Table>
