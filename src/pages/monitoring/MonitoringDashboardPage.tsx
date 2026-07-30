@@ -138,6 +138,8 @@ const MonitoringDashboardPage: React.FC = () => {
   }, [rows, allRows]);
 
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
+  const { data: arrearsMap } = useMLFArrears(selectedBranch, selectedUploadInfo?.jobdate);
+
 
   // Determine previous uploads for "baru cair" & "baru lunas"
   const { prevUploadId, monthBaselineUploadId, monthBaselineInfo, prevUploadInfo } = useMemo(() => {
