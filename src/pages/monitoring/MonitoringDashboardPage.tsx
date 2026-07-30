@@ -8,6 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMLFUploads, useMLFDataByBranch } from '@/hooks/use-mlf-data';
+import { useMLFArrears, fmtHariTunggak } from '@/hooks/use-mlf-arrears';
+
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { getUnit, isProduktif, UNIT_LABEL } from '@/lib/produktif-utils';
 import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2 } from 'lucide-react';
