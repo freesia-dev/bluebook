@@ -185,24 +185,32 @@ const KreditProduktifPage: React.FC = () => {
       'No', 'Nomor Loan', 'Nama Debitur', 'Nomor PK', 'Produk', 'Jenis',
       'Plafon', 'Outstanding', 'Tunggakan', 'Jangka Waktu (bln)',
       'Angsuran Pokok/bln', 'KOL', 'AO', 'Tanggal Mulai', 'Jatuh Tempo',
+      'Hari Tunggak', 'Tgl Bayar Terakhir', 'Nominal Bayar Terakhir',
     ];
-    const bodyRows = filteredRows.map((r, idx) => [
-      idx + 1,
-      r.l0lnno || '-',
-      r.l0name || '-',
-      r.l0narr || '-',
-      r.lytitl || '-',
-      jenisProduktif(r),
-      Number(r.pla) || 0,
-      Number(r.baki) || 0,
-      (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0),
-      r._jw || 0,
-      r._angsuran || 0,
-      kolDisplay(Number(r.kol) || 0),
-      r.l0usid || '-',
-      (r as any).date ? format(new Date((r as any).date), 'dd/MM/yyyy') : '-',
-      r.date1 ? format(new Date(r.date1), 'dd/MM/yyyy') : '-',
-    ]);
+    const bodyRows = filteredRows.map((r, idx) => {
+      const ar = arrearsMap?.get(r.l0lnno || '');
+      const tung = (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+      return [
+        idx + 1,
+        r.l0lnno || '-',
+        r.l0name || '-',
+        r.l0narr || '-',
+        r.lytitl || '-',
+        jenisProduktif(r),
+        Number(r.pla) || 0,
+        Number(r.baki) || 0,
+        tung,
+        r._jw || 0,
+        r._angsuran || 0,
+        kolDisplay(Number(r.kol) || 0),
+        r.l0usid || '-',
+        (r as any).date ? format(new Date((r as any).date), 'dd/MM/yyyy') : '-',
+        r.date1 ? format(new Date(r.date1), 'dd/MM/yyyy') : '-',
+        tung > 0 && ar?.hariTunggak != null ? `${fmtHariTunggak(ar)} hari` : '-',
+        ar?.lastPaymentDate ? format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy') : '-',
+        ar?.lastPaymentAmount || 0,
+      ];
+    });
     const totalRow = [
       '', '', `TOTAL (${bodyRows.length} debitur)`, '', '', '',
       bodyRows.reduce((s, r) => s + (r[6] as number), 0),
@@ -210,8 +218,10 @@ const KreditProduktifPage: React.FC = () => {
       bodyRows.reduce((s, r) => s + (r[8] as number), 0),
       '',
       bodyRows.reduce((s, r) => s + (r[10] as number), 0),
-      '', '', '', '',
+      '', '', '', '', '', '',
+      bodyRows.reduce((s, r) => s + (r[17] as number), 0),
     ];
+
     const unitFill = activeUnit === 'telihan' ? '2563EB' : '059669';
     const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
     const titleRow = [`LAPORAN KREDIT PRODUKTIF — UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`];
