@@ -491,42 +491,53 @@ const KreditProduktifPage: React.FC = () => {
     doc.setTextColor(255, 255, 255);
     doc.text(`Detail Debitur Kredit Produktif — Unit ${UNIT_LABEL[activeUnit]} (${fmtNum(filteredRows.length)} debitur)`, marginX, 8);
 
-    const body = filteredRows.map((r, idx) => [
-      String(idx + 1),
-      r.l0lnno || '-',
-      r.l0name || '-',
-      r.l0narr || '-',
-      jenisProduktif(r),
-      fmtIDR(Number(r.pla) || 0),
-      fmtIDR(Number(r.baki) || 0),
-      fmtIDR((Number(r.tungpk) || 0) + (Number(r.tungbg) || 0)),
-      String(r._jw),
-      fmtIDR(r._angsuran),
-      kolDisplay(Number(r.kol) || 0),
-      r.date1 ? format(new Date(r.date1), 'dd/MM/yy') : '-',
-    ]);
+    const body = filteredRows.map((r, idx) => {
+      const ar = arrearsMap?.get(r.l0lnno || '');
+      const tung = (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+      return [
+        String(idx + 1),
+        r.l0lnno || '-',
+        r.l0name || '-',
+        r.l0narr || '-',
+        jenisProduktif(r),
+        fmtIDR(Number(r.pla) || 0),
+        fmtIDR(Number(r.baki) || 0),
+        fmtIDR(tung),
+        String(r._jw),
+        fmtIDR(r._angsuran),
+        kolDisplay(Number(r.kol) || 0),
+        r.date1 ? format(new Date(r.date1), 'dd/MM/yy') : '-',
+        tung > 0 && ar?.hariTunggak != null ? `${fmtHariTunggak(ar)} hr` : '-',
+        ar?.lastPaymentDate ? format(new Date(ar.lastPaymentDate), 'dd/MM/yy') : '-',
+        ar?.lastPaymentAmount ? fmtIDR(ar.lastPaymentAmount) : '-',
+      ];
+    });
 
     autoTable(doc, {
       startY: 16,
-      head: [['No', 'Nomor Loan', 'Nama', 'Nomor PK', 'Jenis', 'Plafon', 'Outstanding', 'Tunggakan', 'JW (bln)', 'Angs. Pokok/bln', 'KOL', 'Jatuh Tempo']],
-      body: body.length ? body : [['—', '—', '—', 'Tidak ada data', '—', '—', '—', '—', '—', '—', '—', '—']],
-      styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak' },
-      headStyles: { fillColor: unitColor, textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+      head: [['No', 'Nomor Loan', 'Nama', 'Nomor PK', 'Jenis', 'Plafon', 'Outstanding', 'Tunggakan', 'JW (bln)', 'Angs. Pokok/bln', 'KOL', 'Jatuh Tempo', 'Hari Tunggak', 'Bayar Terakhir', 'Nominal Bayar']],
+      body: body.length ? body : [['—', '—', '—', 'Tidak ada data', '—', '—', '—', '—', '—', '—', '—', '—', '—', '—', '—']],
+      styles: { font: 'helvetica', fontSize: 7, cellPadding: 1.4, overflow: 'linebreak' },
+      headStyles: { fillColor: unitColor, textColor: 255, fontStyle: 'bold', fontSize: 7.5, halign: 'center' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
         0: { halign: 'center', cellWidth: 8 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 38 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 24, halign: 'right' },
-        6: { cellWidth: 24, halign: 'right' },
-        7: { cellWidth: 22, halign: 'right' },
-        8: { cellWidth: 12, halign: 'center' },
-        9: { cellWidth: 26, halign: 'right' },
-        10: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
-        11: { cellWidth: 18, halign: 'center' },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 32 },
+        4: { cellWidth: 14, halign: 'center' },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 20, halign: 'right' },
+        7: { cellWidth: 20, halign: 'right' },
+        8: { cellWidth: 10, halign: 'center' },
+        9: { cellWidth: 20, halign: 'right' },
+        10: { cellWidth: 9, halign: 'center', fontStyle: 'bold' },
+        11: { cellWidth: 14, halign: 'center' },
+        12: { cellWidth: 14, halign: 'center' },
+        13: { cellWidth: 16, halign: 'center' },
+        14: { cellWidth: 20, halign: 'right' },
       },
+
       margin: { left: marginX, right: marginX, top: 16 },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 10) {
