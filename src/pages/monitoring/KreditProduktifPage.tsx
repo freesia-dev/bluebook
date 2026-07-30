@@ -19,6 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FileSpreadsheet, FileDown, TrendingUp, Users, Wallet, AlertTriangle, Percent, CalendarClock, ExternalLink } from 'lucide-react';
 import { useMLFUploads, useMLFDataByBranch, type MLFRow } from '@/hooks/use-mlf-data';
+import { useMLFArrears, fmtHariTunggak } from '@/hooks/use-mlf-arrears';
+
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import {
   getUnit,
