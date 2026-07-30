@@ -19,6 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FileSpreadsheet, FileDown, TrendingUp, Users, Wallet, AlertTriangle, Percent, CalendarClock, ExternalLink } from 'lucide-react';
 import { useMLFUploads, useMLFDataByBranch, type MLFRow } from '@/hooks/use-mlf-data';
+import { useMLFArrears, fmtHariTunggak } from '@/hooks/use-mlf-arrears';
+
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import {
   getUnit,
@@ -98,6 +100,8 @@ const KreditProduktifPage: React.FC = () => {
 
   const { data: allRows = [], isLoading } = useMLFDataByBranch(selectedUpload, '143');
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
+  const { data: arrearsMap } = useMLFArrears('143', selectedUploadInfo?.jobdate);
+
 
   // Enrich + filter Produktif
   const produktifRows = useMemo(() => {
@@ -181,24 +185,32 @@ const KreditProduktifPage: React.FC = () => {
       'No', 'Nomor Loan', 'Nama Debitur', 'Nomor PK', 'Produk', 'Jenis',
       'Plafon', 'Outstanding', 'Tunggakan', 'Jangka Waktu (bln)',
       'Angsuran Pokok/bln', 'KOL', 'AO', 'Tanggal Mulai', 'Jatuh Tempo',
+      'Hari Tunggak', 'Tgl Bayar Terakhir', 'Nominal Bayar Terakhir',
     ];
-    const bodyRows = filteredRows.map((r, idx) => [
-      idx + 1,
-      r.l0lnno || '-',
-      r.l0name || '-',
-      r.l0narr || '-',
-      r.lytitl || '-',
-      jenisProduktif(r),
-      Number(r.pla) || 0,
-      Number(r.baki) || 0,
-      (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0),
-      r._jw || 0,
-      r._angsuran || 0,
-      kolDisplay(Number(r.kol) || 0),
-      r.l0usid || '-',
-      (r as any).date ? format(new Date((r as any).date), 'dd/MM/yyyy') : '-',
-      r.date1 ? format(new Date(r.date1), 'dd/MM/yyyy') : '-',
-    ]);
+    const bodyRows = filteredRows.map((r, idx) => {
+      const ar = arrearsMap?.get(r.l0lnno || '');
+      const tung = (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+      return [
+        idx + 1,
+        r.l0lnno || '-',
+        r.l0name || '-',
+        r.l0narr || '-',
+        r.lytitl || '-',
+        jenisProduktif(r),
+        Number(r.pla) || 0,
+        Number(r.baki) || 0,
+        tung,
+        r._jw || 0,
+        r._angsuran || 0,
+        kolDisplay(Number(r.kol) || 0),
+        r.l0usid || '-',
+        (r as any).date ? format(new Date((r as any).date), 'dd/MM/yyyy') : '-',
+        r.date1 ? format(new Date(r.date1), 'dd/MM/yyyy') : '-',
+        tung > 0 && ar?.hariTunggak != null ? `${fmtHariTunggak(ar)} hari` : '-',
+        ar?.lastPaymentDate ? format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy') : '-',
+        ar?.lastPaymentAmount || 0,
+      ];
+    });
     const totalRow = [
       '', '', `TOTAL (${bodyRows.length} debitur)`, '', '', '',
       bodyRows.reduce((s, r) => s + (r[6] as number), 0),
@@ -206,16 +218,18 @@ const KreditProduktifPage: React.FC = () => {
       bodyRows.reduce((s, r) => s + (r[8] as number), 0),
       '',
       bodyRows.reduce((s, r) => s + (r[10] as number), 0),
-      '', '', '', '',
+      '', '', '', '', '', '',
+      bodyRows.reduce((s, r) => s + (r[17] as number), 0),
     ];
+
     const unitFill = activeUnit === 'telihan' ? '2563EB' : '059669';
     const nplPct = aggForActive.baki > 0 ? (aggForActive.npl / aggForActive.baki) * 100 : 0;
     const titleRow = [`LAPORAN KREDIT PRODUKTIF — UNIT ${UNIT_LABEL[activeUnit].toUpperCase()}`];
     const periodeRow = [`Capem 143 Telihan  ·  Periode MLF: ${selectedUploadInfo ? format(new Date(selectedUploadInfo.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-'}  ·  Dicetak: ${format(new Date(), 'dd MMM yyyy HH:mm', { locale: idLocale })}`];
-    const ringkasanHead = ['RINGKASAN', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
+    const ringkasanHead = ['RINGKASAN', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
     const ringkasanRows = [
-      ['Total Debitur', aggForActive.count, '', 'Modal Kerja', aggForActive.modalKerja, '', 'Investasi', aggForActive.investasi, '', 'Angs. Pokok/bln', aggForActive.angsuran, '', 'NPL %', `${nplPct.toFixed(2)}%`, ''],
-      ['Total Plafon', aggForActive.plafon, '', 'Total Outstanding', aggForActive.baki, '', 'Total Tunggakan', aggForActive.tunggakan, '', 'NPL Outstanding', aggForActive.npl, '', 'NPL Debitur', aggForActive.nplCount, ''],
+      ['Total Debitur', aggForActive.count, '', 'Modal Kerja', aggForActive.modalKerja, '', 'Investasi', aggForActive.investasi, '', 'Angs. Pokok/bln', aggForActive.angsuran, '', 'NPL %', `${nplPct.toFixed(2)}%`, '', '', '', ''],
+      ['Total Plafon', aggForActive.plafon, '', 'Total Outstanding', aggForActive.baki, '', 'Total Tunggakan', aggForActive.tunggakan, '', 'NPL Outstanding', aggForActive.npl, '', 'NPL Debitur', aggForActive.nplCount, '', '', '', ''],
     ];
     const aoa = [titleRow, periodeRow, [], ringkasanHead, ...ringkasanRows, [], headers, ...bodyRows, totalRow];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -225,13 +239,15 @@ const KreditProduktifPage: React.FC = () => {
       { wch: 5 }, { wch: 14 }, { wch: 30 }, { wch: 32 }, { wch: 26 }, { wch: 12 },
       { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 20 },
       { wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 18 }, { wch: 22 },
     ];
     // Merges
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 14 } },
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 17 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 17 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 17 } },
     ];
+
 
     const range = XLSX.utils.decode_range(ws['!ref']!);
     const headerRowIdx = 7; // title(0)+periode(1)+gap(2)+ringkasanHead(3)+ring1(4)+ring2(5)+gap(6)+header(7)
@@ -261,10 +277,12 @@ const KreditProduktifPage: React.FC = () => {
           cell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: unitFill } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin', color: { rgb: '000000' } }, bottom: { style: 'thin', color: { rgb: '000000' } } } };
         } else if (R === totalRowIdx) {
           cell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'E2E8F0' } }, border: { top: { style: 'medium', color: { rgb: '000000' } } } };
-          if ([6, 7, 8, 10].includes(C)) cell.z = IDR_FMT;
+          if ([6, 7, 8, 10, 17].includes(C)) cell.z = IDR_FMT;
         } else if (R > headerRowIdx && R < totalRowIdx) {
           if ([6, 7, 8, 10].includes(C)) { cell.z = IDR_FMT; cell.t = 'n'; }
+          if (C === 17 && typeof cell.v === 'number') { cell.z = IDR_FMT; cell.t = 'n'; }
           if (C === 9) { cell.z = NUM_FMT; cell.t = 'n'; }
+
           if (C === 0) cell.s = { alignment: { horizontal: 'center' } };
           if (C === 11) cell.s = { alignment: { horizontal: 'center' }, font: { bold: true } };
           // Zebra
@@ -473,42 +491,53 @@ const KreditProduktifPage: React.FC = () => {
     doc.setTextColor(255, 255, 255);
     doc.text(`Detail Debitur Kredit Produktif — Unit ${UNIT_LABEL[activeUnit]} (${fmtNum(filteredRows.length)} debitur)`, marginX, 8);
 
-    const body = filteredRows.map((r, idx) => [
-      String(idx + 1),
-      r.l0lnno || '-',
-      r.l0name || '-',
-      r.l0narr || '-',
-      jenisProduktif(r),
-      fmtIDR(Number(r.pla) || 0),
-      fmtIDR(Number(r.baki) || 0),
-      fmtIDR((Number(r.tungpk) || 0) + (Number(r.tungbg) || 0)),
-      String(r._jw),
-      fmtIDR(r._angsuran),
-      kolDisplay(Number(r.kol) || 0),
-      r.date1 ? format(new Date(r.date1), 'dd/MM/yy') : '-',
-    ]);
+    const body = filteredRows.map((r, idx) => {
+      const ar = arrearsMap?.get(r.l0lnno || '');
+      const tung = (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+      return [
+        String(idx + 1),
+        r.l0lnno || '-',
+        r.l0name || '-',
+        r.l0narr || '-',
+        jenisProduktif(r),
+        fmtIDR(Number(r.pla) || 0),
+        fmtIDR(Number(r.baki) || 0),
+        fmtIDR(tung),
+        String(r._jw),
+        fmtIDR(r._angsuran),
+        kolDisplay(Number(r.kol) || 0),
+        r.date1 ? format(new Date(r.date1), 'dd/MM/yy') : '-',
+        tung > 0 && ar?.hariTunggak != null ? `${fmtHariTunggak(ar)} hr` : '-',
+        ar?.lastPaymentDate ? format(new Date(ar.lastPaymentDate), 'dd/MM/yy') : '-',
+        ar?.lastPaymentAmount ? fmtIDR(ar.lastPaymentAmount) : '-',
+      ];
+    });
 
     autoTable(doc, {
       startY: 16,
-      head: [['No', 'Nomor Loan', 'Nama', 'Nomor PK', 'Jenis', 'Plafon', 'Outstanding', 'Tunggakan', 'JW (bln)', 'Angs. Pokok/bln', 'KOL', 'Jatuh Tempo']],
-      body: body.length ? body : [['—', '—', '—', 'Tidak ada data', '—', '—', '—', '—', '—', '—', '—', '—']],
-      styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak' },
-      headStyles: { fillColor: unitColor, textColor: 255, fontStyle: 'bold', fontSize: 8, halign: 'center' },
+      head: [['No', 'Nomor Loan', 'Nama', 'Nomor PK', 'Jenis', 'Plafon', 'Outstanding', 'Tunggakan', 'JW (bln)', 'Angs. Pokok/bln', 'KOL', 'Jatuh Tempo', 'Hari Tunggak', 'Bayar Terakhir', 'Nominal Bayar']],
+      body: body.length ? body : [['—', '—', '—', 'Tidak ada data', '—', '—', '—', '—', '—', '—', '—', '—', '—', '—', '—']],
+      styles: { font: 'helvetica', fontSize: 7, cellPadding: 1.4, overflow: 'linebreak' },
+      headStyles: { fillColor: unitColor, textColor: 255, fontStyle: 'bold', fontSize: 7.5, halign: 'center' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
         0: { halign: 'center', cellWidth: 8 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 38 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 24, halign: 'right' },
-        6: { cellWidth: 24, halign: 'right' },
-        7: { cellWidth: 22, halign: 'right' },
-        8: { cellWidth: 12, halign: 'center' },
-        9: { cellWidth: 26, halign: 'right' },
-        10: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
-        11: { cellWidth: 18, halign: 'center' },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 32 },
+        4: { cellWidth: 14, halign: 'center' },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 20, halign: 'right' },
+        7: { cellWidth: 20, halign: 'right' },
+        8: { cellWidth: 10, halign: 'center' },
+        9: { cellWidth: 20, halign: 'right' },
+        10: { cellWidth: 9, halign: 'center', fontStyle: 'bold' },
+        11: { cellWidth: 14, halign: 'center' },
+        12: { cellWidth: 14, halign: 'center' },
+        13: { cellWidth: 16, halign: 'center' },
+        14: { cellWidth: 20, halign: 'right' },
       },
+
       margin: { left: marginX, right: marginX, top: 16 },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 10) {
@@ -714,6 +743,8 @@ const KreditProduktifPage: React.FC = () => {
                                 <TableHead className="text-right">Plafon</TableHead>
                                 <TableHead className="text-right">Outstanding</TableHead>
                                 <TableHead className="text-right">Tunggakan</TableHead>
+                                <TableHead className="text-center">Hari Tunggak</TableHead>
+                                <TableHead>Bayar Terakhir</TableHead>
                                 <TableHead className="text-center">JW (bln)</TableHead>
                                 <TableHead className="text-right">Angs. Pokok/bln</TableHead>
                                 <TableHead className="text-center">KOL</TableHead>
@@ -721,17 +752,19 @@ const KreditProduktifPage: React.FC = () => {
                                 <TableHead>Jatuh Tempo</TableHead>
                                 <TableHead className="w-10"></TableHead>
                               </TableRow>
+
                             </TableHeader>
                             <TableBody>
                               {filteredRows.length === 0 ? (
                                 <TableRow>
-                                  <TableCell colSpan={15} className="text-center text-muted-foreground py-8">
+                                  <TableCell colSpan={17} className="text-center text-muted-foreground py-8">
                                     {isLoading ? 'Memuat data...' : 'Tidak ada debitur produktif untuk unit ini.'}
                                   </TableCell>
                                 </TableRow>
                               ) : filteredRows.map((r, idx) => {
                                 const kol = Number(r.kol) || 0;
                                 const tung = (Number(r.tungpk) || 0) + (Number(r.tungbg) || 0);
+                                const ar = arrearsMap?.get(r.l0lnno || '');
                                 return (
                                   <TableRow key={r.id} className={cn(kol >= 3 && 'bg-rose-50/50 dark:bg-rose-950/20')}>
                                     <TableCell>{idx + 1}</TableCell>
@@ -745,11 +778,38 @@ const KreditProduktifPage: React.FC = () => {
                                     <TableCell className="text-right">{fmtIDR(Number(r.pla) || 0)}</TableCell>
                                     <TableCell className="text-right">{fmtIDR(Number(r.baki) || 0)}</TableCell>
                                     <TableCell className={cn('text-right', tung > 0 && 'text-amber-700 font-medium')}>{fmtIDR(tung)}</TableCell>
+                                    <TableCell className="text-center">
+                                      {tung > 0 && ar?.hariTunggak !== null && ar?.hariTunggak !== undefined ? (
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            'text-xs',
+                                            ar.hariTunggak > 90 ? 'border-rose-500 text-rose-600' :
+                                            ar.hariTunggak > 30 ? 'border-amber-500 text-amber-600' :
+                                            'border-slate-300 text-slate-600',
+                                          )}
+                                          title={ar.hariTunggakMinimal ? 'Tunggakan sudah ada sejak data MLF paling awal — angka minimal' : undefined}
+                                        >
+                                          {fmtHariTunggak(ar)} hari
+                                        </Badge>
+                                      ) : (
+                                        <span className="text-muted-foreground text-xs">—</span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-xs whitespace-nowrap">
+                                      {ar?.lastPaymentDate ? (
+                                        <span title={ar.recentPayments.map((p) => `${format(new Date(p.jobdate), 'dd/MM/yyyy')} · ${fmtIDR(p.amount)}`).join('\n')}>
+                                          <span className="font-medium">{format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy')}</span>
+                                          <span className="block text-emerald-600 font-medium">{fmtIDR(ar.lastPaymentAmount)}</span>
+                                        </span>
+                                      ) : <span className="text-muted-foreground">—</span>}
+                                    </TableCell>
                                     <TableCell className="text-center">{r._jw || '-'}</TableCell>
                                     <TableCell className="text-right font-medium">{r._angsuran ? fmtIDR(r._angsuran) : '-'}</TableCell>
                                     <TableCell className="text-center">
                                       <Badge style={{ backgroundColor: KOL_COLOR[kol], color: 'white' }}>{kolDisplay(kol)}</Badge>
                                     </TableCell>
+
                                     <TableCell className="text-xs">{r.l0usid || '-'}</TableCell>
                                     <TableCell className="text-xs">{r.date1 ? format(new Date(r.date1), 'dd/MM/yy') : '-'}</TableCell>
                                     <TableCell>
