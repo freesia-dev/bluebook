@@ -71,12 +71,27 @@ export interface LoanSimulationRow {
   created_by: string | null;
   created_by_nama: string | null;
   created_at: string;
+  pipeline_status?: PipelineStage | null;
+  pipeline_note?: string | null;
+  pipeline_updated_at?: string | null;
 }
+
+export const PIPELINE_STAGES = ['simulasi', 'berkas_masuk', 'proses', 'input', 'cair'] as const;
+export type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+export const PIPELINE_LABELS: Record<PipelineStage, string> = {
+  simulasi: 'Simulasi Kredit',
+  berkas_masuk: 'Berkas Masuk',
+  proses: 'Proses',
+  input: 'Input',
+  cair: 'Cair',
+};
 
 export type LoanSimulationInput = Omit<
   LoanSimulationRow,
-  'id' | 'created_at' | 'created_by' | 'created_by_nama'
+  'id' | 'created_at' | 'created_by' | 'created_by_nama' | 'pipeline_status' | 'pipeline_note' | 'pipeline_updated_at'
 >;
+
 
 // ============ PRODUCTS ============
 export const useLoanProducts = (activeOnly = true) =>
