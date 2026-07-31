@@ -69,7 +69,7 @@ const stageOf = (s: LoanSimulationRow): PipelineStage =>
 const fmtDate = (v?: string | null) => {
   if (!v) return '-';
   const d = new Date(v);
-  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', yyyy: undefined as never, year: 'numeric' });
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 const PipelinePage: React.FC = () => {
