@@ -261,6 +261,10 @@ const App = () => (
             <Route path="/kalkulator/riwayat" element={
               <Suspense fallback={<TablePageSkeleton />}><RiwayatKalkulatorPage /></Suspense>
             } />
+            <Route path="/kalkulator/pipeline" element={
+              <Suspense fallback={<GenericPageSkeleton />}><PipelineKreditPage /></Suspense>
+            } />
+
             <Route path="/konfigurasi/produk-kalkulator" element={
               <Suspense fallback={<TablePageSkeleton />}><ProdukKalkulatorPage /></Suspense>
             } />
