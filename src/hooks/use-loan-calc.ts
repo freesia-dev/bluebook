@@ -279,6 +279,44 @@ export const useDeleteLoanSimulation = () => {
   });
 };
 
+/** Pindahkan simulasi ke tahap pipeline lain (optimistic, tanpa reload) */
+export const useUpdatePipelineStage = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, stage, note }: { id: string; stage: PipelineStage; note?: string | null }) => {
+      const patch: Record<string, unknown> = {
+        pipeline_status: stage,
+        pipeline_updated_at: new Date().toISOString(),
+      };
+      if (note !== undefined) patch.pipeline_note = note;
+      const { error } = await (supabase as any).from('loan_simulation').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, stage, note }) => {
+      await qc.cancelQueries({ queryKey: ['loan-simulations'] });
+      const prev = qc.getQueryData<LoanSimulationRow[]>(['loan-simulations']);
+      qc.setQueryData<LoanSimulationRow[]>(['loan-simulations'], (old) =>
+        (old || []).map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                pipeline_status: stage,
+                pipeline_updated_at: new Date().toISOString(),
+                pipeline_note: note !== undefined ? note ?? null : r.pipeline_note ?? null,
+              }
+            : r,
+        ),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.prev) qc.setQueryData(['loan-simulations'], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['loan-simulations'] }),
+  });
+};
+
+
 export const PILIHAN_KARIR_DEFAULT = [
   'PNS Fungsional',
   'PNS Struktural',
