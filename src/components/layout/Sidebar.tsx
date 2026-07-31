@@ -174,6 +174,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Kalkulator Konsumtif', href: '/kalkulator' },
     { label: 'Kalkulator Produktif', href: '/kalkulator/produktif' },
     { label: 'Riwayat Simulasi', href: '/kalkulator/riwayat' },
+    { label: 'Pipeline Kredit', href: '/kalkulator/pipeline' },
+
     ...(isAdmin
       ? [
           {

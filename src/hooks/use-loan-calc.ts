@@ -71,12 +71,27 @@ export interface LoanSimulationRow {
   created_by: string | null;
   created_by_nama: string | null;
   created_at: string;
+  pipeline_status?: PipelineStage | null;
+  pipeline_note?: string | null;
+  pipeline_updated_at?: string | null;
 }
+
+export const PIPELINE_STAGES = ['simulasi', 'berkas_masuk', 'proses', 'input', 'cair'] as const;
+export type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+export const PIPELINE_LABELS: Record<PipelineStage, string> = {
+  simulasi: 'Simulasi Kredit',
+  berkas_masuk: 'Berkas Masuk',
+  proses: 'Proses',
+  input: 'Input',
+  cair: 'Cair',
+};
 
 export type LoanSimulationInput = Omit<
   LoanSimulationRow,
-  'id' | 'created_at' | 'created_by' | 'created_by_nama'
+  'id' | 'created_at' | 'created_by' | 'created_by_nama' | 'pipeline_status' | 'pipeline_note' | 'pipeline_updated_at'
 >;
+
 
 // ============ PRODUCTS ============
 export const useLoanProducts = (activeOnly = true) =>
@@ -263,6 +278,44 @@ export const useDeleteLoanSimulation = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-simulations'] }),
   });
 };
+
+/** Pindahkan simulasi ke tahap pipeline lain (optimistic, tanpa reload) */
+export const useUpdatePipelineStage = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, stage, note }: { id: string; stage: PipelineStage; note?: string | null }) => {
+      const patch: Record<string, unknown> = {
+        pipeline_status: stage,
+        pipeline_updated_at: new Date().toISOString(),
+      };
+      if (note !== undefined) patch.pipeline_note = note;
+      const { error } = await (supabase as any).from('loan_simulation').update(patch).eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, stage, note }) => {
+      await qc.cancelQueries({ queryKey: ['loan-simulations'] });
+      const prev = qc.getQueryData<LoanSimulationRow[]>(['loan-simulations']);
+      qc.setQueryData<LoanSimulationRow[]>(['loan-simulations'], (old) =>
+        (old || []).map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                pipeline_status: stage,
+                pipeline_updated_at: new Date().toISOString(),
+                pipeline_note: note !== undefined ? note ?? null : r.pipeline_note ?? null,
+              }
+            : r,
+        ),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.prev) qc.setQueryData(['loan-simulations'], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['loan-simulations'] }),
+  });
+};
+
 
 export const PILIHAN_KARIR_DEFAULT = [
   'PNS Fungsional',

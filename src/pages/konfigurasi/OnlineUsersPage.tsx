@@ -44,7 +44,7 @@ const OnlineUsersPage: React.FC = () => {
   useEffect(() => {
     if (!isAdmin) return;
     const ch = supabase.channel('online-users', {
-      config: { presence: { key: me?.id || 'admin-viewer' } },
+      config: { presence: { key: me?.id || 'admin-viewer' }, broadcast: { self: false } },
     });
 
     const sync = () => {
@@ -68,16 +68,26 @@ const OnlineUsersPage: React.FC = () => {
     ch.on('presence', { event: 'join' }, sync);
     ch.on('presence', { event: 'leave' }, sync);
 
+    let ping: number | undefined;
     ch.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
-        // Track admin as a passive observer (won't broadcast own info as real user unless they log in normally)
         sync();
+        // Minta semua klien mengirim ulang presence-nya agar daftar langsung terisi
+        await ch.send({ type: 'broadcast', event: 'presence-ping', payload: {} });
+        ping = window.setInterval(() => {
+          ch.send({ type: 'broadcast', event: 'presence-ping', payload: {} });
+          sync();
+        }, 10000);
       }
     });
     setChannel(ch);
 
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (ping) window.clearInterval(ping);
+      supabase.removeChannel(ch);
+    };
   }, [isAdmin, me?.id]);
+
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
