@@ -58,6 +58,8 @@ const AuditPublicPage = lazy(() => import("./pages/security/AuditPublicPage"));
 const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
 const KalkulatorProduktifPage = lazy(() => import("./pages/kalkulator/KalkulatorProduktifPage"));
 const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
+const PipelineKreditPage = lazy(() => import("./pages/kalkulator/PipelinePage"));
+
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
 const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPage"));
