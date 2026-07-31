@@ -199,21 +199,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     });
 
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
+    // Admin bisa minta semua klien mengirim ulang presence-nya (sinkron instan)
+    channel.on('broadcast', { event: 'presence-ping' }, () => { void track(); });
+
+    const onlineSince = new Date().toISOString();
+    const track = async () => {
+      try {
         await channel.track({
           user_id: user.id,
           email: user.email,
           nama: userName,
           role,
-          online_at: new Date().toISOString(),
+          online_at: onlineSince,
+          last_seen: new Date().toISOString(),
           user_agent: navigator.userAgent,
         });
-      }
+      } catch { /* noop */ }
+    };
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') await track();
     });
 
-    return () => { supabase.removeChannel(channel); };
+    // Heartbeat supaya status tetap segar & cepat terlihat oleh admin
+    const heartbeat = window.setInterval(track, 15000);
+    const onVisible = () => { if (document.visibilityState === 'visible') void track(); };
+    const onLeave = () => { try { channel.untrack(); } catch { /* noop */ } };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    window.addEventListener('pagehide', onLeave);
+
+    return () => {
+      window.clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+      window.removeEventListener('pagehide', onLeave);
+      try { channel.untrack(); } catch { /* noop */ }
+      supabase.removeChannel(channel);
+    };
   }, [user, isApproved, role, userName]);
+
 
   return (
     <AuthContext.Provider value={{
