@@ -995,6 +995,9 @@ export type Database = {
           pekerjaan: string | null
           pelunasan_bulan_ke: number | null
           pilihan_karir: string | null
+          pipeline_note: string | null
+          pipeline_status: string
+          pipeline_updated_at: string
           plafon: number
           premi_kredit: number | null
           product_id: string | null
@@ -1039,6 +1042,9 @@ export type Database = {
           pekerjaan?: string | null
           pelunasan_bulan_ke?: number | null
           pilihan_karir?: string | null
+          pipeline_note?: string | null
+          pipeline_status?: string
+          pipeline_updated_at?: string
           plafon?: number
           premi_kredit?: number | null
           product_id?: string | null
@@ -1083,6 +1089,9 @@ export type Database = {
           pekerjaan?: string | null
           pelunasan_bulan_ke?: number | null
           pilihan_karir?: string | null
+          pipeline_note?: string | null
+          pipeline_status?: string
+          pipeline_updated_at?: string
           plafon?: number
           premi_kredit?: number | null
           product_id?: string | null
