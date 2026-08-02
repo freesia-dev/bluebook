@@ -7,7 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { TEMPLATE_PLACEHOLDERS, renderTemplate, SAMPLE_PREVIEW_DATA } from '@/lib/wa-utils';
+import { TEMPLATE_PLACEHOLDERS, TEMPLATE_PLACEHOLDERS_PENAWARAN, renderTemplate, SAMPLE_PREVIEW_DATA } from '@/lib/wa-utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSaveWATemplate, useDeleteWATemplate, WATemplate } from '@/hooks/use-wa-template';
 import { toast } from 'sonner';
 import { Trash2, Save, Plus } from 'lucide-react';
@@ -17,12 +18,14 @@ interface Props {
   open: boolean;
   template?: WATemplate | null;
   onClose: () => void;
+  defaultKategori?: 'tagihan' | 'penawaran';
 }
 
-export const TemplateEditor: React.FC<Props> = ({ open, template, onClose }) => {
+export const TemplateEditor: React.FC<Props> = ({ open, template, onClose, defaultKategori = 'tagihan' }) => {
   const [nama, setNama] = useState(template?.nama_template || '');
   const [isi, setIsi] = useState(template?.isi || '');
   const [isDefault, setIsDefault] = useState(template?.is_default || false);
+  const [kategori, setKategori] = useState<'tagihan' | 'penawaran'>((template?.kategori as any) || defaultKategori);
   const save = useSaveWATemplate();
   const del = useDeleteWATemplate();
   const { isAdmin } = useAuth();
@@ -32,7 +35,8 @@ export const TemplateEditor: React.FC<Props> = ({ open, template, onClose }) => 
     setNama(template?.nama_template || '');
     setIsi(template?.isi || '');
     setIsDefault(template?.is_default || false);
-  }, [template, open]);
+    setKategori(((template?.kategori as any) || defaultKategori) as 'tagihan' | 'penawaran');
+  }, [template, open, defaultKategori]);
 
   const insertPlaceholder = (key: string) => {
     const ta = textareaRef.current;
@@ -54,7 +58,7 @@ export const TemplateEditor: React.FC<Props> = ({ open, template, onClose }) => 
       return;
     }
     try {
-      await save.mutateAsync({ id: template?.id, nama_template: nama.trim(), isi, is_default: isDefault });
+      await save.mutateAsync({ id: template?.id, nama_template: nama.trim(), isi, is_default: isDefault, kategori });
       toast.success('Template tersimpan');
       onClose();
     } catch (e: any) {
@@ -91,6 +95,16 @@ export const TemplateEditor: React.FC<Props> = ({ open, template, onClose }) => 
               <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="cth: Reminder Tegas KOL 3+" />
             </div>
             <div>
+              <Label>Kategori Pesan</Label>
+              <Select value={kategori} onValueChange={(v: any) => setKategori(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tagihan">Tagihan / Penagihan</SelectItem>
+                  <SelectItem value="penawaran">Penawaran Kredit (Top Up / Pengajuan Kembali)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <div className="flex items-center justify-between mb-1">
                 <Label>Isi Pesan</Label>
                 <span className="text-[10px] text-muted-foreground">{isi.length} karakter</span>
@@ -100,7 +114,7 @@ export const TemplateEditor: React.FC<Props> = ({ open, template, onClose }) => 
             <div>
               <Label className="text-xs mb-1 block">Klik untuk sisipkan placeholder:</Label>
               <div className="flex flex-wrap gap-1">
-                {TEMPLATE_PLACEHOLDERS.map((p) => (
+                {(kategori === 'penawaran' ? TEMPLATE_PLACEHOLDERS_PENAWARAN : TEMPLATE_PLACEHOLDERS).map((p) => (
                   <Badge key={p.key} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground" onClick={() => insertPlaceholder(p.key)} title={p.desc}>
                     {`{${p.key}}`}
                   </Badge>

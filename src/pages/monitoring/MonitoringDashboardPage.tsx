@@ -12,7 +12,9 @@ import { useMLFArrears, fmtHariTunggak } from '@/hooks/use-mlf-arrears';
 
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { getUnit, isProduktif, UNIT_LABEL } from '@/lib/produktif-utils';
-import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2, Gift } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -35,6 +37,7 @@ const BRANCH_OPTIONS = [
 ];
 
 const MonitoringDashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [selectedBranch, setSelectedBranch] = useState<string>('143');
@@ -443,6 +446,16 @@ const MonitoringDashboardPage: React.FC = () => {
                 <CardTitle className="text-base">Loan Akan Lunas</CardTitle>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
+                  onClick={() => navigate('/monitoring/reminder?mode=penawaran')}
+                  title="Kirim penawaran top up / pengajuan kembali via WA Blaster"
+                >
+                  <Gift className="w-3.5 h-3.5 mr-1" />
+                  Kirim Penawaran
+                </Button>
                 <Select value={lunasRange} onValueChange={(v: any) => setLunasRange(v)}>
                   <SelectTrigger className="w-[220px] h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -478,12 +491,13 @@ const MonitoringDashboardPage: React.FC = () => {
                     <TableHead className="text-center">KOL</TableHead>
                     <TableHead className="text-right">Outstanding</TableHead>
                     <TableHead>AO</TableHead>
+                    <TableHead className="text-center">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {akanLunas.items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={selectedBranch === '143' ? 8 : 7} className="text-center text-muted-foreground py-6">
+                      <TableCell colSpan={selectedBranch === '143' ? 9 : 8} className="text-center text-muted-foreground py-6">
                         Tidak ada loan yang akan lunas pada periode ini.
                       </TableCell>
                     </TableRow>
@@ -501,6 +515,18 @@ const MonitoringDashboardPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
                       <TableCell className="text-xs">{d.l0usid}</TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-[11px] text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
+                          onClick={() => navigate(`/monitoring/reminder?mode=penawaran&q=${encodeURIComponent(d.l0lnno || '')}`)}
+                          title="Kirim penawaran top up / pengajuan kredit kembali"
+                        >
+                          <Gift className="w-3.5 h-3.5 mr-1" />
+                          Penawaran
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

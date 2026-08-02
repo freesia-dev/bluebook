@@ -13,6 +13,7 @@ export interface WAReminderLog {
   kol: number | null;
   tunggakan: number | null;
   upload_id: string | null;
+  kategori?: string | null;
   sent_by: string | null;
   sent_at: string;
 }

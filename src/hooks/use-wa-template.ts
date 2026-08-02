@@ -6,6 +6,7 @@ export interface WATemplate {
   nama_template: string;
   isi: string;
   is_default: boolean;
+  kategori?: 'tagihan' | 'penawaran' | string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -46,6 +47,7 @@ export const useSaveWATemplate = () => {
             nama_template: payload.nama_template,
             isi: payload.isi,
             is_default: !!payload.is_default,
+            kategori: payload.kategori || 'tagihan',
             updated_at: new Date().toISOString(),
           })
           .eq('id', payload.id)
@@ -60,6 +62,7 @@ export const useSaveWATemplate = () => {
           nama_template: payload.nama_template,
           isi: payload.isi,
           is_default: !!payload.is_default,
+          kategori: payload.kategori || 'tagihan',
           created_by: userId,
         })
         .select()

@@ -18,6 +18,7 @@ export interface QueueItem {
   tunggakan: number;
   template_id: string | null;
   upload_id: string | null;
+  kategori?: 'tagihan' | 'penawaran';
 }
 
 interface Props {
@@ -68,7 +69,8 @@ export const AntrianWAModal: React.FC<Props> = ({ open, items, onClose }) => {
         kol: current.kol,
         tunggakan: current.tunggakan,
         upload_id: current.upload_id,
-      },
+        kategori: current.kategori || 'tagihan',
+      } as any,
       {
         onError: (e: any) => toast.error('Gagal mencatat log: ' + e.message),
       },

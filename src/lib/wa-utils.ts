@@ -38,6 +38,9 @@ export interface TemplateData {
   tungbg?: number | null;
   tunggakan?: number | null;
   ao?: string | null;
+  plafon?: number | null;
+  jatuh_tempo?: string | null;
+  sisa_bulan?: number | null;
 }
 
 export const TEMPLATE_PLACEHOLDERS = [
@@ -52,6 +55,18 @@ export const TEMPLATE_PLACEHOLDERS = [
   { key: 'ao', desc: 'AO / Petugas' },
 ];
 
+/** Placeholder khusus pesan penawaran / top up kredit */
+export const TEMPLATE_PLACEHOLDERS_PENAWARAN = [
+  { key: 'nama', desc: 'Nama debitur' },
+  { key: 'no_rek', desc: 'Nomor rekening' },
+  { key: 'produk', desc: 'Nama produk kredit' },
+  { key: 'plafon', desc: 'Plafon awal (Rp)' },
+  { key: 'baki', desc: 'Sisa pinjaman / outstanding (Rp)' },
+  { key: 'jatuh_tempo', desc: 'Tanggal lunas / jatuh tempo' },
+  { key: 'sisa_bulan', desc: 'Sisa bulan menuju lunas' },
+  { key: 'ao', desc: 'AO / Petugas' },
+];
+
 export const renderTemplate = (tpl: string, data: TemplateData): string => {
   const map: Record<string, string> = {
     nama: data.nama || '-',
@@ -63,6 +78,9 @@ export const renderTemplate = (tpl: string, data: TemplateData): string => {
     tungbg: fmtIDRPlain(Number(data.tungbg) || 0),
     tunggakan: fmtIDRPlain(Number(data.tunggakan) || 0),
     ao: data.ao || '-',
+    plafon: fmtIDRPlain(Number(data.plafon) || 0),
+    jatuh_tempo: data.jatuh_tempo || '-',
+    sisa_bulan: data.sisa_bulan != null ? String(data.sisa_bulan) : '-',
   };
   return tpl.replace(/\{(\w+)\}/g, (m, k) => (k in map ? map[k] : m));
 };
@@ -85,4 +103,21 @@ export const SAMPLE_PREVIEW_DATA: TemplateData = {
   tungbg: 875000,
   tunggakan: 4375000,
   ao: 'PETUGAS01',
+  plafon: 200000000,
+  jatuh_tempo: '20 Desember 2026',
+  sisa_bulan: 3,
 };
+
+export const DEFAULT_PENAWARAN_TEMPLATE = `Yth. Bapak/Ibu {nama},
+
+Kami dari Bankaltimtara KCP Telihan menyampaikan terima kasih atas kepercayaan Anda selama ini.
+
+Berdasarkan catatan kami, fasilitas kredit Anda ({produk} - {no_rek}) akan lunas pada {jatuh_tempo} dengan sisa pinjaman {baki}.
+
+Kami menawarkan kesempatan *Top Up / Pengajuan Kembali* dengan proses cepat dan syarat mudah bagi nasabah lancar seperti Bapak/Ibu.
+
+Jika berminat atau ingin simulasi angsuran, silakan balas pesan ini.
+
+Salam,
+{ao}
+Bankaltimtara KCP Telihan`;

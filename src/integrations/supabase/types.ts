@@ -995,6 +995,7 @@ export type Database = {
           pekerjaan: string | null
           pelunasan_bulan_ke: number | null
           pilihan_karir: string | null
+          pipeline_history: Json
           pipeline_note: string | null
           pipeline_status: string
           pipeline_updated_at: string
@@ -1042,6 +1043,7 @@ export type Database = {
           pekerjaan?: string | null
           pelunasan_bulan_ke?: number | null
           pilihan_karir?: string | null
+          pipeline_history?: Json
           pipeline_note?: string | null
           pipeline_status?: string
           pipeline_updated_at?: string
@@ -1089,6 +1091,7 @@ export type Database = {
           pekerjaan?: string | null
           pelunasan_bulan_ke?: number | null
           pilihan_karir?: string | null
+          pipeline_history?: Json
           pipeline_note?: string | null
           pipeline_status?: string
           pipeline_updated_at?: string
@@ -2011,6 +2014,7 @@ export type Database = {
       wa_reminder_log: {
         Row: {
           id: string
+          kategori: string
           kol: number | null
           l0lnno: string
           metode: string
@@ -2026,6 +2030,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          kategori?: string
           kol?: number | null
           l0lnno: string
           metode?: string
@@ -2041,6 +2046,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          kategori?: string
           kol?: number | null
           l0lnno?: string
           metode?: string
@@ -2063,6 +2069,7 @@ export type Database = {
           id: string
           is_default: boolean
           isi: string
+          kategori: string
           nama_template: string
           updated_at: string
         }
@@ -2072,6 +2079,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           isi: string
+          kategori?: string
           nama_template: string
           updated_at?: string
         }
@@ -2081,6 +2089,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           isi?: string
+          kategori?: string
           nama_template?: string
           updated_at?: string
         }

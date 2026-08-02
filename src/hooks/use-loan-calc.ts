@@ -74,6 +74,14 @@ export interface LoanSimulationRow {
   pipeline_status?: PipelineStage | null;
   pipeline_note?: string | null;
   pipeline_updated_at?: string | null;
+  pipeline_history?: PipelineHistoryEntry[] | null;
+}
+
+export interface PipelineHistoryEntry {
+  from: string | null;
+  to: string;
+  at: string;
+  by?: string | null;
 }
 
 export const PIPELINE_STAGES = ['simulasi', 'berkas_masuk', 'proses', 'input', 'cair'] as const;
@@ -89,7 +97,7 @@ export const PIPELINE_LABELS: Record<PipelineStage, string> = {
 
 export type LoanSimulationInput = Omit<
   LoanSimulationRow,
-  'id' | 'created_at' | 'created_by' | 'created_by_nama' | 'pipeline_status' | 'pipeline_note' | 'pipeline_updated_at'
+  'id' | 'created_at' | 'created_by' | 'created_by_nama' | 'pipeline_status' | 'pipeline_note' | 'pipeline_updated_at' | 'pipeline_history'
 >;
 
 
@@ -283,25 +291,38 @@ export const useDeleteLoanSimulation = () => {
 export const useUpdatePipelineStage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, stage, note }: { id: string; stage: PipelineStage; note?: string | null }) => {
+    mutationFn: async ({ id, stage, note, by }: { id: string; stage: PipelineStage; note?: string | null; by?: string | null }) => {
+      const { data: cur } = await (supabase as any)
+        .from('loan_simulation')
+        .select('pipeline_status, pipeline_history')
+        .eq('id', id)
+        .maybeSingle();
+      const history: PipelineHistoryEntry[] = Array.isArray(cur?.pipeline_history) ? cur.pipeline_history : [];
+      history.push({ from: cur?.pipeline_status ?? null, to: stage, at: new Date().toISOString(), by: by ?? null });
       const patch: Record<string, unknown> = {
         pipeline_status: stage,
         pipeline_updated_at: new Date().toISOString(),
+        pipeline_history: history.slice(-50),
       };
       if (note !== undefined) patch.pipeline_note = note;
       const { error } = await (supabase as any).from('loan_simulation').update(patch).eq('id', id);
       if (error) throw error;
     },
-    onMutate: async ({ id, stage, note }) => {
+    onMutate: async ({ id, stage, note, by }) => {
       await qc.cancelQueries({ queryKey: ['loan-simulations'] });
       const prev = qc.getQueryData<LoanSimulationRow[]>(['loan-simulations']);
+      const now = new Date().toISOString();
       qc.setQueryData<LoanSimulationRow[]>(['loan-simulations'], (old) =>
         (old || []).map((r) =>
           r.id === id
             ? {
                 ...r,
                 pipeline_status: stage,
-                pipeline_updated_at: new Date().toISOString(),
+                pipeline_updated_at: now,
+                pipeline_history: [
+                  ...(Array.isArray(r.pipeline_history) ? r.pipeline_history : []),
+                  { from: r.pipeline_status ?? null, to: stage, at: now, by: by ?? null },
+                ],
                 pipeline_note: note !== undefined ? note ?? null : r.pipeline_note ?? null,
               }
             : r,

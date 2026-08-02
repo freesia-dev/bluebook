@@ -25,15 +25,19 @@ import { CallMemoTable } from '@/components/monitoring/CallMemoTable';
 import { CallMemoDialog } from '@/components/monitoring/CallMemoDialog';
 import { format, formatDistanceToNow } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { Send, Plus, Edit3, MessageCircle, Phone, FileText, ClipboardList } from 'lucide-react';
+import { Send, Plus, Edit3, MessageCircle, Phone, FileText, ClipboardList, Gift } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { PenawaranKreditTab } from '@/components/monitoring/PenawaranKreditTab';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock } from 'lucide-react';
 
 const ReminderTunggakanPage: React.FC = () => {
   const { canEdit } = useAuth();
+  const [searchParams] = useSearchParams();
+  const modeParam = searchParams.get('mode') === 'penawaran' ? 'penawaran' : 'reminder';
+  const qParam = searchParams.get('q') || '';
   const { data: uploads = [] } = useMLFUploads();
   const [uploadId, setUploadId] = useState<string | undefined>();
   useEffect(() => { if (!uploadId && uploads.length > 0) setUploadId(uploads[0].id); }, [uploads, uploadId]);
@@ -68,15 +72,20 @@ const ReminderTunggakanPage: React.FC = () => {
   const [memoDialogOpen, setMemoDialogOpen] = useState(false);
   const [memoPrefillL0lnno, setMemoPrefillL0lnno] = useState<string | undefined>();
 
+  const tagihanTpls = useMemo(
+    () => templates.filter((t) => (t.kategori || 'tagihan') !== 'penawaran'),
+    [templates],
+  );
+
   // pick default template
   useEffect(() => {
-    if (!selectedTplId && templates.length > 0) {
-      const def = templates.find((t) => t.is_default) || templates[0];
+    if (!selectedTplId && tagihanTpls.length > 0) {
+      const def = tagihanTpls.find((t) => t.is_default) || tagihanTpls[0];
       setSelectedTplId(def.id);
     }
-  }, [templates, selectedTplId]);
+  }, [tagihanTpls, selectedTplId]);
 
-  const currentTpl = templates.find((t) => t.id === selectedTplId);
+  const currentTpl = tagihanTpls.find((t) => t.id === selectedTplId);
   const effectiveTpl = useOverride ? overrideTpl : currentTpl?.isi || '';
 
   const kontakMap = useMemo(() => {
@@ -211,8 +220,8 @@ const ReminderTunggakanPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Reminder & Penagihan Tunggakan"
-        description="Kirim reminder WhatsApp & catat Call Memo penagihan kredit"
+        title="WA Blaster"
+        description="Kirim pesan tagihan maupun penawaran produk kredit via WhatsApp, plus catatan Call Memo"
       />
 
       {!canEdit && (
@@ -224,11 +233,24 @@ const ReminderTunggakanPage: React.FC = () => {
         </Alert>
       )}
 
-      <Tabs defaultValue="reminder" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="reminder"><MessageCircle className="w-4 h-4 mr-1" />Kirim Reminder</TabsTrigger>
+      <Tabs defaultValue={modeParam} className="w-full">
+        <TabsList className="mb-4 flex-wrap h-auto">
+          <TabsTrigger value="reminder"><MessageCircle className="w-4 h-4 mr-1" />Tagihan Tunggakan</TabsTrigger>
+          <TabsTrigger value="penawaran"><Gift className="w-4 h-4 mr-1" />Penawaran Kredit</TabsTrigger>
           <TabsTrigger value="memo"><ClipboardList className="w-4 h-4 mr-1" />Riwayat Call Memo</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="penawaran">
+          <PenawaranKreditTab
+            rows={rows}
+            uploadId={uploadId}
+            jobdate={uploads.find((u) => u.id === uploadId)?.jobdate}
+            kontakMap={kontakMap}
+            canEdit={canEdit}
+            initialSearch={qParam}
+            onIsiHp={(l0lnno, nama) => setQuickFill({ l0lnno, nama, value: '' })}
+          />
+        </TabsContent>
 
         <TabsContent value="memo">
           <CallMemoTable />
@@ -374,7 +396,7 @@ const ReminderTunggakanPage: React.FC = () => {
               <Select value={selectedTplId} onValueChange={(v) => { setSelectedTplId(v); setUseOverride(false); }}>
                 <SelectTrigger><SelectValue placeholder="Pilih template" /></SelectTrigger>
                 <SelectContent>
-                  {templates.map((t) => <SelectItem key={t.id} value={t.id}>{t.nama_template}{t.is_default ? ' ⭐' : ''}</SelectItem>)}
+                  {tagihanTpls.map((t) => <SelectItem key={t.id} value={t.id}>{t.nama_template}{t.is_default ? ' ⭐' : ''}</SelectItem>)}
                 </SelectContent>
               </Select>
               {currentTpl && (
