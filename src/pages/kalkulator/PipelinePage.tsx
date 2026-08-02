@@ -20,8 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, ChevronLeft, ChevronRight, Eye, GripVertical,
-  Calculator, FolderInput, Loader2, Keyboard, CheckCircle2,
+  Calculator, FolderInput, Loader2, Keyboard, CheckCircle2, History as HistoryIcon,
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const STAGE_META: Record<PipelineStage, { icon: React.ElementType; accent: string; note: string; dot: string; ring: string }> = {
   simulasi: {
@@ -264,7 +265,7 @@ const PipelinePage: React.FC = () => {
                               className="mt-1.5 w-full flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition rounded px-1 py-0.5 hover:bg-background/60"
                               title="Lihat riwayat perpindahan tahap"
                             >
-                              <History className="w-3 h-3 shrink-0" />
+                              <HistoryIcon className="w-3 h-3 shrink-0" />
                               <span className="truncate">
                                 {row.pipeline_updated_at
                                   ? `Pindah ${sinceLabel(row.pipeline_updated_at)} · ${fmtDateTime(row.pipeline_updated_at)}`
