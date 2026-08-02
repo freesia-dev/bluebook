@@ -72,10 +72,33 @@ const fmtDate = (v?: string | null) => {
   return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+const fmtDateTime = (v?: string | null) => {
+  if (!v) return '-';
+  const d = new Date(v);
+  return isNaN(d.getTime())
+    ? '-'
+    : d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const sinceLabel = (v?: string | null) => {
+  if (!v) return '';
+  const t = new Date(v).getTime();
+  if (isNaN(t)) return '';
+  const mins = Math.floor((Date.now() - t) / 60000);
+  if (mins < 1) return 'baru saja';
+  if (mins < 60) return `${mins} mnt lalu`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h} jam lalu`;
+  return `${Math.floor(h / 24)} hari lalu`;
+};
+
+const stageLabel = (s?: string | null) =>
+  s && (PIPELINE_LABELS as Record<string, string>)[s] ? (PIPELINE_LABELS as Record<string, string>)[s] : 'Simulasi Kredit';
+
 const PipelinePage: React.FC = () => {
   const { data: sims, isLoading } = useLoanSimulations();
   const move = useUpdatePipelineStage();
-  const { canEdit } = useAuth();
+  const { canEdit, userName } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
