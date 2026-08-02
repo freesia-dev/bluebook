@@ -137,9 +137,9 @@ const PipelinePage: React.FC = () => {
       return;
     }
     if (stageOf(row) === stage) return;
-    move.mutate({ id: row.id, stage });
-    toast({ title: `${row.nama_debitur} → ${PIPELINE_LABELS[stage]}` });
-  }, [canEdit, move, toast]);
+    move.mutate({ id: row.id, stage, by: userName });
+    toast({ title: `${row.nama_debitur} → ${PIPELINE_LABELS[stage]}`, description: `Dipindahkan ${fmtDateTime(new Date().toISOString())}` });
+  }, [canEdit, move, toast, userName]);
 
   const shift = (row: LoanSimulationRow, dir: -1 | 1) => {
     const idx = PIPELINE_STAGES.indexOf(stageOf(row));
