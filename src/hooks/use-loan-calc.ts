@@ -97,7 +97,7 @@ export const PIPELINE_LABELS: Record<PipelineStage, string> = {
 
 export type LoanSimulationInput = Omit<
   LoanSimulationRow,
-  'id' | 'created_at' | 'created_by' | 'created_by_nama' | 'pipeline_status' | 'pipeline_note' | 'pipeline_updated_at'
+  'id' | 'created_at' | 'created_by' | 'created_by_nama' | 'pipeline_status' | 'pipeline_note' | 'pipeline_updated_at' | 'pipeline_history'
 >;
 
 
