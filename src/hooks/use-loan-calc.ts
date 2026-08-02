@@ -74,6 +74,14 @@ export interface LoanSimulationRow {
   pipeline_status?: PipelineStage | null;
   pipeline_note?: string | null;
   pipeline_updated_at?: string | null;
+  pipeline_history?: PipelineHistoryEntry[] | null;
+}
+
+export interface PipelineHistoryEntry {
+  from: string | null;
+  to: string;
+  at: string;
+  by?: string | null;
 }
 
 export const PIPELINE_STAGES = ['simulasi', 'berkas_masuk', 'proses', 'input', 'cair'] as const;
