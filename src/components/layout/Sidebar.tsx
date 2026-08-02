@@ -224,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Kredit Produktif Unit', href: '/monitoring/kredit-produktif' },
     { label: 'Export PDF', href: '/monitoring/export-pdf' },
     { label: 'Kontak Debitur', href: '/monitoring/kontak' },
-    { label: 'Reminder Tunggakan', href: '/monitoring/reminder' },
+    { label: 'WA Blaster', href: '/monitoring/reminder' },
   ];
   const monitoringItems = (permissions.monitoringDashboardOnly
     ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard' || m.href === '/monitoring/kredit-produktif')
