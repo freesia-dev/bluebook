@@ -256,8 +256,56 @@ const PipelinePage: React.FC = () => {
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-2">
                           {row.nama_ao ? `AO ${row.nama_ao} · ` : ''}
-                          {fmtDate(row.pipeline_updated_at || row.created_at)}
+                          {fmtDate(row.created_at)}
                         </p>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className="mt-1.5 w-full flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition rounded px-1 py-0.5 hover:bg-background/60"
+                              title="Lihat riwayat perpindahan tahap"
+                            >
+                              <History className="w-3 h-3 shrink-0" />
+                              <span className="truncate">
+                                {row.pipeline_updated_at
+                                  ? `Pindah ${sinceLabel(row.pipeline_updated_at)} · ${fmtDateTime(row.pipeline_updated_at)}`
+                                  : 'Belum pernah dipindahkan'}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="start" className="w-72 p-3">
+                            <p className="text-xs font-semibold mb-2">Riwayat Tahap — {row.nama_debitur}</p>
+                            <div className="space-y-2 max-h-56 overflow-y-auto">
+                              {(row.pipeline_history || []).length === 0 ? (
+                                <p className="text-[11px] text-muted-foreground">
+                                  Belum ada perpindahan tahap yang tercatat.
+                                </p>
+                              ) : (
+                                [...(row.pipeline_history || [])].reverse().map((h, hi) => (
+                                  <div key={hi} className="flex gap-2 text-[11px]">
+                                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                    <div>
+                                      <p className="font-medium">
+                                        {stageLabel(h.from)} → {stageLabel(h.to)}
+                                      </p>
+                                      <p className="text-muted-foreground">
+                                        {fmtDateTime(h.at)}
+                                        {h.by ? ` · ${h.by}` : ''}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                              <div className="flex gap-2 text-[11px] pt-1 border-t">
+                                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
+                                <div>
+                                  <p className="font-medium">Simulasi dibuat</p>
+                                  <p className="text-muted-foreground">{fmtDateTime(row.created_at)}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
 
                         {canEdit && (
                           <div className="mt-2 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
