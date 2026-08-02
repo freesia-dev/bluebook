@@ -12,7 +12,9 @@ import { useMLFArrears, fmtHariTunggak } from '@/hooks/use-mlf-arrears';
 
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { getUnit, isProduktif, UNIT_LABEL } from '@/lib/produktif-utils';
-import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2, Gift } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
