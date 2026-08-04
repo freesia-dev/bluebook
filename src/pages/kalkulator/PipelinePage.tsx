@@ -118,11 +118,21 @@ const PipelinePage: React.FC = () => {
     );
   }, [sims, search]);
 
+  const cancelled = useMemo(
+    () =>
+      rows
+        .filter((r) => isCancelled(r))
+        .sort((a, b) =>
+          String(b.pipeline_updated_at || b.created_at).localeCompare(String(a.pipeline_updated_at || a.created_at)),
+        ),
+    [rows],
+  );
+
   const grouped = useMemo(() => {
     const g: Record<PipelineStage, LoanSimulationRow[]> = {
       simulasi: [], berkas_masuk: [], proses: [], input: [], cair: [],
     };
-    rows.forEach((r) => g[stageOf(r)].push(r));
+    rows.filter((r) => !isCancelled(r)).forEach((r) => g[stageOf(r)].push(r));
     (Object.keys(g) as PipelineStage[]).forEach((k) =>
       g[k].sort((a, b) =>
         String(b.pipeline_updated_at || b.created_at).localeCompare(String(a.pipeline_updated_at || a.created_at)),
@@ -136,16 +146,24 @@ const PipelinePage: React.FC = () => {
       toast({ title: 'Hanya lihat', description: 'Role Anda tidak dapat mengubah tahap pipeline.', variant: 'destructive' });
       return;
     }
-    if (stageOf(row) === stage) return;
-    move.mutate({ id: row.id, stage, by: userName });
+    if (!isCancelled(row) && stageOf(row) === stage) return;
+    move.mutate({ id: row.id, stage, by: userName, note: isCancelled(row) ? null : undefined });
     toast({ title: `${row.nama_debitur} → ${PIPELINE_LABELS[stage]}`, description: `Dipindahkan ${fmtDateTime(new Date().toISOString())}` });
   }, [canEdit, move, toast, userName]);
+
+  const handleCancel = (reason: string) => {
+    if (!cancelTarget) return;
+    move.mutate({ id: cancelTarget.id, stage: 'batal', note: reason, by: userName });
+    toast({ title: 'Simulasi dibatalkan', description: `${cancelTarget.nama_debitur} — ${reason}` });
+    setCancelTarget(null);
+  };
 
   const shift = (row: LoanSimulationRow, dir: -1 | 1) => {
     const idx = PIPELINE_STAGES.indexOf(stageOf(row));
     const next = PIPELINE_STAGES[idx + dir];
     if (next) handleMove(row, next);
   };
+
 
   const totalNominal = (list: LoanSimulationRow[]) => list.reduce((a, b) => a + (Number(b.plafon) || 0), 0);
 
