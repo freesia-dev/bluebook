@@ -308,7 +308,7 @@ export const useDeleteLoanSimulation = () => {
 export const useUpdatePipelineStage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, stage, note, by }: { id: string; stage: PipelineStage; note?: string | null; by?: string | null }) => {
+    mutationFn: async ({ id, stage, note, by }: { id: string; stage: StageOrCancel; note?: string | null; by?: string | null }) => {
       const { data: cur } = await (supabase as any)
         .from('loan_simulation')
         .select('pipeline_status, pipeline_history')
