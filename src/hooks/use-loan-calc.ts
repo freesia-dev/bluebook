@@ -71,7 +71,7 @@ export interface LoanSimulationRow {
   created_by: string | null;
   created_by_nama: string | null;
   created_at: string;
-  pipeline_status?: PipelineStage | null;
+  pipeline_status?: StageOrCancel | null;
   pipeline_note?: string | null;
   pipeline_updated_at?: string | null;
   pipeline_history?: PipelineHistoryEntry[] | null;
