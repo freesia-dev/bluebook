@@ -5,12 +5,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useLoanSimulations, useDeleteLoanSimulation, type LoanSimulationRow } from '@/hooks/use-loan-calc';
+import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber } from '@/lib/loan-calc';
-import { Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  CancelSimulationDialog,
+  StageBadge,
+  isCancelled,
+  stageBeforeCancel,
+} from '@/components/kalkulator/CancelSimulationDialog';
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -312,10 +319,26 @@ const RiwayatPage: React.FC = () => {
   const del = useDeleteLoanSimulation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { canEdit } = useAuth();
+  const { canEdit, userName } = useAuth();
+  const move = useUpdatePipelineStage();
   const [detail, setDetail] = useState<LoanSimulationRow | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<LoanSimulationRow | null>(null);
   const [jpgTarget, setJpgTarget] = useState<LoanSimulationRow | null>(null);
   const jpgRef = useRef<HTMLDivElement>(null);
+
+  const handleCancel = (reason: string) => {
+    if (!cancelTarget) return;
+    move.mutate({ id: cancelTarget.id, stage: 'batal', note: reason, by: userName });
+    toast({ title: 'Simulasi dibatalkan', description: `${cancelTarget.nama_debitur} — ${reason}` });
+    setCancelTarget(null);
+  };
+
+  const handleUndoCancel = (s: LoanSimulationRow) => {
+    const back = stageBeforeCancel(s);
+    move.mutate({ id: s.id, stage: back, note: null, by: userName });
+    toast({ title: 'Pembatalan dibatalkan', description: `${s.nama_debitur} dikembalikan ke tahap sebelumnya.` });
+  };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus simulasi ini?')) return;
@@ -372,6 +395,7 @@ const RiwayatPage: React.FC = () => {
                 <TableHead className="text-right">Plafon</TableHead>
                 <TableHead>Tenor</TableHead>
                 <TableHead className="text-right">Angsuran</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Dibuat oleh</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
@@ -379,27 +403,35 @@ const RiwayatPage: React.FC = () => {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Memuat...
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && data.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Belum ada simulasi tersimpan
                   </TableCell>
                 </TableRow>
               )}
               {data.map((s) => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={isCancelled(s) ? 'opacity-70' : ''}>
                   <TableCell>{new Date(s.created_at).toLocaleDateString('id-ID')}</TableCell>
-                  <TableCell className="font-medium">{s.nama_debitur}</TableCell>
+                  <TableCell className={`font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</TableCell>
                   <TableCell>{s.product_nama || '-'}</TableCell>
                   <TableCell className="text-right">{fmtRp(s.plafon)}</TableCell>
                   <TableCell>{s.tenor_bulan} bln</TableCell>
                   <TableCell className="text-right">
                     {fmtRp(s.hasil_ringkasan?.angsuranPertama ?? 0)}
+                  </TableCell>
+                  <TableCell>
+                    <StageBadge status={s.pipeline_status} note={s.pipeline_note} />
+                    {isCancelled(s) && s.pipeline_note && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 max-w-[160px] truncate" title={s.pipeline_note}>
+                        {s.pipeline_note}
+                      </p>
+                    )}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.created_by_nama || '-'}</TableCell>
                   <TableCell className="text-right">
@@ -411,6 +443,15 @@ const RiwayatPage: React.FC = () => {
                         <Pencil className="w-4 h-4 text-blue-600" />
                       </Button>
                     )}
+                    {canEdit && (isCancelled(s) ? (
+                      <Button size="icon" variant="ghost" onClick={() => handleUndoCancel(s)} title="Undo pembatalan">
+                        <Undo2 className="w-4 h-4 text-emerald-600" />
+                      </Button>
+                    ) : (
+                      <Button size="icon" variant="ghost" onClick={() => setCancelTarget(s)} title="Batalkan simulasi">
+                        <Ban className="w-4 h-4 text-rose-500" />
+                      </Button>
+                    ))}
                     <Button size="icon" variant="ghost" onClick={() => handleExportJpg(s)} title="Export JPG">
                       <ImageIcon className="w-4 h-4 text-amber-600" />
                     </Button>
@@ -427,11 +468,20 @@ const RiwayatPage: React.FC = () => {
                     )}
                   </TableCell>
                 </TableRow>
+
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <CancelSimulationDialog
+        row={cancelTarget}
+        onOpenChange={(o) => !o && setCancelTarget(null)}
+        onConfirm={handleCancel}
+      />
+
+
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">

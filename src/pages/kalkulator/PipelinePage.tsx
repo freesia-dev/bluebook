@@ -20,9 +20,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, ChevronLeft, ChevronRight, Eye, GripVertical,
-  Calculator, FolderInput, Loader2, Keyboard, CheckCircle2, History as HistoryIcon,
+  Calculator, FolderInput, Loader2, Keyboard, CheckCircle2, History as HistoryIcon, Ban, Undo2,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  CancelSimulationDialog,
+  isCancelled,
+  stageBeforeCancel,
+} from '@/components/kalkulator/CancelSimulationDialog';
+
 
 const STAGE_META: Record<PipelineStage, { icon: React.ElementType; accent: string; note: string; dot: string; ring: string }> = {
   simulasi: {
@@ -105,6 +111,8 @@ const PipelinePage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<PipelineStage | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<LoanSimulationRow | null>(null);
+
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -118,11 +126,21 @@ const PipelinePage: React.FC = () => {
     );
   }, [sims, search]);
 
+  const cancelled = useMemo(
+    () =>
+      rows
+        .filter((r) => isCancelled(r))
+        .sort((a, b) =>
+          String(b.pipeline_updated_at || b.created_at).localeCompare(String(a.pipeline_updated_at || a.created_at)),
+        ),
+    [rows],
+  );
+
   const grouped = useMemo(() => {
     const g: Record<PipelineStage, LoanSimulationRow[]> = {
       simulasi: [], berkas_masuk: [], proses: [], input: [], cair: [],
     };
-    rows.forEach((r) => g[stageOf(r)].push(r));
+    rows.filter((r) => !isCancelled(r)).forEach((r) => g[stageOf(r)].push(r));
     (Object.keys(g) as PipelineStage[]).forEach((k) =>
       g[k].sort((a, b) =>
         String(b.pipeline_updated_at || b.created_at).localeCompare(String(a.pipeline_updated_at || a.created_at)),
@@ -136,16 +154,24 @@ const PipelinePage: React.FC = () => {
       toast({ title: 'Hanya lihat', description: 'Role Anda tidak dapat mengubah tahap pipeline.', variant: 'destructive' });
       return;
     }
-    if (stageOf(row) === stage) return;
-    move.mutate({ id: row.id, stage, by: userName });
+    if (!isCancelled(row) && stageOf(row) === stage) return;
+    move.mutate({ id: row.id, stage, by: userName, note: isCancelled(row) ? null : undefined });
     toast({ title: `${row.nama_debitur} → ${PIPELINE_LABELS[stage]}`, description: `Dipindahkan ${fmtDateTime(new Date().toISOString())}` });
   }, [canEdit, move, toast, userName]);
+
+  const handleCancel = (reason: string) => {
+    if (!cancelTarget) return;
+    move.mutate({ id: cancelTarget.id, stage: 'batal', note: reason, by: userName });
+    toast({ title: 'Simulasi dibatalkan', description: `${cancelTarget.nama_debitur} — ${reason}` });
+    setCancelTarget(null);
+  };
 
   const shift = (row: LoanSimulationRow, dir: -1 | 1) => {
     const idx = PIPELINE_STAGES.indexOf(stageOf(row));
     const next = PIPELINE_STAGES[idx + dir];
     if (next) handleMove(row, next);
   };
+
 
   const totalNominal = (list: LoanSimulationRow[]) => list.reduce((a, b) => a + (Number(b.plafon) || 0), 0);
 
@@ -318,6 +344,13 @@ const PipelinePage: React.FC = () => {
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </Button>
+                            <Button
+                              size="sm" variant="ghost" className="h-6 px-1.5 text-rose-600 hover:text-rose-700"
+                              onClick={() => setCancelTarget(row)}
+                              title="Batalkan simulasi"
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                            </Button>
                             <span className="text-[10px] text-muted-foreground flex-1 text-center">pindah tahap</span>
                             <Button
                               size="sm" variant="ghost" className="h-6 px-1.5"
@@ -336,17 +369,70 @@ const PipelinePage: React.FC = () => {
               </div>
             );
           })}
+
+          {/* Kolom Dibatalkan */}
+          <div className="shrink-0 w-[290px] snap-start rounded-xl border border-dashed bg-card/40 backdrop-blur-sm">
+            <div className="rounded-t-xl bg-gradient-to-br from-rose-500/15 to-rose-500/5 text-rose-700 dark:text-rose-300 px-3 py-2.5 border-b">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <Ban className="w-4 h-4" />
+                <span className="font-semibold text-sm">Dibatalkan</span>
+                <Badge variant="secondary" className="ml-auto text-[10px]">{cancelled.length}</Badge>
+              </div>
+              <p className="text-[11px] mt-1 opacity-80">{fmtRp(totalNominal(cancelled))}</p>
+            </div>
+            <div className="p-2.5 space-y-2.5 min-h-[220px] max-h-[calc(100vh-330px)] overflow-y-auto">
+              {cancelled.length === 0 && (
+                <div className="text-center text-xs text-muted-foreground py-10 border border-dashed rounded-lg">
+                  Tidak ada simulasi yang dibatalkan
+                </div>
+              )}
+              {cancelled.map((row) => (
+                <div
+                  key={row.id}
+                  className="rounded-lg border p-3 shadow-sm bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900"
+                >
+                  <p className="font-semibold text-sm leading-snug line-through opacity-80">{row.nama_debitur}</p>
+                  <p className="text-[15px] font-bold mt-1 opacity-80">{fmtRp(Number(row.plafon) || 0)}</p>
+                  {row.pipeline_note && (
+                    <p className="text-[11px] mt-1.5 text-rose-700 dark:text-rose-300">Alasan: {row.pipeline_note}</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    {sinceLabel(row.pipeline_updated_at)} · {fmtDateTime(row.pipeline_updated_at)}
+                  </p>
+                  {canEdit && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="mt-2 h-7 w-full text-[11px]"
+                      onClick={() => handleMove(row, stageBeforeCancel(row))}
+                      title="Kembalikan ke tahap sebelumnya"
+                    >
+                      <Undo2 className="w-3.5 h-3.5 mr-1" /> Undo pembatalan
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
+      <CancelSimulationDialog
+        row={cancelTarget}
+        onOpenChange={(o) => !o && setCancelTarget(null)}
+        onConfirm={handleCancel}
+      />
+
       <Card className="mt-4">
         <CardContent className="py-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-          <span>Total berkas: <b className="text-foreground">{rows.length}</b></span>
-          <span>Belum cair: <b className="text-foreground">{rows.length - grouped.cair.length}</b></span>
+          <span>Total berkas: <b className="text-foreground">{rows.length - cancelled.length}</b></span>
+          <span>Belum cair: <b className="text-foreground">{rows.length - cancelled.length - grouped.cair.length}</b></span>
           <span>Sudah cair: <b className="text-foreground">{grouped.cair.length}</b></span>
           <span>Nilai cair: <b className="text-foreground">{fmtRp(totalNominal(grouped.cair))}</b></span>
+          <span>Dibatalkan: <b className="text-foreground">{cancelled.length}</b></span>
         </CardContent>
       </Card>
+
     </MainLayout>
   );
 };
