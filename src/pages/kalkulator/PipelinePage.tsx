@@ -111,6 +111,8 @@ const PipelinePage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<PipelineStage | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<LoanSimulationRow | null>(null);
+
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
