@@ -20,9 +20,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, ChevronLeft, ChevronRight, Eye, GripVertical,
-  Calculator, FolderInput, Loader2, Keyboard, CheckCircle2, History as HistoryIcon,
+  Calculator, FolderInput, Loader2, Keyboard, CheckCircle2, History as HistoryIcon, Ban, Undo2,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  CancelSimulationDialog,
+  isCancelled,
+  stageBeforeCancel,
+} from '@/components/kalkulator/CancelSimulationDialog';
+
 
 const STAGE_META: Record<PipelineStage, { icon: React.ElementType; accent: string; note: string; dot: string; ring: string }> = {
   simulasi: {
