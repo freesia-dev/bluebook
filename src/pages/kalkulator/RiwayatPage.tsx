@@ -5,12 +5,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useLoanSimulations, useDeleteLoanSimulation, type LoanSimulationRow } from '@/hooks/use-loan-calc';
+import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber } from '@/lib/loan-calc';
-import { Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  CancelSimulationDialog,
+  StageBadge,
+  isCancelled,
+  stageBeforeCancel,
+} from '@/components/kalkulator/CancelSimulationDialog';
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
