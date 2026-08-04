@@ -475,6 +475,14 @@ const RiwayatPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      <CancelSimulationDialog
+        row={cancelTarget}
+        onOpenChange={(o) => !o && setCancelTarget(null)}
+        onConfirm={handleCancel}
+      />
+
+
+
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
           <DialogHeader>
