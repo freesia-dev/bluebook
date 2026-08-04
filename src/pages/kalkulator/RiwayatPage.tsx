@@ -395,6 +395,7 @@ const RiwayatPage: React.FC = () => {
                 <TableHead className="text-right">Plafon</TableHead>
                 <TableHead>Tenor</TableHead>
                 <TableHead className="text-right">Angsuran</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Dibuat oleh</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
@@ -402,27 +403,35 @@ const RiwayatPage: React.FC = () => {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Memuat...
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && data.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Belum ada simulasi tersimpan
                   </TableCell>
                 </TableRow>
               )}
               {data.map((s) => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={isCancelled(s) ? 'opacity-70' : ''}>
                   <TableCell>{new Date(s.created_at).toLocaleDateString('id-ID')}</TableCell>
-                  <TableCell className="font-medium">{s.nama_debitur}</TableCell>
+                  <TableCell className={`font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</TableCell>
                   <TableCell>{s.product_nama || '-'}</TableCell>
                   <TableCell className="text-right">{fmtRp(s.plafon)}</TableCell>
                   <TableCell>{s.tenor_bulan} bln</TableCell>
                   <TableCell className="text-right">
                     {fmtRp(s.hasil_ringkasan?.angsuranPertama ?? 0)}
+                  </TableCell>
+                  <TableCell>
+                    <StageBadge status={s.pipeline_status} note={s.pipeline_note} />
+                    {isCancelled(s) && s.pipeline_note && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 max-w-[160px] truncate" title={s.pipeline_note}>
+                        {s.pipeline_note}
+                      </p>
+                    )}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.created_by_nama || '-'}</TableCell>
                   <TableCell className="text-right">
@@ -434,6 +443,15 @@ const RiwayatPage: React.FC = () => {
                         <Pencil className="w-4 h-4 text-blue-600" />
                       </Button>
                     )}
+                    {canEdit && (isCancelled(s) ? (
+                      <Button size="icon" variant="ghost" onClick={() => handleUndoCancel(s)} title="Undo pembatalan">
+                        <Undo2 className="w-4 h-4 text-emerald-600" />
+                      </Button>
+                    ) : (
+                      <Button size="icon" variant="ghost" onClick={() => setCancelTarget(s)} title="Batalkan simulasi">
+                        <Ban className="w-4 h-4 text-rose-500" />
+                      </Button>
+                    ))}
                     <Button size="icon" variant="ghost" onClick={() => handleExportJpg(s)} title="Export JPG">
                       <ImageIcon className="w-4 h-4 text-amber-600" />
                     </Button>
@@ -450,6 +468,7 @@ const RiwayatPage: React.FC = () => {
                     )}
                   </TableCell>
                 </TableRow>
+
               ))}
             </TableBody>
           </Table>
