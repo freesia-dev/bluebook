@@ -319,10 +319,26 @@ const RiwayatPage: React.FC = () => {
   const del = useDeleteLoanSimulation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { canEdit } = useAuth();
+  const { canEdit, userName } = useAuth();
+  const move = useUpdatePipelineStage();
   const [detail, setDetail] = useState<LoanSimulationRow | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<LoanSimulationRow | null>(null);
   const [jpgTarget, setJpgTarget] = useState<LoanSimulationRow | null>(null);
   const jpgRef = useRef<HTMLDivElement>(null);
+
+  const handleCancel = (reason: string) => {
+    if (!cancelTarget) return;
+    move.mutate({ id: cancelTarget.id, stage: 'batal', note: reason, by: userName });
+    toast({ title: 'Simulasi dibatalkan', description: `${cancelTarget.nama_debitur} — ${reason}` });
+    setCancelTarget(null);
+  };
+
+  const handleUndoCancel = (s: LoanSimulationRow) => {
+    const back = stageBeforeCancel(s);
+    move.mutate({ id: s.id, stage: back, note: null, by: userName });
+    toast({ title: 'Pembatalan dibatalkan', description: `${s.nama_debitur} dikembalikan ke tahap sebelumnya.` });
+  };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus simulasi ini?')) return;
