@@ -86,6 +86,8 @@ export interface PipelineHistoryEntry {
 
 export const PIPELINE_STAGES = ['simulasi', 'berkas_masuk', 'proses', 'input', 'cair'] as const;
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
+export const CANCEL_STAGE = 'batal' as const;
+export type StageOrCancel = PipelineStage | typeof CANCEL_STAGE;
 
 export const PIPELINE_LABELS: Record<PipelineStage, string> = {
   simulasi: 'Simulasi Kredit',
@@ -94,6 +96,21 @@ export const PIPELINE_LABELS: Record<PipelineStage, string> = {
   input: 'Input',
   cair: 'Cair',
 };
+
+export const STAGE_LABELS_ALL: Record<string, string> = {
+  ...PIPELINE_LABELS,
+  batal: 'Dibatalkan',
+};
+
+export const ALASAN_BATAL_TEMPLATE = [
+  'Hitungan tidak cocok bagi debitur',
+  'Batal pengajuan (permintaan debitur)',
+  'Mengajukan di tempat lain / bank lain',
+  'Tidak memenuhi syarat / plafon tidak cukup',
+  'Berkas tidak lengkap dan tidak dilanjutkan',
+  'Duplikat / salah input simulasi',
+];
+
 
 export type LoanSimulationInput = Omit<
   LoanSimulationRow,
