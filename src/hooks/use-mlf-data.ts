@@ -79,3 +79,31 @@ export const useMLFDataByBranch = (uploadId?: string, branchCode?: string) => {
 
 /** @deprecated use useMLFDataByBranch(uploadId, '143') */
 export const useMLFData143 = (uploadId?: string) => useMLFDataByBranch(uploadId, '143');
+
+/** Ambil seluruh baris MLF pada satu upload (semua cabang) — dipakai Executive Dashboard. */
+export const useMLFDataAll = (uploadId?: string) => {
+  return useQuery({
+    queryKey: ['mlf-data-all', uploadId],
+    queryFn: async () => {
+      if (!uploadId) return [] as MLFRow[];
+      const all: MLFRow[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await (supabase as any)
+          .from('mlf_data')
+          .select('*')
+          .eq('upload_id', uploadId)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const chunk = (data || []) as MLFRow[];
+        all.push(...chunk);
+        if (chunk.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
+    },
+    enabled: !!uploadId,
+    staleTime: 1000 * 60 * 5,
+  });
+};

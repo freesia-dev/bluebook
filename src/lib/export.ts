@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 export const isExportAllowed = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return !!(window as any).__BLUEBOOK_IS_ADMIN__;
+  return !!((window as any).__BLUEBOOK_IS_ADMIN__ || (window as any).__BLUEBOOK_CAN_EXPORT__);
 };
 
 const guardExport = (): boolean => {

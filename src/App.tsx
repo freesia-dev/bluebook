@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { 
   DashboardSkeleton, 
@@ -59,6 +59,7 @@ const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
 const KalkulatorProduktifPage = lazy(() => import("./pages/kalkulator/KalkulatorProduktifPage"));
 const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
 const PipelineKreditPage = lazy(() => import("./pages/kalkulator/PipelinePage"));
+const ExecutiveDashboardPage = lazy(() => import("./pages/executive/ExecutiveDashboardPage"));
 
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
@@ -81,6 +82,13 @@ const LoginLoader = () => (
     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
+
+// Pemimpin masuk ke Executive Dashboard, role lain ke dashboard biasa
+const DashboardRouter = () => {
+  const { userRole } = useAuth();
+  if (userRole === 'pemimpin') return <Navigate to="/executive" replace />;
+  return <Dashboard />;
+};
 
 // Component to handle inactivity logout
 const InactivityHandler = () => {
@@ -123,8 +131,11 @@ const App = () => (
             <Route path="/reset-password" element={
               <Suspense fallback={<LoginLoader />}><ResetPassword /></Suspense>
             } />
+            <Route path="/executive" element={
+              <Suspense fallback={<DashboardSkeleton />}><ExecutiveDashboardPage /></Suspense>
+            } />
             <Route path="/dashboard" element={
-              <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
+              <Suspense fallback={<DashboardSkeleton />}><DashboardRouter /></Suspense>
             } />
             <Route path="/surat-masuk" element={
               <Suspense fallback={<TablePageSkeleton />}><SuratMasuk /></Suspense>
