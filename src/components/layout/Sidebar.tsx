@@ -94,9 +94,9 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-            "hover:bg-sidebar-accent/80 text-sidebar-foreground",
-            hasActiveChild && "bg-sidebar-accent"
+            "w-full flex items-center gap-3 px-4 py-3 glass-item",
+            "text-sidebar-foreground",
+            hasActiveChild && "bg-white/5 border-white/10"
           )}
         >
           <Icon className="w-5 h-5 opacity-90" />
@@ -104,7 +104,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
           <ChevronDown className={cn("w-4 h-4 opacity-60 transition-transform", isOpen && "rotate-180")} />
         </button>
         {isOpen && (
-          <div className="ml-3 mt-1 space-y-0.5 animate-slide-in border-l-2 border-sidebar-border/50 pl-3">
+          <div className="ml-3 mt-1 space-y-0.5 animate-slide-in border-l border-white/10 pl-3">
             {children.map((child, idx) => {
               if (child.children && child.children.length > 0) {
                 return <SubGroup key={`sub-${idx}-${child.label}`} label={child.label} items={child.children} onNavigate={onNavigate} />;
@@ -115,14 +115,14 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
                   to={child.href!}
                   onClick={onNavigate}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
-                    "hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground",
-                    location.pathname === child.href && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                    "flex items-center gap-3 px-3 py-2.5 text-sm glass-item",
+                    "text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                    location.pathname === child.href && "glass-item-active text-sidebar-foreground font-semibold"
                   )}
                 >
                   <span className={cn(
                     "w-1.5 h-1.5 rounded-full transition-all",
-                    location.pathname === child.href ? "bg-sidebar-primary-foreground" : "bg-current opacity-40"
+                    location.pathname === child.href ? "bg-sidebar-primary" : "bg-current opacity-40"
                   )} />
                   <span>{child.label}</span>
                 </Link>
@@ -139,12 +139,12 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
       to={href || '/'}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-        "hover:bg-sidebar-accent/80 text-sidebar-foreground",
-        isActive && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm border-l-4 border-sidebar-primary-foreground/30"
+        "flex items-center gap-3 px-4 py-3 glass-item",
+        "text-sidebar-foreground",
+        isActive && "glass-item-active font-semibold"
       )}
     >
-      <Icon className="w-5 h-5 opacity-90" />
+      <Icon className={cn("w-5 h-5 opacity-90", isActive && "text-sidebar-primary opacity-100")} />
       <span className="font-medium text-sm">{label}</span>
     </Link>
   );
