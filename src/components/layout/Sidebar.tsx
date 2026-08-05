@@ -409,24 +409,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </nav>
 
           {/* User Info */}
-          <div className="px-4 py-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <User className="w-5 h-5 text-sidebar-foreground" />
+          <div className="px-3 py-3 border-t border-white/10">
+            <div className="glass-panel rounded-2xl p-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-9 h-9 rounded-full glass-panel flex items-center justify-center">
+                  <User className="w-4 h-4 text-sidebar-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
+                  <p className="text-xs text-sidebar-foreground/60 truncate">{ROLE_LABELS[userRole] ?? userRole}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-                <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS[userRole] ?? userRole}</p>
-              </div>
+              <Button 
+                onClick={logout}
+                variant="ghost" 
+                className="w-full justify-start gap-2 rounded-xl text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
             </div>
-            <Button 
-              onClick={logout}
-              variant="ghost" 
-              className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
           </div>
         </div>
       </aside>
