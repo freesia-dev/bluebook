@@ -255,37 +255,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Overlay for mobile only */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
       
       {/* Sidebar - always fixed position, slides in/out */}
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen w-64 gradient-dark transition-transform duration-300",
+        "fixed left-0 top-0 z-50 h-screen w-64 sidebar-glass transition-transform duration-300",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-sidebar-border">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-md p-1.5">
+              <div className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center p-1.5 shadow-lg">
                 <img 
                   src={logoImage} 
                   alt="Bluebook Logo" 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain drop-shadow"
                 />
               </div>
               <div>
-                <h1 className="font-display text-xl font-bold text-sidebar-foreground">Bluebook</h1>
-                <p className="text-xs text-sidebar-foreground/60">Telihan</p>
+                <h1 className="font-display text-xl font-bold text-sidebar-foreground tracking-tight">Bluebook</h1>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-sidebar-foreground/50">Telihan</p>
               </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={onClose}
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-sidebar-foreground hover:bg-white/10 rounded-xl"
             >
               <X className="w-5 h-5" />
             </Button>
