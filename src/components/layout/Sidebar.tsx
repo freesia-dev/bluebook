@@ -45,7 +45,7 @@ const SubGroup: React.FC<{ label: string; items: { label: string; href: string }
         onClick={() => setOpen(!open)}
         className={cn(
           "w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs uppercase tracking-wide",
-          "hover:bg-sidebar-accent/50 text-sidebar-foreground/70",
+          "glass-item text-sidebar-foreground/70",
           hasActive && "text-sidebar-foreground"
         )}
       >
@@ -62,13 +62,13 @@ const SubGroup: React.FC<{ label: string; items: { label: string; href: string }
               onClick={onNavigate}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
-                "hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground",
-                location.pathname === it.href && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                "glass-item text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                location.pathname === it.href && "glass-item-active text-sidebar-foreground font-semibold"
               )}
             >
               <span className={cn(
                 "w-1 h-1 rounded-full",
-                location.pathname === it.href ? "bg-sidebar-primary-foreground" : "bg-current opacity-40"
+                location.pathname === it.href ? "bg-sidebar-primary" : "bg-current opacity-40"
               )} />
               <span>{it.label}</span>
             </Link>
@@ -94,9 +94,9 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-            "hover:bg-sidebar-accent/80 text-sidebar-foreground",
-            hasActiveChild && "bg-sidebar-accent"
+            "w-full flex items-center gap-3 px-4 py-3 glass-item",
+            "text-sidebar-foreground",
+            hasActiveChild && "bg-white/5 border-white/10"
           )}
         >
           <Icon className="w-5 h-5 opacity-90" />
@@ -104,7 +104,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
           <ChevronDown className={cn("w-4 h-4 opacity-60 transition-transform", isOpen && "rotate-180")} />
         </button>
         {isOpen && (
-          <div className="ml-3 mt-1 space-y-0.5 animate-slide-in border-l-2 border-sidebar-border/50 pl-3">
+          <div className="ml-3 mt-1 space-y-0.5 animate-slide-in border-l border-white/10 pl-3">
             {children.map((child, idx) => {
               if (child.children && child.children.length > 0) {
                 return <SubGroup key={`sub-${idx}-${child.label}`} label={child.label} items={child.children} onNavigate={onNavigate} />;
@@ -115,14 +115,14 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
                   to={child.href!}
                   onClick={onNavigate}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
-                    "hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground",
-                    location.pathname === child.href && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                    "flex items-center gap-3 px-3 py-2.5 text-sm glass-item",
+                    "text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                    location.pathname === child.href && "glass-item-active text-sidebar-foreground font-semibold"
                   )}
                 >
                   <span className={cn(
                     "w-1.5 h-1.5 rounded-full transition-all",
-                    location.pathname === child.href ? "bg-sidebar-primary-foreground" : "bg-current opacity-40"
+                    location.pathname === child.href ? "bg-sidebar-primary" : "bg-current opacity-40"
                   )} />
                   <span>{child.label}</span>
                 </Link>
@@ -139,12 +139,12 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
       to={href || '/'}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-        "hover:bg-sidebar-accent/80 text-sidebar-foreground",
-        isActive && "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm border-l-4 border-sidebar-primary-foreground/30"
+        "flex items-center gap-3 px-4 py-3 glass-item",
+        "text-sidebar-foreground",
+        isActive && "glass-item-active font-semibold"
       )}
     >
-      <Icon className="w-5 h-5 opacity-90" />
+      <Icon className={cn("w-5 h-5 opacity-90", isActive && "text-sidebar-primary opacity-100")} />
       <span className="font-medium text-sm">{label}</span>
     </Link>
   );
@@ -255,44 +255,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Overlay for mobile only */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
       
       {/* Sidebar - always fixed position, slides in/out */}
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen w-64 gradient-dark transition-transform duration-300",
+        "fixed left-0 top-0 z-50 h-screen w-64 sidebar-glass transition-transform duration-300",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-sidebar-border">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-md p-1.5">
+              <div className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center p-1.5 shadow-lg">
                 <img 
                   src={logoImage} 
                   alt="Bluebook Logo" 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain drop-shadow"
                 />
               </div>
               <div>
-                <h1 className="font-display text-xl font-bold text-sidebar-foreground">Bluebook</h1>
-                <p className="text-xs text-sidebar-foreground/60">Telihan</p>
+                <h1 className="font-display text-xl font-bold text-sidebar-foreground tracking-tight">Bluebook</h1>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-sidebar-foreground/50">Telihan</p>
               </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={onClose}
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-sidebar-foreground hover:bg-white/10 rounded-xl"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
             {permissions.dashboard && (
               <NavItem 
                 icon={LayoutDashboard} 
@@ -409,24 +409,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </nav>
 
           {/* User Info */}
-          <div className="px-4 py-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <User className="w-5 h-5 text-sidebar-foreground" />
+          <div className="px-3 py-3 border-t border-white/10">
+            <div className="glass-panel rounded-2xl p-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-9 h-9 rounded-full glass-panel flex items-center justify-center">
+                  <User className="w-4 h-4 text-sidebar-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
+                  <p className="text-xs text-sidebar-foreground/60 truncate">{ROLE_LABELS[userRole] ?? userRole}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-                <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS[userRole] ?? userRole}</p>
-              </div>
+              <Button 
+                onClick={logout}
+                variant="ghost" 
+                className="w-full justify-start gap-2 rounded-xl text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
             </div>
-            <Button 
-              onClick={logout}
-              variant="ghost" 
-              className="w-full justify-start gap-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
           </div>
         </div>
       </aside>
