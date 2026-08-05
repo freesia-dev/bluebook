@@ -293,6 +293,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+            {permissions.executiveDashboard && (
+              <NavItem
+                icon={LayoutDashboard}
+                label="Executive Dashboard"
+                href="/executive"
+                isActive={location.pathname === '/executive'}
+                onNavigate={onClose}
+              />
+            )}
+
             {permissions.dashboard && (
               <NavItem 
                 icon={LayoutDashboard} 
