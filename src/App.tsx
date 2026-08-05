@@ -59,6 +59,7 @@ const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
 const KalkulatorProduktifPage = lazy(() => import("./pages/kalkulator/KalkulatorProduktifPage"));
 const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
 const PipelineKreditPage = lazy(() => import("./pages/kalkulator/PipelinePage"));
+const ExecutiveDashboardPage = lazy(() => import("./pages/executive/ExecutiveDashboardPage"));
 
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
@@ -123,8 +124,11 @@ const App = () => (
             <Route path="/reset-password" element={
               <Suspense fallback={<LoginLoader />}><ResetPassword /></Suspense>
             } />
+            <Route path="/executive" element={
+              <Suspense fallback={<DashboardSkeleton />}><ExecutiveDashboardPage /></Suspense>
+            } />
             <Route path="/dashboard" element={
-              <Suspense fallback={<DashboardSkeleton />}><Dashboard /></Suspense>
+              <Suspense fallback={<DashboardSkeleton />}><DashboardRouter /></Suspense>
             } />
             <Route path="/surat-masuk" element={
               <Suspense fallback={<TablePageSkeleton />}><SuratMasuk /></Suspense>
