@@ -85,8 +85,8 @@ const LoginLoader = () => (
 
 // Pemimpin masuk ke Executive Dashboard, role lain ke dashboard biasa
 const DashboardRouter = () => {
-  const { role } = useAuth();
-  if (role === 'pemimpin') return <Navigate to="/executive" replace />;
+  const { userRole } = useAuth();
+  if (userRole === 'pemimpin') return <Navigate to="/executive" replace />;
   return <Dashboard />;
 };
 
