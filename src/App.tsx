@@ -83,6 +83,13 @@ const LoginLoader = () => (
   </div>
 );
 
+// Pemimpin masuk ke Executive Dashboard, role lain ke dashboard biasa
+const DashboardRouter = () => {
+  const { role } = useAuth();
+  if (role === 'pemimpin') return <Navigate to="/executive" replace />;
+  return <Dashboard />;
+};
+
 // Component to handle inactivity logout
 const InactivityHandler = () => {
   useInactivityLogout();
