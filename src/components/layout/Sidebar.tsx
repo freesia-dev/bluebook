@@ -45,7 +45,7 @@ const SubGroup: React.FC<{ label: string; items: { label: string; href: string }
         onClick={() => setOpen(!open)}
         className={cn(
           "w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-xs uppercase tracking-wide",
-          "hover:bg-sidebar-accent/50 text-sidebar-foreground/70",
+          "glass-item text-sidebar-foreground/70",
           hasActive && "text-sidebar-foreground"
         )}
       >
