@@ -54,7 +54,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* Header with menu button */}
       <header className={cn(
         "fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300",
-        sidebarOpen ? "left-64" : "left-0"
+        sidebarOpen ? "left-64" : "left-0 lg:left-[76px]"
       )}>
         <div className="flex items-center gap-3">
           <Button 
@@ -76,7 +76,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* Main Content - shifts when sidebar is open on desktop */}
       <main className={cn(
         "min-h-screen pt-16 transition-all duration-300",
-        sidebarOpen ? "lg:ml-64" : "ml-0"
+        sidebarOpen ? "lg:ml-64" : "ml-0 lg:ml-[76px]"
       )}>
         <div className="p-4 md:p-6">
           {isDemo && (
