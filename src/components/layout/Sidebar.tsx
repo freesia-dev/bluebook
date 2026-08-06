@@ -8,6 +8,7 @@ import {
   Settings, 
   Info,
   ChevronDown,
+  ChevronRight,
   LogOut,
   User,
   X,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { ROLE_LABELS } from '@/lib/role-permissions';
 import logoImage from '@/assets/logo_bluebook.png';
@@ -32,6 +34,7 @@ interface NavItemProps {
   href?: string;
   children?: ChildItem[];
   isActive?: boolean;
+  collapsed?: boolean;
   onNavigate?: () => void;
 }
 
@@ -79,7 +82,80 @@ const SubGroup: React.FC<{ label: string; items: { label: string; href: string }
   );
 };
 
-const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, onNavigate }) => {
+/** Flyout panel (muncul saat hover) untuk mode collapse. */
+const Flyout: React.FC<{
+  label: string;
+  items?: ChildItem[];
+  href?: string;
+  onNavigate?: () => void;
+}> = ({ label, items, href, onNavigate }) => {
+  const location = useLocation();
+  return (
+    <div
+      className={cn(
+        "absolute left-full top-0 ml-2 z-[60] min-w-[230px] origin-left",
+        "opacity-0 -translate-x-2 scale-95 pointer-events-none",
+        "group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100 group-hover:pointer-events-auto",
+        "transition-all duration-200 ease-out"
+      )}
+    >
+      <div className="glass-panel rounded-2xl p-2 shadow-2xl border border-white/10">
+        <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+          {label}
+        </p>
+        {!items && href && (
+          <Link
+            to={href}
+            onClick={onNavigate}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm glass-item text-sidebar-foreground"
+          >
+            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+            Buka {label}
+          </Link>
+        )}
+        {items?.map((child, idx) => {
+          if (child.children?.length) {
+            return (
+              <div key={`fg-${idx}`} className="mt-1">
+                <p className="px-3 py-1 text-[10px] uppercase tracking-wide text-sidebar-foreground/45">{child.label}</p>
+                {child.children.map((cc) => (
+                  <Link
+                    key={cc.href}
+                    to={cc.href}
+                    onClick={onNavigate}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm glass-item text-sidebar-foreground/75 hover:text-sidebar-foreground",
+                      location.pathname === cc.href && "glass-item-active text-sidebar-foreground font-semibold"
+                    )}
+                  >
+                    <span className="w-1 h-1 rounded-full bg-current opacity-50" />
+                    {cc.label}
+                  </Link>
+                ))}
+              </div>
+            );
+          }
+          return (
+            <Link
+              key={child.href || `${child.label}-${idx}`}
+              to={child.href!}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl text-sm glass-item text-sidebar-foreground/80 hover:text-sidebar-foreground",
+                location.pathname === child.href && "glass-item-active text-sidebar-foreground font-semibold"
+              )}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+              {child.label}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, collapsed, onNavigate }) => {
   const location = useLocation();
   // Auto-expand if any (nested) child is active
   const isChildActive = (c: ChildItem): boolean =>
@@ -87,6 +163,32 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
     !!c.children?.some((cc) => location.pathname === cc.href);
   const hasActiveChild = children?.some(isChildActive) || false;
   const [isOpen, setIsOpen] = useState(hasActiveChild);
+
+  // ── Mode collapse: icon saja + flyout saat hover ──
+  if (collapsed) {
+    const active = isActive || hasActiveChild;
+    const iconBox = (
+      <div
+        className={cn(
+          "w-11 h-11 mx-auto flex items-center justify-center rounded-xl glass-item transition-all duration-200",
+          "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:scale-105",
+          active && "glass-item-active text-sidebar-primary"
+        )}
+      >
+        <Icon className="w-5 h-5" />
+      </div>
+    );
+    return (
+      <div className="relative group">
+        {children ? (
+          <button className="w-full">{iconBox}</button>
+        ) : (
+          <Link to={href || '/'} onClick={onNavigate} className="block">{iconBox}</Link>
+        )}
+        <Flyout label={label} items={children} href={href} onNavigate={onNavigate} />
+      </div>
+    );
+  }
 
   if (children) {
     return (
@@ -99,8 +201,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
             hasActiveChild && "bg-white/5 border-white/10"
           )}
         >
-          <Icon className="w-5 h-5 opacity-90" />
-          <span className="flex-1 text-left font-medium text-sm">{label}</span>
+          <Icon className="w-5 h-5 opacity-90 shrink-0" />
+          <span className="flex-1 text-left font-medium text-sm truncate">{label}</span>
           <ChevronDown className={cn("w-4 h-4 opacity-60 transition-transform", isOpen && "rotate-180")} />
         </button>
         {isOpen && (
@@ -144,8 +246,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
         isActive && "glass-item-active font-semibold"
       )}
     >
-      <Icon className={cn("w-5 h-5 opacity-90", isActive && "text-sidebar-primary opacity-100")} />
-      <span className="font-medium text-sm">{label}</span>
+      <Icon className={cn("w-5 h-5 opacity-90 shrink-0", isActive && "text-sidebar-primary opacity-100")} />
+      <span className="font-medium text-sm truncate">{label}</span>
     </Link>
   );
 };
@@ -158,6 +260,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const { userName, userRole, logout, isAdmin, permissions } = useAuth();
+  const isMobile = useIsMobile();
+  const collapsed = !isOpen && !isMobile;
 
   const agendaKreditItems = [
     { label: 'Agenda Kredit', href: '/agenda-kredit/agenda-kredit' },
@@ -222,12 +326,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Upload Data', href: '/monitoring/upload' },
     { label: 'Dashboard', href: '/monitoring/dashboard' },
     { label: 'Kredit Produktif Unit', href: '/monitoring/kredit-produktif' },
+    { label: 'Laporan Bulanan', href: '/monitoring/laporan-bulanan' },
     { label: 'Export PDF', href: '/monitoring/export-pdf' },
     { label: 'Kontak Debitur', href: '/monitoring/kontak' },
     { label: 'WA Blaster', href: '/monitoring/reminder' },
   ];
   const monitoringItems = (permissions.monitoringDashboardOnly
-    ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard' || m.href === '/monitoring/kredit-produktif')
+    ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard' || m.href === '/monitoring/kredit-produktif' || m.href === '/monitoring/laporan-bulanan')
     : monitoringItemsFull
   ).filter((m) => m.href !== '/monitoring/upload' || permissions.canUpload);
 
@@ -250,6 +355,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
       ];
 
+  const navOnNavigate = isMobile ? onClose : undefined;
+
   return (
     <>
       {/* Overlay for mobile only */}
@@ -260,46 +367,58 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
       
-      {/* Sidebar - always fixed position, slides in/out */}
+      {/* Sidebar - expanded (w-64) atau collapsed rail (w-[76px]) di desktop */}
       <aside className={cn(
-        "fixed left-0 top-0 z-50 h-screen w-64 sidebar-glass transition-transform duration-300",
-        isOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed left-0 top-0 z-50 h-screen sidebar-glass",
+        "transition-[width,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        isOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:w-[76px] lg:translate-x-0"
       )}>
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl glass-panel flex items-center justify-center p-1.5 shadow-lg">
+          <div className={cn(
+            "flex items-center border-b border-white/10 py-4 transition-all duration-300",
+            collapsed ? "justify-center px-2" : "justify-between px-5"
+          )}>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 shrink-0 rounded-2xl glass-panel flex items-center justify-center p-1.5 shadow-lg">
                 <img 
                   src={logoImage} 
                   alt="Bluebook Logo" 
                   className="w-full h-full object-contain drop-shadow"
                 />
               </div>
-              <div>
-                <h1 className="font-display text-xl font-bold text-sidebar-foreground tracking-tight">Bluebook</h1>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-sidebar-foreground/50">Telihan</p>
-              </div>
+              {!collapsed && (
+                <div className="min-w-0">
+                  <h1 className="font-display text-xl font-bold text-sidebar-foreground tracking-tight">Bluebook</h1>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-sidebar-foreground/50">Telihan</p>
+                </div>
+              )}
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose}
-              className="text-sidebar-foreground hover:bg-white/10 rounded-xl"
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            {!collapsed && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose}
+                className="text-sidebar-foreground hover:bg-white/10 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+          <nav className={cn(
+            "flex-1 py-4 space-y-1 scrollbar-thin",
+            collapsed ? "px-2 overflow-y-auto overflow-x-visible" : "px-3 overflow-y-auto"
+          )}>
             {permissions.executiveDashboard && (
               <NavItem
                 icon={LayoutDashboard}
                 label="Executive Dashboard"
                 href="/executive"
                 isActive={location.pathname === '/executive'}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
 
@@ -309,7 +428,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 label="Dashboard" 
                 href="/dashboard" 
                 isActive={location.pathname === '/dashboard'} 
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {permissions.surat && (
@@ -319,14 +439,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   label="Surat Masuk" 
                   href="/surat-masuk" 
                   isActive={location.pathname === '/surat-masuk'} 
-                  onNavigate={onClose}
+                  collapsed={collapsed}
+                  onNavigate={navOnNavigate}
                 />
                 <NavItem 
                   icon={Send} 
                   label="Surat Keluar" 
                   href="/surat-keluar" 
                   isActive={location.pathname === '/surat-keluar'} 
-                  onNavigate={onClose}
+                  collapsed={collapsed}
+                  onNavigate={navOnNavigate}
                 />
               </>
             )}
@@ -335,7 +457,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={CreditCard} 
                 label="Agenda Kredit" 
                 children={agendaKreditItems}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {permissions.loanCalc && (
@@ -343,7 +466,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Calculator}
                 label="Simulasi Kredit"
                 children={simulasiKreditItems}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {permissions.atmTelihan && (
@@ -351,7 +475,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Banknote} 
                 label="ATM Telihan" 
                 children={atmTelihanItems}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {permissions.customerService && (
@@ -359,7 +484,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Headphones}
                 label="Customer Service"
                 children={csItems}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {permissions.monitoring && monitoringItems.length > 0 && (
@@ -367,7 +493,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={TrendingUp} 
                 label="Loan Monitoring" 
                 children={monitoringItems}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {permissions.securityLog && (
@@ -379,7 +506,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Log Harian', href: '/security/log' },
                     { label: 'Link Audit', href: '/security/audit-links' },
                   ]}
-                  onNavigate={onClose}
+                  collapsed={collapsed}
+                  onNavigate={navOnNavigate}
                 />
               ) : (
                 <NavItem 
@@ -387,7 +515,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   label="Log Security" 
                   href="/security/log" 
                   isActive={location.pathname.startsWith('/security')} 
-                  onNavigate={onClose}
+                  collapsed={collapsed}
+                  onNavigate={navOnNavigate}
                 />
               )
             )}
@@ -398,7 +527,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 label="OB" 
                 href="/ob" 
                 isActive={location.pathname === '/ob'} 
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             {isAdmin && (
@@ -406,7 +536,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Settings} 
                 label="Konfigurasi" 
                 children={konfigurasiItems}
-                onNavigate={onClose}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
               />
             )}
             <NavItem 
@@ -414,31 +545,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               label="About" 
               href="/about" 
               isActive={location.pathname === '/about'} 
-              onNavigate={onClose}
+              collapsed={collapsed}
+              onNavigate={navOnNavigate}
             />
           </nav>
 
           {/* User Info */}
-          <div className="px-3 py-3 border-t border-white/10">
-            <div className="glass-panel rounded-2xl p-3">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 rounded-full glass-panel flex items-center justify-center">
+          <div className={cn("py-3 border-t border-white/10", collapsed ? "px-2" : "px-3")}>
+            {collapsed ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full glass-panel flex items-center justify-center" title={userName}>
                   <User className="w-4 h-4 text-sidebar-foreground" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">{ROLE_LABELS[userRole] ?? userRole}</p>
-                </div>
+                <Button
+                  onClick={logout}
+                  variant="ghost"
+                  size="icon"
+                  title="Logout"
+                  className="rounded-xl text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
               </div>
-              <Button 
-                onClick={logout}
-                variant="ghost" 
-                className="w-full justify-start gap-2 rounded-xl text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </Button>
-            </div>
+            ) : (
+              <div className="glass-panel rounded-2xl p-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-full glass-panel flex items-center justify-center">
+                    <User className="w-4 h-4 text-sidebar-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">{userName}</p>
+                    <p className="text-xs text-sidebar-foreground/60 truncate">{ROLE_LABELS[userRole] ?? userRole}</p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={logout}
+                  variant="ghost" 
+                  className="w-full justify-start gap-2 rounded-xl text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-white/10"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </aside>

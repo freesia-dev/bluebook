@@ -34,7 +34,32 @@ const SYSTEM_PROMPT = `Kamu adalah **BIRU** (Bluebook Intelligent Response Unit)
 - Kalau user menyebut nama orang, nomor rekening (angka panjang), nomor PK/SPPK/KK/MPAK, atau nomor surat → **wajib** panggil \`cari_data\`.
 - Setelah hasil tool datang, jelaskan dengan bahasa yang enak dibaca. Jangan cuma paste JSON.
 - Kalau hasil kosong, sampaikan "belum ada data di database" dan sarankan cek pengejaan atau upload MLF terbaru.
-- Jangan pernah mengaku sebagai model AI merek tertentu. Kamu adalah **BIRU**.`;
+- Jangan pernah mengaku sebagai model AI merek tertentu. Kamu adalah **BIRU**.
+
+# Waktu & Tanggal
+- Waktu sekarang selalu diberikan di pesan sistem "KONTEKS WAKTU" pada setiap percakapan. **Gunakan itu** sebagai acuan tanggal hari ini (zona WITA, UTC+8).
+- Jangan pernah menebak atau mengarang tanggal. Kalau user tanya "hari ini tanggal berapa", jawab persis dari KONTEKS WAKTU.
+- Hitung "kemarin", "besok", "bulan ini", "akhir bulan", "jatuh tempo x hari lagi", dsb. dari tanggal tersebut, dan sebutkan tanggalnya secara eksplisit (contoh: Kamis, 6 Agustus 2026).`;
+
+const waktuKonteks = (): string => {
+  const now = new Date();
+  const wita = new Date(now.getTime() + 8 * 3600 * 1000);
+  const hari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"][wita.getUTCDay()];
+  const bulanArr = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const d = wita.getUTCDate();
+  const m = wita.getUTCMonth();
+  const y = wita.getUTCFullYear();
+  const iso = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const jam = `${String(wita.getUTCHours()).padStart(2, "0")}:${String(wita.getUTCMinutes()).padStart(2, "0")}`;
+  const akhirBulan = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return [
+    "KONTEKS WAKTU (akurat, wajib dipakai):",
+    `- Hari ini: ${hari}, ${d} ${bulanArr[m]} ${y} (${iso}), pukul ${jam} WITA.`,
+    `- Bulan berjalan: ${bulanArr[m]} ${y} (1 s/d ${akhirBulan} ${bulanArr[m]} ${y}).`,
+    `- Tahun berjalan: ${y}. Kuartal: Q${Math.floor(m / 3) + 1}.`,
+    "Abaikan asumsi tanggal apa pun dari pengetahuan internalmu.",
+  ].join("\n");
+};
 
 const TOOLS = [
   {
@@ -201,7 +226,11 @@ Deno.serve(async (req) => {
     }
 
     const model = "google/gemini-2.5-flash";
-    const convo: any[] = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
+    const convo: any[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: waktuKonteks() },
+      ...messages,
+    ];
 
     // Tool-call loop (non-stream). Max 3 iterations.
     for (let iter = 0; iter < 3; iter++) {

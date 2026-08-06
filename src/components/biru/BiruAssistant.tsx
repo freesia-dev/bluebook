@@ -147,14 +147,21 @@ export const BiruAssistant: React.FC = () => {
       {/* Panel */}
       <aside
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full sm:w-[420px] bg-background border-l border-border shadow-2xl",
-          "flex flex-col transition-transform duration-300 ease-out",
-          open ? "translate-x-0" : "translate-x-full",
+          "fixed z-50 flex flex-col overflow-hidden",
+          "inset-x-3 bottom-3 top-16 sm:inset-x-auto sm:top-auto sm:right-5 sm:bottom-24",
+          "sm:w-[400px] sm:h-[min(620px,calc(100vh-9rem))]",
+          "rounded-3xl border border-white/20 dark:border-white/10",
+          "bg-background/70 backdrop-blur-2xl shadow-2xl shadow-primary/10",
+          "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] origin-bottom-right",
+          open
+            ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+            : "opacity-0 translate-y-4 scale-95 pointer-events-none",
         )}
         aria-hidden={!open}
       >
+
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/10 via-blue-500/5 to-transparent">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-white/15 dark:border-white/10 bg-gradient-to-r from-primary/15 via-blue-500/10 to-transparent backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white shadow-md">
               <Bot className="h-5 w-5" />
@@ -247,7 +254,7 @@ export const BiruAssistant: React.FC = () => {
         </div>
 
         {/* Composer */}
-        <div className="border-t border-border p-3 bg-background">
+        <div className="border-t border-white/15 dark:border-white/10 p-3 bg-white/30 dark:bg-white/5 backdrop-blur-xl">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -265,13 +272,13 @@ export const BiruAssistant: React.FC = () => {
                   send(input);
                 }
               }}
-              placeholder="Tanya BIRU apa saja... (Enter kirim, Shift+Enter baris baru)"
+              placeholder="Tanya BIRU apa saja..."
               rows={1}
-              className="min-h-[42px] max-h-32 resize-none text-sm"
+              className="min-h-[42px] max-h-32 resize-none text-sm bg-white/60 dark:bg-white/5 border-white/30 dark:border-white/10 rounded-2xl backdrop-blur"
               disabled={streaming}
             />
             {streaming ? (
-              <Button type="button" size="icon" variant="destructive" onClick={stop} title="Stop">
+              <Button type="button" size="icon" variant="destructive" onClick={stop} title="Stop" className="rounded-2xl">
                 <X className="h-4 w-4" />
               </Button>
             ) : (
@@ -279,17 +286,15 @@ export const BiruAssistant: React.FC = () => {
                 type="submit"
                 size="icon"
                 disabled={!input.trim()}
-                className="bg-gradient-to-br from-primary to-blue-600"
+                className="bg-gradient-to-br from-primary to-blue-600 rounded-2xl"
                 title="Kirim"
               >
                 <Send className="h-4 w-4" />
               </Button>
             )}
           </form>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-            BIRU bisa keliru. Verifikasi hitungan penting. · <kbd className="px-1 rounded bg-muted">Ctrl+I</kbd> untuk buka/tutup
-          </p>
         </div>
+
       </aside>
     </>
   );
