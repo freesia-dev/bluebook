@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileSpreadsheet, FileDown, Wallet, TrendingDown, Target } from 'lucide-react';
 import { useMLFUploads, useMLFDataByBranch, type MLFRow } from '@/hooks/use-mlf-data';
 import { fmtIDR, fmtNum } from '@/lib/mlf-utils';
-import { getUnit, isProduktif, getAngsuranPokok, getJangkaWaktuBulan, type UnitKredit } from '@/lib/produktif-utils';
+import { getUnit, isProduktif, getAngsuranPokok, type UnitKredit } from '@/lib/produktif-utils';
 
 type Segment = 'konsumtif' | 'mikro' | 'kecil' | 'menengah';
 
