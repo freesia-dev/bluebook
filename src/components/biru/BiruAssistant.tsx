@@ -254,7 +254,7 @@ export const BiruAssistant: React.FC = () => {
         </div>
 
         {/* Composer */}
-        <div className="border-t border-border p-3 bg-background">
+        <div className="border-t border-white/15 dark:border-white/10 p-3 bg-white/30 dark:bg-white/5 backdrop-blur-xl">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -272,13 +272,13 @@ export const BiruAssistant: React.FC = () => {
                   send(input);
                 }
               }}
-              placeholder="Tanya BIRU apa saja... (Enter kirim, Shift+Enter baris baru)"
+              placeholder="Tanya BIRU apa saja..."
               rows={1}
-              className="min-h-[42px] max-h-32 resize-none text-sm"
+              className="min-h-[42px] max-h-32 resize-none text-sm bg-white/60 dark:bg-white/5 border-white/30 dark:border-white/10 rounded-2xl backdrop-blur"
               disabled={streaming}
             />
             {streaming ? (
-              <Button type="button" size="icon" variant="destructive" onClick={stop} title="Stop">
+              <Button type="button" size="icon" variant="destructive" onClick={stop} title="Stop" className="rounded-2xl">
                 <X className="h-4 w-4" />
               </Button>
             ) : (
@@ -286,17 +286,15 @@ export const BiruAssistant: React.FC = () => {
                 type="submit"
                 size="icon"
                 disabled={!input.trim()}
-                className="bg-gradient-to-br from-primary to-blue-600"
+                className="bg-gradient-to-br from-primary to-blue-600 rounded-2xl"
                 title="Kirim"
               >
                 <Send className="h-4 w-4" />
               </Button>
             )}
           </form>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-            BIRU bisa keliru. Verifikasi hitungan penting. · <kbd className="px-1 rounded bg-muted">Ctrl+I</kbd> untuk buka/tutup
-          </p>
         </div>
+
       </aside>
     </>
   );
