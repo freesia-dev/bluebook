@@ -147,12 +147,19 @@ export const BiruAssistant: React.FC = () => {
       {/* Panel */}
       <aside
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full sm:w-[420px] bg-background border-l border-border shadow-2xl",
-          "flex flex-col transition-transform duration-300 ease-out",
-          open ? "translate-x-0" : "translate-x-full",
+          "fixed z-50 flex flex-col overflow-hidden",
+          "inset-x-3 bottom-3 top-16 sm:inset-x-auto sm:top-auto sm:right-5 sm:bottom-24",
+          "sm:w-[400px] sm:h-[min(620px,calc(100vh-9rem))]",
+          "rounded-3xl border border-white/20 dark:border-white/10",
+          "bg-background/70 backdrop-blur-2xl shadow-2xl shadow-primary/10",
+          "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] origin-bottom-right",
+          open
+            ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+            : "opacity-0 translate-y-4 scale-95 pointer-events-none",
         )}
         aria-hidden={!open}
       >
+
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/10 via-blue-500/5 to-transparent">
           <div className="flex items-center gap-3">
