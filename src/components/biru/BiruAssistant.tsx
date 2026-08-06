@@ -161,7 +161,7 @@ export const BiruAssistant: React.FC = () => {
       >
 
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/10 via-blue-500/5 to-transparent">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-white/15 dark:border-white/10 bg-gradient-to-r from-primary/15 via-blue-500/10 to-transparent backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white shadow-md">
               <Bot className="h-5 w-5" />
