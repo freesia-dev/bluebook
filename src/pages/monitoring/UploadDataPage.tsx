@@ -15,7 +15,7 @@ import { id as idLocale } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const UploadDataPage: React.FC = () => {
+export const UploadMLFPanel: React.FC = () => {
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
@@ -186,12 +186,7 @@ const UploadDataPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <PageHeader
-        title="Upload Data MLF"
-        description="Upload file Master Loan Filter (.xls) — tanggal data mengikuti nama file (contoh: mlf_13-05-2026.xls)"
-      />
-
+    <>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -275,8 +270,18 @@ const UploadDataPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
-    </MainLayout>
+    </>
   );
 };
+
+const UploadDataPage: React.FC = () => (
+  <MainLayout>
+    <PageHeader
+      title="Upload Data MLF"
+      description="Upload file Master Loan Filter (.xls) — tanggal data mengikuti nama file (contoh: mlf_13-05-2026.xls)"
+    />
+    <UploadMLFPanel />
+  </MainLayout>
+);
 
 export default UploadDataPage;
