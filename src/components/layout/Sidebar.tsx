@@ -574,6 +574,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Log Harian', href: '/security/log' },
                     { label: 'Link Audit', href: '/security/audit-links' },
                   ]}
+                  openGroup={openGroup}
+                  setOpenGroup={setOpenGroup}
                   collapsed={collapsed}
                   onNavigate={navOnNavigate}
                 />
