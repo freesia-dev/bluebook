@@ -110,15 +110,15 @@ const Flyout: React.FC<{
           : "opacity-0 -translate-x-2 scale-95 pointer-events-none"
       )}
     >
-      <div className="glass-panel rounded-2xl p-2 shadow-2xl border border-white/10">
-        <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+      <div className="rounded-2xl p-2 shadow-2xl bg-sidebar/95 backdrop-blur-xl border border-sidebar-border">
+        <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/70">
           {label}
         </p>
         {!items && href && (
           <Link
             to={href}
             onClick={onNavigate}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm glass-item text-sidebar-foreground"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-sidebar-foreground hover:bg-sidebar-accent/60"
           >
             <ChevronRight className="w-3.5 h-3.5 opacity-60" />
             Buka {label}
@@ -128,18 +128,18 @@ const Flyout: React.FC<{
           if (child.children?.length) {
             return (
               <div key={`fg-${idx}`} className="mt-1">
-                <p className="px-3 py-1 text-[10px] uppercase tracking-wide text-sidebar-foreground/45">{child.label}</p>
+                <p className="px-3 py-1 text-[10px] uppercase tracking-wide text-sidebar-foreground/55">{child.label}</p>
                 {child.children.map((cc) => (
                   <Link
                     key={cc.href}
                     to={cc.href}
                     onClick={onNavigate}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm glass-item text-sidebar-foreground/75 hover:text-sidebar-foreground",
-                      location.pathname === cc.href && "glass-item-active text-sidebar-foreground font-semibold"
+                      "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-sidebar-foreground/85 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                      location.pathname === cc.href && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                     )}
                   >
-                    <span className="w-1 h-1 rounded-full bg-current opacity-50" />
+                    <span className="w-1 h-1 rounded-full bg-current opacity-60" />
                     {cc.label}
                   </Link>
                 ))}
@@ -152,11 +152,11 @@ const Flyout: React.FC<{
               to={child.href!}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-xl text-sm glass-item text-sidebar-foreground/80 hover:text-sidebar-foreground",
-                location.pathname === child.href && "glass-item-active text-sidebar-foreground font-semibold"
+                "flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                location.pathname === child.href && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
               )}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
               {child.label}
             </Link>
           );
