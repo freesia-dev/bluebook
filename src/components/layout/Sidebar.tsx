@@ -307,6 +307,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { userName, userRole, logout, isAdmin, permissions } = useAuth();
   const isMobile = useIsMobile();
   const collapsed = !isOpen && !isMobile;
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+
+
 
   const agendaKreditItems = [
     { label: 'Agenda Kredit', href: '/agenda-kredit/agenda-kredit' },
