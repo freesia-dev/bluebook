@@ -370,19 +370,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { label: 'Register Bilyet Deposito', href: '/cs/bilyet-deposito' },
   ];
 
-  const monitoringItemsFull = [
-    { label: 'Upload Data', href: '/monitoring/upload' },
+  const monitoringItems: ChildItem[] = [
     { label: 'Dashboard', href: '/monitoring/dashboard' },
-    { label: 'Kredit Produktif Unit', href: '/monitoring/kredit-produktif' },
-    { label: 'Laporan Bulanan', href: '/monitoring/laporan-bulanan' },
-    { label: 'Export PDF', href: '/monitoring/export-pdf' },
-    { label: 'Kontak Debitur', href: '/monitoring/kontak' },
-    { label: 'WA Blaster', href: '/monitoring/reminder' },
+    {
+      label: 'Laporan & Analisa',
+      children: [
+        { label: 'Kredit Produktif Unit', href: '/monitoring/kredit-produktif' },
+        { label: 'Laporan Bulanan', href: '/monitoring/laporan-bulanan' },
+        { label: 'Export PDF', href: '/monitoring/export-pdf' },
+      ],
+    },
+    ...(permissions.monitoringDashboardOnly
+      ? []
+      : [
+          {
+            label: 'WA Blaster',
+            children: [
+              { label: 'Kirim Pesan', href: '/monitoring/reminder' },
+              { label: 'Kontak Debitur', href: '/monitoring/kontak' },
+            ],
+          },
+        ]),
   ];
-  const monitoringItems = (permissions.monitoringDashboardOnly
-    ? monitoringItemsFull.filter((m) => m.href === '/monitoring/dashboard' || m.href === '/monitoring/kredit-produktif' || m.href === '/monitoring/laporan-bulanan')
-    : monitoringItemsFull
-  ).filter((m) => m.href !== '/monitoring/upload' || permissions.canUpload);
+
 
   const konfigurasiItems = isAdmin
     ? [
