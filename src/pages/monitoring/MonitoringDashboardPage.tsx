@@ -14,7 +14,10 @@ import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-util
 import { getUnit, isProduktif, UNIT_LABEL } from '@/lib/produktif-utils';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2, Gift } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { UploadMLFPanel } from '@/pages/monitoring/UploadDataPage';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2, Gift, Upload } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -217,10 +220,33 @@ const MonitoringDashboardPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <PageHeader
-        title="Dashboard Monitoring KKR & NPL"
-        description={`Rangkuman pengolahan data Master Loan Filter — Cabang ${selectedBranch}${selectedBranchInfo ? ` (${selectedBranchInfo.name})` : ''}`}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <PageHeader
+          title="Dashboard Monitoring KKR & NPL"
+          description={`Rangkuman pengolahan data Master Loan Filter — Cabang ${selectedBranch}${selectedBranchInfo ? ` (${selectedBranchInfo.name})` : ''}`}
+        />
+        {permissions.canUpload && (
+          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+            <DialogTrigger asChild>
+              <Button className="shrink-0">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Data MLF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Upload Data MLF</DialogTitle>
+                <DialogDescription>
+                  File Master Loan Filter (.xls) — tanggal data mengikuti nama file (contoh: mlf_13-05-2026.xls).
+                </DialogDescription>
+              </DialogHeader>
+              <UploadMLFPanel />
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+
 
       {/* Controls bar */}
       <Card className="mb-6 overflow-hidden relative border-border/60">
