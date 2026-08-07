@@ -174,7 +174,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
     (c.href !== undefined && location.pathname === c.href) ||
     !!c.children?.some((cc) => location.pathname === cc.href);
   const hasActiveChild = children?.some(isChildActive) || false;
-  const isOpen = openGroup === label;
+  const isOpen = openGroup === label || (openGroup == null && hasActiveChild);
 
   const anchorRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState(false);
