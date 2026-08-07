@@ -515,6 +515,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={CreditCard} 
                 label="Agenda Kredit" 
                 children={agendaKreditItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -524,6 +526,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Calculator}
                 label="Simulasi Kredit"
                 children={simulasiKreditItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -533,6 +537,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Banknote} 
                 label="ATM Telihan" 
                 children={atmTelihanItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -542,6 +548,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Headphones}
                 label="Customer Service"
                 children={csItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -551,6 +559,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={TrendingUp} 
                 label="Loan Monitoring" 
                 children={monitoringItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -594,6 +604,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 icon={Settings} 
                 label="Konfigurasi" 
                 children={konfigurasiItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
