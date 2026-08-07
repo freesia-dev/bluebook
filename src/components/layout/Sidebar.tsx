@@ -239,7 +239,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
     return (
       <div>
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setOpenGroup?.(isOpen ? null : label)}
           className={cn(
             "w-full flex items-center gap-3 px-4 py-3 glass-item",
             "text-sidebar-foreground",
