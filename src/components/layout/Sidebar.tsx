@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -36,6 +37,8 @@ interface NavItemProps {
   isActive?: boolean;
   collapsed?: boolean;
   onNavigate?: () => void;
+  openGroup?: string | null;
+  setOpenGroup?: (label: string | null) => void;
 }
 
 const SubGroup: React.FC<{ label: string; items: { label: string; href: string }[]; onNavigate?: () => void }> = ({ label, items, onNavigate }) => {
@@ -82,21 +85,29 @@ const SubGroup: React.FC<{ label: string; items: { label: string; href: string }
   );
 };
 
-/** Flyout panel (muncul saat hover) untuk mode collapse. */
+/** Flyout panel (muncul saat hover) untuk mode collapse — dirender via portal agar tidak terpotong. */
 const Flyout: React.FC<{
   label: string;
   items?: ChildItem[];
   href?: string;
+  pos: { top: number; left: number };
+  visible: boolean;
   onNavigate?: () => void;
-}> = ({ label, items, href, onNavigate }) => {
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}> = ({ label, items, href, pos, visible, onNavigate, onMouseEnter, onMouseLeave }) => {
   const location = useLocation();
-  return (
+  return createPortal(
     <div
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{ top: pos.top, left: pos.left }}
       className={cn(
-        "absolute left-full top-0 ml-2 z-[60] min-w-[230px] origin-left",
-        "opacity-0 -translate-x-2 scale-95 pointer-events-none",
-        "group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100 group-hover:pointer-events-auto",
-        "transition-all duration-200 ease-out"
+        "fixed z-[100] min-w-[240px] max-h-[70vh] overflow-y-auto scrollbar-thin origin-left",
+        "transition-all duration-200 ease-out",
+        visible
+          ? "opacity-100 translate-x-0 scale-100 pointer-events-auto"
+          : "opacity-0 -translate-x-2 scale-95 pointer-events-none"
       )}
     >
       <div className="glass-panel rounded-2xl p-2 shadow-2xl border border-white/10">
@@ -151,18 +162,37 @@ const Flyout: React.FC<{
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
-const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, collapsed, onNavigate }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, collapsed, onNavigate, openGroup, setOpenGroup }) => {
   const location = useLocation();
   // Auto-expand if any (nested) child is active
   const isChildActive = (c: ChildItem): boolean =>
     (c.href !== undefined && location.pathname === c.href) ||
     !!c.children?.some((cc) => location.pathname === cc.href);
   const hasActiveChild = children?.some(isChildActive) || false;
-  const [isOpen, setIsOpen] = useState(hasActiveChild);
+  const isOpen = openGroup === label;
+
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openFlyout = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    const r = anchorRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: Math.min(r.top, window.innerHeight - 120), left: r.right + 8 });
+    setHover(true);
+  };
+  const closeFlyout = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setHover(false), 120);
+  };
+
+  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
 
   // ── Mode collapse: icon saja + flyout saat hover ──
   if (collapsed) {
@@ -179,16 +209,31 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
       </div>
     );
     return (
-      <div className="relative group">
+      <div
+        ref={anchorRef}
+        className="relative"
+        onMouseEnter={openFlyout}
+        onMouseLeave={closeFlyout}
+      >
         {children ? (
           <button className="w-full">{iconBox}</button>
         ) : (
           <Link to={href || '/'} onClick={onNavigate} className="block">{iconBox}</Link>
         )}
-        <Flyout label={label} items={children} href={href} onNavigate={onNavigate} />
+        <Flyout
+          label={label}
+          items={children}
+          href={href}
+          pos={pos}
+          visible={hover}
+          onNavigate={onNavigate}
+          onMouseEnter={openFlyout}
+          onMouseLeave={closeFlyout}
+        />
       </div>
     );
   }
+
 
   if (children) {
     return (
