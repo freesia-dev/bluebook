@@ -41,6 +41,8 @@ const BRANCH_OPTIONS = [
 
 const MonitoringDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { permissions } = useAuth();
+  const [uploadOpen, setUploadOpen] = useState(false);
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [selectedBranch, setSelectedBranch] = useState<string>('143');
