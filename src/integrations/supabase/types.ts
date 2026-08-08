@@ -1515,6 +1515,51 @@ export type Database = {
         }
         Relationships: []
       }
+      proyeksi_kredit: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_nama: string | null
+          id: string
+          jangka_waktu_bulan: number
+          jenis_kredit: string
+          keterangan: string | null
+          nama_debitur: string
+          periode: string | null
+          plafon: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          id?: string
+          jangka_waktu_bulan?: number
+          jenis_kredit?: string
+          keterangan?: string | null
+          nama_debitur: string
+          periode?: string | null
+          plafon?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_nama?: string | null
+          id?: string
+          jangka_waktu_bulan?: number
+          jenis_kredit?: string
+          keterangan?: string | null
+          nama_debitur?: string
+          periode?: string | null
+          plafon?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       recycle_bin: {
         Row: {
           data: Json
