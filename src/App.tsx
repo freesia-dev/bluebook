@@ -44,7 +44,6 @@ const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const UploadDataPage = lazy(() => import("./pages/monitoring/UploadDataPage"));
 const MonitoringDashboardPage = lazy(() => import("./pages/monitoring/MonitoringDashboardPage"));
 const KreditProduktifPage = lazy(() => import("./pages/monitoring/KreditProduktifPage"));
-const LaporanBulananPage = lazy(() => import("./pages/monitoring/LaporanBulananPage"));
 const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
 const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPage"));
 const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
