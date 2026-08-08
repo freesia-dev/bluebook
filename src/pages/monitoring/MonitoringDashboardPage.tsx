@@ -89,6 +89,11 @@ const MonitoringDashboardPage: React.FC = () => {
     const nplRatio = nplBaseBaki > 0 ? (nplBaki / nplBaseBaki) * 100 : 0;
     const nplCountRatio = nplBaseCount > 0 ? (nplCount / nplBaseCount) * 100 : 0;
 
+    // KKR (Kredit Kualitas Rendah / KOL 2-5)
+    const kkrRows = rows.filter((r) => { const k = Number(r.kol) || 0; return k >= 2; });
+    const kkrCount = kkrRows.length;
+    const kkrBaki = kkrRows.reduce((s, r) => s + (Number(r.baki) || 0), 0);
+
     // Coverage tunggakan vs outstanding
     const tunggakanRatio = totalBaki > 0 ? (totalTunggakan / totalBaki) * 100 : 0;
 
@@ -140,6 +145,9 @@ const MonitoringDashboardPage: React.FC = () => {
     return {
       totalDebitur, totalBaki, totalPlafon, totalTunggakan, totalTungpk, totalTungbg,
       kolData, nplCount, nplBaki, nplRatio, nplCountRatio, nplBaseBaki, nplBaseCount,
+      kkrCount, kkrBaki,
+      kkrRatio: nplBaseBaki > 0 ? (kkrBaki / nplBaseBaki) * 100 : 0,
+      kkrCountRatio: nplBaseCount > 0 ? (kkrCount / nplBaseCount) * 100 : 0,
       tunggakanRatio, dpkCount, dpkBaki, lancarCount, lancarBaki,
       ekstraCount, ekstraBaki, prodData, aoData, topDebitur,
     };
@@ -344,6 +352,12 @@ const MonitoringDashboardPage: React.FC = () => {
               <KPICard icon={Percent} label="Rasio Tunggakan / OS" value={`${stats.tunggakanRatio.toFixed(2)}%`}
                 sub={`DPK (KOL 2): ${fmtNum(stats.dpkCount)} • ${fmtIDR(stats.dpkBaki)}`}
                 tint="rose" />
+              <KPICard icon={Gauge} label="Rasio KKR (KOL 2-5)" value={`${stats.kkrRatio.toFixed(2)}%`}
+                sub={`${fmtNum(stats.kkrCount)} debitur (${stats.kkrCountRatio.toFixed(2)}%) • ${fmtIDR(stats.kkrBaki)}`}
+                tint="amber" />
+              <KPICard icon={ShieldAlert} label="Selisih KKR vs NPL" value={`${(stats.kkrRatio - stats.nplRatio).toFixed(2)}%`}
+                sub={`Porsi DPK (KOL 2) terhadap outstanding non-ekstrakom`}
+                tint="blue" />
             </div>
           </div>
 
