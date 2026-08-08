@@ -104,10 +104,10 @@ const Flyout: React.FC<{
       style={{ top: pos.top, left: pos.left }}
       className={cn(
         "fixed z-[100] min-w-[240px] max-h-[70vh] overflow-y-auto scrollbar-thin origin-left",
-        "transition-all duration-200 ease-out",
+        "transition-[opacity,transform] duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform]",
         visible
           ? "opacity-100 translate-x-0 scale-100 pointer-events-auto"
-          : "opacity-0 -translate-x-2 scale-95 pointer-events-none"
+          : "opacity-0 -translate-x-3 scale-[0.97] pointer-events-none"
       )}
     >
       <div className="rounded-2xl p-2 shadow-2xl bg-sidebar/95 backdrop-blur-xl border border-sidebar-border">
@@ -181,18 +181,28 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const openFlyout = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    const r = anchorRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: Math.min(r.top, window.innerHeight - 120), left: r.right + 8 });
-    setHover(true);
+    if (openTimer.current) clearTimeout(openTimer.current);
+    const place = () => {
+      const r = anchorRef.current?.getBoundingClientRect();
+      if (r) setPos({ top: Math.min(r.top - 4, window.innerHeight - 160), left: r.right + 10 });
+    };
+    place();
+    openTimer.current = setTimeout(() => { place(); setHover(true); }, 70);
   };
   const closeFlyout = () => {
+    if (openTimer.current) clearTimeout(openTimer.current);
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setHover(false), 120);
+    closeTimer.current = setTimeout(() => setHover(false), 180);
   };
 
-  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
+  useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (openTimer.current) clearTimeout(openTimer.current);
+  }, []);
 
   // ── Mode collapse: icon saja + flyout saat hover ──
   if (collapsed) {
@@ -200,18 +210,20 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
     const iconBox = (
       <div
         className={cn(
-          "w-11 h-11 mx-auto flex items-center justify-center rounded-xl glass-item transition-all duration-200",
-          "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:scale-105",
+          "w-11 h-11 mx-auto flex items-center justify-center rounded-xl glass-item",
+          "text-sidebar-foreground/75 hover:text-sidebar-foreground",
+          "transition-[background-color,color,box-shadow] duration-300 ease-out",
+          "hover:bg-white/10 hover:shadow-[0_4px_16px_-6px_rgba(0,0,0,0.45)]",
           active && "glass-item-active text-sidebar-primary"
         )}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-5 h-5 transition-transform duration-300 ease-out group-hover/rail:scale-110" />
       </div>
     );
     return (
       <div
         ref={anchorRef}
-        className="relative"
+        className="relative group/rail"
         onMouseEnter={openFlyout}
         onMouseLeave={closeFlyout}
       >
