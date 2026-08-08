@@ -376,7 +376,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       label: 'Laporan & Analisa',
       children: [
         { label: 'Kredit Produktif Unit', href: '/monitoring/kredit-produktif' },
-        { label: 'Laporan Bulanan', href: '/monitoring/laporan-bulanan' },
         { label: 'Export PDF', href: '/monitoring/export-pdf' },
       ],
     },
