@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -31,6 +31,7 @@ import {
   UNIT_LABEL,
   type UnitKredit,
 } from '@/lib/produktif-utils';
+import { LaporanBulananContent } from '@/pages/monitoring/LaporanBulananPage';
 import logoUrl from '@/assets/logo-bankaltimtara.png';
 import { cn } from '@/lib/utils';
 
@@ -93,6 +94,9 @@ const KreditProduktifPage: React.FC = () => {
   const [activeUnit, setActiveUnit] = useState<'telihan' | 'meranti'>('telihan');
   const [search, setSearch] = useState('');
   const [kolFilter, setKolFilter] = useState<string>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mainTab = searchParams.get('tab') === 'laporan' ? 'laporan' : 'produktif';
+  const setMainTab = (v: string) => setSearchParams(v === 'laporan' ? { tab: 'laporan' } : {}, { replace: true });
 
   useEffect(() => {
     if (!selectedUpload && uploads.length > 0) setSelectedUpload(uploads[0].id);
@@ -572,6 +576,17 @@ const KreditProduktifPage: React.FC = () => {
         description="Pemisahan debitur kredit produktif (Modal Kerja & Investasi) Capem 143 Telihan berdasarkan Unit Telihan vs Meranti (dari nomor PK di MLF)."
       />
 
+      <Tabs value={mainTab} onValueChange={setMainTab} className="mb-4">
+        <TabsList>
+          <TabsTrigger value="produktif">Kredit Produktif Unit</TabsTrigger>
+          <TabsTrigger value="laporan">Laporan Bulanan</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {mainTab === 'laporan' ? (
+        <LaporanBulananContent />
+      ) : (
+      <>
       {/* Controls */}
       <Card className="mb-4">
         <CardContent className="pt-6 flex flex-col md:flex-row md:items-end gap-4">
@@ -841,6 +856,8 @@ const KreditProduktifPage: React.FC = () => {
             </CardContent>
           </Card>
         </>
+      )}
+      </>
       )}
     </MainLayout>
   );
