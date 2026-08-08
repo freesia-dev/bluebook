@@ -225,7 +225,7 @@ const App = () => (
               <Suspense fallback={<TablePageSkeleton />}><KreditProduktifPage /></Suspense>
             } />
             <Route path="/monitoring/laporan-bulanan" element={
-              <Suspense fallback={<TablePageSkeleton />}><LaporanBulananPage /></Suspense>
+              <Navigate to="/monitoring/kredit-produktif?tab=laporan" replace />
             } />
 
             <Route path="/monitoring/export-pdf" element={
