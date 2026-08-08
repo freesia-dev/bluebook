@@ -21,7 +21,6 @@ import { fmtIDR, fmtNum } from '@/lib/mlf-utils';
 import { getUnit, isProduktif, getAngsuranPokok, type UnitKredit } from '@/lib/produktif-utils';
 import { useProyeksi, useProyeksiMutations, type ProyeksiRow } from '@/hooks/use-proyeksi';
 import { useAuth } from '@/contexts/AuthContext';
-import { getRolePermissions } from '@/lib/role-permissions';
 
 type Segment = 'konsumtif' | 'mikro' | 'kecil' | 'menengah';
 
@@ -325,8 +324,7 @@ export const LaporanBulananContent: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [unit, setUnit] = useState<'telihan' | 'meranti'>('telihan');
-  const { userRole } = useAuth() as any;
-  const permissions = getRolePermissions(userRole);
+  const { permissions } = useAuth();
   const canEdit = !!permissions?.canEdit;
 
   const { data: proyeksiAll = [] } = useProyeksi();
