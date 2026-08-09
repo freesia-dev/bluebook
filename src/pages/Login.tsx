@@ -204,13 +204,13 @@ const Login: React.FC = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in mt-32">
+      <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in mt-56">
         <CardHeader className="text-center pb-2">
           {/* Karakter hidup */}
           <LoginMascot
             gaze={gaze}
             mood={mascotMood}
-            className="absolute -top-[9.5rem] left-1/2 -translate-x-1/2 w-56 h-56 pointer-events-none select-none"
+            className="absolute -top-[13rem] left-1/2 -translate-x-1/2 w-56 h-56 pointer-events-none select-none"
           />
 
 
