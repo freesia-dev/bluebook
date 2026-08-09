@@ -12,12 +12,23 @@ const denied = () => {
 };
 
 // Patch XLSX.writeFile so every Excel export in the app funnels through the guard.
-const origWriteFile = XLSX.writeFile;
-(XLSX as any).writeFile = function (...args: any[]) {
-  if (!isAdmin()) { denied(); return; }
-  // @ts-ignore
-  return origWriteFile.apply(this, args);
-};
+// ESM namespace objects are read-only (dev/Vite), so this may fail — never let it crash the app.
+try {
+  const origWriteFile = XLSX.writeFile;
+  const guarded = function (...args: any[]) {
+    if (!isAdmin()) { denied(); return; }
+    // @ts-ignore
+    return origWriteFile.apply(this, args);
+  };
+  try {
+    (XLSX as any).writeFile = guarded;
+  } catch {
+    Object.defineProperty(XLSX, 'writeFile', { value: guarded, configurable: true, writable: true });
+  }
+} catch {
+  // XLSX namespace is frozen; per-call guards elsewhere still apply.
+}
+
 
 // Patch jsPDF.prototype.save so every PDF download funnels through the guard.
 const origSave = (jsPDF as any).prototype.save;
