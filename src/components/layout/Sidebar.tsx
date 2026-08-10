@@ -99,6 +99,7 @@ const Flyout: React.FC<{
   const location = useLocation();
   return createPortal(
     <div
+      data-sidebar-flyout
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{ top: pos.top, left: pos.left }}
