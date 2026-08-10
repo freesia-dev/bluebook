@@ -952,6 +952,15 @@ const KalkulatorPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {jenisPPPK && (
+                <div>
+                  <Label>Tanggal SK Diterbitkan</Label>
+                  <Input type="date" value={tanggalSk} onChange={(e) => setTanggalSk(e.target.value)} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PPPK {jenisPPPK === 'penuh' ? 'Penuh Waktu (kontrak 5 tahun, tenor maks 59 bln)' : 'Paruh Waktu (kontrak 12 bulan, tenor maks 10 bln)'}
+                  </p>
+                </div>
+              )}
               <div>
                 <Label>Pekerjaan</Label>
                 <Input value={pekerjaan} onChange={(e) => setPekerjaan(e.target.value)} />
@@ -960,7 +969,31 @@ const KalkulatorPage: React.FC = () => {
                 <Label>Instansi</Label>
                 <Input value={instansi} onChange={(e) => setInstansi(e.target.value)} />
               </div>
-              {pensiunInfo && (
+              {pppkInfo && (
+                <div className="md:col-span-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                  <div className="flex flex-wrap gap-x-6 gap-y-1">
+                    <span>
+                      Masa kontrak berakhir:{' '}
+                      <strong>{new Date(pppkInfo.tanggalBerakhir).toLocaleDateString('id-ID')}</strong>
+                    </span>
+                    <span>
+                      Sisa jangka waktu:{' '}
+                      <strong>
+                        {pppkInfo.sisaTahun} thn {pppkInfo.sisaBulan} bln ({pppkInfo.sisaBulanTotal} bulan)
+                      </strong>
+                    </span>
+                    <span>
+                      Tenor maksimal: <strong>{pppkInfo.maxTenor} bulan</strong>
+                    </span>
+                  </div>
+                  {pppkInfo.sudahBerakhir && (
+                    <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Masa kontrak PPPK sudah berakhir.
+                    </p>
+                  )}
+                </div>
+              )}
+              {pensiunInfo && !pppkInfo && (
                 <div className="md:col-span-2 rounded-lg border bg-muted/30 p-3 text-sm">
                   <div className="flex flex-wrap gap-x-6 gap-y-1">
                     <span>
@@ -1018,8 +1051,10 @@ const KalkulatorPage: React.FC = () => {
                 <Input type="number" value={tenor} onChange={(e) => setTenor(e.target.value)} />
                 {tenorMelebihiPensiun && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Tenor melebihi sisa masa kerja sampai pensiun (
-                    {pensiunInfo!.sisaBulanTotal} bulan)
+                    <AlertTriangle className="w-3 h-3" />{' '}
+                    {pppkInfo
+                      ? `Tenor melebihi batas masa kontrak PPPK (maks ${pppkInfo.maxTenor} bulan)`
+                      : `Tenor melebihi sisa masa kerja sampai pensiun (${maxTenorBulan} bulan)`}
                   </p>
                 )}
               </div>
@@ -1195,16 +1230,50 @@ const KalkulatorPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="md:col-span-2 rounded-lg border border-dashed p-3 flex items-end gap-2 bg-muted/20">
-                <div className="flex-1">
-                  <Label>DSR Target (%)</Label>
-                  <Input
-                    type="number"
-                    value={dsrTarget}
-                    onChange={(e) => setDsrTarget(e.target.value)}
-                  />
+              <div className="md:col-span-2 rounded-lg border border-dashed p-3 space-y-3 bg-muted/20">
+                <div>
+                  <Label>Kategori DSR</Label>
+                  <RadioGroup
+                    value={dsrBasis}
+                    onValueChange={(v) => setDsrBasis(v as 'gaji' | 'ttp')}
+                    className="flex flex-wrap gap-4 pt-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="gaji" id="dsr-gaji" />
+                      <Label htmlFor="dsr-gaji" className="cursor-pointer font-normal">
+                        GAJI — basis Gaji Pokok + TTP
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="ttp" id="dsr-ttp" />
+                      <Label htmlFor="dsr-ttp" className="cursor-pointer font-normal">
+                        TTP — maks 30% dari TTP
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {dsrBasis === 'gaji'
+                      ? 'DSR dihitung dari Gaji Pokok + TTP, namun angsuran maksimal dibatasi sebesar Gaji Pokok.'
+                      : 'DSR hanya membaca nilai TTP, angsuran maksimal 30% dari TTP.'}
+                  </p>
                 </div>
-                <Button type="button" variant="secondary" onClick={handleHitungMaxPlafon}>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-md border bg-background p-2">
+                    <div className="text-xs text-muted-foreground">Basis Penghasilan</div>
+                    <div className="font-semibold">{fmtRp(dsrBasisNilai)}</div>
+                  </div>
+                  <div className="rounded-md border bg-background p-2">
+                    <div className="text-xs text-muted-foreground">Angsuran Maksimal</div>
+                    <div className="font-semibold">{fmtRp(dsrMaxAngsuran)}</div>
+                  </div>
+                </div>
+                {dsrAman === false && (
+                  <p className="text-xs text-rose-600 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Angsuran {fmtRp(angsuranPertama)} melebihi batas{' '}
+                    {fmtRp(dsrMaxAngsuran)}.
+                  </p>
+                )}
+                <Button type="button" variant="secondary" onClick={handleHitungMaxPlafon} className="w-full">
                   <Calculator className="w-4 h-4 mr-2" /> Hitung Max Plafon
                 </Button>
               </div>
@@ -1460,7 +1529,7 @@ const KalkulatorPage: React.FC = () => {
               <CardTitle className="text-base flex items-center justify-between">
                 Ringkasan
                 {result && gaji > 0 && (
-                  <Badge className={`${dsrColor} text-white`}>DSR {dsrPct.toFixed(1)}%</Badge>
+                  <Badge className={`${dsrColor} text-white`}>DSR {dsrPct.toFixed(1)}% · {dsrBasis === 'ttp' ? 'TTP' : 'GAJI'}</Badge>
                 )}
               </CardTitle>
             </CardHeader>
@@ -1630,7 +1699,7 @@ const KalkulatorPage: React.FC = () => {
               <JRow label="Plafon" value={fmtRp(plafon)} />
               <JRow label="Tenor" value={`${tenorBulan} bulan`} />
               <JRow label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} accent={cerdasResult ? '#d97706' : undefined} />
-              {gaji > 0 && <JRow label="DSR" value={`${dsrPct.toFixed(1)}%`} />}
+              {dsrBasisNilai > 0 && <JRow label={`DSR (${dsrBasis === 'ttp' ? 'TTP' : 'GAJI'})`} value={`${dsrPct.toFixed(1)}%`} />}
             </div>
 
             {gaji > 0 && (
