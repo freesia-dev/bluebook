@@ -10,8 +10,6 @@ import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import logoImage from '@/assets/logo_bluebook.png';
-import LoginMascot, { MascotMood } from '@/components/login/LoginMascot';
-
 
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -72,41 +70,11 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // ==== Mascot state ====
-  const [gaze, setGaze] = useState(0);
-  const [focusField, setFocusField] = useState<'none' | 'text' | 'password'>('none');
-  const [isTyping, setIsTyping] = useState(false);
-  const [mascotResult, setMascotResult] = useState<'none' | 'success' | 'error'>('none');
-  const typingTimer = React.useRef<number>();
-
-  const trackGaze = (e: React.SyntheticEvent<HTMLInputElement>) => {
-    const el = e.currentTarget;
-    const pos = el.selectionStart ?? el.value.length;
-    const ratio = Math.min(1, pos / 22);
-    setGaze(ratio * 2 - 1);
-    setIsTyping(true);
-    setMascotResult('none');
-    window.clearTimeout(typingTimer.current);
-    typingTimer.current = window.setTimeout(() => setIsTyping(false), 900);
-  };
-
-  const mascotMood: MascotMood =
-    mascotResult === 'success'
-      ? 'success'
-      : mascotResult === 'error'
-        ? 'error'
-        : focusField === 'password'
-          ? (showPassword ? 'peeking' : 'covering')
-          : isTyping
-            ? 'typing'
-            : 'idle';
-
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
-
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,16 +98,12 @@ const Login: React.FC = () => {
     
     if (error) {
       setShowLoadingScreen(false);
-      setMascotResult('error');
-      setFocusField('none');
       toast({
         title: 'Login Gagal',
         description: error,
         variant: 'destructive',
       });
     } else {
-      setMascotResult('success');
-
       toast({
         title: 'Login Berhasil',
         description: 'Selamat datang di Bluebook Telihan!',
@@ -204,16 +168,13 @@ const Login: React.FC = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in mt-56">
+      <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
         <CardHeader className="text-center pb-2">
-          {/* Karakter hidup */}
-          <LoginMascot
-            gaze={gaze}
-            mood={mascotMood}
-            className="absolute -top-[13rem] left-1/2 -translate-x-1/2 w-56 h-56 pointer-events-none select-none"
+          <img 
+            src={logoImage} 
+            alt="Bluebook Logo" 
+            className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-lg"
           />
-
-
           <CardTitle className="font-display text-3xl font-bold text-foreground">Bluebook Telihan</CardTitle>
           <CardDescription className="text-muted-foreground mt-2">
             In Bluebook we Trust!
@@ -235,15 +196,10 @@ const Login: React.FC = () => {
                     type="email"
                     placeholder="email@example.com"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); trackGaze(e); }}
-                    onFocus={() => { setFocusField('text'); setMascotResult('none'); }}
-                    onBlur={() => setFocusField('none')}
-                    onKeyUp={trackGaze}
-                    onClick={trackGaze}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     className="h-11"
                   />
-
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
@@ -254,13 +210,10 @@ const Login: React.FC = () => {
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Masukkan password"
                       value={password}
-                      onChange={(e) => { setPassword(e.target.value); trackGaze(e); }}
-                      onFocus={() => { setFocusField('password'); setMascotResult('none'); }}
-                      onBlur={() => setFocusField('none')}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="h-11 pr-10"
                     />
-
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -305,10 +258,7 @@ const Login: React.FC = () => {
                     type="text"
                     placeholder="Nama lengkap Anda"
                     value={nama}
-                    onChange={(e) => { setNama(e.target.value); trackGaze(e); }}
-                    onFocus={() => setFocusField('text')}
-                    onBlur={() => setFocusField('none')}
-
+                    onChange={(e) => setNama(e.target.value)}
                     required
                     className="h-11"
                   />
@@ -321,10 +271,7 @@ const Login: React.FC = () => {
                     type="email"
                     placeholder="email@example.com"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); trackGaze(e); }}
-                    onFocus={() => setFocusField('text')}
-                    onBlur={() => setFocusField('none')}
-
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     className="h-11"
                   />
@@ -338,10 +285,7 @@ const Login: React.FC = () => {
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Minimal 6 karakter"
                       value={password}
-                      onChange={(e) => { setPassword(e.target.value); trackGaze(e); }}
-                      onFocus={() => setFocusField('password')}
-                      onBlur={() => setFocusField('none')}
-
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="h-11 pr-10"
                     />
