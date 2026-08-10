@@ -25,6 +25,8 @@ import {
   calcPotongan,
   calcPelunasan,
   calcPensiun,
+  calcPPPK,
+  detectPPPK,
   calcMaxPlafonByDSR,
   fmtRp,
   fmtNumber,
@@ -79,6 +81,7 @@ const KalkulatorPage: React.FC = () => {
   const [pekerjaan, setPekerjaan] = useState('');
   const [instansi, setInstansi] = useState('');
   const [pilihanKarir, setPilihanKarir] = useState('');
+  const [tanggalSk, setTanggalSk] = useState('');
   const [namaAo, setNamaAo] = useState('');
 
   // Loan
@@ -105,6 +108,8 @@ const KalkulatorPage: React.FC = () => {
   const [outstandingPokok, setOutstandingPokok] = useState('');
   const [outstandingBunga, setOutstandingBunga] = useState('');
   const [dsrTarget, setDsrTarget] = useState('40');
+  // Kategori DSR: 'gaji' = basis Gaji + TTP (angsuran maks = Gaji Pokok) | 'ttp' = maks 30% dari TTP
+  const [dsrBasis, setDsrBasis] = useState<'gaji' | 'ttp'>('gaji');
 
   // CERDAS promo
   const [cerdasOn, setCerdasOn] = useState(false);
@@ -144,6 +149,9 @@ const KalkulatorPage: React.FC = () => {
     setPekerjaan(editRow.pekerjaan || '');
     setInstansi(editRow.instansi || '');
     setPilihanKarir(editRow.pilihan_karir || '');
+    setTanggalSk(((editRow.hasil_ringkasan as any)?.tanggalSk as string) || '');
+    const savedBasis = (editRow.hasil_ringkasan as any)?.dsrBasis;
+    if (savedBasis === 'gaji' || savedBasis === 'ttp') setDsrBasis(savedBasis);
     setNamaAo(editRow.nama_ao || '');
     setProductId(editRow.product_id || '');
     setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
@@ -205,7 +213,15 @@ const KalkulatorPage: React.FC = () => {
     return calcPensiun(tanggalLahir, pensionRule.usia_pensiun);
   }, [tanggalLahir, pensionRule]);
 
-  const tenorMelebihiPensiun = pensiunInfo && tenorBulan > pensiunInfo.sisaBulanTotal;
+  // PPPK: masa kontrak dihitung dari tanggal SK
+  const jenisPPPK = detectPPPK(pilihanKarir);
+  const pppkInfo = useMemo(
+    () => (jenisPPPK && tanggalSk ? calcPPPK(tanggalSk, jenisPPPK, tanggalAkad || undefined) : null),
+    [jenisPPPK, tanggalSk, tanggalAkad],
+  );
+
+  const maxTenorBulan = pppkInfo ? pppkInfo.maxTenor : pensiunInfo ? pensiunInfo.sisaBulanTotal : null;
+  const tenorMelebihiPensiun = maxTenorBulan != null && tenorBulan > maxTenorBulan;
 
   // Al-Amin computation
   const umur = useMemo(
@@ -297,18 +313,24 @@ const KalkulatorPage: React.FC = () => {
     return potongan.danaDiterima - (pelunasan?.totalPelunasan ?? 0);
   }, [potongan, pelunasan]);
 
-  const dsrPct = result && gaji > 0 ? (result.summary.angsuranPertama / gaji) * 100 : 0;
+  // Basis penghasilan & batas angsuran sesuai kategori DSR
+  const dsrBasisNilai = dsrBasis === 'ttp' ? ttp : gaji; // TTP saja vs Gaji Pokok + TTP
+  const dsrMaxAngsuran = dsrBasis === 'ttp' ? Math.round(ttp * 0.3) : gajiPokok;
+  const angsuranPertama = result?.summary.angsuranPertama ?? 0;
+  const dsrPct = result && dsrBasisNilai > 0 ? (angsuranPertama / dsrBasisNilai) * 100 : 0;
+  const dsrAman = dsrMaxAngsuran > 0 && angsuranPertama > 0 ? angsuranPertama <= dsrMaxAngsuran : null;
   const dsrColor =
-    dsrPct === 0 ? 'bg-muted' : dsrPct <= 40 ? 'bg-emerald-600' : dsrPct <= 50 ? 'bg-amber-500' : 'bg-rose-600';
+    dsrAman === null ? 'bg-muted' : dsrAman ? 'bg-emerald-600' : 'bg-rose-600';
+  const dsrLabel = dsrBasis === 'ttp' ? 'TTP (maks 30%)' : 'GAJI (maks = Gaji Pokok)';
 
   const handleHitungMaxPlafon = () => {
-    if (gaji <= 0 || tenorBulan <= 0 || bungaPa <= 0) {
-      toast({ title: 'Lengkapi gaji, tenor, bunga dulu', variant: 'destructive' });
+    if (dsrMaxAngsuran <= 0 || tenorBulan <= 0 || bungaPa <= 0) {
+      toast({ title: 'Lengkapi gaji/TTP, tenor, bunga dulu', variant: 'destructive' });
       return;
     }
     const max = calcMaxPlafonByDSR({
-      gaji,
-      dsrPct: parseFloat(dsrTarget) || 40,
+      gaji: dsrMaxAngsuran, // batas angsuran sesuai kategori DSR
+      dsrPct: 100,
       tenorBulan,
       bungaPa,
       skema,
