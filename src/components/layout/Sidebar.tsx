@@ -99,6 +99,7 @@ const Flyout: React.FC<{
   const location = useLocation();
   return createPortal(
     <div
+      data-sidebar-flyout
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{ top: pos.top, left: pos.left }}
@@ -437,7 +438,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
       
       {/* Sidebar - expanded (w-64) atau collapsed rail (w-[76px]) di desktop */}
-      <aside className={cn(
+      <aside data-sidebar-root className={cn(
         "fixed left-0 top-0 z-50 h-screen sidebar-glass",
         "transition-[width,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:w-[76px] lg:translate-x-0"

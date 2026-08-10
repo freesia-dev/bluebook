@@ -38,6 +38,49 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Auto-collapse sidebar (desktop) setelah 5 detik, kecuali pointer berada di dalam sidebar
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    if (typeof window === 'undefined' || window.innerWidth < 1024) return;
+
+    let timer: number | undefined;
+    let pointerInside = false;
+
+    const isInsideSidebar = (target: EventTarget | null) =>
+      target instanceof Element &&
+      !!target.closest('[data-sidebar-root], [data-sidebar-flyout]');
+
+    const clear = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = undefined;
+    };
+
+    const schedule = () => {
+      clear();
+      if (pointerInside) return;
+      timer = window.setTimeout(() => {
+        if (!pointerInside && window.innerWidth >= 1024) setSidebarOpen(false);
+      }, 5000);
+    };
+
+    const handlePointerMove = (e: MouseEvent) => {
+      const inside = isInsideSidebar(e.target);
+      if (inside !== pointerInside) {
+        pointerInside = inside;
+        schedule();
+      }
+    };
+
+    document.addEventListener('mousemove', handlePointerMove);
+    schedule();
+
+    return () => {
+      clear();
+      document.removeEventListener('mousemove', handlePointerMove);
+    };
+  }, [sidebarOpen]);
+
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
