@@ -107,7 +107,6 @@ const KalkulatorPage: React.FC = () => {
   const [adaPelunasan, setAdaPelunasan] = useState(false);
   const [outstandingPokok, setOutstandingPokok] = useState('');
   const [outstandingBunga, setOutstandingBunga] = useState('');
-  const [dsrTarget, setDsrTarget] = useState('40');
   // Kategori DSR: 'gaji' = basis Gaji + TTP (angsuran maks = Gaji Pokok) | 'ttp' = maks 30% dari TTP
   const [dsrBasis, setDsrBasis] = useState<'gaji' | 'ttp'>('gaji');
 
@@ -380,6 +379,11 @@ const KalkulatorPage: React.FC = () => {
         ...result.summary,
         ...potongan,
         danaDiterima: danaBersih,
+        dsrBasis,
+        dsrPct,
+        dsrMaxAngsuran,
+        tanggalSk: tanggalSk || null,
+        pppkMaxTenor: pppkInfo?.maxTenor ?? null,
         cerdas: cerdasResult ? { ...cerdasResult, provisiPctAsli: provisiInput, bungaPctAsli: bungaInput } : null,
       },
       tabel_angsuran: result.rows,
