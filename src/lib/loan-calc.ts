@@ -206,6 +206,59 @@ export function calcPensiun(tglLahir: string | Date, usiaPensiun: number): Pensi
   };
 }
 
+// ================= PPPK (masa kontrak berdasarkan SK) =================
+export type PPPKJenis = 'penuh' | 'paruh';
+
+export interface PPPKInfo {
+  jenis: PPPKJenis;
+  masaKontrakBulan: number; // 60 (penuh) / 12 (paruh)
+  capTenor: number; // 59 (penuh) / 10 (paruh)
+  tanggalSk: string;
+  tanggalBerakhir: string; // 1 hari sebelum SK + masa kontrak
+  sisaBulanTotal: number; // sisa bulan dari tanggal referensi sampai berakhir
+  sisaTahun: number;
+  sisaBulan: number;
+  maxTenor: number; // min(sisaBulanTotal, capTenor)
+  sudahBerakhir: boolean;
+}
+
+/** Deteksi jenis PPPK dari label pilihan karir */
+export function detectPPPK(pilihanKarir?: string | null): PPPKJenis | null {
+  const s = (pilihanKarir || '').toLowerCase();
+  if (!s.includes('pppk')) return null;
+  if (s.includes('paruh')) return 'paruh';
+  if (s.includes('penuh')) return 'penuh';
+  return null;
+}
+
+export function calcPPPK(tglSk: string | Date, jenis: PPPKJenis, refDate?: string | Date): PPPKInfo {
+  const sk = new Date(tglSk);
+  const ref = refDate ? new Date(refDate) : new Date();
+  const masaKontrakBulan = jenis === 'penuh' ? 60 : 12;
+  const capTenor = jenis === 'penuh' ? 59 : 10;
+
+  const akhir = addMonths(sk, masaKontrakBulan);
+  akhir.setDate(akhir.getDate() - 1); // mis. SK 01 Feb 2025 → berakhir 31 Jan 2030
+
+  let sisa = (akhir.getFullYear() - ref.getFullYear()) * 12 + (akhir.getMonth() - ref.getMonth());
+  if (akhir.getDate() < ref.getDate()) sisa -= 1;
+  sisa = Math.max(0, sisa);
+
+  return {
+    jenis,
+    masaKontrakBulan,
+    capTenor,
+    tanggalSk: isoDate(sk),
+    tanggalBerakhir: isoDate(akhir),
+    sisaBulanTotal: sisa,
+    sisaTahun: Math.floor(sisa / 12),
+    sisaBulan: sisa % 12,
+    maxTenor: Math.min(sisa, capTenor),
+    sudahBerakhir: akhir <= ref,
+  };
+}
+
+
 // Reverse calc: max plafon yang memenuhi DSR target dari gaji
 export function calcMaxPlafonByDSR(input: {
   gaji: number;
