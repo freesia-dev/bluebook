@@ -78,7 +78,13 @@ export interface LoanSimulationRow {
   provisi_pct: number;
   biaya_notaris: number;
   biaya_perikatan: number;
+  biaya_items?: BiayaItem[] | null;
+  angsuran_gaji?: number | null;
+  angsuran_praja?: number | null;
+  dsr_basis?: DsrBasis | null;
+  dsr_max_pct?: number | null;
   blokir_angsuran: number;
+
   ada_pelunasan: boolean;
   pelunasan_bulan_ke: number | null;
   outstanding_pokok: number | null;
