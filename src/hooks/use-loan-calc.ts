@@ -390,3 +390,45 @@ export const PILIHAN_KARIR_DEFAULT = [
   'PPPK Paruh Waktu',
   'Pensiunan',
 ];
+
+// ============ DAFTAR AO ============
+export const useLoanAOs = (activeOnly = true) =>
+  useQuery({
+    queryKey: ['loan-ao', activeOnly],
+    queryFn: async () => {
+      let q = (supabase as any).from('loan_ao').select('*').order('urutan').order('nama');
+      if (activeOnly) q = q.eq('is_active', true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as LoanAO[];
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+export const useUpsertLoanAO = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (a: Partial<LoanAO> & { nama: string }) => {
+      const { id, ...rest } = a;
+      if (id) {
+        const { error } = await (supabase as any).from('loan_ao').update(rest).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from('loan_ao').insert(rest);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-ao'] }),
+  });
+};
+
+export const useDeleteLoanAO = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('loan_ao').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-ao'] }),
+  });
+};
