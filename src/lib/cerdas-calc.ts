@@ -4,12 +4,15 @@
 // - top_up: diskon provisi (mis. 50%), tidak ada subsidi AJK.
 
 export interface CerdasConfig {
-  id: number;
+  id: number | string;
+  kode?: string;
+  deskripsi?: string | null;
   nama_program: string;
   aktif: boolean;
   periode_mulai: string;
   periode_selesai: string;
   bunga_debitur_baru: number;
+
   bunga_take_over: number;
   bunga_top_up: number;
   diskon_provisi_top_up_pct: number;
