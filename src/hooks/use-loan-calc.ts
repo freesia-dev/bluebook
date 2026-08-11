@@ -1,11 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { LoanSkema, AmortRow, CalcSummary, PotonganResult } from '@/lib/loan-calc';
+import type { LoanSkema, AmortRow, CalcSummary, PotonganResult, BiayaItem, DsrBasis } from '@/lib/loan-calc';
 
 export interface RateOption {
   label: string;
   value: number;
 }
+
+export interface DsrRule {
+  kode: DsrBasis;
+  label: string;
+  max_pct: number;
+}
+
+export const DSR_RULES_DEFAULT: DsrRule[] = [
+  { kode: 'gaji', label: 'GAJI', max_pct: 100 },
+  { kode: 'ttp', label: 'TTP', max_pct: 30 },
+];
 
 export interface LoanProduct {
   id: string;
@@ -15,6 +26,8 @@ export interface LoanProduct {
   bunga_options: RateOption[];
   asuransi_options: RateOption[];
   provisi_options: RateOption[];
+  biaya_items: BiayaItem[];
+  dsr_rules: DsrRule[];
   biaya_notaris: number;
   biaya_perikatan: number;
   blokir_angsuran: number;
@@ -23,11 +36,20 @@ export interface LoanProduct {
   asuransi_provider_default?: string;
 }
 
+export interface LoanAO {
+  id: string;
+  nama: string;
+  jabatan: string | null;
+  is_active: boolean;
+  urutan: number;
+}
+
 export interface PensionRule {
   id: string;
   pilihan_karir: string;
   usia_pensiun: number;
 }
+
 
 export interface LoanSimulationRow {
   id: string;
