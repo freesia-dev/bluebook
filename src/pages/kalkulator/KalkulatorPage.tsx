@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -18,27 +19,30 @@ import {
   useSaveLoanSimulation,
   useLoanSimulation,
   useUpdateLoanSimulation,
+  useLoanAOs,
+  DSR_RULES_DEFAULT,
   PILIHAN_KARIR_DEFAULT,
 } from '@/hooks/use-loan-calc';
 import {
   calcAmortization,
   calcPotongan,
-  calcPelunasan,
   calcPensiun,
   calcPPPK,
+  calcDsr,
   detectPPPK,
   calcMaxPlafonByDSR,
   fmtRp,
   fmtNumber,
   type LoanSkema,
+  type BiayaItem,
+  type DsrBasis,
 } from '@/lib/loan-calc';
 import { calcAlamin, calcUmur, cekUnderwriting, type AlaminResult, type UWResult } from '@/lib/alamin-calc';
 import { useAlaminConfig, useAlaminTarif, useAlaminUWRules } from '@/hooks/use-alamin';
-import { useCerdasConfig } from '@/hooks/use-cerdas';
+import { usePromoPrograms, type PromoProgram } from '@/hooks/use-promo-program';
 import {
   applyCerdas,
   isCerdasActive,
-  getCerdasTier,
   getCerdasBunga,
   CERDAS_SKEMA_LABEL,
   type CerdasSkema,
@@ -46,7 +50,10 @@ import {
 } from '@/lib/cerdas-calc';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
-import { Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert, ShieldQuestion, Sparkles, CheckCircle2, Image as ImageIcon } from 'lucide-react';
+import {
+  Save, Download, FileText, Calculator, AlertTriangle, History, ShieldCheck, ShieldAlert,
+  ShieldQuestion, Sparkles, CheckCircle2, Image as ImageIcon, Plus, X, User, Wallet, Receipt, Percent,
+} from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -57,6 +64,10 @@ import logoBpd from '@/assets/logo-bankaltimtara.png';
 // 'manual' = Pialang Asuransi (nominal diinput manual); 'alamin' = perhitungan Al-Amin otomatis.
 type AsuransiProvider = 'manual' | 'alamin';
 
+interface BiayaRow extends BiayaItem {
+  nominalStr: string;
+}
+
 const KalkulatorPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,10 +76,11 @@ const KalkulatorPage: React.FC = () => {
   const { canEdit } = useAuth();
   const { data: products = [] } = useLoanProducts(true);
   const { data: pensionRules = [] } = usePensionRules();
+  const { data: aoList = [] } = useLoanAOs(true);
   const { data: alaminTarif } = useAlaminTarif();
   const { data: alaminRules = [] } = useAlaminUWRules();
   const { data: alaminConfig } = useAlaminConfig();
-  const { data: cerdasConfig } = useCerdasConfig();
+  const { data: promoPrograms = [] } = usePromoPrograms(true);
   const save = useSaveLoanSimulation();
   const update = useUpdateLoanSimulation();
   const { data: editRow } = useLoanSimulation(editId);
@@ -94,27 +106,34 @@ const KalkulatorPage: React.FC = () => {
   const [bunga, setBunga] = useState('');
   const [bungaMode, setBungaMode] = useState<'preset' | 'manual'>('preset');
 
-  // Asuransi — dipisah 2: Kredit (kerugian, tanpa subsidi CERDAS) & Jiwa (AJK, kena subsidi CERDAS)
+  // Angsuran existing
+  const [adaAngsuranGaji, setAdaAngsuranGaji] = useState(false);
+  const [angsuranGajiStr, setAngsuranGajiStr] = useState('');
+  const [adaAngsuranPraja, setAdaAngsuranPraja] = useState(false);
+  const [angsuranPrajaStr, setAngsuranPrajaStr] = useState('');
+
+  // Asuransi — dipisah 2: Kredit (kerugian, tanpa subsidi promo) & Jiwa (AJK, kena subsidi promo)
   const [asuransiProvider, setAsuransiProvider] = useState<AsuransiProvider>('manual');
-  const [asuransiJiwaStr, setAsuransiJiwaStr] = useState('');   // premi Asuransi Jiwa (manual/pialang) — dipakai jika provider = 'manual'
-  const [asuransiKreditStr, setAsuransiKreditStr] = useState(''); // premi Asuransi Kredit (selalu manual/pialang)
+  const [asuransiJiwaStr, setAsuransiJiwaStr] = useState('');
+  const [asuransiKreditStr, setAsuransiKreditStr] = useState('');
 
   const [provisi, setProvisi] = useState('0');
   const [provisiMode, setProvisiMode] = useState<'preset' | 'manual'>('preset');
-  const [notarisStr, setNotarisStr] = useState('');
-  const [perikatanStr, setPerikatanStr] = useState('');
+  const [biayaRows, setBiayaRows] = useState<BiayaRow[]>([]);
   const [blokir, setBlokir] = useState('0');
   const [adaPelunasan, setAdaPelunasan] = useState(false);
   const [outstandingPokok, setOutstandingPokok] = useState('');
   const [outstandingBunga, setOutstandingBunga] = useState('');
-  // Kategori DSR: 'gaji' = basis Gaji + TTP (angsuran maks = Gaji Pokok) | 'ttp' = maks 30% dari TTP
-  const [dsrBasis, setDsrBasis] = useState<'gaji' | 'ttp'>('gaji');
+  const [dsrBasis, setDsrBasis] = useState<DsrBasis>('gaji');
 
-  // CERDAS promo
-  const [cerdasOn, setCerdasOn] = useState(false);
+  // Promo program
+  const [promoOn, setPromoOn] = useState(false);
+  const [promoId, setPromoId] = useState('');
   const [cerdasSkema, setCerdasSkema] = useState<CerdasSkema>('debitur_baru');
 
   const selectedProduct = products.find((p) => p.id === productId);
+  const dsrRules = selectedProduct?.dsr_rules?.length ? selectedProduct.dsr_rules : DSR_RULES_DEFAULT;
+  const dsrRule = dsrRules.find((r) => r.kode === dsrBasis) ?? dsrRules[0];
 
   const skipProductResetRef = useRef(false);
   useEffect(() => {
@@ -127,13 +146,29 @@ const KalkulatorPage: React.FC = () => {
     setProvisiMode('preset');
     setBunga(selectedProduct.bunga_options[0]?.value?.toString() ?? '');
     setProvisi(selectedProduct.provisi_options[0]?.value?.toString() ?? '0');
-    setNotarisStr(selectedProduct.biaya_notaris ? formatCurrencyInput(String(selectedProduct.biaya_notaris)) : '');
-    setPerikatanStr(selectedProduct.biaya_perikatan ? formatCurrencyInput(String(selectedProduct.biaya_perikatan)) : '');
+    const items = selectedProduct.biaya_items?.length
+      ? selectedProduct.biaya_items
+      : [
+          ...(selectedProduct.biaya_notaris ? [{ label: 'Biaya Notaris', nominal: selectedProduct.biaya_notaris }] : []),
+          ...(selectedProduct.biaya_perikatan ? [{ label: 'Biaya Perikatan', nominal: selectedProduct.biaya_perikatan }] : []),
+        ];
+    setBiayaRows(items.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(String(b.nominal)) : '' })));
     setBlokir(String(selectedProduct.blokir_angsuran ?? 0));
+    const firstRule = selectedProduct.dsr_rules?.[0]?.kode;
+    if (firstRule) setDsrBasis(firstRule);
     if (selectedProduct.asuransi_provider_default === 'alamin') {
       setAsuransiProvider('alamin');
     }
   }, [productId]); // eslint-disable-line
+
+  // Program promo aktif untuk tanggal akad
+  const promoCfg: PromoProgram | null =
+    promoPrograms.find((p) => p.id === promoId) ?? null;
+  useEffect(() => {
+    if (promoId || !promoPrograms.length) return;
+    const aktif = promoPrograms.find((p) => isCerdasActive(p, tanggalAkad)) ?? promoPrograms[0];
+    if (aktif) setPromoId(aktif.id);
+  }, [promoPrograms, tanggalAkad, promoId]);
 
   // Prefill state saat mode edit riwayat
   const hydratedRef = useRef(false);
@@ -149,7 +184,7 @@ const KalkulatorPage: React.FC = () => {
     setInstansi(editRow.instansi || '');
     setPilihanKarir(editRow.pilihan_karir || '');
     setTanggalSk(((editRow.hasil_ringkasan as any)?.tanggalSk as string) || '');
-    const savedBasis = (editRow.hasil_ringkasan as any)?.dsrBasis;
+    const savedBasis = (editRow.dsr_basis ?? (editRow.hasil_ringkasan as any)?.dsrBasis) as DsrBasis | undefined;
     if (savedBasis === 'gaji' || savedBasis === 'ttp') setDsrBasis(savedBasis);
     setNamaAo(editRow.nama_ao || '');
     setProductId(editRow.product_id || '');
@@ -160,6 +195,14 @@ const KalkulatorPage: React.FC = () => {
     const tt = editRow.ttp ?? 0;
     setGajiPokokStr(gp ? formatCurrencyInput(String(gp)) : '');
     setTtpStr(tt ? formatCurrencyInput(String(tt)) : '');
+    if (editRow.angsuran_gaji) {
+      setAdaAngsuranGaji(true);
+      setAngsuranGajiStr(formatCurrencyInput(String(editRow.angsuran_gaji)));
+    }
+    if (editRow.angsuran_praja) {
+      setAdaAngsuranPraja(true);
+      setAngsuranPrajaStr(formatCurrencyInput(String(editRow.angsuran_praja)));
+    }
     setBunga(String(editRow.bunga_pa ?? ''));
     setBungaMode('manual');
     const savedCerdas = (editRow.hasil_ringkasan as any)?.cerdas;
@@ -180,25 +223,32 @@ const KalkulatorPage: React.FC = () => {
     );
     setAsuransiJiwaStr(savedPremiJiwaAktual ? formatCurrencyInput(String(savedPremiJiwaAktual)) : '');
     setAsuransiKreditStr(editRow.premi_kredit ? formatCurrencyInput(String(editRow.premi_kredit)) : '');
-    setNotarisStr(editRow.biaya_notaris ? formatCurrencyInput(String(editRow.biaya_notaris)) : '');
-    setPerikatanStr(editRow.biaya_perikatan ? formatCurrencyInput(String(editRow.biaya_perikatan)) : '');
+    const savedBiaya: BiayaItem[] = Array.isArray(editRow.biaya_items) && editRow.biaya_items.length
+      ? (editRow.biaya_items as BiayaItem[])
+      : [
+          ...(editRow.biaya_notaris ? [{ label: 'Biaya Notaris', nominal: editRow.biaya_notaris }] : []),
+          ...(editRow.biaya_perikatan ? [{ label: 'Biaya Perikatan', nominal: editRow.biaya_perikatan }] : []),
+        ];
+    setBiayaRows(savedBiaya.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(String(b.nominal)) : '' })));
     setBlokir(String(editRow.blokir_angsuran ?? 0));
     setAdaPelunasan(!!editRow.ada_pelunasan);
     if (editRow.outstanding_pokok != null) setOutstandingPokok(String(editRow.outstanding_pokok));
     if (editRow.outstanding_bunga != null) setOutstandingBunga(String(editRow.outstanding_bunga));
     if (editRow.cerdas_skema) {
-      setCerdasOn(true);
+      setPromoOn(true);
       setCerdasSkema(editRow.cerdas_skema as CerdasSkema);
     }
   }, [editRow]);
-
 
   const plafon = parseCurrencyValue(plafonStr);
   const gajiPokok = parseCurrencyValue(gajiPokokStr);
   const ttp = parseCurrencyValue(ttpStr);
   const gaji = gajiPokok + ttp;
-  const notaris = parseCurrencyValue(notarisStr);
-  const perikatan = parseCurrencyValue(perikatanStr);
+  const angsuranGaji = adaAngsuranGaji ? parseCurrencyValue(angsuranGajiStr) : 0;
+  const angsuranPraja = adaAngsuranPraja ? parseCurrencyValue(angsuranPrajaStr) : 0;
+  const biayaItems: BiayaItem[] = biayaRows
+    .map((b) => ({ label: b.label, nominal: parseCurrencyValue(b.nominalStr) }))
+    .filter((b) => b.label || b.nominal);
   const tenorBulan = parseInt(tenor) || 0;
   const bungaInput = parseFloat(bunga) || 0;
   const provisiInput = parseFloat(provisi) || 0;
@@ -239,17 +289,16 @@ const KalkulatorPage: React.FC = () => {
     return cekUnderwriting(umur, plafon, tenorBulan, alaminRules, alaminConfig?.x_plus_n_default);
   }, [asuransiProvider, alaminRules, umur, plafon, tenorBulan, alaminConfig]);
 
-  // Premi Asuransi Jiwa (AJK) — sumbernya Al-Amin atau input Pialang. INI YANG kena subsidi CERDAS.
+  // Premi Asuransi Jiwa (AJK) — sumbernya Al-Amin atau input Pialang. INI YANG kena subsidi promo.
   const premiJiwaAktual =
     asuransiProvider === 'alamin'
       ? alamin?.premiGross ?? 0
       : parseCurrencyValue(asuransiJiwaStr);
-  // Premi Asuransi Kredit — selalu input Pialang, TIDAK ada subsidi CERDAS.
   const premiKredit = parseCurrencyValue(asuransiKreditStr);
 
-  // CERDAS apply (subsidi khusus Asuransi Jiwa)
+  // Program promo apply (subsidi khusus Asuransi Jiwa)
   const cerdasResult: CerdasApplyResult | null = useMemo(() => {
-    if (!cerdasOn || !cerdasConfig) return null;
+    if (!promoOn || !promoCfg) return null;
     const savedCerdas = (editRow?.hasil_ringkasan as any)?.cerdas;
     if (editRow && savedCerdas) {
       const savedSkema = (savedCerdas.skema ?? editRow.cerdas_skema) as CerdasSkema | null;
@@ -267,17 +316,17 @@ const KalkulatorPage: React.FC = () => {
       plafon,
       premiAsuransiAktual: premiJiwaAktual,
       provisiPctAsli: provisiInput,
-      cfg: cerdasConfig,
+      cfg: promoCfg,
     });
-  }, [cerdasOn, cerdasConfig, cerdasSkema, plafon, premiJiwaAktual, provisiInput, editRow]);
+  }, [promoOn, promoCfg, cerdasSkema, plafon, premiJiwaAktual, provisiInput, editRow]);
+
+  const promoNama = promoCfg?.nama_program || 'Program Promo';
 
   const bungaPa = cerdasResult ? cerdasResult.bungaFinal : bungaInput;
   const provisiPct = cerdasResult ? cerdasResult.provisiFinalPct : provisiInput;
-  // Beban asuransi jiwa yang dibayar debitur (setelah subsidi CERDAS, jika ada)
   const asuransiJiwaBeban = cerdasResult
     ? (cerdasResult.skema === 'top_up' ? premiJiwaAktual : cerdasResult.selisihDebitur)
     : premiJiwaAktual;
-  // Total asuransi yang masuk potongan = Jiwa (setelah subsidi) + Kredit (tanpa subsidi)
   const asuransiNominal = asuransiJiwaBeban + premiKredit;
 
   // Calculation
@@ -292,12 +341,11 @@ const KalkulatorPage: React.FC = () => {
       plafon,
       asuransiNominal,
       provisiPct,
-      biayaNotaris: notaris,
-      biayaPerikatan: perikatan,
+      biayaItems,
       blokirAngsuran: blokirN,
       angsuranPertama: result.summary.angsuranPertama,
     });
-  }, [result, plafon, asuransiNominal, provisiPct, notaris, perikatan, blokirN]);
+  }, [result, plafon, asuransiNominal, provisiPct, JSON.stringify(biayaItems), blokirN]); // eslint-disable-line
 
   const pelunasan = useMemo(() => {
     if (!adaPelunasan) return null;
@@ -312,23 +360,30 @@ const KalkulatorPage: React.FC = () => {
     return potongan.danaDiterima - (pelunasan?.totalPelunasan ?? 0);
   }, [potongan, pelunasan]);
 
-  // Basis penghasilan & batas angsuran sesuai kategori DSR
-  const dsrBasisNilai = dsrBasis === 'ttp' ? ttp : gaji; // TTP saja vs Gaji Pokok + TTP
-  const dsrMaxAngsuran = dsrBasis === 'ttp' ? Math.round(ttp * 0.3) : gajiPokok;
+  // ==== DSR ====
   const angsuranPertama = result?.summary.angsuranPertama ?? 0;
-  const dsrPct = result && dsrBasisNilai > 0 ? (angsuranPertama / dsrBasisNilai) * 100 : 0;
-  const dsrAman = dsrMaxAngsuran > 0 && angsuranPertama > 0 ? angsuranPertama <= dsrMaxAngsuran : null;
-  const dsrColor =
-    dsrAman === null ? 'bg-muted' : dsrAman ? 'bg-emerald-600' : 'bg-rose-600';
-  const dsrLabel = dsrBasis === 'ttp' ? 'TTP (maks 30%)' : 'GAJI (maks = Gaji Pokok)';
+  const dsr = useMemo(
+    () =>
+      calcDsr({
+        basis: dsrBasis,
+        gajiPokok,
+        ttp,
+        maxPct: dsrRule?.max_pct ?? (dsrBasis === 'ttp' ? 30 : 100),
+        angsuranGaji,
+        angsuranPraja,
+        angsuranPertama,
+      }),
+    [dsrBasis, gajiPokok, ttp, dsrRule, angsuranGaji, angsuranPraja, angsuranPertama],
+  );
+  const dsrColor = dsr.aman === null ? 'bg-muted' : dsr.aman ? 'bg-emerald-600' : 'bg-rose-600';
 
   const handleHitungMaxPlafon = () => {
-    if (dsrMaxAngsuran <= 0 || tenorBulan <= 0 || bungaPa <= 0) {
+    if (dsr.maxAngsuran <= 0 || tenorBulan <= 0 || bungaPa <= 0) {
       toast({ title: 'Lengkapi gaji/TTP, tenor, bunga dulu', variant: 'destructive' });
       return;
     }
     const max = calcMaxPlafonByDSR({
-      gaji: dsrMaxAngsuran, // batas angsuran sesuai kategori DSR
+      gaji: dsr.maxAngsuran,
       dsrPct: 100,
       tenorBulan,
       bungaPa,
@@ -360,6 +415,10 @@ const KalkulatorPage: React.FC = () => {
       gaji,
       gaji_pokok: gajiPokok,
       ttp,
+      angsuran_gaji: angsuranGaji,
+      angsuran_praja: angsuranPraja,
+      dsr_basis: dsrBasis,
+      dsr_max_pct: dsr.maxPct,
       bunga_pa: bungaPa,
       asuransi_provider: asuransiProvider,
       asuransi_nominal: asuransiNominal,
@@ -367,8 +426,9 @@ const KalkulatorPage: React.FC = () => {
       asuransi_jiwa_beban: asuransiJiwaBeban,
       premi_kredit: premiKredit,
       provisi_pct: provisiPct,
-      biaya_notaris: notaris,
-      biaya_perikatan: perikatan,
+      biaya_items: potongan.biaya,
+      biaya_notaris: potongan.notaris,
+      biaya_perikatan: potongan.perikatan,
       blokir_angsuran: blokirN,
       ada_pelunasan: adaPelunasan,
       pelunasan_bulan_ke: null,
@@ -380,11 +440,15 @@ const KalkulatorPage: React.FC = () => {
         ...potongan,
         danaDiterima: danaBersih,
         dsrBasis,
-        dsrPct,
-        dsrMaxAngsuran,
+        dsrPct: dsr.dsrPct,
+        dsrMaxAngsuran: dsr.maxAngsuran,
+        dsrMaxPct: dsr.maxPct,
+        selisihAG: dsr.selisihAG,
+        angsuranPraja,
         tanggalSk: tanggalSk || null,
         pppkMaxTenor: pppkInfo?.maxTenor ?? null,
-        cerdas: cerdasResult ? { ...cerdasResult, provisiPctAsli: provisiInput, bungaPctAsli: bungaInput } : null,
+        promoNama: cerdasResult ? promoNama : null,
+        cerdas: cerdasResult ? { ...cerdasResult, programNama: promoNama, provisiPctAsli: provisiInput, bungaPctAsli: bungaInput } : null,
       },
       tabel_angsuran: result.rows,
       cerdas_skema: cerdasResult ? cerdasResult.skema : null,
@@ -405,7 +469,6 @@ const KalkulatorPage: React.FC = () => {
       toast({ title: 'Gagal menyimpan', description: e.message, variant: 'destructive' });
     }
   };
-
 
   const handleExportExcel = () => {
     if (!result || !potongan) return;
@@ -429,14 +492,20 @@ const KalkulatorPage: React.FC = () => {
       ['Bunga p.a.', `${bungaPa}%`],
       ['Sumber Asuransi Jiwa', asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Pialang Asuransi'],
       ['Asuransi Jiwa — Premi Aktual (Rp)', premiJiwaAktual],
-      ['Asuransi Jiwa — Subsidi Bank (CERDAS)', cerdasResult && cerdasResult.skema !== 'top_up' ? cerdasResult.subsidiBank : 0],
+      [`Asuransi Jiwa — Subsidi Bank (${promoNama})`, cerdasResult && cerdasResult.skema !== 'top_up' ? cerdasResult.subsidiBank : 0],
       ['Asuransi Jiwa — Beban Debitur (Rp)', asuransiJiwaBeban],
       ['Asuransi Kredit — Pialang (Rp)', premiKredit],
       ['Total Asuransi masuk potongan (Rp)', potongan.asuransi],
       ['Provisi', `${provisiPct}%`],
-      ['Notaris', notaris],
-      ['Perikatan', perikatan],
+      ...potongan.biaya.map((b) => [b.label, b.nominal]),
       ['Blokir Angsuran', `${blokirN}× angsuran pertama`],
+      [],
+      ['Kategori DSR', dsr.label],
+      ['Basis Penghasilan', dsr.basisNilai],
+      ['Angsuran Gaji', angsuranGaji],
+      ['Selisih AG', dsr.selisihAG],
+      ['Angsuran Praja (AP)', angsuranPraja],
+      ['Angsuran Maksimal (DSR)', dsr.maxAngsuran],
       [],
       ['Angsuran Pertama', result.summary.angsuranPertama],
       ['Total Angsuran', result.summary.totalAngsuran],
@@ -468,10 +537,7 @@ const KalkulatorPage: React.FC = () => {
         ['Total Pelunasan', pelunasan.totalPelunasan],
       );
     }
-    ringkasan.push(
-      [],
-      ['Dana Diterima', danaBersih],
-    );
+    ringkasan.push([], ['Dana Diterima', danaBersih]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), 'Ringkasan');
 
     const ang = result.rows.map((r) => ({
@@ -487,7 +553,7 @@ const KalkulatorPage: React.FC = () => {
   };
 
   // =========================
-  // PDF EXPORT — redesigned
+  // PDF EXPORT
   // =========================
   const handleExportPdf = async () => {
     if (!result || !potongan) return;
@@ -501,7 +567,6 @@ const KalkulatorPage: React.FC = () => {
     const ZEBRA: [number, number, number] = [241, 245, 249];
     const TEXT_DARK: [number, number, number] = [30, 41, 59];
 
-    // ---------- WATERMARK (tiled, low opacity, drawn at page start) ----------
     const drawWatermark = () => {
       const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.06 }) : null;
       if (gState) (doc as any).setGState(gState);
@@ -516,17 +581,13 @@ const KalkulatorPage: React.FC = () => {
           doc.text('SIMULASI', col * stepX - offset, row * stepY, { angle: 30 });
         }
       }
-      // reset opacity
       const gReset = (doc as any).GState ? new (doc as any).GState({ opacity: 1 }) : null;
       if (gReset) (doc as any).setGState(gReset);
     };
     (doc as any).internal.events.subscribe('addPage', drawWatermark);
-    drawWatermark(); // first page
+    drawWatermark();
 
-
-    // ---------- KOP SURAT ----------
     try {
-      // load logo as data URL with correct aspect ratio
       const logoData = await fetch(logoBpd).then((r) => r.blob()).then(
         (b) =>
           new Promise<string>((res) => {
@@ -551,20 +612,14 @@ const KalkulatorPage: React.FC = () => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
-    doc.text(
-      'Jl. Letjend S. Parman No. 14-15, Bontang 75383  ·  Telp. 0548-26567',
-      kopX,
-      M + 14.5
-    );
+    doc.text('Jl. Letjend S. Parman No. 14-15, Bontang 75383  ·  Telp. 0548-26567', kopX, M + 14.5);
     doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', kopX, M + 18);
 
-    // brand accent lines
     doc.setFillColor(...BRAND_BLUE);
     doc.rect(M, M + 21, pageW - 2 * M, 1.2, 'F');
     doc.setFillColor(...BRAND_ORANGE);
     doc.rect(M, M + 22.4, pageW - 2 * M, 0.5, 'F');
 
-    // ---------- TITLE ----------
     let y = M + 30;
     doc.setTextColor(...BRAND_BLUE);
     doc.setFont('helvetica', 'bold');
@@ -581,7 +636,6 @@ const KalkulatorPage: React.FC = () => {
       { align: 'center' }
     );
 
-    // ---------- SECTION 1: Data Debitur + Parameter Pinjaman (2 col side by side) ----------
     y += 4;
     autoTable(doc, {
       startY: y,
@@ -605,60 +659,41 @@ const KalkulatorPage: React.FC = () => {
         ['Nama', ':', namaDebitur || '-', 'Produk', ':', selectedProduct?.nama || '-'],
         ['Nomor KTP', ':', nomorKtp || '-', 'Skema', ':', skema.toUpperCase()],
         [
-          'Jenis Kelamin',
-          ':',
+          'Jenis Kelamin', ':',
           jenisKelamin === 'L' ? 'Laki-laki' : jenisKelamin === 'P' ? 'Perempuan' : '-',
-          'Plafon',
-          ':',
-          fmtRp(plafon),
+          'Plafon', ':', fmtRp(plafon),
         ],
         [
-          'Tanggal Lahir',
-          ':',
+          'Tanggal Lahir', ':',
           tanggalLahir ? new Date(tanggalLahir).toLocaleDateString('id-ID') : '-',
-          'Tenor',
-          ':',
-          `${tenorBulan} bulan`,
+          'Tenor', ':', `${tenorBulan} bulan`,
         ],
         [
-          'Umur',
-          ':',
-          umur ? `${umur} tahun` : '-',
-          'Tanggal Akad',
-          ':',
-          tanggalAkad ? new Date(tanggalAkad).toLocaleDateString('id-ID') : '-',
+          'Umur', ':', umur ? `${umur} tahun` : '-',
+          'Tanggal Akad', ':', tanggalAkad ? new Date(tanggalAkad).toLocaleDateString('id-ID') : '-',
         ],
         ['Pekerjaan', ':', pekerjaan || '-', 'Bunga p.a.', ':', `${bungaPa}%`],
-        ['Instansi', ':', instansi || '-', 'Gaji Bersih', ':', fmtRp(gaji)],
+        ['Instansi', ':', instansi || '-', 'Penghasilan', ':', fmtRp(gaji)],
         [
-          'Pilihan Karir',
-          ':',
-          pilihanKarir || '-',
-          'DSR',
-          ':',
-          gaji > 0 ? `${dsrPct.toFixed(1)}%` : '-',
+          'Pilihan Karir', ':', pilihanKarir || '-',
+          `DSR ${dsr.basis.toUpperCase()}`, ':',
+          dsr.basisNilai > 0 ? `${dsr.dsrPct.toFixed(1)}% (maks ${fmtRp(dsr.maxAngsuran)})` : '-',
         ],
         [
-          'Tanggal Pensiun',
-          ':',
+          'Tanggal Pensiun', ':',
           pensiunInfo ? new Date(pensiunInfo.tanggalPensiun).toLocaleDateString('id-ID') : '-',
-          'Provider Asuransi',
-          ':',
-          asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Manual',
+          'Provider Asuransi', ':',
+          asuransiProvider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Pialang Asuransi',
         ],
         [
-          'Sisa Masa Kerja',
-          ':',
+          'Sisa Masa Kerja', ':',
           pensiunInfo ? `${pensiunInfo.sisaTahun} thn ${pensiunInfo.sisaBulan} bln` : '-',
-          'Nama AO',
-          ':',
-          namaAo || '-',
+          'Nama AO', ':', namaAo || '-',
         ],
       ],
       margin: { left: M, right: M },
     });
 
-    // ---------- SECTION 2: Rincian Biaya / Potongan ----------
     let yy = (doc as any).lastAutoTable.finalY + 4;
     autoTable(doc, {
       startY: yy,
@@ -668,17 +703,12 @@ const KalkulatorPage: React.FC = () => {
           'Asuransi',
           asuransiProvider === 'alamin' && alamin
             ? `Al-Amin: Tarif ${alamin.rate.toFixed(2)}/1.000 × Plafon (umur ${umur}, ${tenorBulan} bln)`
-            : 'Manual (input nominal premi)',
+            : 'Pialang (input nominal premi)',
           fmtNumber(potongan.asuransi),
         ],
         ['Provisi', `${provisiPct}% × Plafon`, fmtNumber(potongan.provisi)],
-        ['Biaya Notaris', '—', fmtNumber(potongan.notaris)],
-        ['Biaya Perikatan', '—', fmtNumber(potongan.perikatan)],
-        [
-          'Blokir Angsuran',
-          blokirN > 0 ? `${blokirN} × Angsuran Pertama` : '—',
-          fmtNumber(potongan.blokir),
-        ],
+        ...potongan.biaya.map((b) => [b.label, '—', fmtNumber(b.nominal)]),
+        ['Blokir Angsuran', blokirN > 0 ? `${blokirN} × Angsuran Pertama` : '—', fmtNumber(potongan.blokir)],
         [
           { content: 'TOTAL POTONGAN', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: ZEBRA } },
           { content: fmtNumber(potongan.total), styles: { fontStyle: 'bold', fillColor: ZEBRA } },
@@ -686,23 +716,14 @@ const KalkulatorPage: React.FC = () => {
       ],
       styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
       headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' },
-      columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 'auto' },
-        2: { cellWidth: 38, halign: 'right' },
-      },
+      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 38, halign: 'right' } },
       margin: { left: M, right: M },
     });
 
-    // ---------- SECTION 3: Detail Al-Amin (only if alamin) ----------
     if (alamin) {
       yy = (doc as any).lastAutoTable.finalY + 4;
       const uwColor: [number, number, number] =
-        underwriting?.status === 'aman'
-          ? [22, 163, 74]
-          : underwriting?.status === 'medis'
-          ? [217, 119, 6]
-          : [220, 38, 38];
+        underwriting?.status === 'aman' ? [22, 163, 74] : underwriting?.status === 'medis' ? [217, 119, 6] : [220, 38, 38];
       autoTable(doc, {
         startY: yy,
         head: [[{ content: "DETAIL PREMI AL-AMIN (AT TA'MIN UM)", colSpan: 2, styles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' } }]],
@@ -723,15 +744,10 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
-    // ---------- SECTION 3b: Program CERDAS ----------
     if (cerdasResult) {
       yy = (doc as any).lastAutoTable.finalY + 4;
       const statusColor: [number, number, number] =
-        cerdasResult.status === 'gratis'
-          ? [22, 163, 74]
-          : cerdasResult.status === 'selisih'
-          ? [217, 119, 6]
-          : [100, 116, 139];
+        cerdasResult.status === 'gratis' ? [22, 163, 74] : cerdasResult.status === 'selisih' ? [217, 119, 6] : [100, 116, 139];
       const cerdasBody: any[][] = [
         ['Skema Promo', cerdasResult.skemaLabel],
         ['Bunga Promo', `${cerdasResult.bungaFinal}% p.a. fixed`],
@@ -753,7 +769,7 @@ const KalkulatorPage: React.FC = () => {
       cerdasBody.push([{ content: cerdasResult.pesan, colSpan: 2, styles: { fontStyle: 'italic', textColor: statusColor, fillColor: [254, 252, 232] } }]);
       autoTable(doc, {
         startY: yy,
-        head: [[{ content: 'PROGRAM CERDAS — Cicilan Extra Ringan & Diskon Asuransi', colSpan: 2, styles: { fillColor: [245, 130, 32], textColor: 255, fontStyle: 'bold' } }]],
+        head: [[{ content: `PROGRAM PROMO — ${promoNama.toUpperCase()}`, colSpan: 2, styles: { fillColor: [245, 130, 32], textColor: 255, fontStyle: 'bold' } }]],
         body: cerdasBody,
         styles: { fontSize: 8.5, cellPadding: 2, textColor: TEXT_DARK },
         columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold' }, 1: { halign: 'right' } },
@@ -761,9 +777,6 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
-    // (Ringkasan Angsuran sengaja dihilangkan agar lebih ringkas — detail bulanan ada di tabel angsuran)
-
-    // ---------- SECTION 5: Top Up / Pelunasan (Outstanding manual) ----------
     if (pelunasan) {
       yy = (doc as any).lastAutoTable.finalY + 4;
       autoTable(doc, {
@@ -780,7 +793,6 @@ const KalkulatorPage: React.FC = () => {
       });
     }
 
-    // ---------- SECTION 5b: Dana Diterima (Nilai Bersih) ----------
     yy = (doc as any).lastAutoTable.finalY + 4;
     autoTable(doc, {
       startY: yy,
@@ -795,7 +807,6 @@ const KalkulatorPage: React.FC = () => {
       margin: { left: M, right: M },
     });
 
-    // ---------- SECTION 6: Tabel Angsuran ----------
     yy = (doc as any).lastAutoTable.finalY + 6;
     autoTable(doc, {
       startY: yy,
@@ -822,28 +833,20 @@ const KalkulatorPage: React.FC = () => {
       margin: { left: M, right: M },
     });
 
-    // ---------- FOOTER per page ----------
     const totalPages = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      // footer
       doc.setTextColor(120);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.text(
-        'Dokumen simulasi — bukan dokumen perjanjian kredit. Nilai dapat berubah sewaktu-waktu.',
-        M,
-        pageH - 6
-      );
-      doc.text(`Hal ${i} / ${totalPages}  ·  AO: ${namaAo || '-'}`, pageW - M, pageH - 6, {
-        align: 'right',
-      });
+      doc.text('Dokumen simulasi — bukan dokumen perjanjian kredit. Nilai dapat berubah sewaktu-waktu.', M, pageH - 6);
+      doc.text(`Hal ${i} / ${totalPages}  ·  AO: ${namaAo || '-'}`, pageW - M, pageH - 6, { align: 'right' });
     }
 
     doc.save(`Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.pdf`);
   };
 
-  // ---- Export JPG (kartu ringkasan HD untuk dibagikan ke debitur) ----
+  // ---- Export JPG ----
   const jpgCardRef = useRef<HTMLDivElement>(null);
   const handleExportJpg = async () => {
     if (!jpgCardRef.current) return;
@@ -866,24 +869,22 @@ const KalkulatorPage: React.FC = () => {
     }
   };
 
-
   const uwBadgeVariant = underwriting?.status === 'aman'
     ? 'success'
     : underwriting?.status === 'medis'
     ? 'warning'
     : 'destructive';
   const UwIcon =
-    underwriting?.status === 'aman'
-      ? ShieldCheck
-      : underwriting?.status === 'medis'
-      ? ShieldQuestion
-      : ShieldAlert;
+    underwriting?.status === 'aman' ? ShieldCheck : underwriting?.status === 'medis' ? ShieldQuestion : ShieldAlert;
+
+  const updateBiaya = (i: number, patch: Partial<BiayaRow>) =>
+    setBiayaRows((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   return (
     <MainLayout>
       <PageHeader
         title={editId ? 'Edit Simulasi Loan' : 'Kalkulator Konsumtif'}
-        description={editId ? 'Menyunting simulasi tersimpan — perubahan akan menimpa data lama.' : 'Hitung simulasi angsuran kredit konsumtif (anuitas / efektif) berdasarkan gaji & DSR'}
+        description={editId ? 'Menyunting simulasi tersimpan — perubahan akan menimpa data lama.' : 'Input bertahap per tab, hasil hitungan tampil berdampingan tanpa perlu scroll.'}
         actions={
           <div className="flex gap-2">
             {editId && (
@@ -898,646 +899,608 @@ const KalkulatorPage: React.FC = () => {
         }
       />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* FORM */}
-        <div className="xl:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Data Calon Debitur</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Nomor KTP</Label>
-                <Input
-                  value={nomorKtp}
-                  onChange={(e) => setNomorKtp(e.target.value.replace(/\D/g, '').slice(0, 16))}
-                  placeholder="16 digit"
-                />
-              </div>
-              <div>
-                <Label>Nama Calon Debitur *</Label>
-                <Input value={namaDebitur} onChange={(e) => setNamaDebitur(e.target.value)} />
-              </div>
-              <div>
-                <Label>Tanggal Lahir</Label>
-                <Input type="date" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)} />
-              </div>
-              <div>
-                <Label>Jenis Kelamin</Label>
-                <RadioGroup
-                  value={jenisKelamin}
-                  onValueChange={(v) => setJenisKelamin(v as 'L' | 'P')}
-                  className="flex gap-4 pt-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="L" id="jk-l" />
-                    <Label htmlFor="jk-l" className="cursor-pointer font-normal">Laki-laki</Label>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        {/* FORM — TABBED */}
+        <div className="xl:col-span-2">
+          <Tabs defaultValue="debitur" className="w-full">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="debitur"><User className="w-4 h-4 mr-1.5" /> Debitur</TabsTrigger>
+              <TabsTrigger value="kredit"><Calculator className="w-4 h-4 mr-1.5" /> Kredit</TabsTrigger>
+              <TabsTrigger value="penghasilan"><Wallet className="w-4 h-4 mr-1.5" /> Penghasilan</TabsTrigger>
+              <TabsTrigger value="biaya"><Receipt className="w-4 h-4 mr-1.5" /> Biaya</TabsTrigger>
+            </TabsList>
+
+            {/* ================= TAB 1: DEBITUR ================= */}
+            <TabsContent value="debitur" className="mt-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Data Calon Debitur</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Nomor KTP</Label>
+                    <Input value={nomorKtp} onChange={(e) => setNomorKtp(e.target.value.replace(/\D/g, '').slice(0, 16))} placeholder="16 digit" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="P" id="jk-p" />
-                    <Label htmlFor="jk-p" className="cursor-pointer font-normal">Perempuan</Label>
+                  <div>
+                    <Label>Nama Calon Debitur *</Label>
+                    <Input value={namaDebitur} onChange={(e) => setNamaDebitur(e.target.value)} />
                   </div>
-                </RadioGroup>
-              </div>
-              <div>
-                <Label>Pilihan Karir</Label>
-                <Select value={pilihanKarir} onValueChange={setPilihanKarir}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih karir" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(pensionRules.length ? pensionRules.map((r) => r.pilihan_karir) : PILIHAN_KARIR_DEFAULT).map(
-                      (k) => (
-                        <SelectItem key={k} value={k}>
-                          {k}
-                        </SelectItem>
-                      ),
+                  <div>
+                    <Label>Tanggal Lahir</Label>
+                    <Input type="date" value={tanggalLahir} onChange={(e) => setTanggalLahir(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Jenis Kelamin</Label>
+                    <RadioGroup value={jenisKelamin} onValueChange={(v) => setJenisKelamin(v as 'L' | 'P')} className="flex gap-4 pt-2">
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="L" id="jk-l" />
+                        <Label htmlFor="jk-l" className="cursor-pointer font-normal">Laki-laki</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="P" id="jk-p" />
+                        <Label htmlFor="jk-p" className="cursor-pointer font-normal">Perempuan</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  <div>
+                    <Label>Pilihan Karir</Label>
+                    <Select value={pilihanKarir} onValueChange={setPilihanKarir}>
+                      <SelectTrigger><SelectValue placeholder="Pilih karir" /></SelectTrigger>
+                      <SelectContent>
+                        {(pensionRules.length ? pensionRules.map((r) => r.pilihan_karir) : PILIHAN_KARIR_DEFAULT).map((k) => (
+                          <SelectItem key={k} value={k}>{k}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {jenisPPPK && (
+                    <div>
+                      <Label>Tanggal SK Diterbitkan</Label>
+                      <Input type="date" value={tanggalSk} onChange={(e) => setTanggalSk(e.target.value)} />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PPPK {jenisPPPK === 'penuh' ? 'Penuh Waktu (kontrak 5 tahun, tenor maks 59 bln)' : 'Paruh Waktu (kontrak 12 bulan, tenor maks 10 bln)'}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <Label>Pekerjaan</Label>
+                    <Input value={pekerjaan} onChange={(e) => setPekerjaan(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Instansi</Label>
+                    <Input value={instansi} onChange={(e) => setInstansi(e.target.value)} />
+                  </div>
+                  {pppkInfo && (
+                    <div className="md:col-span-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                      <div className="flex flex-wrap gap-x-6 gap-y-1">
+                        <span>Masa kontrak berakhir: <strong>{new Date(pppkInfo.tanggalBerakhir).toLocaleDateString('id-ID')}</strong></span>
+                        <span>Sisa jangka waktu: <strong>{pppkInfo.sisaTahun} thn {pppkInfo.sisaBulan} bln ({pppkInfo.sisaBulanTotal} bulan)</strong></span>
+                        <span>Tenor maksimal: <strong>{pppkInfo.maxTenor} bulan</strong></span>
+                      </div>
+                      {pppkInfo.sudahBerakhir && (
+                        <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Masa kontrak PPPK sudah berakhir.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {pensiunInfo && !pppkInfo && (
+                    <div className="md:col-span-2 rounded-lg border bg-muted/30 p-3 text-sm">
+                      <div className="flex flex-wrap gap-x-6 gap-y-1">
+                        <span>Umur: <strong>{pensiunInfo.umurTahun} thn {pensiunInfo.umurBulan} bln</strong></span>
+                        <span>Pensiun: <strong>{new Date(pensiunInfo.tanggalPensiun).toLocaleDateString('id-ID')}</strong></span>
+                        <span>Sisa masa kerja: <strong>{pensiunInfo.sisaTahun} thn {pensiunInfo.sisaBulan} bln ({pensiunInfo.sisaBulanTotal} bulan)</strong></span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="md:col-span-2">
+                    <Label>Nama AO</Label>
+                    {aoList.length ? (
+                      <Select value={namaAo} onValueChange={setNamaAo}>
+                        <SelectTrigger><SelectValue placeholder="Pilih AO" /></SelectTrigger>
+                        <SelectContent>
+                          {aoList.map((a) => (
+                            <SelectItem key={a.id} value={a.nama}>
+                              {a.nama}{a.jabatan ? ` — ${a.jabatan}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input value={namaAo} onChange={(e) => setNamaAo(e.target.value)} placeholder="Daftar AO belum diatur di konfigurasi" />
                     )}
-                  </SelectContent>
-                </Select>
-              </div>
-              {jenisPPPK && (
-                <div>
-                  <Label>Tanggal SK Diterbitkan</Label>
-                  <Input type="date" value={tanggalSk} onChange={(e) => setTanggalSk(e.target.value)} />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PPPK {jenisPPPK === 'penuh' ? 'Penuh Waktu (kontrak 5 tahun, tenor maks 59 bln)' : 'Paruh Waktu (kontrak 12 bulan, tenor maks 10 bln)'}
-                  </p>
-                </div>
-              )}
-              <div>
-                <Label>Pekerjaan</Label>
-                <Input value={pekerjaan} onChange={(e) => setPekerjaan(e.target.value)} />
-              </div>
-              <div>
-                <Label>Instansi</Label>
-                <Input value={instansi} onChange={(e) => setInstansi(e.target.value)} />
-              </div>
-              {pppkInfo && (
-                <div className="md:col-span-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-                  <div className="flex flex-wrap gap-x-6 gap-y-1">
-                    <span>
-                      Masa kontrak berakhir:{' '}
-                      <strong>{new Date(pppkInfo.tanggalBerakhir).toLocaleDateString('id-ID')}</strong>
-                    </span>
-                    <span>
-                      Sisa jangka waktu:{' '}
-                      <strong>
-                        {pppkInfo.sisaTahun} thn {pppkInfo.sisaBulan} bln ({pppkInfo.sisaBulanTotal} bulan)
-                      </strong>
-                    </span>
-                    <span>
-                      Tenor maksimal: <strong>{pppkInfo.maxTenor} bulan</strong>
-                    </span>
                   </div>
-                  {pppkInfo.sudahBerakhir && (
-                    <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" /> Masa kontrak PPPK sudah berakhir.
-                    </p>
-                  )}
-                </div>
-              )}
-              {pensiunInfo && !pppkInfo && (
-                <div className="md:col-span-2 rounded-lg border bg-muted/30 p-3 text-sm">
-                  <div className="flex flex-wrap gap-x-6 gap-y-1">
-                    <span>
-                      Umur: <strong>{pensiunInfo.umurTahun} thn {pensiunInfo.umurBulan} bln</strong>
-                    </span>
-                    <span>
-                      Pensiun: <strong>{new Date(pensiunInfo.tanggalPensiun).toLocaleDateString('id-ID')}</strong>
-                    </span>
-                    <span>
-                      Sisa masa kerja:{' '}
-                      <strong>
-                        {pensiunInfo.sisaTahun} thn {pensiunInfo.sisaBulan} bln ({pensiunInfo.sisaBulanTotal} bulan)
-                      </strong>
-                    </span>
-                  </div>
-                </div>
-              )}
-              <div className="md:col-span-2">
-                <Label>Nama AO</Label>
-                <Input value={namaAo} onChange={(e) => setNamaAo(e.target.value)} />
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Data Pinjaman</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label>Produk Kredit</Label>
-                <Select value={productId} onValueChange={setProductId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih produk" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.nama} <span className="text-muted-foreground">— {p.skema}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Plafon Pengajuan</Label>
-                <Input
-                  value={plafonStr}
-                  onChange={(e) => setPlafonStr(formatCurrencyInput(e.target.value))}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label>Jangka Waktu (bulan)</Label>
-                <Input type="number" value={tenor} onChange={(e) => setTenor(e.target.value)} />
-                {tenorMelebihiPensiun && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />{' '}
-                    {pppkInfo
-                      ? `Tenor melebihi batas masa kontrak PPPK (maks ${pppkInfo.maxTenor} bulan)`
-                      : `Tenor melebihi sisa masa kerja sampai pensiun (${maxTenorBulan} bulan)`}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label>Tanggal Akad</Label>
-                <Input type="date" value={tanggalAkad} onChange={(e) => setTanggalAkad(e.target.value)} />
-              </div>
-              <div>
-                <Label>Gaji Pokok / Bulan</Label>
-                <Input
-                  value={gajiPokokStr}
-                  onChange={(e) => setGajiPokokStr(formatCurrencyInput(e.target.value))}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label>Pendapatan Lainnya (TTP)</Label>
-                <Input
-                  value={ttpStr}
-                  onChange={(e) => setTtpStr(formatCurrencyInput(e.target.value))}
-                  placeholder="0"
-                />
-                {gaji > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Total penghasilan: <b>{fmtRp(gaji)}</b>
-                  </p>
-                )}
-              </div>
-
-
-              <div>
-                <Label className="flex items-center justify-between">
-                  <span>Bunga p.a. (%)</span>
-                  {cerdasResult && (
-                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> CERDAS: {cerdasResult.bungaFinal}%
-                    </span>
-                  )}
-                </Label>
-                <div className="flex gap-2">
-                  {bungaMode === 'preset' && selectedProduct ? (
-                    <Select value={bunga} onValueChange={setBunga}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+            {/* ================= TAB 2: KREDIT ================= */}
+            <TabsContent value="kredit" className="mt-4 space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Data Pinjaman</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label>Produk Kredit</Label>
+                    <Select value={productId} onValueChange={setProductId}>
+                      <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
                       <SelectContent>
-                        {selectedProduct.bunga_options.map((o) => (
-                          <SelectItem key={o.label} value={String(o.value)}>
-                            {o.label}
+                        {products.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nama} <span className="text-muted-foreground">— {p.skema}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <Input type="number" step="0.01" value={bunga} onChange={(e) => setBunga(e.target.value)} />
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setBungaMode(bungaMode === 'preset' ? 'manual' : 'preset')}
-                  >
-                    {bungaMode === 'preset' ? 'Manual' : 'Preset'}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label className="flex items-center justify-between">
-                  <span>Provisi (%)</span>
-                  {cerdasResult?.skema === 'top_up' && (
-                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> CERDAS: {cerdasResult.provisiFinalPct.toFixed(2)}%
-                    </span>
-                  )}
-                </Label>
-                <div className="flex gap-2">
-                  {provisiMode === 'preset' && selectedProduct ? (
-                    <Select value={provisi} onValueChange={setProvisi}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">0%</SelectItem>
-                        {selectedProduct.provisi_options.map((o) => (
-                          <SelectItem key={o.label} value={String(o.value)}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input type="number" step="0.01" value={provisi} onChange={(e) => setProvisi(e.target.value)} />
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setProvisiMode(provisiMode === 'preset' ? 'manual' : 'preset')}
-                  >
-                    {provisiMode === 'preset' ? 'Manual' : 'Preset'}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label>Biaya Notaris</Label>
-                <Input
-                  value={notarisStr}
-                  onChange={(e) => setNotarisStr(formatCurrencyInput(e.target.value))}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label>Biaya Perikatan</Label>
-                <Input
-                  value={perikatanStr}
-                  onChange={(e) => setPerikatanStr(formatCurrencyInput(e.target.value))}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label>Blokir Angsuran</Label>
-                <Select value={blokir} onValueChange={setBlokir}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Tidak Ada</SelectItem>
-                    <SelectItem value="1">1× Angsuran</SelectItem>
-                    <SelectItem value="2">2× Angsuran</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2 pt-2 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="pelunasan"
-                    checked={adaPelunasan}
-                    onCheckedChange={(c) => setAdaPelunasan(!!c)}
-                  />
-                  <Label htmlFor="pelunasan" className="cursor-pointer">
-                    Top Up? Ada Pelunasan?
-                  </Label>
-                </div>
-                {adaPelunasan && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-lg border border-dashed p-3 bg-muted/20">
-                    <div>
-                      <Label>Outstanding Pokok (Rp)</Label>
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        value={outstandingPokok}
-                        onChange={(e) => setOutstandingPokok(e.target.value)}
-                        placeholder="Lihat di core"
-                      />
-                    </div>
-                    <div>
-                      <Label>Outstanding Bunga (Rp)</Label>
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        value={outstandingBunga}
-                        onChange={(e) => setOutstandingBunga(e.target.value)}
-                        placeholder="Lihat di core"
-                      />
-                    </div>
-                    <p className="md:col-span-2 text-xs text-muted-foreground">
-                      Diisi manual sesuai data outstanding di core banking.
-                    </p>
                   </div>
-                )}
-              </div>
-
-              <div className="md:col-span-2 rounded-lg border border-dashed p-3 space-y-3 bg-muted/20">
-                <div>
-                  <Label>Kategori DSR</Label>
-                  <RadioGroup
-                    value={dsrBasis}
-                    onValueChange={(v) => setDsrBasis(v as 'gaji' | 'ttp')}
-                    className="flex flex-wrap gap-4 pt-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="gaji" id="dsr-gaji" />
-                      <Label htmlFor="dsr-gaji" className="cursor-pointer font-normal">
-                        GAJI — basis Gaji Pokok + TTP
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="ttp" id="dsr-ttp" />
-                      <Label htmlFor="dsr-ttp" className="cursor-pointer font-normal">
-                        TTP — maks 30% dari TTP
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {dsrBasis === 'gaji'
-                      ? 'DSR dihitung dari Gaji Pokok + TTP, namun angsuran maksimal dibatasi sebesar Gaji Pokok.'
-                      : 'DSR hanya membaca nilai TTP, angsuran maksimal 30% dari TTP.'}
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-md border bg-background p-2">
-                    <div className="text-xs text-muted-foreground">Basis Penghasilan</div>
-                    <div className="font-semibold">{fmtRp(dsrBasisNilai)}</div>
+                  <div>
+                    <Label>Plafon Pengajuan</Label>
+                    <Input value={plafonStr} onChange={(e) => setPlafonStr(formatCurrencyInput(e.target.value))} placeholder="0" />
                   </div>
-                  <div className="rounded-md border bg-background p-2">
-                    <div className="text-xs text-muted-foreground">Angsuran Maksimal</div>
-                    <div className="font-semibold">{fmtRp(dsrMaxAngsuran)}</div>
+                  <div>
+                    <Label>Jangka Waktu (bulan)</Label>
+                    <Input type="number" value={tenor} onChange={(e) => setTenor(e.target.value)} />
+                    {tenorMelebihiPensiun && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />{' '}
+                        {pppkInfo
+                          ? `Tenor melebihi batas masa kontrak PPPK (maks ${pppkInfo.maxTenor} bulan)`
+                          : `Tenor melebihi sisa masa kerja sampai pensiun (${maxTenorBulan} bulan)`}
+                      </p>
+                    )}
                   </div>
-                </div>
-                {dsrAman === false && (
-                  <p className="text-xs text-rose-600 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Angsuran {fmtRp(angsuranPertama)} melebihi batas{' '}
-                    {fmtRp(dsrMaxAngsuran)}.
-                  </p>
-                )}
-                <Button type="button" variant="secondary" onClick={handleHitungMaxPlafon} className="w-full">
-                  <Calculator className="w-4 h-4 mr-2" /> Hitung Max Plafon
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* PROGRAM CERDAS */}
-          {cerdasConfig && (
-            <Card className={cerdasOn ? 'border-amber-400 bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10' : ''}>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    Program CERDAS
-                    <Badge variant="outline" className="text-[10px] font-normal">
-                      {new Date(cerdasConfig.periode_mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} — {new Date(cerdasConfig.periode_selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </Badge>
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="cerdas-switch" className="text-sm font-normal cursor-pointer">
-                      Ikut Promo
+                  <div>
+                    <Label>Tanggal Akad</Label>
+                    <Input type="date" value={tanggalAkad} onChange={(e) => setTanggalAkad(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="flex items-center justify-between">
+                      <span>Bunga p.a. (%)</span>
+                      {cerdasResult && (
+                        <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Promo: {cerdasResult.bungaFinal}%
+                        </span>
+                      )}
                     </Label>
-                    <Switch
-                      id="cerdas-switch"
-                      checked={cerdasOn}
-                      onCheckedChange={(v) => setCerdasOn(v && isCerdasActive(cerdasConfig, tanggalAkad))}
-                      disabled={!isCerdasActive(cerdasConfig, tanggalAkad)}
-                    />
+                    <div className="flex gap-2">
+                      {bungaMode === 'preset' && selectedProduct ? (
+                        <Select value={bunga} onValueChange={setBunga}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {selectedProduct.bunga_options.map((o) => (
+                              <SelectItem key={o.label} value={String(o.value)}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input type="number" step="0.01" value={bunga} onChange={(e) => setBunga(e.target.value)} />
+                      )}
+                      <Button type="button" variant="outline" size="sm" onClick={() => setBungaMode(bungaMode === 'preset' ? 'manual' : 'preset')}>
+                        {bungaMode === 'preset' ? 'Manual' : 'Preset'}
+                      </Button>
+                    </div>
                   </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!isCerdasActive(cerdasConfig, tanggalAkad) && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Tanggal akad di luar periode promo CERDAS.
-                  </p>
-                )}
-                {cerdasOn && (
-                  <>
-                    <RadioGroup
-                      value={cerdasSkema}
-                      onValueChange={(v) => setCerdasSkema(v as CerdasSkema)}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-3"
-                    >
-                      {(['debitur_baru', 'take_over', 'top_up'] as CerdasSkema[]).map((sk) => {
-                        const bunga = getCerdasBunga(sk, cerdasConfig);
-                        const active = cerdasSkema === sk;
-                        const isTopUp = sk === 'top_up';
-                        return (
-                          <label
-                            key={sk}
-                            htmlFor={`cerdas-${sk}`}
-                            className={`cursor-pointer rounded-lg border-2 p-3 transition-all ${
-                              active
-                                ? isTopUp
-                                  ? 'border-amber-500 bg-amber-100/60 dark:bg-amber-900/30'
-                                  : 'border-primary bg-primary/5'
-                                : 'border-border hover:border-muted-foreground/30'
+                  <div className="md:col-span-2 pt-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="pelunasan" checked={adaPelunasan} onCheckedChange={(c) => setAdaPelunasan(!!c)} />
+                      <Label htmlFor="pelunasan" className="cursor-pointer">Top Up? Ada Pelunasan?</Label>
+                    </div>
+                    {adaPelunasan && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-lg border border-dashed p-3 bg-muted/20">
+                        <div>
+                          <Label>Outstanding Pokok (Rp)</Label>
+                          <Input type="number" inputMode="numeric" value={outstandingPokok} onChange={(e) => setOutstandingPokok(e.target.value)} placeholder="Lihat di core" />
+                        </div>
+                        <div>
+                          <Label>Outstanding Bunga (Rp)</Label>
+                          <Input type="number" inputMode="numeric" value={outstandingBunga} onChange={(e) => setOutstandingBunga(e.target.value)} placeholder="Lihat di core" />
+                        </div>
+                        <p className="md:col-span-2 text-xs text-muted-foreground">Diisi manual sesuai data outstanding di core banking.</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* PROGRAM PROMO */}
+              {promoPrograms.length > 0 && (
+                <Card className={promoOn ? 'border-amber-400 bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-950/20 dark:to-orange-950/10' : ''}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center justify-between gap-3 flex-wrap">
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        Program Promo
+                        {promoCfg && (
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            {new Date(promoCfg.periode_mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} — {new Date(promoCfg.periode_selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </Badge>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="promo-switch" className="text-sm font-normal cursor-pointer">Ikut Promo</Label>
+                        <Switch
+                          id="promo-switch"
+                          checked={promoOn}
+                          onCheckedChange={(v) => setPromoOn(v && isCerdasActive(promoCfg, tanggalAkad))}
+                          disabled={!isCerdasActive(promoCfg, tanggalAkad)}
+                        />
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Pilih Program</Label>
+                      <Select value={promoId} onValueChange={(v) => { setPromoId(v); setPromoOn(false); }}>
+                        <SelectTrigger><SelectValue placeholder="Pilih program promo" /></SelectTrigger>
+                        <SelectContent>
+                          {promoPrograms.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.nama_program}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {promoCfg?.deskripsi && <p className="text-xs text-muted-foreground mt-1">{promoCfg.deskripsi}</p>}
+                    </div>
+                    {!isCerdasActive(promoCfg, tanggalAkad) && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Tanggal akad di luar periode program ini.
+                      </p>
+                    )}
+                    {promoOn && promoCfg && (
+                      <>
+                        <RadioGroup value={cerdasSkema} onValueChange={(v) => setCerdasSkema(v as CerdasSkema)} className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {(['debitur_baru', 'take_over', 'top_up'] as CerdasSkema[]).map((sk) => {
+                            const bungaSk = getCerdasBunga(sk, promoCfg);
+                            const active = cerdasSkema === sk;
+                            const isTopUp = sk === 'top_up';
+                            return (
+                              <label
+                                key={sk}
+                                htmlFor={`promo-${sk}`}
+                                className={`cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                                  active
+                                    ? isTopUp ? 'border-amber-500 bg-amber-100/60 dark:bg-amber-900/30' : 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-muted-foreground/30'
+                                }`}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <RadioGroupItem value={sk} id={`promo-${sk}`} className="mt-1" />
+                                  <div className="flex-1">
+                                    <div className="text-xs uppercase font-bold tracking-wide text-muted-foreground">{CERDAS_SKEMA_LABEL[sk]}</div>
+                                    <div className={`text-2xl font-bold mt-1 ${isTopUp ? 'text-amber-700 dark:text-amber-400' : 'text-primary'}`}>
+                                      {isTopUp ? `${promoCfg.diskon_provisi_top_up_pct}%` : `${bungaSk.toFixed(2).replace('.', ',')}%`}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground">
+                                      {isTopUp ? `Diskon provisi · Bunga ${bungaSk}% p.a.` : 'p.a. fixed · Subsidi AJK'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </RadioGroup>
+
+                        {cerdasResult && (
+                          <div
+                            className={`rounded-lg p-3 text-sm border ${
+                              cerdasResult.status === 'gratis'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
+                                : cerdasResult.status === 'selisih'
+                                ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800'
+                                : 'bg-muted/40 border-border'
                             }`}
                           >
                             <div className="flex items-start gap-2">
-                              <RadioGroupItem value={sk} id={`cerdas-${sk}`} className="mt-1" />
-                              <div className="flex-1">
-                                <div className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
-                                  {CERDAS_SKEMA_LABEL[sk]}
-                                </div>
-                                <div className={`text-2xl font-bold mt-1 ${isTopUp ? 'text-amber-700 dark:text-amber-400' : 'text-primary'}`}>
-                                  {isTopUp ? `${cerdasConfig.diskon_provisi_top_up_pct}%` : `${bunga.toFixed(2).replace('.', ',')}%`}
-                                </div>
-                                <div className="text-[10px] text-muted-foreground">
-                                  {isTopUp
-                                    ? `Diskon provisi · Bunga ${bunga}% p.a.`
-                                    : 'p.a. fixed · Gratis AJK'}
-                                </div>
+                              {cerdasResult.status === 'gratis' ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                              ) : cerdasResult.status === 'selisih' ? (
+                                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                              ) : (
+                                <Sparkles className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                              )}
+                              <div className="flex-1 space-y-1">
+                                <div className="font-medium">{cerdasResult.pesan}</div>
+                                {cerdasResult.tier && (
+                                  <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
+                                    <span>{cerdasResult.tier.label}</span>
+                                    <span className="text-right">Cap: <strong>{fmtRp(cerdasResult.capSubsidi)}</strong></span>
+                                    <span>Premi aktual</span>
+                                    <span className="text-right">{fmtRp(cerdasResult.premiAsuransiAktual)}</span>
+                                    <span>Subsidi bank</span>
+                                    <span className="text-right text-emerald-700 dark:text-emerald-400 font-medium">− {fmtRp(cerdasResult.subsidiBank)}</span>
+                                    <span className="font-semibold">Beban debitur</span>
+                                    <span className={`text-right font-bold ${cerdasResult.selisihDebitur === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                      {cerdasResult.selisihDebitur === 0 ? 'GRATIS' : fmtRp(cerdasResult.selisihDebitur)}
+                                    </span>
+                                  </div>
+                                )}
+                                {cerdasResult.skema === 'top_up' && (
+                                  <div className="text-xs text-muted-foreground pt-1">
+                                    Provisi awal {provisiInput}% → <strong>{cerdasResult.provisiFinalPct.toFixed(2)}%</strong> setelah diskon {cerdasResult.diskonProvisiPct}%.
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </label>
-                        );
-                      })}
-                    </RadioGroup>
-
-                    {cerdasResult && (
-                      <div
-                        className={`rounded-lg p-3 text-sm border ${
-                          cerdasResult.status === 'gratis'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
-                            : cerdasResult.status === 'selisih'
-                            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800'
-                            : 'bg-muted/40 border-border'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          {cerdasResult.status === 'gratis' ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                          ) : cerdasResult.status === 'selisih' ? (
-                            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                          ) : (
-                            <Sparkles className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-1 space-y-1">
-                            <div className="font-medium">{cerdasResult.pesan}</div>
-                            {cerdasResult.tier && (
-                              <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
-                                <span>{cerdasResult.tier.label}</span>
-                                <span className="text-right">Cap: <strong>{fmtRp(cerdasResult.capSubsidi)}</strong></span>
-                                <span>Premi aktual</span>
-                                <span className="text-right">{fmtRp(cerdasResult.premiAsuransiAktual)}</span>
-                                <span>Subsidi bank</span>
-                                <span className="text-right text-emerald-700 dark:text-emerald-400 font-medium">
-                                  − {fmtRp(cerdasResult.subsidiBank)}
-                                </span>
-                                <span className="font-semibold">Beban debitur</span>
-                                <span className={`text-right font-bold ${cerdasResult.selisihDebitur === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                                  {cerdasResult.selisihDebitur === 0 ? 'GRATIS' : fmtRp(cerdasResult.selisihDebitur)}
-                                </span>
-                              </div>
-                            )}
-                            {cerdasResult.skema === 'top_up' && (
-                              <div className="text-xs text-muted-foreground pt-1">
-                                Provisi awal {provisiInput}% → <strong>{cerdasResult.provisiFinalPct.toFixed(2)}%</strong> setelah diskon {cerdasResult.diskonProvisiPct}%.
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </div>
+                        )}
+                        <p className="text-[11px] text-muted-foreground italic">
+                          Catatan: pelunasan dipercepat/top up ≤ 1 tahun wajib mengganti premi AJK yang telah disubsidi bank.
+                        </p>
+                      </>
                     )}
-                    <p className="text-[11px] text-muted-foreground italic">
-                      Catatan: pelunasan dipercepat/top up ≤ 1 tahun wajib mengganti premi AJK yang telah disubsidi bank.
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
-          {/* ASURANSI */}
-          <Card>
-
-            <CardHeader>
-              <CardTitle className="text-base">Asuransi</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* ==== Asuransi Jiwa (AJK) ==== */}
-              <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
-                <div className="flex items-center justify-between gap-2">
+            {/* ================= TAB 3: PENGHASILAN & DSR ================= */}
+            <TabsContent value="penghasilan" className="mt-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Penghasilan & DSR</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="text-sm font-semibold">Asuransi Jiwa (AJK)</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      Kena subsidi Program CERDAS bila aktif.
+                    <Label>Gaji Pokok / Bulan</Label>
+                    <Input value={gajiPokokStr} onChange={(e) => setGajiPokokStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Checkbox id="ag" checked={adaAngsuranGaji} onCheckedChange={(c) => setAdaAngsuranGaji(!!c)} />
+                      <Label htmlFor="ag" className="cursor-pointer font-normal text-sm">Angsuran Gaji (jika ada)</Label>
                     </div>
+                    {adaAngsuranGaji && (
+                      <>
+                        <Input
+                          className="mt-2"
+                          value={angsuranGajiStr}
+                          onChange={(e) => setAngsuranGajiStr(formatCurrencyInput(e.target.value))}
+                          placeholder="0"
+                        />
+                        {dsr.selisihAG > 0 ? (
+                          <p className="text-xs text-rose-600 mt-1">
+                            Selisih AG: <b>{fmtRp(dsr.selisihAG)}</b> (angsuran gaji melebihi gaji pokok) — mengurangi DSR TTP.
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-1">Angsuran gaji masih dalam batas gaji pokok (Selisih AG = Rp 0).</p>
+                        )}
+                      </>
+                    )}
                   </div>
-                  <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
-                    <SelectTrigger className="w-56">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="manual">Pialang Asuransi</SelectItem>
-                      <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {asuransiProvider === 'manual' && (
                   <div>
-                    <Label>Premi Asuransi Jiwa (Rp) — Pialang</Label>
-                    <Input
-                      value={asuransiJiwaStr}
-                      onChange={(e) => setAsuransiJiwaStr(formatCurrencyInput(e.target.value))}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Nominal premi jiwa dari quotation Pialang Asuransi.
-                    </p>
+                    <Label>Pendapatan Lainnya (TTP)</Label>
+                    <Input value={ttpStr} onChange={(e) => setTtpStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Checkbox id="ap" checked={adaAngsuranPraja} onCheckedChange={(c) => setAdaAngsuranPraja(!!c)} />
+                      <Label htmlFor="ap" className="cursor-pointer font-normal text-sm">Angsuran Praja (jika ada)</Label>
+                    </div>
+                    {adaAngsuranPraja && (
+                      <Input
+                        className="mt-2"
+                        value={angsuranPrajaStr}
+                        onChange={(e) => setAngsuranPrajaStr(formatCurrencyInput(e.target.value))}
+                        placeholder="0"
+                      />
+                    )}
+                    {gaji > 0 && <p className="text-xs text-muted-foreground mt-2">Total penghasilan: <b>{fmtRp(gaji)}</b></p>}
                   </div>
-                )}
 
-                {asuransiProvider === 'alamin' && (
-                  <div className="space-y-3">
-                    {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
-                      <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
+                  <div className="md:col-span-2 rounded-lg border border-dashed p-3 space-y-3 bg-muted/20">
+                    <div>
+                      <Label>Kategori DSR (sesuai konfigurasi produk)</Label>
+                      <RadioGroup value={dsrBasis} onValueChange={(v) => setDsrBasis(v as DsrBasis)} className="flex flex-wrap gap-4 pt-2">
+                        {dsrRules.map((r) => (
+                          <div key={r.kode} className="flex items-center gap-2">
+                            <RadioGroupItem value={r.kode} id={`dsr-${r.kode}`} />
+                            <Label htmlFor={`dsr-${r.kode}`} className="cursor-pointer font-normal">
+                              {r.label} — maks {r.max_pct}% {r.kode === 'ttp' ? 'dari TTP' : 'dari Gaji Pokok'}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {dsrBasis === 'ttp'
+                          ? `Angsuran maksimal = ${dsr.maxPct}% × TTP − Selisih AG − AP.`
+                          : `Angsuran maksimal = ${dsr.maxPct}% dari Gaji Pokok (TTP hanya menambah basis penghasilan).`}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <MiniStat label="Basis Penghasilan" value={fmtRp(dsr.basisNilai)} />
+                      <MiniStat label="Selisih AG" value={fmtRp(dsr.selisihAG)} />
+                      <MiniStat label="Angsuran Praja" value={fmtRp(dsr.angsuranPraja)} />
+                      <MiniStat label="Angsuran Maksimal" value={fmtRp(dsr.maxAngsuran)} />
+                    </div>
+                    {dsr.aman === false && (
+                      <p className="text-xs text-rose-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Angsuran {fmtRp(angsuranPertama)} melebihi batas {fmtRp(dsr.maxAngsuran)}.
                       </p>
                     )}
-                    {alamin ? (
-                      <div className="rounded-lg border bg-background p-4 space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
-                          <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
-                          <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
-                          <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
-                          <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
-                          <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
-                          <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
-                          <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
-                        </div>
-                        {alamin.cappedToMin && (
-                          <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
+                    <Button type="button" variant="secondary" onClick={handleHitungMaxPlafon} className="w-full">
+                      <Calculator className="w-4 h-4 mr-2" /> Hitung Max Plafon
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ================= TAB 4: BIAYA & ASURANSI ================= */}
+            <TabsContent value="biaya" className="mt-4 space-y-4">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Provisi & Biaya</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="flex items-center justify-between">
+                      <span>Provisi (%)</span>
+                      {cerdasResult?.skema === 'top_up' && (
+                        <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Promo: {cerdasResult.provisiFinalPct.toFixed(2)}%
+                        </span>
+                      )}
+                    </Label>
+                    <div className="flex gap-2">
+                      {provisiMode === 'preset' && selectedProduct ? (
+                        <Select value={provisi} onValueChange={setProvisi}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0%</SelectItem>
+                            {selectedProduct.provisi_options.map((o) => (
+                              <SelectItem key={o.label} value={String(o.value)}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input type="number" step="0.01" value={provisi} onChange={(e) => setProvisi(e.target.value)} />
+                      )}
+                      <Button type="button" variant="outline" size="sm" onClick={() => setProvisiMode(provisiMode === 'preset' ? 'manual' : 'preset')}>
+                        {provisiMode === 'preset' ? 'Manual' : 'Preset'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Blokir Angsuran</Label>
+                    <Select value={blokir} onValueChange={setBlokir}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Tidak Ada</SelectItem>
+                        <SelectItem value="1">1× Angsuran</SelectItem>
+                        <SelectItem value="2">2× Angsuran</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Biaya Lain (dapat ditambah / dihapus)</Label>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setBiayaRows([...biayaRows, { label: '', nominal: 0, nominalStr: '' }])}>
+                        <Plus className="w-4 h-4 mr-1" /> Tambah Biaya
+                      </Button>
+                    </div>
+                    {biayaRows.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Belum ada biaya. Preset biaya dapat diatur di Konfigurasi Kalkulator → Produk.</p>
+                    )}
+                    {biayaRows.map((b, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <Input
+                          className="flex-1"
+                          placeholder="Nama biaya (mis. Biaya Notaris)"
+                          value={b.label}
+                          onChange={(e) => updateBiaya(i, { label: e.target.value })}
+                        />
+                        <Input
+                          className="w-48"
+                          placeholder="0"
+                          value={b.nominalStr}
+                          onChange={(e) => updateBiaya(i, { nominalStr: formatCurrencyInput(e.target.value) })}
+                        />
+                        <Button type="button" size="icon" variant="ghost" onClick={() => setBiayaRows(biayaRows.filter((_, idx) => idx !== i))}>
+                          <X className="w-4 h-4 text-rose-600" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ASURANSI */}
+              <Card>
+                <CardHeader><CardTitle className="text-base">Asuransi</CardTitle></CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div>
+                        <div className="text-sm font-semibold">Asuransi Jiwa (AJK)</div>
+                        <div className="text-[11px] text-muted-foreground">Kena subsidi Program Promo bila aktif.</div>
+                      </div>
+                      <Select value={asuransiProvider} onValueChange={(v) => setAsuransiProvider(v as AsuransiProvider)}>
+                        <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="manual">Pialang Asuransi</SelectItem>
+                          <SelectItem value="alamin">Al-Amin (AT TA'MIN UM)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {asuransiProvider === 'manual' && (
+                      <div>
+                        <Label>Premi Asuransi Jiwa (Rp) — Pialang</Label>
+                        <Input value={asuransiJiwaStr} onChange={(e) => setAsuransiJiwaStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                        <p className="text-xs text-muted-foreground mt-1">Nominal premi jiwa dari quotation Pialang Asuransi.</p>
+                      </div>
+                    )}
+
+                    {asuransiProvider === 'alamin' && (
+                      <div className="space-y-3">
+                        {(!tanggalLahir || plafon <= 0 || tenorBulan <= 0) && (
+                          <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                            <AlertTriangle className="w-4 h-4" /> Isi tanggal lahir, plafon, dan tenor untuk menghitung premi Al-Amin.
+                          </p>
+                        )}
+                        {alamin ? (
+                          <div className="rounded-lg border bg-background p-4 space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold">Premi Gross (yang masuk potongan)</span>
+                              <span className="font-bold text-lg">{fmtRp(alamin.premiGross)}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                              <span>Tarif per Rp 1.000 UP</span><span className="text-right text-foreground">{alamin.rate.toFixed(4)}</span>
+                              <span>Umur saat akad</span><span className="text-right text-foreground">{umur} tahun</span>
+                              <span>Ujroh Gross (10%)</span><span className="text-right">{fmtRp(alamin.ujrohGross)}</span>
+                              <span>Pajak Ujroh (2%)</span><span className="text-right">{fmtRp(alamin.pajak)}</span>
+                              <span>Ujroh Net (feebase bank)</span><span className="text-right text-emerald-600 font-medium">{fmtRp(alamin.ujrohNet)}</span>
+                              <span>{'Premi Net (bank -> Al-Amin)'}</span><span className="text-right">{fmtRp(alamin.premiNet)}</span>
+                            </div>
+                            {alamin.cappedToMin && (
+                              <p className="text-xs text-amber-600">Premi di-cap minimum Rp {fmtNumber(alaminConfig?.premi_min ?? 5000)}.</p>
+                            )}
+                          </div>
+                        ) : (
+                          tanggalLahir && plafon > 0 && tenorBulan > 0 && (
+                            <p className="text-sm text-rose-600 flex items-center gap-1">
+                              <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
+                            </p>
+                          )
+                        )}
+                        {underwriting && (
+                          <div className="flex items-start gap-2">
+                            <Badge variant={uwBadgeVariant as any} className="gap-1">
+                              <UwIcon className="w-3 h-3" />
+                              {underwriting.kode}
+                            </Badge>
+                            <div className="text-sm">
+                              <div className="font-medium">{underwriting.keterangan}</div>
+                              <div className="text-xs text-muted-foreground">
+                                x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
+                                {!underwriting.xPlusNOk && ' — melebihi batas!'}
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    ) : (
-                      tanggalLahir && plafon > 0 && tenorBulan > 0 && (
-                        <p className="text-sm text-rose-600 flex items-center gap-1">
-                          <AlertTriangle className="w-4 h-4" /> Tarif tidak ditemukan untuk umur {umur} & tenor {tenorBulan} bulan.
-                        </p>
-                      )
-                    )}
-                    {underwriting && (
-                      <div className="flex items-start gap-2">
-                        <Badge variant={uwBadgeVariant as any} className="gap-1">
-                          <UwIcon className="w-3 h-3" />
-                          {underwriting.kode}
-                        </Badge>
-                        <div className="text-sm">
-                          <div className="font-medium">{underwriting.keterangan}</div>
-                          <div className="text-xs text-muted-foreground">
-                            x+n = {underwriting.xPlusN} (batas {underwriting.xPlusNMax})
-                            {!underwriting.xPlusNOk && ' — melebihi batas!'}
-                          </div>
-                        </div>
-                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* ==== Asuransi Kredit ==== */}
-              <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
-                <div>
-                  <div className="text-sm font-semibold">Asuransi Kredit — Pialang Asuransi</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    Nominal diisi manual. <strong>Tidak</strong> mendapatkan subsidi Program CERDAS.
+                  <div className="rounded-lg border p-4 space-y-3 bg-muted/10">
+                    <div>
+                      <div className="text-sm font-semibold">Asuransi Kredit — Pialang Asuransi</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Nominal diisi manual. <strong>Tidak</strong> mendapatkan subsidi Program Promo.
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Premi Asuransi Kredit (Rp)</Label>
+                      <Input value={asuransiKreditStr} onChange={(e) => setAsuransiKreditStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <Label>Premi Asuransi Kredit (Rp)</Label>
-                  <Input
-                    value={asuransiKreditStr}
-                    onChange={(e) => setAsuransiKreditStr(formatCurrencyInput(e.target.value))}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* RESULT */}
         <div className="space-y-4">
-          <Card className="sticky top-20">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center justify-between">
+          <Card className="xl:sticky xl:top-20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
                 Ringkasan
-                {result && gaji > 0 && (
-                  <Badge className={`${dsrColor} text-white`}>DSR {dsrPct.toFixed(1)}% · {dsrBasis === 'ttp' ? 'TTP' : 'GAJI'}</Badge>
+                {result && dsr.basisNilai > 0 && (
+                  <Badge className={`${dsrColor} text-white`}>DSR {dsr.dsrPct.toFixed(1)}% · {dsrBasis.toUpperCase()}</Badge>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+            <CardContent className="space-y-2 text-sm max-h-[calc(100vh-12rem)] overflow-auto">
               {!result && <p className="text-muted-foreground">Isi plafon & tenor untuk melihat simulasi.</p>}
               {result && potongan && (
                 <>
@@ -1545,11 +1508,9 @@ const KalkulatorPage: React.FC = () => {
                   {cerdasResult && (
                     <div className="flex justify-between items-center -mt-1">
                       <span className="text-muted-foreground flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500" /> CERDAS
+                        <Sparkles className="w-3 h-3 text-amber-500" /> {promoNama}
                       </span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {cerdasResult.skemaLabel}
-                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">{cerdasResult.skemaLabel}</Badge>
                     </div>
                   )}
                   <Row label="Plafon" value={fmtRp(plafon)} />
@@ -1557,19 +1518,20 @@ const KalkulatorPage: React.FC = () => {
                   <Row label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} />
                   <hr className="my-2" />
                   <Row label="Angsuran Pertama" value={fmtRp(result.summary.angsuranPertama)} strong />
-                  {skema !== 'anuitas' && (
-                    <Row label="Angsuran Terakhir" value={fmtRp(result.summary.angsuranTerakhir)} />
-                  )}
+                  {skema !== 'anuitas' && <Row label="Angsuran Terakhir" value={fmtRp(result.summary.angsuranTerakhir)} />}
                   <Row label="Total Angsuran" value={fmtRp(result.summary.totalAngsuran)} />
                   <Row label="Total Bunga" value={fmtRp(result.summary.totalBunga)} />
+                  <hr className="my-2" />
+                  <div className="text-xs uppercase text-muted-foreground font-semibold">Kapasitas Angsuran (DSR)</div>
+                  <Row label={dsr.label} value={fmtRp(dsr.maxAngsuran)} />
+                  {dsr.selisihAG > 0 && <Row label="Selisih AG (pengurang)" value={`− ${fmtRp(dsr.selisihAG)}`} />}
+                  {dsr.angsuranPraja > 0 && <Row label="Angsuran Praja (pengurang)" value={`− ${fmtRp(dsr.angsuranPraja)}`} />}
                   <hr className="my-2" />
                   <div className="text-xs uppercase text-muted-foreground font-semibold">Potongan di Muka</div>
                   <Row
                     label={`Asuransi Jiwa${asuransiProvider === 'alamin' ? ' (Al-Amin)' : ' (Pialang)'}${
                       cerdasResult && cerdasResult.skema !== 'top_up'
-                        ? cerdasResult.selisihDebitur === 0
-                          ? ' — GRATIS'
-                          : ' — selisih'
+                        ? cerdasResult.selisihDebitur === 0 ? ' — GRATIS' : ' — selisih'
                         : ''
                     }`}
                     value={fmtRp(asuransiJiwaBeban)}
@@ -1590,8 +1552,9 @@ const KalkulatorPage: React.FC = () => {
                   <Row label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
                   <Row label="Total Asuransi" value={fmtRp(potongan.asuransi)} />
                   <Row label="Provisi" value={fmtRp(potongan.provisi)} />
-                  <Row label="Notaris" value={fmtRp(potongan.notaris)} />
-                  <Row label="Perikatan" value={fmtRp(potongan.perikatan)} />
+                  {potongan.biaya.map((b, i) => (
+                    <Row key={i} label={b.label} value={fmtRp(b.nominal)} />
+                  ))}
                   <Row label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
                   <Row label="Total Potongan" value={fmtRp(potongan.total)} strong />
                   {pelunasan && (
@@ -1635,9 +1598,7 @@ const KalkulatorPage: React.FC = () => {
       {/* AMORT TABLE */}
       {result && (
         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base">Tabel Angsuran ({result.rows.length} bulan)</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Tabel Angsuran ({result.rows.length} bulan)</CardTitle></CardHeader>
           <CardContent>
             <div className="max-h-[500px] overflow-auto">
               <Table>
@@ -1669,7 +1630,7 @@ const KalkulatorPage: React.FC = () => {
         </Card>
       )}
 
-      {/* HIDDEN HD SUMMARY CARD — dipakai untuk export JPG (di-render off-screen) */}
+      {/* HIDDEN HD SUMMARY CARD — dipakai untuk export JPG */}
       <div style={{ position: 'fixed', left: '-10000px', top: 0, pointerEvents: 'none' }}>
         {result && potongan && (
           <div
@@ -1697,13 +1658,11 @@ const KalkulatorPage: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
               <JRow label="Skema" value={skema.toUpperCase()} />
-              {cerdasResult && (
-                <JRow label="✨ CERDAS" value={cerdasResult.skemaLabel} accent="#d97706" />
-              )}
+              {cerdasResult && <JRow label={`✨ ${promoNama}`} value={cerdasResult.skemaLabel} accent="#d97706" />}
               <JRow label="Plafon" value={fmtRp(plafon)} />
               <JRow label="Tenor" value={`${tenorBulan} bulan`} />
               <JRow label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} accent={cerdasResult ? '#d97706' : undefined} />
-              {dsrBasisNilai > 0 && <JRow label={`DSR (${dsrBasis === 'ttp' ? 'TTP' : 'GAJI'})`} value={`${dsrPct.toFixed(1)}%`} />}
+              {dsr.basisNilai > 0 && <JRow label={`DSR (${dsrBasis.toUpperCase()})`} value={`${dsr.dsrPct.toFixed(1)}%`} />}
             </div>
 
             {gaji > 0 && (
@@ -1712,8 +1671,13 @@ const KalkulatorPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: 13 }}>
                   <div><div style={{ color: '#64748b', fontSize: 11 }}>Gaji Pokok</div><div style={{ fontWeight: 600 }}>{fmtRp(gajiPokok)}</div></div>
                   <div><div style={{ color: '#64748b', fontSize: 11 }}>TTP / Lainnya</div><div style={{ fontWeight: 600 }}>{fmtRp(ttp)}</div></div>
-                  <div><div style={{ color: '#64748b', fontSize: 11 }}>Total</div><div style={{ fontWeight: 700, color: '#003f7f' }}>{fmtRp(gaji)}</div></div>
+                  <div><div style={{ color: '#64748b', fontSize: 11 }}>Angsuran Maks (DSR)</div><div style={{ fontWeight: 700, color: '#003f7f' }}>{fmtRp(dsr.maxAngsuran)}</div></div>
                 </div>
+                {(dsr.selisihAG > 0 || dsr.angsuranPraja > 0) && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: '#64748b' }}>
+                    Pengurang DSR: Selisih AG {fmtRp(dsr.selisihAG)} · AP {fmtRp(dsr.angsuranPraja)}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1739,8 +1703,9 @@ const KalkulatorPage: React.FC = () => {
                   )}
                   <JTr label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
                   <JTr label="Provisi" value={fmtRp(potongan.provisi)} />
-                  <JTr label="Notaris" value={fmtRp(potongan.notaris)} />
-                  <JTr label="Perikatan" value={fmtRp(potongan.perikatan)} />
+                  {potongan.biaya.map((b, i) => (
+                    <JTr key={i} label={b.label} value={fmtRp(b.nominal)} />
+                  ))}
                   <JTr label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
                   <JTr label="Total Potongan" value={fmtRp(potongan.total)} bold />
                 </tbody>
@@ -1764,13 +1729,10 @@ const KalkulatorPage: React.FC = () => {
               <div>
                 <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.9 }}>Dana Diterima</div>
                 <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>{fmtRp(danaBersih)}</div>
-                {pelunasan && (
-                  <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>setelah pelunasan {fmtRp(pelunasan.totalPelunasan)}</div>
-                )}
+                {pelunasan && <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>setelah pelunasan {fmtRp(pelunasan.totalPelunasan)}</div>}
               </div>
               <div style={{ fontSize: 40 }}>💰</div>
             </div>
-
 
             <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
               <span>Simulasi · bukan dokumen perjanjian. Nilai dapat berubah sewaktu-waktu.</span>
@@ -1783,17 +1745,20 @@ const KalkulatorPage: React.FC = () => {
   );
 };
 
+const MiniStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="rounded-md border bg-background p-2">
+    <div className="text-xs text-muted-foreground">{label}</div>
+    <div className="font-semibold">{value}</div>
+  </div>
+);
+
 const Row: React.FC<{ label: string; value: string; strong?: boolean; highlight?: boolean }> = ({
   label,
   value,
   strong,
   highlight,
 }) => (
-  <div
-    className={`flex justify-between items-center ${
-      highlight ? 'bg-primary/10 px-2 py-1 rounded' : ''
-    }`}
-  >
+  <div className={`flex justify-between items-center gap-3 ${highlight ? 'bg-primary/10 px-2 py-1 rounded' : ''}`}>
     <span className="text-muted-foreground">{label}</span>
     <span className={strong ? 'font-semibold' : ''}>{value}</span>
   </div>

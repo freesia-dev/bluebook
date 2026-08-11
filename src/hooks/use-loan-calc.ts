@@ -1,11 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { LoanSkema, AmortRow, CalcSummary, PotonganResult } from '@/lib/loan-calc';
+import type { LoanSkema, AmortRow, CalcSummary, PotonganResult, BiayaItem, DsrBasis } from '@/lib/loan-calc';
 
 export interface RateOption {
   label: string;
   value: number;
 }
+
+export interface DsrRule {
+  kode: DsrBasis;
+  label: string;
+  max_pct: number;
+}
+
+export const DSR_RULES_DEFAULT: DsrRule[] = [
+  { kode: 'gaji', label: 'GAJI', max_pct: 100 },
+  { kode: 'ttp', label: 'TTP', max_pct: 30 },
+];
 
 export interface LoanProduct {
   id: string;
@@ -15,6 +26,8 @@ export interface LoanProduct {
   bunga_options: RateOption[];
   asuransi_options: RateOption[];
   provisi_options: RateOption[];
+  biaya_items: BiayaItem[];
+  dsr_rules: DsrRule[];
   biaya_notaris: number;
   biaya_perikatan: number;
   blokir_angsuran: number;
@@ -23,11 +36,20 @@ export interface LoanProduct {
   asuransi_provider_default?: string;
 }
 
+export interface LoanAO {
+  id: string;
+  nama: string;
+  jabatan: string | null;
+  is_active: boolean;
+  urutan: number;
+}
+
 export interface PensionRule {
   id: string;
   pilihan_karir: string;
   usia_pensiun: number;
 }
+
 
 export interface LoanSimulationRow {
   id: string;
@@ -56,7 +78,13 @@ export interface LoanSimulationRow {
   provisi_pct: number;
   biaya_notaris: number;
   biaya_perikatan: number;
+  biaya_items?: BiayaItem[] | null;
+  angsuran_gaji?: number | null;
+  angsuran_praja?: number | null;
+  dsr_basis?: DsrBasis | null;
+  dsr_max_pct?: number | null;
   blokir_angsuran: number;
+
   ada_pelunasan: boolean;
   pelunasan_bulan_ke: number | null;
   outstanding_pokok: number | null;
@@ -362,3 +390,45 @@ export const PILIHAN_KARIR_DEFAULT = [
   'PPPK Paruh Waktu',
   'Pensiunan',
 ];
+
+// ============ DAFTAR AO ============
+export const useLoanAOs = (activeOnly = true) =>
+  useQuery({
+    queryKey: ['loan-ao', activeOnly],
+    queryFn: async () => {
+      let q = (supabase as any).from('loan_ao').select('*').order('urutan').order('nama');
+      if (activeOnly) q = q.eq('is_active', true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as LoanAO[];
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+export const useUpsertLoanAO = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (a: Partial<LoanAO> & { nama: string }) => {
+      const { id, ...rest } = a;
+      if (id) {
+        const { error } = await (supabase as any).from('loan_ao').update(rest).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from('loan_ao').insert(rest);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-ao'] }),
+  });
+};
+
+export const useDeleteLoanAO = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('loan_ao').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-ao'] }),
+  });
+};

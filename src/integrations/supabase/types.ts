@@ -855,15 +855,47 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_ao: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          jabatan: string | null
+          nama: string
+          updated_at: string
+          urutan: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          jabatan?: string | null
+          nama: string
+          updated_at?: string
+          urutan?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          jabatan?: string | null
+          nama?: string
+          updated_at?: string
+          urutan?: number
+        }
+        Relationships: []
+      }
       loan_product_config: {
         Row: {
           asuransi_options: Json
           asuransi_provider_default: string
+          biaya_items: Json
           biaya_notaris: number
           biaya_perikatan: number
           blokir_angsuran: number
           bunga_options: Json
           created_at: string
+          dsr_rules: Json
           id: string
           is_active: boolean
           max_tenor_bulan: number
@@ -876,11 +908,13 @@ export type Database = {
         Insert: {
           asuransi_options?: Json
           asuransi_provider_default?: string
+          biaya_items?: Json
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
           bunga_options?: Json
           created_at?: string
+          dsr_rules?: Json
           id?: string
           is_active?: boolean
           max_tenor_bulan?: number
@@ -893,11 +927,13 @@ export type Database = {
         Update: {
           asuransi_options?: Json
           asuransi_provider_default?: string
+          biaya_items?: Json
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
           bunga_options?: Json
           created_at?: string
+          dsr_rules?: Json
           id?: string
           is_active?: boolean
           max_tenor_bulan?: number
@@ -963,13 +999,100 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_promo_program: {
+        Row: {
+          aktif: boolean
+          bunga_debitur_baru: number
+          bunga_take_over: number
+          bunga_top_up: number
+          cap_tier_1_baru: number
+          cap_tier_1_takeover: number
+          cap_tier_2_baru: number
+          cap_tier_2_takeover: number
+          cap_tier_3_baru: number
+          cap_tier_3_takeover: number
+          cap_tier_4_baru: number
+          cap_tier_4_takeover: number
+          created_at: string
+          deskripsi: string | null
+          diskon_provisi_top_up_pct: number
+          id: string
+          kode: string
+          nama_program: string
+          periode_mulai: string
+          periode_selesai: string
+          plafon_tier_1_max: number
+          plafon_tier_2_max: number
+          plafon_tier_3_max: number
+          updated_at: string
+          urutan: number
+        }
+        Insert: {
+          aktif?: boolean
+          bunga_debitur_baru?: number
+          bunga_take_over?: number
+          bunga_top_up?: number
+          cap_tier_1_baru?: number
+          cap_tier_1_takeover?: number
+          cap_tier_2_baru?: number
+          cap_tier_2_takeover?: number
+          cap_tier_3_baru?: number
+          cap_tier_3_takeover?: number
+          cap_tier_4_baru?: number
+          cap_tier_4_takeover?: number
+          created_at?: string
+          deskripsi?: string | null
+          diskon_provisi_top_up_pct?: number
+          id?: string
+          kode?: string
+          nama_program: string
+          periode_mulai: string
+          periode_selesai: string
+          plafon_tier_1_max?: number
+          plafon_tier_2_max?: number
+          plafon_tier_3_max?: number
+          updated_at?: string
+          urutan?: number
+        }
+        Update: {
+          aktif?: boolean
+          bunga_debitur_baru?: number
+          bunga_take_over?: number
+          bunga_top_up?: number
+          cap_tier_1_baru?: number
+          cap_tier_1_takeover?: number
+          cap_tier_2_baru?: number
+          cap_tier_2_takeover?: number
+          cap_tier_3_baru?: number
+          cap_tier_3_takeover?: number
+          cap_tier_4_baru?: number
+          cap_tier_4_takeover?: number
+          created_at?: string
+          deskripsi?: string | null
+          diskon_provisi_top_up_pct?: number
+          id?: string
+          kode?: string
+          nama_program?: string
+          periode_mulai?: string
+          periode_selesai?: string
+          plafon_tier_1_max?: number
+          plafon_tier_2_max?: number
+          plafon_tier_3_max?: number
+          updated_at?: string
+          urutan?: number
+        }
+        Relationships: []
+      }
       loan_simulation: {
         Row: {
           ada_pelunasan: boolean
+          angsuran_gaji: number
+          angsuran_praja: number
           asuransi_jiwa_beban: number | null
           asuransi_nominal: number
           asuransi_pct: number
           asuransi_provider: string
+          biaya_items: Json
           biaya_notaris: number
           biaya_perikatan: number
           blokir_angsuran: number
@@ -981,6 +1104,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           created_by_nama: string | null
+          dsr_basis: string
+          dsr_max_pct: number
           gaji: number
           gaji_pokok: number | null
           hasil_ringkasan: Json | null
@@ -1014,10 +1139,13 @@ export type Database = {
         }
         Insert: {
           ada_pelunasan?: boolean
+          angsuran_gaji?: number
+          angsuran_praja?: number
           asuransi_jiwa_beban?: number | null
           asuransi_nominal?: number
           asuransi_pct?: number
           asuransi_provider?: string
+          biaya_items?: Json
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
@@ -1029,6 +1157,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           created_by_nama?: string | null
+          dsr_basis?: string
+          dsr_max_pct?: number
           gaji?: number
           gaji_pokok?: number | null
           hasil_ringkasan?: Json | null
@@ -1062,10 +1192,13 @@ export type Database = {
         }
         Update: {
           ada_pelunasan?: boolean
+          angsuran_gaji?: number
+          angsuran_praja?: number
           asuransi_jiwa_beban?: number | null
           asuransi_nominal?: number
           asuransi_pct?: number
           asuransi_provider?: string
+          biaya_items?: Json
           biaya_notaris?: number
           biaya_perikatan?: number
           blokir_angsuran?: number
@@ -1077,6 +1210,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           created_by_nama?: string | null
+          dsr_basis?: string
+          dsr_max_pct?: number
           gaji?: number
           gaji_pokok?: number | null
           hasil_ringkasan?: Json | null

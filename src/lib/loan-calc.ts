@@ -115,12 +115,21 @@ export function calcAmortization(input: CalcInput): CalcResult {
 
 // Potongan di muka. `asuransiNominal` adalah nominal premi (Rp) yang sudah dihitung
 // di luar (manual input atau hasil Al-Amin), bukan persen.
+// Biaya lain-lain kini dinamis (bisa ditambah/hapus di konfigurasi produk).
+export interface BiayaItem {
+  label: string;
+  nominal: number;
+}
+
 export interface PotonganInput {
   plafon: number;
   asuransiNominal: number;
   provisiPct: number; // % dari plafon
-  biayaNotaris: number;
-  biayaPerikatan: number;
+  biayaItems?: BiayaItem[];
+  /** @deprecated pakai biayaItems */
+  biayaNotaris?: number;
+  /** @deprecated pakai biayaItems */
+  biayaPerikatan?: number;
   blokirAngsuran: number; // 0/1/2
   angsuranPertama: number;
 }
@@ -128,7 +137,11 @@ export interface PotonganInput {
 export interface PotonganResult {
   asuransi: number;
   provisi: number;
+  biaya: BiayaItem[];
+  biayaTotal: number;
+  /** kompatibilitas data lama */
   notaris: number;
+  /** kompatibilitas data lama */
   perikatan: number;
   blokir: number;
   total: number;
@@ -138,13 +151,26 @@ export interface PotonganResult {
 export function calcPotongan(p: PotonganInput): PotonganResult {
   const asuransi = Math.max(0, Math.round(p.asuransiNominal || 0));
   const provisi = round((p.provisiPct / 100) * p.plafon);
-  const notaris = p.biayaNotaris || 0;
-  const perikatan = p.biayaPerikatan || 0;
+
+  const legacy: BiayaItem[] = [];
+  if (p.biayaNotaris) legacy.push({ label: 'Biaya Notaris', nominal: p.biayaNotaris });
+  if (p.biayaPerikatan) legacy.push({ label: 'Biaya Perikatan', nominal: p.biayaPerikatan });
+
+  const biaya = (p.biayaItems && p.biayaItems.length ? p.biayaItems : legacy)
+    .filter((b) => b && (b.label || b.nominal))
+    .map((b) => ({ label: b.label || 'Biaya', nominal: Math.max(0, Math.round(b.nominal || 0)) }));
+
+  const biayaTotal = biaya.reduce((s, b) => s + b.nominal, 0);
+  const notaris = biaya.find((b) => /notaris/i.test(b.label))?.nominal ?? 0;
+  const perikatan = biaya.find((b) => /perikatan|apht|fidusia/i.test(b.label))?.nominal ?? 0;
+
   const blokir = round((p.blokirAngsuran || 0) * p.angsuranPertama);
-  const total = asuransi + provisi + notaris + perikatan + blokir;
+  const total = asuransi + provisi + biayaTotal + blokir;
   return {
     asuransi,
     provisi,
+    biaya,
+    biayaTotal,
     notaris,
     perikatan,
     blokir,
@@ -152,6 +178,70 @@ export function calcPotongan(p: PotonganInput): PotonganResult {
     danaDiterima: p.plafon - total,
   };
 }
+
+// ================= DSR =================
+export type DsrBasis = 'gaji' | 'ttp';
+
+export interface DsrInput {
+  basis: DsrBasis;
+  gajiPokok: number;
+  ttp: number;
+  /** persentase maksimal DSR sesuai konfigurasi produk (gaji default 100, ttp default 30) */
+  maxPct: number;
+  /** nilai Angsuran Gaji (jika ada) */
+  angsuranGaji?: number;
+  /** nilai Angsuran Praja (AP, jika ada) */
+  angsuranPraja?: number;
+  angsuranPertama?: number;
+}
+
+export interface DsrResult {
+  basis: DsrBasis;
+  basisNilai: number;
+  maxPct: number;
+  /** selisih AG = angsuran gaji − gaji pokok (hanya jika positif) */
+  selisihAG: number;
+  angsuranPraja: number;
+  maxAngsuran: number;
+  dsrPct: number;
+  aman: boolean | null;
+  label: string;
+}
+
+export function calcDsr(i: DsrInput): DsrResult {
+  const gajiPokok = Math.max(0, i.gajiPokok || 0);
+  const ttp = Math.max(0, i.ttp || 0);
+  const ag = Math.max(0, i.angsuranGaji || 0);
+  const ap = Math.max(0, i.angsuranPraja || 0);
+  const selisihAG = Math.max(0, ag - gajiPokok);
+  const angsuran = Math.max(0, i.angsuranPertama || 0);
+
+  let basisNilai: number;
+  let maxAngsuran: number;
+  if (i.basis === 'ttp') {
+    basisNilai = ttp;
+    maxAngsuran = Math.max(0, Math.round((ttp * (i.maxPct || 30)) / 100) - selisihAG - ap);
+  } else {
+    basisNilai = gajiPokok + ttp;
+    maxAngsuran = Math.round((gajiPokok * (i.maxPct || 100)) / 100);
+  }
+
+  return {
+    basis: i.basis,
+    basisNilai,
+    maxPct: i.maxPct,
+    selisihAG,
+    angsuranPraja: ap,
+    maxAngsuran,
+    dsrPct: basisNilai > 0 && angsuran > 0 ? (angsuran / basisNilai) * 100 : 0,
+    aman: maxAngsuran > 0 && angsuran > 0 ? angsuran <= maxAngsuran : null,
+    label:
+      i.basis === 'ttp'
+        ? `TTP (maks ${i.maxPct || 30}% TTP${selisihAG || ap ? ' − AG/AP' : ''})`
+        : `GAJI (maks ${i.maxPct || 100}% Gaji Pokok)`,
+  };
+}
+
 
 // Pelunasan dipercepat di bulan ke-N
 export function calcPelunasan(rows: AmortRow[], bulanKe: number) {
