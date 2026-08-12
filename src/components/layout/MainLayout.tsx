@@ -16,6 +16,9 @@ interface MainLayoutProps {
   children: ReactNode;
 }
 
+/** Sidebar menutup otomatis setelah 5 detik tanpa interaksi (desktop). */
+const AUTO_COLLAPSE_MS = 5000;
+
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isAuthenticated, isDemo, userRole } = useAuth();
   const location = useLocation();
@@ -26,6 +29,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
     return false;
   });
+  const [sidebarHovered, setSidebarHovered] = useState(false);
 
   // Update sidebar state on window resize
   useEffect(() => {
@@ -38,6 +42,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Auto-collapse: tutup sidebar 5 detik setelah dibuka jika kursor tidak berada di atasnya
+  useEffect(() => {
+    if (!sidebarOpen || sidebarHovered) return;
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    const t = setTimeout(() => setSidebarOpen(false), AUTO_COLLAPSE_MS);
+    return () => clearTimeout(t);
+  }, [sidebarOpen, sidebarHovered, location.pathname]);
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -49,7 +61,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onHoverChange={setSidebarHovered}
+      />
       
       {/* Header with menu button */}
       <header className={cn(
