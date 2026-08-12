@@ -62,8 +62,9 @@ const PipelineKreditPage = lazy(() => import("./pages/kalkulator/PipelinePage"))
 const ExecutiveDashboardPage = lazy(() => import("./pages/executive/ExecutiveDashboardPage"));
 
 const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
-const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
-const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPage"));
+const KalkulatorConfigPage = lazy(() => import("./pages/konfigurasi/KalkulatorConfigPage"));
+const DaftarAOPage = lazy(() => import("./pages/konfigurasi/DaftarAOPage"));
+const SecurityDashboardPage = lazy(() => import("./pages/security/SecurityDashboardPage"));
 const KalkulatorPromoPage = lazy(() => import("./pages/konfigurasi/KalkulatorPromoPage"));
 const CIFPage = lazy(() => import("./pages/cs/CIFPage"));
 const RekeningPage = lazy(() => import("./pages/cs/RekeningPage"));
@@ -87,6 +88,7 @@ const LoginLoader = () => (
 const DashboardRouter = () => {
   const { userRole } = useAuth();
   if (userRole === 'pemimpin') return <Navigate to="/executive" replace />;
+  if (userRole === 'security' || userRole === 'team_leader_security') return <Navigate to="/security/dashboard" replace />;
   return <Dashboard />;
 };
 
@@ -244,6 +246,9 @@ const App = () => (
               <Suspense fallback={<LoginLoader />}><InstallApp /></Suspense>
             } />
             {/* Log Security */}
+            <Route path="/security/dashboard" element={
+              <Suspense fallback={<DashboardSkeleton />}><SecurityDashboardPage /></Suspense>
+            } />
             <Route path="/security/log" element={
               <Suspense fallback={<TablePageSkeleton />}><LogSecurityPage /></Suspense>
             } />
@@ -279,14 +284,20 @@ const App = () => (
               <Suspense fallback={<GenericPageSkeleton />}><PipelineKreditPage /></Suspense>
             } />
 
+            <Route path="/konfigurasi/kalkulator" element={
+              <Suspense fallback={<TablePageSkeleton />}><KalkulatorConfigPage /></Suspense>
+            } />
+            <Route path="/konfigurasi/daftar-ao" element={
+              <Suspense fallback={<TablePageSkeleton />}><DaftarAOPage /></Suspense>
+            } />
             <Route path="/konfigurasi/produk-kalkulator" element={
-              <Suspense fallback={<TablePageSkeleton />}><ProdukKalkulatorPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=produk" replace />
             } />
             <Route path="/konfigurasi/usia-pensiun" element={
-              <Suspense fallback={<TablePageSkeleton />}><UsiaPensiunPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=pensiun" replace />
             } />
             <Route path="/konfigurasi/program-cerdas" element={
-              <Suspense fallback={<TablePageSkeleton />}><ProgramCerdasPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=promo" replace />
             } />
             <Route path="/konfigurasi/promo-kalkulator" element={
               <Suspense fallback={<TablePageSkeleton />}><KalkulatorPromoPage /></Suspense>

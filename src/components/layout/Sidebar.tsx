@@ -312,9 +312,11 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Dipanggil saat kursor masuk/keluar sidebar (dipakai untuk auto-collapse). */
+  onHoverChange?: (hovered: boolean) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange }) => {
   const location = useLocation();
   const { userName, userRole, logout, isAdmin, permissions } = useAuth();
   const isMobile = useIsMobile();
@@ -345,9 +347,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {
             label: 'Konfigurasi',
             children: [
-              { label: 'Produk Kalkulator', href: '/konfigurasi/produk-kalkulator' },
-              { label: 'Usia Pensiun', href: '/konfigurasi/usia-pensiun' },
-              { label: 'Program Kalkulator', href: '/konfigurasi/promo-kalkulator' },
+              { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
+              { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
+              { label: 'Program Promo', href: '/konfigurasi/kalkulator?tab=promo' },
+              { label: 'Promo Umum (lama)', href: '/konfigurasi/promo-kalkulator' },
             ],
           },
         ]
@@ -414,6 +417,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
+        { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
+        { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
       ]
@@ -437,7 +442,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
       
       {/* Sidebar - expanded (w-64) atau collapsed rail (w-[76px]) di desktop */}
-      <aside className={cn(
+      <aside
+        onMouseEnter={() => onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
+        className={cn(
         "fixed left-0 top-0 z-50 h-screen sidebar-glass",
         "transition-[width,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:w-[76px] lg:translate-x-0"
@@ -486,6 +494,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 label="Executive Dashboard"
                 href="/executive"
                 isActive={location.pathname === '/executive'}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
+              />
+            )}
+
+            {permissions.securityDashboard && (
+              <NavItem
+                icon={LayoutDashboard}
+                label="Dashboard Security"
+                href="/security/dashboard"
+                isActive={location.pathname === '/security/dashboard'}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -595,7 +614,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   icon={Shield} 
                   label="Log Security" 
                   href="/security/log" 
-                  isActive={location.pathname.startsWith('/security')} 
+                  isActive={location.pathname.startsWith('/security/log')} 
                   collapsed={collapsed}
                   onNavigate={navOnNavigate}
                 />

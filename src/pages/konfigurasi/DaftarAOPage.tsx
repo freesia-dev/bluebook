@@ -13,7 +13,7 @@ import { useLoanAOs, useUpsertLoanAO, useDeleteLoanAO, type LoanAO } from '@/hoo
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
-const DaftarAOPage: React.FC = () => {
+export const DaftarAOSection: React.FC = () => {
   const { data = [], isLoading } = useLoanAOs(false);
   const upsert = useUpsertLoanAO();
   const del = useDeleteLoanAO();
@@ -48,16 +48,12 @@ const DaftarAOPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <PageHeader
-        title="Daftar AO"
-        description="Nama Account Officer yang tampil sebagai pilihan dropdown di kalkulator kredit"
-        actions={
-          <Button onClick={() => { setForm({ nama: '', jabatan: '', is_active: true, urutan: 0 }); setOpen(true); }}>
-            <Plus className="w-4 h-4 mr-2" /> Tambah AO
-          </Button>
-        }
-      />
+    <>
+      <div className="flex justify-end mb-3">
+        <Button onClick={() => { setForm({ nama: '', jabatan: '', is_active: true, urutan: 0 }); setOpen(true); }}>
+          <Plus className="w-4 h-4 mr-2" /> Tambah AO
+        </Button>
+      </div>
       <Card>
         <CardContent className="pt-6">
           <Table>
@@ -127,8 +123,18 @@ const DaftarAOPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 };
+
+const DaftarAOPage: React.FC = () => (
+  <MainLayout>
+    <PageHeader
+      title="Daftar AO"
+      description="Nama Account Officer yang tampil sebagai pilihan dropdown di kalkulator kredit"
+    />
+    <DaftarAOSection />
+  </MainLayout>
+);
 
 export default DaftarAOPage;

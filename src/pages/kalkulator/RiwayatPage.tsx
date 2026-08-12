@@ -52,6 +52,20 @@ const getInsuranceBreakdown = (s: LoanSimulationRow) => {
   return { premiJiwaAktual, subsidiBank, asuransiJiwaBeban, premiKredit, totalAsuransi };
 };
 
+const getBiayaList = (s: LoanSimulationRow): { label: string; nominal: number }[] => {
+  const r: any = s.hasil_ringkasan || {};
+  const fromResult: any[] = Array.isArray(r.biaya) ? r.biaya : [];
+  const fromRow: any[] = Array.isArray((s as any).biaya_items) ? (s as any).biaya_items : [];
+  const legacy = [
+    { label: 'Biaya Notaris', nominal: toNumber(s.biaya_notaris) },
+    { label: 'Biaya Perikatan', nominal: toNumber(s.biaya_perikatan) },
+  ];
+  const src = fromResult.length ? fromResult : fromRow.length ? fromRow : legacy;
+  return src
+    .map((b) => ({ label: String(b?.label || 'Biaya'), nominal: toNumber(b?.nominal) }))
+    .filter((b) => b.nominal > 0);
+};
+
 const getPelunasanBreakdown = (s: LoanSimulationRow) => {
   const outPokok = toNumber(s.outstanding_pokok);
   const outBunga = toNumber(s.outstanding_bunga);
@@ -96,8 +110,7 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     ['Asuransi Jiwa — Beban Debitur', ins.asuransiJiwaBeban],
     ['Asuransi Kredit — Pialang', ins.premiKredit],
     ['Total Asuransi Masuk Potongan', ins.totalAsuransi],
-    ['Biaya Notaris', s.biaya_notaris],
-    ['Biaya Perikatan', s.biaya_perikatan],
+    ...getBiayaList(s).map((b) => [b.label, b.nominal] as [string, number]),
     ['Blokir Angsuran', s.blokir_angsuran],
     ['Nama AO', s.nama_ao || '-'],
     [],
@@ -107,8 +120,7 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     ['Total Angsuran', r.totalAngsuran ?? 0],
     ['Total Bunga', r.totalBunga ?? 0],
     ['Provisi', r.provisi ?? 0],
-    ['Notaris', r.notaris ?? s.biaya_notaris],
-    ['Perikatan', r.perikatan ?? s.biaya_perikatan],
+    ...getBiayaList(s).map((b) => [b.label, b.nominal] as [string, number]),
     ['Blokir Angsuran', r.blokir ?? 0],
     ['Total Potongan di Muka', r.total ?? 0],
     ['Dana Diterima', r.danaDiterima ?? 0],
@@ -257,8 +269,7 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
     ['Asuransi Kredit (Pialang)', fmtNumber(ins.premiKredit)],
     ['Total Asuransi Masuk Potongan', fmtNumber(ins.totalAsuransi)],
     ['Provisi', fmtNumber(r.provisi ?? 0)],
-    ['Notaris', fmtNumber(r.notaris ?? s.biaya_notaris)],
-    ['Perikatan', fmtNumber(r.perikatan ?? s.biaya_perikatan)],
+    ...getBiayaList(s).map((b) => [b.label, fmtNumber(b.nominal)]),
     ['Blokir Angsuran', fmtNumber(r.blokir ?? 0)],
     ['Total Potongan di Muka', fmtNumber(r.total ?? 0)],
   );
@@ -626,8 +637,9 @@ const RiwayatPage: React.FC = () => {
                     {row('Asuransi Kredit (Pialang)', fmtRp(ins.premiKredit))}
                     {row('Total Asuransi', fmtRp(ins.totalAsuransi))}
                     {row('Provisi', fmtRp(r.provisi ?? 0))}
-                    {row('Notaris', fmtRp(r.notaris ?? s.biaya_notaris))}
-                    {row('Perikatan', fmtRp(r.perikatan ?? s.biaya_perikatan))}
+                    {getBiayaList(s).map((b) => (
+                      <React.Fragment key={b.label}>{row(b.label, fmtRp(b.nominal))}</React.Fragment>
+                    ))}
                     {row('Blokir Angsuran', fmtRp(r.blokir ?? 0))}
                     {row('Total Potongan', fmtRp(r.total ?? 0), true)}
                   </tbody>
