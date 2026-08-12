@@ -312,9 +312,11 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Dipanggil saat kursor masuk/keluar sidebar (dipakai untuk auto-collapse). */
+  onHoverChange?: (hovered: boolean) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange }) => {
   const location = useLocation();
   const { userName, userRole, logout, isAdmin, permissions } = useAuth();
   const isMobile = useIsMobile();
@@ -440,7 +442,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
       
       {/* Sidebar - expanded (w-64) atau collapsed rail (w-[76px]) di desktop */}
-      <aside className={cn(
+      <aside
+        onMouseEnter={() => onHoverChange?.(true)}
+        onMouseLeave={() => onHoverChange?.(false)}
+        className={cn(
         "fixed left-0 top-0 z-50 h-screen sidebar-glass",
         "transition-[width,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:w-[76px] lg:translate-x-0"
