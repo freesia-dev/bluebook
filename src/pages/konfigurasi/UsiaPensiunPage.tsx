@@ -11,7 +11,7 @@ import { usePensionRules, useUpsertPensionRule, useDeletePensionRule, type Pensi
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
-const UsiaPensiunPage: React.FC = () => {
+export const UsiaPensiunSection: React.FC = () => {
   const { data = [], isLoading } = usePensionRules();
   const upsert = useUpsertPensionRule();
   const del = useDeletePensionRule();
@@ -44,21 +44,17 @@ const UsiaPensiunPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <PageHeader
-        title="Aturan Usia Pensiun"
-        description="Atur usia pensiun otomatis per pilihan karir untuk Kalkulator Loan"
-        actions={
-          <Button
-            onClick={() => {
-              setForm({ pilihan_karir: '', usia_pensiun: 58 });
-              setOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> Tambah
-          </Button>
-        }
-      />
+    <>
+      <div className="flex justify-end mb-3">
+        <Button
+          onClick={() => {
+            setForm({ pilihan_karir: '', usia_pensiun: 58 });
+            setOpen(true);
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" /> Tambah
+        </Button>
+      </div>
       <Card>
         <CardContent className="pt-6">
           <Table>
@@ -119,8 +115,18 @@ const UsiaPensiunPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 };
+
+const UsiaPensiunPage: React.FC = () => (
+  <MainLayout>
+    <PageHeader
+      title="Aturan Usia Pensiun"
+      description="Atur usia pensiun otomatis per pilihan karir untuk Kalkulator Loan"
+    />
+    <UsiaPensiunSection />
+  </MainLayout>
+);
 
 export default UsiaPensiunPage;
