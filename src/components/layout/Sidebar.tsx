@@ -345,9 +345,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {
             label: 'Konfigurasi',
             children: [
-              { label: 'Produk Kalkulator', href: '/konfigurasi/produk-kalkulator' },
-              { label: 'Usia Pensiun', href: '/konfigurasi/usia-pensiun' },
-              { label: 'Program Kalkulator', href: '/konfigurasi/promo-kalkulator' },
+              { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
+              { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
+              { label: 'Program Promo', href: '/konfigurasi/kalkulator?tab=promo' },
+              { label: 'Promo Umum (lama)', href: '/konfigurasi/promo-kalkulator' },
             ],
           },
         ]
@@ -414,6 +415,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
         { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
+        { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
+        { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
       ]
@@ -486,6 +489,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 label="Executive Dashboard"
                 href="/executive"
                 isActive={location.pathname === '/executive'}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
+              />
+            )}
+
+            {permissions.securityDashboard && (
+              <NavItem
+                icon={LayoutDashboard}
+                label="Dashboard Security"
+                href="/security/dashboard"
+                isActive={location.pathname === '/security/dashboard'}
                 collapsed={collapsed}
                 onNavigate={navOnNavigate}
               />
@@ -595,7 +609,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   icon={Shield} 
                   label="Log Security" 
                   href="/security/log" 
-                  isActive={location.pathname.startsWith('/security')} 
+                  isActive={location.pathname.startsWith('/security/log')} 
                   collapsed={collapsed}
                   onNavigate={navOnNavigate}
                 />

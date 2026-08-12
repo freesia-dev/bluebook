@@ -65,8 +65,6 @@ const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkul
 const KalkulatorConfigPage = lazy(() => import("./pages/konfigurasi/KalkulatorConfigPage"));
 const DaftarAOPage = lazy(() => import("./pages/konfigurasi/DaftarAOPage"));
 const SecurityDashboardPage = lazy(() => import("./pages/security/SecurityDashboardPage"));
-const UsiaPensiunPage = lazy(() => import("./pages/konfigurasi/UsiaPensiunPage"));
-const ProgramCerdasPage = lazy(() => import("./pages/konfigurasi/ProgramCerdasPage"));
 const KalkulatorPromoPage = lazy(() => import("./pages/konfigurasi/KalkulatorPromoPage"));
 const CIFPage = lazy(() => import("./pages/cs/CIFPage"));
 const RekeningPage = lazy(() => import("./pages/cs/RekeningPage"));
