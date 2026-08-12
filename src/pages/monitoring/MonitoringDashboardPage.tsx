@@ -323,23 +323,23 @@ const MonitoringDashboardPage: React.FC = () => {
       ) : (
         <>
           {/* Hero KPI Row — NPL focal */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 items-stretch">
             <div className={cn(
-              "lg:col-span-1 relative overflow-hidden rounded-xl p-5 sm:p-6 text-white shadow-lg bg-gradient-to-br",
+              "lg:col-span-1 min-w-0 relative overflow-hidden rounded-xl p-4 sm:p-6 text-white shadow-lg bg-gradient-to-br",
               nplColor
             )}>
-              <ShieldAlert className="absolute -right-4 -bottom-4 w-40 h-40 opacity-10 rotate-12" strokeWidth={1.2} />
-              <Gauge className="absolute right-4 top-4 w-6 h-6 opacity-80" />
-              <p className="text-xs uppercase tracking-wider opacity-90">Rasio NPL (KOL 3-5)</p>
-              <p className="text-4xl sm:text-5xl font-bold mt-2 tracking-tight">{stats.nplRatio.toFixed(2)}<span className="text-2xl opacity-80">%</span></p>
-              <div className="mt-4 space-y-1 text-xs opacity-95">
+              <ShieldAlert className="absolute -right-4 -bottom-4 w-28 sm:w-40 h-28 sm:h-40 opacity-10 rotate-12 pointer-events-none" strokeWidth={1.2} />
+              <Gauge className="absolute right-3 top-3 sm:right-4 sm:top-4 w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
+              <p className="text-[11px] sm:text-xs uppercase tracking-wider opacity-90 pr-8">Rasio NPL (KOL 3-5)</p>
+              <p className="text-3xl sm:text-4xl xl:text-5xl font-bold mt-1.5 sm:mt-2 tracking-tight break-words">{stats.nplRatio.toFixed(2)}<span className="text-xl sm:text-2xl opacity-80">%</span></p>
+              <div className="mt-3 sm:mt-4 space-y-1 text-[11px] sm:text-xs opacity-95">
                 <p className="break-words">NPL: <strong>{fmtIDR(stats.nplBaki)}</strong> dari {fmtIDR(stats.nplBaseBaki)}</p>
-                <p>{fmtNum(stats.nplCount)} debitur ({stats.nplCountRatio.toFixed(2)}% dari {fmtNum(stats.nplBaseCount)})</p>
+                <p className="break-words">{fmtNum(stats.nplCount)} debitur ({stats.nplCountRatio.toFixed(2)}% dari {fmtNum(stats.nplBaseCount)})</p>
                 <p className="pt-2 text-[10px] opacity-75">Basis: outstanding non-ekstrakomtabel</p>
               </div>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="lg:col-span-2 min-w-0 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               <KPICard icon={Users} label="Total Debitur" value={fmtNum(stats.totalDebitur)}
                 sub={includeEkstrakom ? `+ ${fmtNum(stats.ekstraCount)} ekstrakom` : 'tanpa ekstrakom'}
                 tint="blue" />
