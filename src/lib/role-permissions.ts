@@ -67,6 +67,8 @@ export interface RolePermissions {
   canUpload: boolean;
   /** Executive Dashboard (KPI bank) — khusus Pemimpin. */
   executiveDashboard: boolean;
+  /** Dashboard khusus Security & Team Leader Security (menggantikan dashboard utama). */
+  securityDashboard: boolean;
 }
 
 
@@ -91,6 +93,7 @@ const FULL: RolePermissions = {
   comingSoonOB: false,
   canUpload: true,
   executiveDashboard: false,
+  securityDashboard: false,
 };
 
 const NONE: RolePermissions = {
@@ -114,6 +117,7 @@ const NONE: RolePermissions = {
   comingSoonOB: false,
   canUpload: false,
   executiveDashboard: false,
+  securityDashboard: false,
 };
 
 
@@ -130,8 +134,8 @@ export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
   staff_admin_kcp: { ...FULL, konfigurasi: false, monitoringDashboardOnly: true, securityLog: true, canEditSecurityLog: true, canPrintSecurityBA: true, canUpload: false },
   teller: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false, canUpload: false },
   cs: { ...FULL, konfigurasi: false, agendaKredit: false, monitoring: false, loanCalc: false, customerService: true, atmTelihan: false, canUpload: false },
-  security: { ...NONE, securityLog: true, canEditSecurityLog: true, canStartSecurityShift: true, canEdit: true },
-  team_leader_security: { ...NONE, securityLog: true, canCommentSecurityLog: true, canEdit: true },
+  security: { ...NONE, securityLog: true, canEditSecurityLog: true, canStartSecurityShift: true, canEdit: true, dashboard: false, securityDashboard: true },
+  team_leader_security: { ...NONE, securityLog: true, canCommentSecurityLog: true, canEdit: true, dashboard: false, securityDashboard: true },
   ob: { ...NONE, comingSoonOB: true },
 };
 
@@ -158,7 +162,7 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
   ) return true;
 
   if (pathname === '/executive') return p.executiveDashboard;
-  if (pathname === '/dashboard') return p.dashboard || !p.executiveDashboard;
+  if (pathname === '/dashboard') return p.dashboard || !(p.executiveDashboard || p.securityDashboard);
   if (pathname.startsWith('/surat-')) return p.surat;
   if (pathname.startsWith('/agenda-kredit')) return p.agendaKredit;
   if (pathname.startsWith('/atm-telihan')) return p.atmTelihan;
