@@ -1633,114 +1633,44 @@ const KalkulatorPage: React.FC = () => {
       {/* HIDDEN HD SUMMARY CARD — dipakai untuk export JPG */}
       <div style={{ position: 'fixed', left: '-10000px', top: 0, pointerEvents: 'none' }}>
         {result && potongan && (
-          <div
+          <SimulasiCard
             ref={jpgCardRef}
-            style={{
-              width: 900,
-              padding: 40,
-              background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              color: '#0f172a',
+            data={{
+              namaDebitur: namaDebitur || '—',
+              produk: selectedProduct?.nama || 'Produk Kredit',
+              skema,
+              plafon,
+              tenorBulan,
+              bungaPa,
+              promoNama: cerdasResult ? promoNama : null,
+              promoLabel: cerdasResult ? cerdasResult.skemaLabel : null,
+              gajiPokok,
+              ttp,
+              dsrPct: dsr.basisNilai > 0 ? dsr.dsrPct : null,
+              angsuranPertama: result.summary.angsuranPertama,
+              angsuranTerakhir: skema !== 'anuitas' ? result.summary.angsuranTerakhir : undefined,
+              totalAngsuran: result.summary.totalAngsuran,
+              totalBunga: result.summary.totalBunga,
+              asuransiJiwa: asuransiJiwaBeban,
+              asuransiJiwaProvider: asuransiProvider === 'alamin' ? "Al-Amin" : 'Pialang Asuransi',
+              premiJiwaAktual: cerdasResult?.premiAsuransiAktual,
+              subsidiJiwa: cerdasResult && cerdasResult.skema !== 'top_up' ? cerdasResult.subsidiBank : 0,
+              asuransiKredit: premiKredit,
+              provisi: potongan.provisi,
+              biaya: potongan.biaya.map((b) => ({ label: b.label, nominal: b.nominal })),
+              blokir: potongan.blokir,
+              totalPotongan: potongan.total,
+              pelunasan: pelunasan
+                ? { pokok: pelunasan.sisaPokok, bunga: pelunasan.bungaBerjalan, total: pelunasan.totalPelunasan }
+                : null,
+              danaDiterima: danaBersih,
+              namaAo,
+              tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }),
             }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 20, borderBottom: '2px solid #003f7f' }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#003f7f', letterSpacing: -0.5 }}>Simulasi Kredit</div>
-                <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
-                  {selectedProduct?.nama || 'Produk Kredit'} · {namaDebitur || '—'}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b' }}>Bankaltimtara</div>
-                <div style={{ fontSize: 12, color: '#003f7f', fontWeight: 600 }}>KCP Telihan</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
-              <JRow label="Skema" value={skema.toUpperCase()} />
-              {cerdasResult && <JRow label={`✨ ${promoNama}`} value={cerdasResult.skemaLabel} accent="#d97706" />}
-              <JRow label="Plafon" value={fmtRp(plafon)} />
-              <JRow label="Tenor" value={`${tenorBulan} bulan`} />
-              <JRow label="Bunga p.a." value={`${bungaPa}%${cerdasResult ? ' (promo)' : ''}`} accent={cerdasResult ? '#d97706' : undefined} />
-              {dsr.basisNilai > 0 && <JRow label={`DSR (${dsrBasis.toUpperCase()})`} value={`${dsr.dsrPct.toFixed(1)}%`} />}
-            </div>
-
-            {gaji > 0 && (
-              <div style={{ marginTop: 16, padding: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, marginBottom: 6 }}>Penghasilan Debitur</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: 13 }}>
-                  <div><div style={{ color: '#64748b', fontSize: 11 }}>Gaji Pokok</div><div style={{ fontWeight: 600 }}>{fmtRp(gajiPokok)}</div></div>
-                  <div><div style={{ color: '#64748b', fontSize: 11 }}>TTP / Lainnya</div><div style={{ fontWeight: 600 }}>{fmtRp(ttp)}</div></div>
-                  <div><div style={{ color: '#64748b', fontSize: 11 }}>Angsuran Maks (DSR)</div><div style={{ fontWeight: 700, color: '#003f7f' }}>{fmtRp(dsr.maxAngsuran)}</div></div>
-                </div>
-                {(dsr.selisihAG > 0 || dsr.angsuranPraja > 0) && (
-                  <div style={{ marginTop: 8, fontSize: 11, color: '#64748b' }}>
-                    Pengurang DSR: Selisih AG {fmtRp(dsr.selisihAG)} · AP {fmtRp(dsr.angsuranPraja)}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div style={{ marginTop: 20, padding: 20, background: '#003f7f', color: '#fff', borderRadius: 12 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.8 }}>Angsuran Pertama / Bulan</div>
-              <div style={{ fontSize: 36, fontWeight: 800, marginTop: 4 }}>{fmtRp(result.summary.angsuranPertama)}</div>
-              <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 12, opacity: 0.9 }}>
-                <span>Total Angsuran: <b>{fmtRp(result.summary.totalAngsuran)}</b></span>
-                <span>Total Bunga: <b>{fmtRp(result.summary.totalBunga)}</b></span>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 24 }}>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>Potongan di Muka</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-                <tbody>
-                  <JTr label={`Asuransi Jiwa (${asuransiProvider === 'alamin' ? 'Al-Amin' : 'Pialang'})`} value={fmtRp(asuransiJiwaBeban)} />
-                  {cerdasResult && cerdasResult.skema !== 'top_up' && (
-                    <>
-                      <JTrSub label="Premi aktual" value={fmtRp(cerdasResult.premiAsuransiAktual)} />
-                      <JTrSub label={`Subsidi bank (cap ${fmtRp(cerdasResult.capSubsidi)})`} value={`− ${fmtRp(cerdasResult.subsidiBank)}`} accent="#059669" />
-                    </>
-                  )}
-                  <JTr label="Asuransi Kredit (Pialang)" value={fmtRp(premiKredit)} />
-                  <JTr label="Provisi" value={fmtRp(potongan.provisi)} />
-                  {potongan.biaya.map((b, i) => (
-                    <JTr key={i} label={b.label} value={fmtRp(b.nominal)} />
-                  ))}
-                  <JTr label="Blokir Angsuran" value={fmtRp(potongan.blokir)} />
-                  <JTr label="Total Potongan" value={fmtRp(potongan.total)} bold />
-                </tbody>
-              </table>
-            </div>
-
-            {pelunasan && (
-              <div style={{ marginTop: 20, padding: 16, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 10 }}>
-                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: '#92400e', fontWeight: 700, marginBottom: 6 }}>Top Up / Pelunasan</div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <tbody>
-                    <JTr label="Outstanding Pokok" value={fmtRp(pelunasan.sisaPokok)} />
-                    <JTr label="Bunga Berjalan" value={fmtRp(pelunasan.bungaBerjalan)} />
-                    <JTr label="Total Pelunasan" value={fmtRp(pelunasan.totalPelunasan)} bold />
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div style={{ marginTop: 20, padding: 18, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.9 }}>Dana Diterima</div>
-                <div style={{ fontSize: 28, fontWeight: 800, marginTop: 2 }}>{fmtRp(danaBersih)}</div>
-                {pelunasan && <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>setelah pelunasan {fmtRp(pelunasan.totalPelunasan)}</div>}
-              </div>
-              <div style={{ fontSize: 40 }}>💰</div>
-            </div>
-
-            <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Simulasi · bukan dokumen perjanjian. Nilai dapat berubah sewaktu-waktu.</span>
-              <span>{new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} · AO: {namaAo || '-'}</span>
-            </div>
-          </div>
+          />
         )}
       </div>
+
     </MainLayout>
   );
 };
