@@ -513,20 +513,12 @@ const RiwayatPage: React.FC = () => {
           </DialogHeader>
           {detail && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                <Info label="KTP" v={detail.nomor_ktp} />
-                <Info label="Pekerjaan" v={detail.pekerjaan} />
-                <Info label="Instansi" v={detail.instansi} />
-                <Info label="Karir" v={detail.pilihan_karir} />
-                <Info label="Skema" v={detail.skema.toUpperCase()} />
-                <Info label="Bunga p.a." v={`${detail.bunga_pa}%`} />
-                <Info label="Plafon" v={fmtRp(detail.plafon)} />
-                <Info label="Tenor" v={`${detail.tenor_bulan} bln`} />
-                <Info label="Angsuran" v={fmtRp(detail.hasil_ringkasan?.angsuranPertama ?? 0)} />
-                <Info label="Total Bunga" v={fmtRp(detail.hasil_ringkasan?.totalBunga ?? 0)} />
-                <Info label="Dana Diterima" v={fmtRp(detail.hasil_ringkasan?.danaDiterima ?? 0)} />
-                <Info label="AO" v={detail.nama_ao} />
+              <div className="rounded-xl border overflow-hidden bg-white">
+                <div style={{ zoom: 0.82 }}>
+                  <SimulasiCard data={rowToCardData(detail)} />
+                </div>
               </div>
+
               {detail.tabel_angsuran && (
                 <div className="max-h-[400px] overflow-auto border rounded-lg">
                   <Table>
