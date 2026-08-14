@@ -1,5 +1,7 @@
 import React from 'react';
 import { fmtRp } from '@/lib/loan-calc';
+import { DEFAULT_SIMULASI_THEME, SimulasiSectionKey, SimulasiTheme } from '@/lib/simulasi-theme';
+import { useSimulasiTheme } from '@/hooks/use-simulasi-theme';
 
 export interface SimulasiCardData {
   namaDebitur: string;
@@ -32,146 +34,144 @@ export interface SimulasiCardData {
   tanggal: string;
 }
 
-const C = {
-  ink: '#0f172a',
-  sub: '#64748b',
-  line: '#e2e8f0',
-  blue: '#003f7f',
-  blueSoft: '#eef4fb',
-  green: '#047857',
-  amber: '#b45309',
-  white: '#ffffff',
+const hexToRgba = (hex: string, a: number) => {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full || '000000', 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 };
-
-const Chip: React.FC<{ label: string; value: string; tone?: 'blue' | 'amber' | 'violet' | 'slate' }> = ({
-  label,
-  value,
-  tone = 'slate',
-}) => {
-  const tones = {
-    blue: { bg: '#eef4fb', bd: '#c7dcf2', fg: C.blue },
-    amber: { bg: '#fef6e7', bd: '#f6d9a4', fg: '#b45309' },
-    violet: { bg: '#f2effc', bd: '#d9d0f5', fg: '#5b34c7' },
-    slate: { bg: '#f5f7fa', bd: C.line, fg: C.ink },
-  }[tone];
-  return (
-    <div style={{ background: tones.bg, border: `1px solid ${tones.bd}`, borderRadius: 10, padding: '10px 14px' }}>
-      <div style={{ fontSize: 10.5, letterSpacing: 0.8, textTransform: 'uppercase', color: C.sub, fontWeight: 700 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: tones.fg, marginTop: 3 }}>{value}</div>
-    </div>
-  );
-};
-
-const Tr: React.FC<{ label: string; value: string; bold?: boolean; tone?: 'green' | 'plain'; sub?: boolean }> = ({
-  label,
-  value,
-  bold,
-  tone = 'plain',
-  sub,
-}) => (
-  <tr style={{ borderBottom: sub ? 'none' : `1px solid ${C.line}` }}>
-    <td
-      style={{
-        padding: sub ? '2px 0 6px 18px' : '9px 0',
-        color: sub ? C.sub : bold ? C.ink : '#475569',
-        fontWeight: bold ? 700 : 400,
-        fontSize: sub ? 12 : 14,
-      }}
-    >
-      {label}
-    </td>
-    <td
-      style={{
-        padding: sub ? '2px 0 6px 0' : '9px 0',
-        textAlign: 'right',
-        fontWeight: bold ? 700 : sub ? 600 : 500,
-        fontSize: sub ? 12 : 14,
-        color: tone === 'green' ? C.green : C.ink,
-      }}
-    >
-      {value}
-    </td>
-  </tr>
-);
 
 /** Kartu ringkasan simulasi — dipakai untuk export JPG dan pratinjau detail. */
-export const SimulasiCard = React.forwardRef<HTMLDivElement, { data: SimulasiCardData }>(({ data: d }, ref) => {
+export const SimulasiCard = React.forwardRef<
+  HTMLDivElement,
+  { data: SimulasiCardData; theme?: SimulasiTheme; scaleToFit?: boolean }
+>(({ data: d, theme: themeProp, scaleToFit }, ref) => {
+  const { theme: themeDb } = useSimulasiTheme();
+  const T = themeProp ?? themeDb ?? DEFAULT_SIMULASI_THEME;
+  const s = (n: number) => Math.round(n * T.fontScale * 10) / 10;
   const totalPenghasilan = d.gajiPokok + d.ttp;
-  return (
-    <div
-      ref={ref}
-      style={{
-        width: 900,
-        padding: 36,
-        background: C.white,
-        fontFamily: 'Inter, system-ui, sans-serif',
-        color: C.ink,
-      }}
-    >
-      {/* Header */}
+
+  const primaryBg = T.useGradient
+    ? `linear-gradient(120deg, ${T.primaryColor} 0%, ${T.primaryColor2} 100%)`
+    : T.primaryColor;
+  const successBg = T.useGradient
+    ? `linear-gradient(120deg, ${T.successColor} 0%, ${T.successColor2} 100%)`
+    : T.successColor;
+
+  const Chip: React.FC<{ label: string; value: string; tone?: 'blue' | 'amber' | 'violet' | 'slate' }> = ({
+    label,
+    value,
+    tone = 'slate',
+  }) => {
+    const tones = {
+      blue: { bg: hexToRgba(T.primaryColor, 0.08), bd: hexToRgba(T.primaryColor, 0.25), fg: T.primaryColor },
+      amber: { bg: hexToRgba(T.warnColor, 0.1), bd: hexToRgba(T.warnColor, 0.28), fg: T.warnColor },
+      violet: { bg: hexToRgba(T.accentColor, 0.08), bd: hexToRgba(T.accentColor, 0.25), fg: T.accentColor },
+      slate: { bg: T.cardColor, bd: T.lineColor, fg: T.inkColor },
+    }[tone];
+    return (
+      <div style={{ background: tones.bg, border: `1px solid ${tones.bd}`, borderRadius: T.radius * 0.7, padding: '10px 14px' }}>
+        <div style={{ fontSize: s(10.5), letterSpacing: 0.8, textTransform: 'uppercase', color: T.subColor, fontWeight: 700 }}>
+          {label}
+        </div>
+        <div style={{ fontSize: s(15), fontWeight: 700, color: tones.fg, marginTop: 3 }}>{value}</div>
+      </div>
+    );
+  };
+
+  const Tr: React.FC<{ label: string; value: string; bold?: boolean; tone?: 'green' | 'plain'; sub?: boolean }> = ({
+    label,
+    value,
+    bold,
+    tone = 'plain',
+    sub,
+  }) => (
+    <tr style={{ borderBottom: sub ? 'none' : `1px solid ${T.lineColor}` }}>
+      <td
+        style={{
+          padding: sub ? '2px 0 6px 18px' : '9px 0',
+          color: sub ? T.subColor : bold ? T.inkColor : T.subColor,
+          fontWeight: bold ? 700 : 400,
+          fontSize: s(sub ? 12 : 14),
+        }}
+      >
+        {label}
+      </td>
+      <td
+        style={{
+          padding: sub ? '2px 0 6px 0' : '9px 0',
+          textAlign: 'right',
+          fontWeight: bold ? 700 : sub ? 600 : 500,
+          fontSize: s(sub ? 12 : 14),
+          color: tone === 'green' ? T.successColor : T.inkColor,
+        }}
+      >
+        {value}
+      </td>
+    </tr>
+  );
+
+  const sections: Record<SimulasiSectionKey, React.ReactNode> = {
+    header: (
       <div
         style={{
-          background: 'linear-gradient(120deg, #003f7f 0%, #0b5fa5 55%, #1181c4 100%)',
-          borderRadius: 14,
+          background: primaryBg,
+          borderRadius: T.radius,
           padding: '20px 24px',
-          color: C.white,
+          color: T.headerTextColor,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
-            Simulasi Angsuran Kredit
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 800, marginTop: 4, letterSpacing: -0.4 }}>{d.namaDebitur || '—'}</div>
-          <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>{d.produk || 'Produk Kredit'}</div>
+          <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
+          <div style={{ fontSize: s(26), fontWeight: 800, marginTop: 4, letterSpacing: -0.4 }}>{d.namaDebitur || '—'}</div>
+          <div style={{ fontSize: s(13), opacity: 0.9, marginTop: 2 }}>{d.produk || 'Produk Kredit'}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>Bankaltimtara</div>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>KCP Telihan</div>
-          <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4 }}>{d.tanggal}</div>
+          <div style={{ fontSize: s(12), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
+          <div style={{ fontSize: s(15), fontWeight: 700 }}>{T.branchName}</div>
+          <div style={{ fontSize: s(11), opacity: 0.85, marginTop: 4 }}>{d.tanggal}</div>
         </div>
       </div>
-
-      {/* Plafon & Jangka Waktu — sorotan utama */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16, marginTop: 18 }}>
+    ),
+    sorotan: (
+      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16 }}>
         <div
           style={{
-            background: C.blueSoft,
-            border: '1px solid #c7dcf2',
-            borderRadius: 14,
+            background: hexToRgba(T.primaryColor, 0.07),
+            border: `1px solid ${hexToRgba(T.primaryColor, 0.22)}`,
+            borderRadius: T.radius,
             padding: '18px 22px',
           }}
         >
-          <div style={{ fontSize: 11.5, letterSpacing: 1.4, textTransform: 'uppercase', color: C.blue, fontWeight: 700 }}>
+          <div style={{ fontSize: s(11.5), letterSpacing: 1.4, textTransform: 'uppercase', color: T.primaryColor, fontWeight: 700 }}>
             Plafon Pengajuan
           </div>
-          <div style={{ fontSize: 40, fontWeight: 800, color: C.blue, marginTop: 6, letterSpacing: -1 }}>
+          <div style={{ fontSize: s(40), fontWeight: 800, color: T.primaryColor, marginTop: 6, letterSpacing: -1 }}>
             {fmtRp(d.plafon)}
           </div>
         </div>
         <div
           style={{
-            background: '#f2effc',
-            border: '1px solid #d9d0f5',
-            borderRadius: 14,
+            background: hexToRgba(T.accentColor, 0.07),
+            border: `1px solid ${hexToRgba(T.accentColor, 0.22)}`,
+            borderRadius: T.radius,
             padding: '18px 22px',
           }}
         >
-          <div style={{ fontSize: 11.5, letterSpacing: 1.4, textTransform: 'uppercase', color: '#5b34c7', fontWeight: 700 }}>
+          <div style={{ fontSize: s(11.5), letterSpacing: 1.4, textTransform: 'uppercase', color: T.accentColor, fontWeight: 700 }}>
             Jangka Waktu
           </div>
-          <div style={{ fontSize: 40, fontWeight: 800, color: '#5b34c7', marginTop: 6, letterSpacing: -1 }}>
-            {d.tenorBulan} <span style={{ fontSize: 20, fontWeight: 700 }}>bulan</span>
+          <div style={{ fontSize: s(40), fontWeight: 800, color: T.accentColor, marginTop: 6, letterSpacing: -1 }}>
+            {d.tenorBulan} <span style={{ fontSize: s(20), fontWeight: 700 }}>bulan</span>
           </div>
         </div>
       </div>
-
-      {/* Chips */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 14 }}>
+    ),
+    chips: (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         <Chip label="Skema" value={String(d.skema).toUpperCase()} />
         <Chip label="Suku Bunga" value={`${d.bungaPa}% p.a.`} tone={d.promoLabel ? 'amber' : 'blue'} />
         {d.promoLabel ? (
@@ -179,20 +179,15 @@ export const SimulasiCard = React.forwardRef<HTMLDivElement, { data: SimulasiCar
         ) : (
           <Chip label="Angsuran / Bulan" value={fmtRp(d.angsuranPertama)} tone="blue" />
         )}
-        <Chip
-          label="Rasio Angsuran (DSR)"
-          value={d.dsrPct != null ? `${d.dsrPct.toFixed(1)}%` : '-'}
-          tone="violet"
-        />
+        <Chip label="Rasio Angsuran (DSR)" value={d.dsrPct != null ? `${d.dsrPct.toFixed(1)}%` : '-'} tone="violet" />
       </div>
-
-      {/* Angsuran */}
+    ),
+    angsuran: (
       <div
         style={{
-          marginTop: 16,
-          background: 'linear-gradient(120deg, #003f7f 0%, #0b5fa5 100%)',
-          color: C.white,
-          borderRadius: 14,
+          background: primaryBg,
+          color: T.headerTextColor,
+          borderRadius: T.radius,
           padding: '20px 24px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -200,17 +195,17 @@ export const SimulasiCard = React.forwardRef<HTMLDivElement, { data: SimulasiCar
         }}
       >
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
+          <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
             Angsuran per Bulan
           </div>
-          <div style={{ fontSize: 34, fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
+          <div style={{ fontSize: s(34), fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
           {d.angsuranTerakhir != null && d.angsuranTerakhir > 0 && d.angsuranTerakhir !== d.angsuranPertama && (
-            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+            <div style={{ fontSize: s(12), opacity: 0.9, marginTop: 2 }}>
               Angsuran terakhir {fmtRp(d.angsuranTerakhir)}
             </div>
           )}
         </div>
-        <div style={{ textAlign: 'right', fontSize: 12.5, lineHeight: 1.7, opacity: 0.95 }}>
+        <div style={{ textAlign: 'right', fontSize: s(12.5), lineHeight: 1.7, opacity: 0.95 }}>
           <div>
             Total Angsuran: <b>{fmtRp(d.totalAngsuran)}</b>
           </div>
@@ -219,41 +214,32 @@ export const SimulasiCard = React.forwardRef<HTMLDivElement, { data: SimulasiCar
           </div>
         </div>
       </div>
-
-      {/* Penghasilan */}
-      {totalPenghasilan > 0 && (
-        <div
-          style={{
-            marginTop: 16,
-            padding: 16,
-            background: '#f5f7fa',
-            border: `1px solid ${C.line}`,
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: C.sub, fontWeight: 700, marginBottom: 8 }}>
+    ),
+    penghasilan:
+      totalPenghasilan > 0 ? (
+        <div style={{ padding: 16, background: T.cardColor, border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85 }}>
+          <div style={{ fontSize: s(11), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 8 }}>
             Penghasilan Debitur
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: s(14) }}>
             <div>
-              <div style={{ color: C.sub, fontSize: 11.5 }}>Gaji Pokok</div>
+              <div style={{ color: T.subColor, fontSize: s(11.5) }}>Gaji Pokok</div>
               <div style={{ fontWeight: 700 }}>{fmtRp(d.gajiPokok)}</div>
             </div>
             <div>
-              <div style={{ color: C.sub, fontSize: 11.5 }}>Penghasilan Lainnya</div>
+              <div style={{ color: T.subColor, fontSize: s(11.5) }}>Penghasilan Lainnya</div>
               <div style={{ fontWeight: 700 }}>{fmtRp(d.ttp)}</div>
             </div>
             <div>
-              <div style={{ color: C.sub, fontSize: 11.5 }}>Total Penghasilan</div>
-              <div style={{ fontWeight: 800, color: C.blue }}>{fmtRp(totalPenghasilan)}</div>
+              <div style={{ color: T.subColor, fontSize: s(11.5) }}>Total Penghasilan</div>
+              <div style={{ fontWeight: 800, color: T.primaryColor }}>{fmtRp(totalPenghasilan)}</div>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Potongan */}
-      <div style={{ marginTop: 18, border: `1px solid ${C.line}`, borderRadius: 12, padding: '14px 18px' }}>
-        <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: C.sub, fontWeight: 700, marginBottom: 4 }}>
+      ) : null,
+    potongan: (
+      <div style={{ border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85, padding: '14px 18px' }}>
+        <div style={{ fontSize: s(11), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 4 }}>
           Rincian Potongan di Muka
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -275,11 +261,18 @@ export const SimulasiCard = React.forwardRef<HTMLDivElement, { data: SimulasiCar
           </tbody>
         </table>
       </div>
-
-      {/* Pelunasan */}
-      {d.pelunasan && d.pelunasan.total > 0 && (
-        <div style={{ marginTop: 16, padding: '14px 18px', background: '#fef6e7', border: '1px solid #f6d9a4', borderRadius: 12 }}>
-          <div style={{ fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: C.amber, fontWeight: 700, marginBottom: 4 }}>
+    ),
+    pelunasan:
+      d.pelunasan && d.pelunasan.total > 0 ? (
+        <div
+          style={{
+            padding: '14px 18px',
+            background: hexToRgba(T.warnColor, 0.08),
+            border: `1px solid ${hexToRgba(T.warnColor, 0.25)}`,
+            borderRadius: T.radius * 0.85,
+          }}
+        >
+          <div style={{ fontSize: s(11), letterSpacing: 1.2, textTransform: 'uppercase', color: T.warnColor, fontWeight: 700, marginBottom: 4 }}>
             Pelunasan Pinjaman Lama
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -290,48 +283,73 @@ export const SimulasiCard = React.forwardRef<HTMLDivElement, { data: SimulasiCar
             </tbody>
           </table>
         </div>
-      )}
-
-      {/* Dana diterima */}
+      ) : null,
+    dana: (
       <div
         style={{
-          marginTop: 18,
           padding: '22px 24px',
-          background: 'linear-gradient(120deg, #047857 0%, #10a06b 100%)',
-          color: C.white,
-          borderRadius: 14,
+          background: successBg,
+          color: T.headerTextColor,
+          borderRadius: T.radius,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
         <div>
-          <div style={{ fontSize: 11.5, letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.9 }}>
+          <div style={{ fontSize: s(11.5), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.9 }}>
             Dana Diterima Debitur
           </div>
           {d.pelunasan && d.pelunasan.total > 0 && (
-            <div style={{ fontSize: 11.5, opacity: 0.9, marginTop: 4 }}>
+            <div style={{ fontSize: s(11.5), opacity: 0.9, marginTop: 4 }}>
               Sudah dikurangi pelunasan {fmtRp(d.pelunasan.total)}
             </div>
           )}
         </div>
-        <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: -0.8 }}>{fmtRp(d.danaDiterima)}</div>
+        <div style={{ fontSize: s(38), fontWeight: 800, letterSpacing: -0.8 }}>{fmtRp(d.danaDiterima)}</div>
       </div>
-
+    ),
+    footer: (
       <div
         style={{
-          marginTop: 16,
           paddingTop: 12,
-          borderTop: `1px solid ${C.line}`,
-          fontSize: 11,
-          color: C.sub,
+          borderTop: `1px solid ${T.lineColor}`,
+          fontSize: s(11),
+          color: T.subColor,
           display: 'flex',
           justifyContent: 'space-between',
+          gap: 16,
         }}
       >
-        <span>Simulasi — bukan dokumen perjanjian kredit. Nilai dapat berubah sewaktu-waktu.</span>
+        <span>{T.footerNote}</span>
         <span>Account Officer: {d.namaAo || '-'}</span>
       </div>
+    ),
+  };
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        width: T.cardWidth,
+        padding: T.padding,
+        background: T.bgColor,
+        fontFamily: T.fontFamily,
+        color: T.inkColor,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        ...(scaleToFit
+          ? { transform: 'scale(var(--sim-scale, 1))', transformOrigin: 'top left' }
+          : {}),
+      }}
+    >
+      {T.order
+        .filter((k) => !T.hidden.includes(k))
+        .map((k) => {
+          const node = sections[k];
+          return node ? <React.Fragment key={k}>{node}</React.Fragment> : null;
+        })}
     </div>
   );
 });

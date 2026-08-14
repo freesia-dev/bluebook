@@ -188,6 +188,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_setting: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       atm_config: {
         Row: {
           created_at: string
