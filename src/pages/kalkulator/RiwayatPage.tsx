@@ -17,6 +17,7 @@ import {
   isCancelled,
   stageBeforeCancel,
 } from '@/components/kalkulator/CancelSimulationDialog';
+import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
 
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -70,6 +71,50 @@ const getPelunasanBreakdown = (s: LoanSimulationRow) => {
   const outPokok = toNumber(s.outstanding_pokok);
   const outBunga = toNumber(s.outstanding_bunga);
   return { outPokok, outBunga, totalPelunasan: outPokok + outBunga };
+};
+
+/** Ubah baris riwayat menjadi data kartu simulasi (sama persis dengan hasil JPG kalkulator). */
+const rowToCardData = (s: LoanSimulationRow): SimulasiCardData => {
+  const r: any = s.hasil_ringkasan || {};
+  const ins = getInsuranceBreakdown(s);
+  const pel = getPelunasanBreakdown(s);
+  const gajiPokok = toNumber(s.gaji_pokok, toNumber(s.gaji));
+  const ttp = toNumber(s.ttp);
+  const dsrPct = Number.isFinite(Number(r.dsrPct)) ? Number(r.dsrPct) : null;
+
+  return {
+    namaDebitur: s.nama_debitur || '—',
+    produk: s.product_nama || 'Produk Kredit',
+    skema: s.skema,
+    plafon: toNumber(s.plafon),
+    tenorBulan: toNumber(s.tenor_bulan),
+    bungaPa: s.bunga_pa,
+    promoNama: getCerdas(s)?.namaProgram ?? null,
+    promoLabel: getCerdasLabel(s),
+    gajiPokok,
+    ttp,
+    dsrPct,
+    angsuranPertama: toNumber(r.angsuranPertama),
+    angsuranTerakhir: s.skema !== 'anuitas' ? toNumber(r.angsuranTerakhir) : undefined,
+    totalAngsuran: toNumber(r.totalAngsuran),
+    totalBunga: toNumber(r.totalBunga),
+    asuransiJiwa: ins.asuransiJiwaBeban,
+    asuransiJiwaProvider: s.asuransi_provider === 'alamin' ? 'Al-Amin' : 'Pialang Asuransi',
+    premiJiwaAktual: ins.premiJiwaAktual,
+    subsidiJiwa: ins.subsidiBank,
+    asuransiKredit: ins.premiKredit,
+    provisi: toNumber(r.provisi),
+    biaya: getBiayaList(s),
+    blokir: toNumber(r.blokir, toNumber(s.blokir_angsuran)),
+    totalPotongan: toNumber(r.total),
+    pelunasan:
+      s.ada_pelunasan && pel.totalPelunasan > 0
+        ? { pokok: pel.outPokok, bunga: pel.outBunga, total: pel.totalPelunasan }
+        : null,
+    danaDiterima: toNumber(r.danaDiterima),
+    namaAo: s.nama_ao,
+    tanggal: new Date(s.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }),
+  };
 };
 
 const exportRowToExcel = (s: LoanSimulationRow) => {

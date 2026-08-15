@@ -7,6 +7,7 @@ import { ProdukKalkulatorSection } from './ProdukKalkulatorPage';
 import { DaftarAOSection } from './DaftarAOPage';
 import { UsiaPensiunSection } from './UsiaPensiunPage';
 import ProgramPromoManager from '@/components/cerdas/ProgramPromoManager';
+import SimulasiThemeEditor from '@/components/kalkulator/SimulasiThemeEditor';
 
 /** Satu halaman konfigurasi kalkulator dengan tab: Produk, Daftar AO, Usia Pensiun, Program Promo. */
 const KalkulatorConfigPage: React.FC = () => {
@@ -17,7 +18,7 @@ const KalkulatorConfigPage: React.FC = () => {
     <MainLayout>
       <PageHeader
         title="Konfigurasi Kalkulator"
-        description="Produk & biaya, aturan DSR, daftar AO, usia pensiun, dan program promo — dalam satu halaman"
+        description="Produk & biaya, aturan DSR, daftar AO, usia pensiun, program promo, dan tampilan kartu JPG — dalam satu halaman"
       />
       <Tabs
         value={tab}
@@ -29,12 +30,14 @@ const KalkulatorConfigPage: React.FC = () => {
           <TabsTrigger value="ao">Daftar AO</TabsTrigger>
           <TabsTrigger value="pensiun">Usia Pensiun</TabsTrigger>
           <TabsTrigger value="promo">Program Promo</TabsTrigger>
+          <TabsTrigger value="tampilan">Tampilan JPG</TabsTrigger>
         </TabsList>
 
         <TabsContent value="produk"><ProdukKalkulatorSection /></TabsContent>
         <TabsContent value="ao"><DaftarAOSection /></TabsContent>
         <TabsContent value="pensiun"><UsiaPensiunSection /></TabsContent>
         <TabsContent value="promo"><ProgramPromoManager /></TabsContent>
+        <TabsContent value="tampilan"><SimulasiThemeEditor /></TabsContent>
       </Tabs>
     </MainLayout>
   );
