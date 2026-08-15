@@ -37,6 +37,7 @@ const KalkulatorConfigPage: React.FC = () => {
         <TabsContent value="ao"><DaftarAOSection /></TabsContent>
         <TabsContent value="pensiun"><UsiaPensiunSection /></TabsContent>
         <TabsContent value="promo"><ProgramPromoManager /></TabsContent>
+        <TabsContent value="tampilan"><SimulasiThemeEditor /></TabsContent>
       </Tabs>
     </MainLayout>
   );
