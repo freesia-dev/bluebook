@@ -7,6 +7,7 @@ import { ProdukKalkulatorSection } from './ProdukKalkulatorPage';
 import { DaftarAOSection } from './DaftarAOPage';
 import { UsiaPensiunSection } from './UsiaPensiunPage';
 import ProgramPromoManager from '@/components/cerdas/ProgramPromoManager';
+import SimulasiThemeEditor from '@/components/kalkulator/SimulasiThemeEditor';
 
 /** Satu halaman konfigurasi kalkulator dengan tab: Produk, Daftar AO, Usia Pensiun, Program Promo. */
 const KalkulatorConfigPage: React.FC = () => {
