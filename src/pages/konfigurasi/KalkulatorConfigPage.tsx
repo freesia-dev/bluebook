@@ -18,7 +18,7 @@ const KalkulatorConfigPage: React.FC = () => {
     <MainLayout>
       <PageHeader
         title="Konfigurasi Kalkulator"
-        description="Produk & biaya, aturan DSR, daftar AO, usia pensiun, dan program promo — dalam satu halaman"
+        description="Produk & biaya, aturan DSR, daftar AO, usia pensiun, program promo, dan tampilan kartu JPG — dalam satu halaman"
       />
       <Tabs
         value={tab}
