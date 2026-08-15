@@ -30,6 +30,7 @@ const KalkulatorConfigPage: React.FC = () => {
           <TabsTrigger value="ao">Daftar AO</TabsTrigger>
           <TabsTrigger value="pensiun">Usia Pensiun</TabsTrigger>
           <TabsTrigger value="promo">Program Promo</TabsTrigger>
+          <TabsTrigger value="tampilan">Tampilan JPG</TabsTrigger>
         </TabsList>
 
         <TabsContent value="produk"><ProdukKalkulatorSection /></TabsContent>
