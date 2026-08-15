@@ -17,6 +17,7 @@ import {
   isCancelled,
   stageBeforeCancel,
 } from '@/components/kalkulator/CancelSimulationDialog';
+import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
 
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
