@@ -2,65 +2,47 @@ import logo from "@/assets/logo_bluebook.png";
 
 const FooterSection = () => {
   return (
-    <footer className="py-16 bg-slate-950">
+    <footer className="border-t border-white/10 bg-slate-950 py-12">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col items-center text-center">
-          {/* Logo and name */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 rounded-xl bg-white p-2 flex items-center justify-center shadow-lg">
-              <img 
-                src={logo} 
-                alt="Bluebook Logo" 
-                className="w-full h-full object-contain"
-              />
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white p-1.5">
+                <img src={logo} alt="Logo Bluebook Telihan" className="h-full w-full object-contain" />
+              </div>
+              <div>
+                <div className="text-base font-semibold text-white">Bluebook Telihan</div>
+                <div className="text-xs text-slate-500">Digital Logbook System</div>
+              </div>
             </div>
-            <div className="text-left">
-              <span className="text-2xl font-bold text-white block">
-                Bluebook Telihan
-              </span>
-              <span className="text-sm text-slate-400">
-                Digital Logbook System
-              </span>
-            </div>
+            <p className="mt-5 text-sm leading-relaxed text-slate-400">
+              Aplikasi internal Bankaltimtara KCP Telihan untuk pengelolaan administrasi, agenda kredit,
+              dan pelaporan operasional.
+            </p>
           </div>
 
-          {/* Tagline */}
-          <p className="text-brand-secondary font-medium text-lg mb-6">
-            "In Bluebook we Trust!"
-          </p>
-
-          {/* Description */}
-          <p className="text-slate-400 max-w-md mb-8">
-            Aplikasi Internal – Bankaltimtara KCP Telihan. 
-            Sistem digital untuk pengelolaan administrasi dan agenda kredit.
-          </p>
-
-          {/* Links */}
-          <div className="flex flex-wrap justify-center gap-6 mb-8 text-sm">
-            <a href="#features" className="text-slate-400 hover:text-white transition-colors">
+          <div className="flex flex-col gap-3 text-sm">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Tautan
+            </div>
+            <a href="#features" className="text-slate-400 transition-colors hover:text-white">
               Fitur
             </a>
-            <a href="/panduan" className="text-slate-400 hover:text-white transition-colors">
+            <a href="/panduan" className="text-slate-400 transition-colors hover:text-white">
               Panduan
             </a>
-            <a href="#" className="text-slate-400 hover:text-white transition-colors">
-              Kebijakan Privasi
+            <a href="/install" className="text-slate-400 transition-colors hover:text-white">
+              Install Aplikasi
             </a>
-            <a href="#" className="text-slate-400 hover:text-white transition-colors">
-              Hubungi Kami
+            <a href="/login" className="text-slate-400 transition-colors hover:text-white">
+              Login Pegawai
             </a>
           </div>
+        </div>
 
-          {/* Divider */}
-          <div className="w-full max-w-md h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-8" />
-
-          {/* Copyright */}
-          <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Bluebook Telihan. All rights reserved.
-          </p>
-          <p className="text-xs text-slate-600 mt-2">
-            Dibangun dengan ❤️ untuk Bankaltimtara KCP Telihan
-          </p>
+        <div className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} Bluebook Telihan. All rights reserved.</span>
+          <span>Aplikasi internal — Bankaltimtara KCP Telihan</span>
         </div>
       </div>
     </footer>
