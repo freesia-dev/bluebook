@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 
 const ExplainerSection = () => {
   const steps = [
@@ -6,78 +6,56 @@ const ExplainerSection = () => {
       number: "01",
       title: "Autentikasi & Otorisasi",
       description:
-        "Login dengan akun yang telah disetujui admin. Sistem menyesuaikan tampilan menu dan hak akses berdasarkan peran pengguna.",
-      highlights: ["Approval Workflow", "Hak Akses sesuai Role User", "Auto Logout 1 Jam"],
+        "Login dengan akun yang telah disetujui admin. Menu dan hak akses menyesuaikan peran pengguna secara otomatis.",
+      highlights: ["Approval workflow", "Hak akses per role", "Auto logout 1 jam"],
     },
     {
       number: "02",
       title: "Operasional Harian",
       description:
-        "Registrasi surat, kelola agenda kredit, jalankan simulasi, catat pengisian ATM, pantau NPL, dan operasikan modul Customer Service serta Security dari satu portal.",
-      highlights: ["Auto-Numbering", "Berita Acara Siap Cetak", "Notifikasi sesuai Role User"],
+        "Registrasi surat, agenda kredit, simulasi, pengisian ATM, monitoring NPL, layanan Customer Service, dan log security dari satu portal.",
+      highlights: ["Penomoran otomatis", "Berita acara siap cetak", "Notifikasi per role"],
     },
     {
       number: "03",
       title: "Pelaporan & Audit",
       description:
-        "Dashboard real-time, ekspor Excel dan PDF terformat, global search (Ctrl+K), activity log, serta recycle bin untuk memastikan setiap transaksi terdokumentasi.",
-      highlights: ["Realtime Statistik", "Audit Trail", "Recycle Bin"],
+        "Dashboard real-time, ekspor Excel dan PDF terformat, global search, activity log, serta recycle bin untuk dokumentasi penuh.",
+      highlights: ["Statistik realtime", "Audit trail", "Recycle bin"],
     },
   ];
 
   return (
-    <section className="py-24 lg:py-32 bg-slate-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-secondary/20 rounded-full blur-3xl" />
-
-      <div className="container mx-auto px-4 relative">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block px-4 py-2 rounded-full bg-white/10 text-brand-secondary font-semibold text-sm mb-4">
-            ALUR PENGGUNAAN
-          </span>
-          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
-            Alur Kerja yang{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-amber-400">
-              Terstandar
-            </span>
+    <section className="bg-slate-50 py-20 lg:py-28 border-y border-slate-200">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mb-12">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-3">
+            Alur Penggunaan
+          </div>
+          <h2 className="text-3xl lg:text-4xl font-semibold text-slate-900 tracking-tight">
+            Tiga tahap kerja yang terstandar
           </h2>
-          <p className="text-lg text-slate-300 leading-relaxed">
-            Tiga tahap operasional yang terdokumentasi dari otentikasi hingga pelaporan.
+          <p className="mt-4 text-base text-slate-600 leading-relaxed">
+            Dari otentikasi, operasional harian, hingga pelaporan — seluruh proses terdokumentasi.
           </p>
         </div>
 
-        <div className="relative">
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-brand-secondary/30 to-transparent -translate-y-1/2" />
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            {steps.map((step, index) => (
-              <div key={index} className="relative group">
-                <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 h-full">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-secondary to-amber-500 flex items-center justify-center text-2xl font-bold text-slate-900 shadow-lg group-hover:scale-110 transition-transform">
-                      {step.number}
-                    </div>
-                    {index < steps.length - 1 && (
-                      <ArrowRight className="hidden lg:block w-6 h-6 text-brand-secondary/50 absolute right-[-20px] top-1/2 -translate-y-1/2" />
-                    )}
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">{step.description}</p>
-
-                  <div className="space-y-2">
-                    {step.highlights.map((highlight, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-green-400" />
-                        <span>{highlight}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          {steps.map((step) => (
+            <div key={step.number} className="rounded-lg border border-slate-200 bg-white p-7">
+              <div className="text-sm font-semibold text-brand-primary mb-4">{step.number}</div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">{step.title}</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-5">{step.description}</p>
+              <ul className="space-y-2 border-t border-slate-200 pt-4">
+                {step.highlights.map((highlight) => (
+                  <li key={highlight} className="flex items-center gap-2 text-sm text-slate-700">
+                    <Check className="h-4 w-4 shrink-0 text-brand-primary" />
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </section>
