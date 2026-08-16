@@ -2,7 +2,7 @@ import React from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  Instagram, Linkedin,
+  Flame, Instagram, Linkedin,
   Mail, CreditCard, Banknote, Calculator, TrendingUp, Shield,
   FileSearch, Archive, Users, Zap, BarChart3, Smartphone,
   Bot, UserSquare, Bell, LineChart,
@@ -90,14 +90,15 @@ const About: React.FC = () => {
 
         {/* Platform Perks */}
         <div>
-          <div className="text-center mb-8">
-            <span className="inline-block px-3 py-1 rounded-full bg-secondary/10 text-secondary-foreground text-xs font-semibold mb-3">
-              PLATFORM
-            </span>
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-              Dibangun untuk Cepat & Aman
+          <div className="mb-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
+              Platform
+            </div>
+            <h2 className="font-display text-2xl font-semibold text-foreground">
+              Dibangun untuk cepat dan aman
             </h2>
           </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {platformPerks.map((p, i) => (
               <div key={i} className="rounded-xl border border-border bg-card p-4 text-center hover:border-primary/30 transition-colors">
@@ -127,12 +128,12 @@ const About: React.FC = () => {
         </div>
 
         {/* Creator Section */}
-        <Card className="text-center shadow-xl overflow-hidden">
-          <div className="h-2 bg-gradient-to-r from-primary via-secondary to-primary" />
+        <Card className="text-center border-border">
           <CardContent className="py-8 px-6">
             <p className="text-muted-foreground flex items-center justify-center gap-2 mb-2">
-              Dibuat dengan <Flame className="w-4 h-4 text-orange-500 fill-orange-500 animate-pulse" /> oleh
+              Dibuat dengan <Flame className="w-4 h-4 text-orange-500 fill-orange-500" /> oleh
             </p>
+
             <p className="font-display text-2xl font-bold text-foreground mb-4">Haris Fadilah</p>
             <div className="flex items-center justify-center gap-4 mb-6">
               <a
