@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { LoanSkema, AmortRow, CalcSummary, PotonganResult, BiayaItem, DsrBasis } from '@/lib/loan-calc';
+import type { SegmenKredit, LoanSkema, AmortRow, CalcSummary, PotonganResult, BiayaItem, DsrBasis } from '@/lib/loan-calc';
 
 export interface RateOption {
   label: string;
@@ -22,6 +22,7 @@ export interface LoanProduct {
   id: string;
   nama: string;
   skema: LoanSkema;
+  segmen: SegmenKredit;
   max_tenor_bulan: number;
   bunga_options: RateOption[];
   asuransi_options: RateOption[];
@@ -63,6 +64,7 @@ export interface LoanSimulationRow {
   product_id: string | null;
   product_nama: string | null;
   skema: LoanSkema;
+  segmen?: SegmenKredit | null;
   plafon: number;
   tenor_bulan: number;
   tanggal_akad: string | null;

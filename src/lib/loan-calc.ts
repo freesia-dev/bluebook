@@ -1,7 +1,45 @@
 // Pure calculation functions for the loan calculator.
 // All money is integer rupiah; rates are in percent per annum (e.g., 12 = 12%).
 
-export type LoanSkema = 'anuitas' | 'efektif' | 'sliding';
+/**
+ * Skema perhitungan angsuran:
+ * - `sliding`  : pokok tetap (P/n), bunga dihitung dari saldo sisa → angsuran menurun tiap bulan.
+ * - `efektif`  : efektif rata-rata — total bunga sama dengan sliding, tetapi pokok dan bunga
+ *                dibagi rata sehingga angsuran tetap sampai akhir.
+ * - `anuitas`  : angsuran tetap; bunga besar & pokok kecil di awal, berbalik di akhir.
+ * - `flat`     : bunga tetap dihitung dari plafon awal tiap bulan, pokok tetap.
+ */
+export type LoanSkema = 'anuitas' | 'efektif' | 'sliding' | 'flat';
+
+export type SegmenKredit = 'konsumtif' | 'produktif';
+
+export const SEGMEN_LABELS: Record<SegmenKredit, string> = {
+  konsumtif: 'Konsumtif',
+  produktif: 'Produktif',
+};
+
+/** Kelas warna badge segmen: biru = konsumtif, hijau = produktif. */
+export const SEGMEN_BADGE_CLASS: Record<SegmenKredit, string> = {
+  konsumtif: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+  produktif: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+};
+
+export const normalizeSegmen = (v?: string | null): SegmenKredit =>
+  v === 'produktif' ? 'produktif' : 'konsumtif';
+
+export const SKEMA_LABELS: Record<LoanSkema, string> = {
+  anuitas: 'Anuitas',
+  efektif: 'Efektif Rata-rata',
+  sliding: 'Sliding (Menurun)',
+  flat: 'Flat',
+};
+
+export const SKEMA_DESKRIPSI: Record<LoanSkema, string> = {
+  anuitas: 'Angsuran tetap, bunga besar di awal dan pokok besar di akhir',
+  efektif: 'Bunga efektif dibagi rata — pokok dan bunga tetap sampai akhir',
+  sliding: 'Pokok tetap, bunga menurun mengikuti saldo — angsuran menurun',
+  flat: 'Bunga tetap dihitung dari plafon awal — angsuran tetap',
+};
 
 export interface AmortRow {
   bulan: number;
@@ -67,7 +105,8 @@ export function calcAmortization(input: CalcInput): CalcResult {
         saldo: round(saldo),
       });
     }
-  } else if (skema === 'efektif') {
+  } else if (skema === 'sliding') {
+    // Sliding / menurun: pokok tetap (P/n), bunga dari saldo sisa → angsuran menurun.
     const pokokTetap = plafon / tenorBulan;
     for (let i = 1; i <= tenorBulan; i++) {
       const bunga = saldo * r;
@@ -82,8 +121,26 @@ export function calcAmortization(input: CalcInput): CalcResult {
         saldo: round(saldo),
       });
     }
+  } else if (skema === 'efektif') {
+    // Efektif rata-rata: total bunga sama dengan sliding, dibagi rata sehingga
+    // pokok dan bunga tetap sampai akhir angsuran.
+    const totalBungaEfektif = plafon * r * ((tenorBulan + 1) / 2);
+    const bungaRata = tenorBulan > 0 ? totalBungaEfektif / tenorBulan : 0;
+    const pokokTetap = plafon / tenorBulan;
+    for (let i = 1; i <= tenorBulan; i++) {
+      const pokok = i === tenorBulan ? saldo : pokokTetap;
+      saldo = Math.max(0, saldo - pokok);
+      rows.push({
+        bulan: i,
+        tanggal: isoDate(addMonths(akad, i)),
+        pokok: round(pokok),
+        bunga: round(bungaRata),
+        angsuran: round(pokok + bungaRata),
+        saldo: round(saldo),
+      });
+    }
   } else {
-    // sliding (flat declining): bunga konstan dari plafon awal
+    // flat: bunga konstan dihitung dari plafon awal, pokok tetap → angsuran tetap.
     const pokokTetap = plafon / tenorBulan;
     const bungaTetap = plafon * r;
     for (let i = 1; i <= tenorBulan; i++) {
@@ -364,11 +421,11 @@ export function calcMaxPlafonByDSR(input: {
     if (r === 0) return Math.floor(angsuranMax * input.tenorBulan);
     return Math.floor((angsuranMax * (1 - Math.pow(1 + r, -input.tenorBulan))) / r);
   }
-  if (input.skema === 'sliding') {
-    // angsuran = P/n + P*r → P = ang / (1/n + r)
-    return Math.floor(angsuranMax / (1 / input.tenorBulan + r));
+  if (input.skema === 'efektif') {
+    // angsuran tetap = (P + P*r*(n+1)/2) / n → P = ang * n / (1 + r*(n+1)/2)
+    return Math.floor((angsuranMax * input.tenorBulan) / (1 + (r * (input.tenorBulan + 1)) / 2));
   }
-  // efektif: angsuran pertama = P/n + P*r (terbesar) → ambil sebagai cap
+  // sliding & flat: angsuran (pertama) = P/n + P*r → P = ang / (1/n + r)
   return Math.floor(angsuranMax / (1 / input.tenorBulan + r));
 }
 

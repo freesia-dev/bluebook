@@ -34,6 +34,11 @@ import {
   fmtRp,
   fmtNumber,
   type LoanSkema,
+  SKEMA_LABELS,
+  SKEMA_DESKRIPSI,
+  SEGMEN_LABELS,
+  SEGMEN_BADGE_CLASS,
+  normalizeSegmen,
   type BiayaItem,
   type DsrBasis,
 } from '@/lib/loan-calc';
@@ -255,6 +260,7 @@ const KalkulatorPage: React.FC = () => {
   const provisiInput = parseFloat(provisi) || 0;
   const blokirN = parseInt(blokir) || 0;
   const skema: LoanSkema = selectedProduct?.skema ?? 'anuitas';
+  const segmen = normalizeSegmen(selectedProduct?.segmen);
 
   // Pensiun
   const pensionRule = pensionRules.find((r) => r.pilihan_karir === pilihanKarir);
@@ -410,6 +416,7 @@ const KalkulatorPage: React.FC = () => {
       product_id: productId || null,
       product_nama: selectedProduct?.nama || null,
       skema,
+      segmen,
       plafon,
       tenor_bulan: tenorBulan,
       tanggal_akad: tanggalAkad || null,
@@ -884,8 +891,8 @@ const KalkulatorPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title={editId ? 'Edit Simulasi Loan' : 'Kalkulator Konsumtif'}
-        description={editId ? 'Menyunting simulasi tersimpan — perubahan akan menimpa data lama.' : 'Input bertahap per tab, hasil hitungan tampil berdampingan tanpa perlu scroll.'}
+        title={editId ? 'Edit Simulasi Kredit' : 'Kalkulator Kredit'}
+        description={editId ? 'Menyunting simulasi kredit tersimpan — perubahan akan menimpa data lama.' : 'Satu kalkulator untuk kredit konsumtif maupun produktif — produk menentukan skema dan segmennya.'}
         actions={
           <div className="flex gap-2">
             {editId && (
@@ -1025,7 +1032,13 @@ const KalkulatorPage: React.FC = () => {
                       <SelectContent>
                         {products.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
-                            {p.nama} <span className="text-muted-foreground">— {p.skema}</span>
+                            <span className="flex items-center gap-2">
+                              <Badge variant="outline" className={`text-[10px] ${SEGMEN_BADGE_CLASS[normalizeSegmen(p.segmen)]}`}>
+                                {SEGMEN_LABELS[normalizeSegmen(p.segmen)]}
+                              </Badge>
+                              {p.nama}
+                              <span className="text-muted-foreground">— {SKEMA_LABELS[p.skema as LoanSkema] ?? p.skema}</span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1505,7 +1518,14 @@ const KalkulatorPage: React.FC = () => {
               {!result && <p className="text-muted-foreground">Isi plafon & tenor untuk melihat simulasi.</p>}
               {result && potongan && (
                 <>
-                  <Row label="Skema" value={skema.toUpperCase()} />
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-muted-foreground">Skema</span>
+                    <span className="flex items-center gap-2 font-medium text-right">
+                      <Badge variant="outline" className={`text-[10px] ${SEGMEN_BADGE_CLASS[segmen]}`}>{SEGMEN_LABELS[segmen]}</Badge>
+                      {SKEMA_LABELS[skema]}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground -mt-1">{SKEMA_DESKRIPSI[skema]}</p>
                   {cerdasResult && (
                     <div className="flex justify-between items-center -mt-1">
                       <span className="text-muted-foreground flex items-center gap-1">

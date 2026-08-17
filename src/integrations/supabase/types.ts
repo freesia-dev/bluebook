@@ -919,6 +919,7 @@ export type Database = {
           max_tenor_bulan: number
           nama: string
           provisi_options: Json
+          segmen: string
           skema: Database["public"]["Enums"]["loan_skema"]
           updated_at: string
           urutan: number
@@ -938,6 +939,7 @@ export type Database = {
           max_tenor_bulan?: number
           nama: string
           provisi_options?: Json
+          segmen?: string
           skema?: Database["public"]["Enums"]["loan_skema"]
           updated_at?: string
           urutan?: number
@@ -957,6 +959,7 @@ export type Database = {
           max_tenor_bulan?: number
           nama?: string
           provisi_options?: Json
+          segmen?: string
           skema?: Database["public"]["Enums"]["loan_skema"]
           updated_at?: string
           urutan?: number
@@ -1147,6 +1150,7 @@ export type Database = {
           product_id: string | null
           product_nama: string | null
           provisi_pct: number
+          segmen: string
           skema: Database["public"]["Enums"]["loan_skema"]
           tabel_angsuran: Json | null
           tanggal_akad: string | null
@@ -1200,6 +1204,7 @@ export type Database = {
           product_id?: string | null
           product_nama?: string | null
           provisi_pct?: number
+          segmen?: string
           skema?: Database["public"]["Enums"]["loan_skema"]
           tabel_angsuran?: Json | null
           tanggal_akad?: string | null
@@ -1253,6 +1258,7 @@ export type Database = {
           product_id?: string | null
           product_nama?: string | null
           provisi_pct?: number
+          segmen?: string
           skema?: Database["public"]["Enums"]["loan_skema"]
           tabel_angsuran?: Json | null
           tanggal_akad?: string | null
@@ -2384,7 +2390,7 @@ export type Database = {
         | "taspen"
         | "si"
         | "simpeda_ib"
-      loan_skema: "anuitas" | "efektif" | "sliding"
+      loan_skema: "anuitas" | "efektif" | "sliding" | "flat"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2553,7 +2559,7 @@ export const Constants = {
         "si",
         "simpeda_ib",
       ],
-      loan_skema: ["anuitas", "efektif", "sliding"],
+      loan_skema: ["anuitas", "efektif", "sliding", "flat"],
     },
   },
 } as const

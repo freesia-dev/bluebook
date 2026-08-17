@@ -12,7 +12,7 @@ export interface LoanPromo {
   provisi_diskon_pct: number;
   gratis_asuransi: boolean;
   cap_subsidi: number;
-  target_skema: 'semua' | 'anuitas' | 'efektif' | 'sliding';
+  target_skema: 'semua' | 'anuitas' | 'efektif' | 'sliding' | 'flat';
   syarat: string | null;
   urutan: number;
   created_at: string;

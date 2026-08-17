@@ -1,5 +1,5 @@
 import React from 'react';
-import { fmtRp } from '@/lib/loan-calc';
+import { fmtRp, SKEMA_LABELS, SEGMEN_LABELS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
 import { DEFAULT_SIMULASI_THEME, SimulasiSectionKey, SimulasiTheme } from '@/lib/simulasi-theme';
 import { useSimulasiTheme } from '@/hooks/use-simulasi-theme';
 
@@ -7,6 +7,7 @@ export interface SimulasiCardData {
   namaDebitur: string;
   produk: string;
   skema: string;
+  segmen?: string | null;
   plafon: number;
   tenorBulan: number;
   bungaPa: number | string;
@@ -127,7 +128,23 @@ export const SimulasiCard = React.forwardRef<
         <div>
           <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
           <div style={{ fontSize: s(26), fontWeight: 800, marginTop: 4, letterSpacing: -0.4 }}>{d.namaDebitur || '—'}</div>
-          <div style={{ fontSize: s(13), opacity: 0.9, marginTop: 2 }}>{d.produk || 'Produk Kredit'}</div>
+          <div style={{ fontSize: s(13), opacity: 0.9, marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                background: normalizeSegmen(d.segmen) === 'produktif' ? '#059669' : '#2563eb',
+                color: '#ffffff',
+                borderRadius: 999,
+                padding: '2px 10px',
+                fontSize: s(10.5),
+                fontWeight: 700,
+                letterSpacing: 0.8,
+                textTransform: 'uppercase',
+              }}
+            >
+              {SEGMEN_LABELS[normalizeSegmen(d.segmen)]}
+            </span>
+            <span>{d.produk || 'Produk Kredit'}</span>
+          </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: s(12), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
@@ -172,7 +189,7 @@ export const SimulasiCard = React.forwardRef<
     ),
     chips: (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-        <Chip label="Skema" value={String(d.skema).toUpperCase()} />
+        <Chip label="Skema" value={SKEMA_LABELS[d.skema as LoanSkema] ?? String(d.skema).toUpperCase()} />
         <Chip label="Suku Bunga" value={`${d.bungaPa}% p.a.`} tone={d.promoLabel ? 'amber' : 'blue'} />
         {d.promoLabel ? (
           <Chip label={d.promoNama || 'Program Promo'} value={d.promoLabel} tone="amber" />

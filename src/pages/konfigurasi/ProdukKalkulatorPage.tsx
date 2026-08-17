@@ -27,6 +27,7 @@ import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-in
 const empty = (): Partial<LoanProduct> => ({
   nama: '',
   skema: 'anuitas',
+  segmen: 'konsumtif',
   max_tenor_bulan: 120,
   bunga_options: [],
   asuransi_options: [],
@@ -174,9 +175,20 @@ export const ProdukKalkulatorSection: React.FC = () => {
               <Select value={form.skema} onValueChange={(v: any) => setForm({ ...form, skema: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="anuitas">Anuitas</SelectItem>
-                  <SelectItem value="efektif">Efektif Rata-rata</SelectItem>
-                  <SelectItem value="sliding">Sliding (Flat-declining)</SelectItem>
+                  <SelectItem value="anuitas">Anuitas — angsuran tetap, bunga besar di awal</SelectItem>
+                  <SelectItem value="efektif">Efektif Rata-rata — pokok &amp; bunga tetap sampai akhir</SelectItem>
+                  <SelectItem value="sliding">Sliding — pokok tetap, bunga menurun</SelectItem>
+                  <SelectItem value="flat">Flat — bunga tetap dari plafon awal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Segmen Kredit</Label>
+              <Select value={form.segmen ?? 'konsumtif'} onValueChange={(v: any) => setForm({ ...form, segmen: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="konsumtif">Konsumtif</SelectItem>
+                  <SelectItem value="produktif">Produktif</SelectItem>
                 </SelectContent>
               </Select>
             </div>
