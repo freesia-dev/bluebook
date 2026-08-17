@@ -86,6 +86,7 @@ const rowToCardData = (s: LoanSimulationRow): SimulasiCardData => {
     namaDebitur: s.nama_debitur || '—',
     produk: s.product_nama || 'Produk Kredit',
     skema: s.skema,
+    segmen: s.segmen ?? 'konsumtif',
     plafon: toNumber(s.plafon),
     tenorBulan: toNumber(s.tenor_bulan),
     bungaPa: s.bunga_pa,
@@ -139,7 +140,8 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     [],
     ['— PARAMETER PINJAMAN —'],
     ['Produk', s.product_nama || '-'],
-    ['Skema', s.skema.toUpperCase()],
+    ['Skema', SKEMA_LABELS[s.skema as LoanSkema] ?? s.skema],
+    ['Segmen', SEGMEN_LABELS[normalizeSegmen(s.segmen)]],
     ['Plafon', s.plafon],
     ['Tenor (bulan)', s.tenor_bulan],
     ['Tanggal Akad', s.tanggal_akad || '-'],
@@ -283,7 +285,7 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
     ]],
     body: [
       ['Nama', ':', s.nama_debitur, 'Produk', ':', s.product_nama || '-'],
-      ['Nomor KTP', ':', s.nomor_ktp || '-', 'Skema', ':', s.skema.toUpperCase()],
+      ['Nomor KTP', ':', s.nomor_ktp || '-', 'Skema', ':', SKEMA_LABELS[s.skema as LoanSkema] ?? s.skema],
       ['Jenis Kelamin', ':', s.jenis_kelamin === 'L' ? 'Laki-laki' : s.jenis_kelamin === 'P' ? 'Perempuan' : '-', 'Plafon', ':', fmtRp(s.plafon)],
       ['Tgl Lahir', ':', s.tanggal_lahir ? new Date(s.tanggal_lahir).toLocaleDateString('id-ID') : '-', 'Tenor', ':', `${s.tenor_bulan} bulan`],
       ['Pekerjaan', ':', s.pekerjaan || '-', 'Tanggal Akad', ':', s.tanggal_akad ? new Date(s.tanggal_akad).toLocaleDateString('id-ID') : '-'],
@@ -432,7 +434,7 @@ const RiwayatPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Riwayat Simulasi Loan"
+        title="Riwayat Simulasi Kredit"
         description={`${data.length} simulasi tersimpan`}
         actions={
           <Button variant="outline" onClick={() => navigate('/kalkulator')}>
