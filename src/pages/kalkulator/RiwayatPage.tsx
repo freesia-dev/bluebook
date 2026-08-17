@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
-import { fmtRp, fmtNumber } from '@/lib/loan-calc';
+import { fmtRp, fmtNumber, SKEMA_LABELS, SEGMEN_LABELS, SEGMEN_BADGE_CLASS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
+import { Badge } from '@/components/ui/badge';
 import { Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -477,7 +478,15 @@ const RiwayatPage: React.FC = () => {
                 <TableRow key={s.id} className={isCancelled(s) ? 'opacity-70' : ''}>
                   <TableCell>{new Date(s.created_at).toLocaleDateString('id-ID')}</TableCell>
                   <TableCell className={`font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</TableCell>
-                  <TableCell>{s.product_nama || '-'}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`text-[10px] ${SEGMEN_BADGE_CLASS[normalizeSegmen(s.segmen)]}`}>
+                        {SEGMEN_LABELS[normalizeSegmen(s.segmen)]}
+                      </Badge>
+                      <span>{s.product_nama || '-'}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{SKEMA_LABELS[s.skema as LoanSkema] ?? s.skema}</span>
+                  </TableCell>
                   <TableCell className="text-right">{fmtRp(s.plafon)}</TableCell>
                   <TableCell>{s.tenor_bulan} bln</TableCell>
                   <TableCell className="text-right">

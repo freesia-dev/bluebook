@@ -230,8 +230,9 @@ const KalkulatorPromoPage: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="semua">Semua Skema</SelectItem>
                   <SelectItem value="anuitas">Anuitas saja</SelectItem>
-                  <SelectItem value="efektif">Efektif saja</SelectItem>
-                  <SelectItem value="sliding">Sliding saja (Produktif)</SelectItem>
+                  <SelectItem value="efektif">Efektif Rata-rata saja</SelectItem>
+                  <SelectItem value="sliding">Sliding (menurun) saja</SelectItem>
+                  <SelectItem value="flat">Flat saja</SelectItem>
                 </SelectContent>
               </Select>
             </div>
