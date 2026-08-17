@@ -11,6 +11,22 @@
  */
 export type LoanSkema = 'anuitas' | 'efektif' | 'sliding' | 'flat';
 
+export type SegmenKredit = 'konsumtif' | 'produktif';
+
+export const SEGMEN_LABELS: Record<SegmenKredit, string> = {
+  konsumtif: 'Konsumtif',
+  produktif: 'Produktif',
+};
+
+/** Kelas warna badge segmen: biru = konsumtif, hijau = produktif. */
+export const SEGMEN_BADGE_CLASS: Record<SegmenKredit, string> = {
+  konsumtif: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+  produktif: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+};
+
+export const normalizeSegmen = (v?: string | null): SegmenKredit =>
+  v === 'produktif' ? 'produktif' : 'konsumtif';
+
 export const SKEMA_LABELS: Record<LoanSkema, string> = {
   anuitas: 'Anuitas',
   efektif: 'Efektif Rata-rata',
