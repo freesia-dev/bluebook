@@ -56,7 +56,6 @@ const KondisiKantorTemplatePage = lazy(() => import("./pages/security/KondisiKan
 const AuditLinksAdminPage = lazy(() => import("./pages/security/AuditLinksAdminPage"));
 const AuditPublicPage = lazy(() => import("./pages/security/AuditPublicPage"));
 const KalkulatorPage = lazy(() => import("./pages/kalkulator/KalkulatorPage"));
-const KalkulatorProduktifPage = lazy(() => import("./pages/kalkulator/KalkulatorProduktifPage"));
 const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"));
 const PipelineKreditPage = lazy(() => import("./pages/kalkulator/PipelinePage"));
 const ExecutiveDashboardPage = lazy(() => import("./pages/executive/ExecutiveDashboardPage"));
@@ -274,9 +273,7 @@ const App = () => (
             <Route path="/kalkulator" element={
               <Suspense fallback={<GenericPageSkeleton />}><KalkulatorPage /></Suspense>
             } />
-            <Route path="/kalkulator/produktif" element={
-              <Suspense fallback={<GenericPageSkeleton />}><KalkulatorProduktifPage /></Suspense>
-            } />
+            <Route path="/kalkulator/produktif" element={<Navigate to="/kalkulator" replace />} />
             <Route path="/kalkulator/riwayat" element={
               <Suspense fallback={<TablePageSkeleton />}><RiwayatKalkulatorPage /></Suspense>
             } />

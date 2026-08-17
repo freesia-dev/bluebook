@@ -337,8 +337,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
   ];
 
   const simulasiKreditItems: ChildItem[] = [
-    { label: 'Kalkulator Konsumtif', href: '/kalkulator' },
-    { label: 'Kalkulator Produktif', href: '/kalkulator/produktif' },
+    { label: 'Kalkulator Kredit', href: '/kalkulator' },
     { label: 'Riwayat Simulasi', href: '/kalkulator/riwayat' },
     { label: 'Pipeline Kredit', href: '/kalkulator/pipeline' },
 
