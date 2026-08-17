@@ -89,7 +89,8 @@ export function calcAmortization(input: CalcInput): CalcResult {
         saldo: round(saldo),
       });
     }
-  } else if (skema === 'efektif') {
+  } else if (skema === 'sliding') {
+    // Sliding / menurun: pokok tetap (P/n), bunga dari saldo sisa → angsuran menurun.
     const pokokTetap = plafon / tenorBulan;
     for (let i = 1; i <= tenorBulan; i++) {
       const bunga = saldo * r;
@@ -104,8 +105,26 @@ export function calcAmortization(input: CalcInput): CalcResult {
         saldo: round(saldo),
       });
     }
+  } else if (skema === 'efektif') {
+    // Efektif rata-rata: total bunga sama dengan sliding, dibagi rata sehingga
+    // pokok dan bunga tetap sampai akhir angsuran.
+    const totalBungaEfektif = plafon * r * ((tenorBulan + 1) / 2);
+    const bungaRata = tenorBulan > 0 ? totalBungaEfektif / tenorBulan : 0;
+    const pokokTetap = plafon / tenorBulan;
+    for (let i = 1; i <= tenorBulan; i++) {
+      const pokok = i === tenorBulan ? saldo : pokokTetap;
+      saldo = Math.max(0, saldo - pokok);
+      rows.push({
+        bulan: i,
+        tanggal: isoDate(addMonths(akad, i)),
+        pokok: round(pokok),
+        bunga: round(bungaRata),
+        angsuran: round(pokok + bungaRata),
+        saldo: round(saldo),
+      });
+    }
   } else {
-    // sliding (flat declining): bunga konstan dari plafon awal
+    // flat: bunga konstan dihitung dari plafon awal, pokok tetap → angsuran tetap.
     const pokokTetap = plafon / tenorBulan;
     const bungaTetap = plafon * r;
     for (let i = 1; i <= tenorBulan; i++) {
