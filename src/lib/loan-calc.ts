@@ -405,11 +405,11 @@ export function calcMaxPlafonByDSR(input: {
     if (r === 0) return Math.floor(angsuranMax * input.tenorBulan);
     return Math.floor((angsuranMax * (1 - Math.pow(1 + r, -input.tenorBulan))) / r);
   }
-  if (input.skema === 'sliding') {
-    // angsuran = P/n + P*r → P = ang / (1/n + r)
-    return Math.floor(angsuranMax / (1 / input.tenorBulan + r));
+  if (input.skema === 'efektif') {
+    // angsuran tetap = (P + P*r*(n+1)/2) / n → P = ang * n / (1 + r*(n+1)/2)
+    return Math.floor((angsuranMax * input.tenorBulan) / (1 + (r * (input.tenorBulan + 1)) / 2));
   }
-  // efektif: angsuran pertama = P/n + P*r (terbesar) → ambil sebagai cap
+  // sliding & flat: angsuran (pertama) = P/n + P*r → P = ang / (1/n + r)
   return Math.floor(angsuranMax / (1 / input.tenorBulan + r));
 }
 
