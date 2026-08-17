@@ -1,7 +1,29 @@
 // Pure calculation functions for the loan calculator.
 // All money is integer rupiah; rates are in percent per annum (e.g., 12 = 12%).
 
-export type LoanSkema = 'anuitas' | 'efektif' | 'sliding';
+/**
+ * Skema perhitungan angsuran:
+ * - `sliding`  : pokok tetap (P/n), bunga dihitung dari saldo sisa → angsuran menurun tiap bulan.
+ * - `efektif`  : efektif rata-rata — total bunga sama dengan sliding, tetapi pokok dan bunga
+ *                dibagi rata sehingga angsuran tetap sampai akhir.
+ * - `anuitas`  : angsuran tetap; bunga besar & pokok kecil di awal, berbalik di akhir.
+ * - `flat`     : bunga tetap dihitung dari plafon awal tiap bulan, pokok tetap.
+ */
+export type LoanSkema = 'anuitas' | 'efektif' | 'sliding' | 'flat';
+
+export const SKEMA_LABELS: Record<LoanSkema, string> = {
+  anuitas: 'Anuitas',
+  efektif: 'Efektif Rata-rata',
+  sliding: 'Sliding (Menurun)',
+  flat: 'Flat',
+};
+
+export const SKEMA_DESKRIPSI: Record<LoanSkema, string> = {
+  anuitas: 'Angsuran tetap, bunga besar di awal dan pokok besar di akhir',
+  efektif: 'Bunga efektif dibagi rata — pokok dan bunga tetap sampai akhir',
+  sliding: 'Pokok tetap, bunga menurun mengikuti saldo — angsuran menurun',
+  flat: 'Bunga tetap dihitung dari plafon awal — angsuran tetap',
+};
 
 export interface AmortRow {
   bulan: number;
