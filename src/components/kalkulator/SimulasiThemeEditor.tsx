@@ -100,10 +100,13 @@ const NumField: React.FC<{
   </div>
 );
 
-/** Editor tema kartu simulasi (JPG & pratinjau) — hanya admin yang dapat menyimpan. */
+/** Editor tema kartu simulasi (JPG & pratinjau) — tiap user punya preferensi sendiri; admin bisa set default bank. */
 export const SimulasiThemeEditor: React.FC = () => {
-  const { theme: saved, isLoading } = useSimulasiTheme();
+  const { theme: saved, isLoading, isPersonal } = useSimulasiTheme();
+  const { theme: globalTheme } = useGlobalSimulasiTheme();
   const save = useSaveSimulasiTheme();
+  const saveMine = useSaveMySimulasiTheme();
+  const resetMine = useResetMySimulasiTheme();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [draft, setDraft] = useState<SimulasiTheme>(saved);
@@ -132,11 +135,31 @@ export const SimulasiThemeEditor: React.FC = () => {
       hidden: hidden ? [...new Set([...d.hidden, key])] : d.hidden.filter((k) => k !== key),
     }));
 
-  const onSave = () =>
-    save.mutate(draft, {
-      onSuccess: () => toast({ title: 'Tampilan tersimpan', description: 'Semua kartu JPG kini memakai format baru.' }),
-      onError: (e: any) => toast({ title: 'Gagal menyimpan', description: e?.message, variant: 'destructive' }),
+  const err = (e: any) => toast({ title: 'Gagal menyimpan', description: e?.message, variant: 'destructive' });
+
+  const onSaveMine = () =>
+    saveMine.mutate(draft, {
+      onSuccess: () =>
+        toast({ title: 'Preferensi tersimpan', description: 'Kartu JPG Anda kini memakai tampilan ini.' }),
+      onError: err,
     });
+
+  const onSaveGlobal = () =>
+    save.mutate(draft, {
+      onSuccess: () =>
+        toast({ title: 'Default bank tersimpan', description: 'Berlaku untuk user yang belum punya preferensi sendiri.' }),
+      onError: err,
+    });
+
+  const onFollowGlobal = () =>
+    resetMine.mutate(undefined, {
+      onSuccess: () => {
+        setDraft(globalTheme);
+        toast({ title: 'Mengikuti tampilan default', description: 'Preferensi pribadi dihapus.' });
+      },
+      onError: err,
+    });
+
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
