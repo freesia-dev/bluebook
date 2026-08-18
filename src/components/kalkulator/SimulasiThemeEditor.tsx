@@ -10,7 +10,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
-import { useSaveSimulasiTheme, useSimulasiTheme } from '@/hooks/use-simulasi-theme';
+import {
+  useGlobalSimulasiTheme,
+  useResetMySimulasiTheme,
+  useSaveMySimulasiTheme,
+  useSaveSimulasiTheme,
+  useSimulasiTheme,
+} from '@/hooks/use-simulasi-theme';
 import {
   DEFAULT_SIMULASI_THEME,
   FONT_OPTIONS,
@@ -94,10 +100,13 @@ const NumField: React.FC<{
   </div>
 );
 
-/** Editor tema kartu simulasi (JPG & pratinjau) — hanya admin yang dapat menyimpan. */
+/** Editor tema kartu simulasi (JPG & pratinjau) — tiap user punya preferensi sendiri; admin bisa set default bank. */
 export const SimulasiThemeEditor: React.FC = () => {
-  const { theme: saved, isLoading } = useSimulasiTheme();
+  const { theme: saved, isLoading, isPersonal } = useSimulasiTheme();
+  const { theme: globalTheme } = useGlobalSimulasiTheme();
   const save = useSaveSimulasiTheme();
+  const saveMine = useSaveMySimulasiTheme();
+  const resetMine = useResetMySimulasiTheme();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [draft, setDraft] = useState<SimulasiTheme>(saved);
@@ -126,11 +135,31 @@ export const SimulasiThemeEditor: React.FC = () => {
       hidden: hidden ? [...new Set([...d.hidden, key])] : d.hidden.filter((k) => k !== key),
     }));
 
-  const onSave = () =>
-    save.mutate(draft, {
-      onSuccess: () => toast({ title: 'Tampilan tersimpan', description: 'Semua kartu JPG kini memakai format baru.' }),
-      onError: (e: any) => toast({ title: 'Gagal menyimpan', description: e?.message, variant: 'destructive' }),
+  const err = (e: any) => toast({ title: 'Gagal menyimpan', description: e?.message, variant: 'destructive' });
+
+  const onSaveMine = () =>
+    saveMine.mutate(draft, {
+      onSuccess: () =>
+        toast({ title: 'Preferensi tersimpan', description: 'Kartu JPG Anda kini memakai tampilan ini.' }),
+      onError: err,
     });
+
+  const onSaveGlobal = () =>
+    save.mutate(draft, {
+      onSuccess: () =>
+        toast({ title: 'Default bank tersimpan', description: 'Berlaku untuk user yang belum punya preferensi sendiri.' }),
+      onError: err,
+    });
+
+  const onFollowGlobal = () =>
+    resetMine.mutate(undefined, {
+      onSuccess: () => {
+        setDraft(globalTheme);
+        toast({ title: 'Mengikuti tampilan default', description: 'Preferensi pribadi dihapus.' });
+      },
+      onError: err,
+    });
+
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
@@ -251,19 +280,38 @@ export const SimulasiThemeEditor: React.FC = () => {
           </CardContent>
         </Card>
 
-        <div className="flex gap-2">
-          <Button onClick={onSave} disabled={!isAdmin || save.isPending} className="flex-1">
-            <Save className="mr-2 h-4 w-4" />
-            {save.isPending ? 'Menyimpan…' : 'Simpan Tampilan'}
-          </Button>
-          <Button variant="outline" onClick={() => setDraft(DEFAULT_SIMULASI_THEME)}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Button onClick={onSaveMine} disabled={saveMine.isPending} className="flex-1">
+              <Save className="mr-2 h-4 w-4" />
+              {saveMine.isPending ? 'Menyimpan…' : 'Simpan untuk Saya'}
+            </Button>
+            <Button variant="outline" onClick={() => setDraft(DEFAULT_SIMULASI_THEME)}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={onFollowGlobal}
+              disabled={!isPersonal || resetMine.isPending}
+            >
+              Ikuti Tampilan Default
+            </Button>
+            {isAdmin && (
+              <Button variant="secondary" className="flex-1" onClick={onSaveGlobal} disabled={save.isPending}>
+                {save.isPending ? 'Menyimpan…' : 'Jadikan Default Bank'}
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isPersonal
+              ? 'Anda memakai preferensi tampilan pribadi — hanya memengaruhi kartu JPG milik Anda.'
+              : 'Anda memakai tampilan default bank. Simpan untuk membuat preferensi pribadi.'}
+          </p>
         </div>
-        {!isAdmin && (
-          <p className="text-xs text-muted-foreground">Hanya admin yang dapat menyimpan perubahan tampilan.</p>
-        )}
       </div>
 
       <Card className="h-fit lg:sticky lg:top-4">

@@ -127,8 +127,10 @@ export const SimulasiCard = React.forwardRef<
       >
         <div>
           <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
-          <div style={{ fontSize: s(26), fontWeight: 800, marginTop: 4, letterSpacing: -0.4 }}>{d.namaDebitur || '—'}</div>
-          <div style={{ fontSize: s(13), opacity: 0.9, marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: s(26), fontWeight: 800, marginTop: 4, letterSpacing: -0.4, lineHeight: 1.25 }}>
+            {d.namaDebitur || '—'}
+          </div>
+          <div style={{ fontSize: s(13), opacity: 0.9, marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.4 }}>
             <span
               style={{
                 background: normalizeSegmen(d.segmen) === 'produktif' ? '#059669' : '#2563eb',
