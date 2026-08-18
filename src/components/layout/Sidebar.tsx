@@ -353,7 +353,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
             ],
           },
         ]
-      : []),
+      : [{ label: 'Tampilan Kartu JPG', href: '/konfigurasi/kalkulator?tab=tampilan' }]),
   ];
 
   const atmTelihanItems = [
