@@ -280,19 +280,38 @@ export const SimulasiThemeEditor: React.FC = () => {
           </CardContent>
         </Card>
 
-        <div className="flex gap-2">
-          <Button onClick={onSave} disabled={!isAdmin || save.isPending} className="flex-1">
-            <Save className="mr-2 h-4 w-4" />
-            {save.isPending ? 'Menyimpan…' : 'Simpan Tampilan'}
-          </Button>
-          <Button variant="outline" onClick={() => setDraft(DEFAULT_SIMULASI_THEME)}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Button onClick={onSaveMine} disabled={saveMine.isPending} className="flex-1">
+              <Save className="mr-2 h-4 w-4" />
+              {saveMine.isPending ? 'Menyimpan…' : 'Simpan untuk Saya'}
+            </Button>
+            <Button variant="outline" onClick={() => setDraft(DEFAULT_SIMULASI_THEME)}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={onFollowGlobal}
+              disabled={!isPersonal || resetMine.isPending}
+            >
+              Ikuti Tampilan Default
+            </Button>
+            {isAdmin && (
+              <Button variant="secondary" className="flex-1" onClick={onSaveGlobal} disabled={save.isPending}>
+                {save.isPending ? 'Menyimpan…' : 'Jadikan Default Bank'}
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isPersonal
+              ? 'Anda memakai preferensi tampilan pribadi — hanya memengaruhi kartu JPG milik Anda.'
+              : 'Anda memakai tampilan default bank. Simpan untuk membuat preferensi pribadi.'}
+          </p>
         </div>
-        {!isAdmin && (
-          <p className="text-xs text-muted-foreground">Hanya admin yang dapat menyimpan perubahan tampilan.</p>
-        )}
       </div>
 
       <Card className="h-fit lg:sticky lg:top-4">
