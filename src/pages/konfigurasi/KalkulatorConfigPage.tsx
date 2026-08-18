@@ -3,16 +3,30 @@ import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
 import { ProdukKalkulatorSection } from './ProdukKalkulatorPage';
 import { DaftarAOSection } from './DaftarAOPage';
 import { UsiaPensiunSection } from './UsiaPensiunPage';
 import ProgramPromoManager from '@/components/cerdas/ProgramPromoManager';
 import SimulasiThemeEditor from '@/components/kalkulator/SimulasiThemeEditor';
 
-/** Satu halaman konfigurasi kalkulator dengan tab: Produk, Daftar AO, Usia Pensiun, Program Promo. */
+/** Konfigurasi kalkulator. Admin: semua tab. Non-admin: hanya tampilan kartu JPG (preferensi pribadi). */
 const KalkulatorConfigPage: React.FC = () => {
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') || 'produk';
+  const { isAdmin } = useAuth();
+  const tab = isAdmin ? params.get('tab') || 'produk' : 'tampilan';
+
+  if (!isAdmin) {
+    return (
+      <MainLayout>
+        <PageHeader
+          title="Tampilan Kartu JPG"
+          description="Atur susunan, font, dan warna kartu simulasi sesuai preferensi Anda sendiri"
+        />
+        <SimulasiThemeEditor />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
