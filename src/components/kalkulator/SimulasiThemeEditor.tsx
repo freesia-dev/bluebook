@@ -10,7 +10,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
-import { useSaveSimulasiTheme, useSimulasiTheme } from '@/hooks/use-simulasi-theme';
+import {
+  useGlobalSimulasiTheme,
+  useResetMySimulasiTheme,
+  useSaveMySimulasiTheme,
+  useSaveSimulasiTheme,
+  useSimulasiTheme,
+} from '@/hooks/use-simulasi-theme';
 import {
   DEFAULT_SIMULASI_THEME,
   FONT_OPTIONS,
