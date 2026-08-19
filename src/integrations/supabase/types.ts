@@ -2348,6 +2348,7 @@ export type Database = {
         Returns: string
       }
       get_ba_security_nomor: { Args: { _tanggal: string }; Returns: string }
+      get_database_usage: { Args: never; Returns: Json }
       get_security_audit_report: { Args: { _token: string }; Returns: Json }
       get_security_users: {
         Args: never
