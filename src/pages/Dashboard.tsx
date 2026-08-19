@@ -136,7 +136,7 @@ const Dashboard: React.FC = () => {
     // the admin storage/db usage cards so the gauges are always up-to-date.
     const invalidateUsage = () => {
       refetchAll();
-      queryClient.invalidateQueries({ queryKey: ['storage-counts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['db-usage'] });
       queryClient.invalidateQueries({ queryKey: ['file-storage-usage'] });
     };
     const tablesToWatch = [
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
 
     // Also refetch storage gauges when the tab regains focus
     const onFocus = () => {
-      queryClient.invalidateQueries({ queryKey: ['storage-counts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['db-usage'] });
       queryClient.invalidateQueries({ queryKey: ['file-storage-usage'] });
     };
     window.addEventListener('focus', onFocus);
