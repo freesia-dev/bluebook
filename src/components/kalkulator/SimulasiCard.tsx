@@ -139,39 +139,8 @@ export const SimulasiCard = React.forwardRef<
           >
             {d.namaDebitur || '—'}
           </div>
-          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: normalizeSegmen(d.segmen) === 'produktif' ? '#059669' : '#2563eb',
-                color: '#ffffff',
-                borderRadius: 999,
-                padding: '0 12px',
-                height: Math.round(s(10.5) * 2),
-                fontSize: s(10.5),
-                fontWeight: 700,
-                letterSpacing: 0.8,
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                lineHeight: 1,
-              }}
-            >
-              {SEGMEN_LABELS[normalizeSegmen(d.segmen)]}
-            </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                fontSize: s(13),
-                opacity: 0.9,
-                height: Math.round(s(10.5) * 2),
-                lineHeight: 1,
-              }}
-            >
-              {d.produk || 'Produk Kredit'}
-            </span>
+          <div style={{ marginTop: 10, fontSize: s(13), opacity: 0.9, lineHeight: 1.4 }}>
+            {d.produk || 'Produk Kredit'}
           </div>
 
         </div>
@@ -179,6 +148,19 @@ export const SimulasiCard = React.forwardRef<
           <div style={{ fontSize: s(12), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
           <div style={{ fontSize: s(15), fontWeight: 700 }}>{T.branchName}</div>
           <div style={{ fontSize: s(11), opacity: 0.85, marginTop: 4 }}>{d.tanggal}</div>
+          <div
+            style={{
+              fontSize: s(10.5),
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              textTransform: 'uppercase',
+              opacity: 0.9,
+              marginTop: 12,
+              lineHeight: 1.3,
+            }}
+          >
+            Kredit {SEGMEN_LABELS[normalizeSegmen(d.segmen)]}
+          </div>
         </div>
       </div>
     ),
