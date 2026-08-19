@@ -127,26 +127,50 @@ export const SimulasiCard = React.forwardRef<
       >
         <div>
           <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
-          <div style={{ fontSize: s(26), fontWeight: 800, marginTop: 4, letterSpacing: -0.4, lineHeight: 1.25 }}>
+          <div
+            style={{
+              fontSize: s(26),
+              fontWeight: 800,
+              marginTop: 6,
+              letterSpacing: -0.4,
+              lineHeight: 1.35,
+              paddingBottom: 4,
+            }}
+          >
             {d.namaDebitur || '—'}
           </div>
-          <div style={{ fontSize: s(13), opacity: 0.9, marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.4 }}>
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
             <span
               style={{
+                display: 'block',
                 background: normalizeSegmen(d.segmen) === 'produktif' ? '#059669' : '#2563eb',
                 color: '#ffffff',
                 borderRadius: 999,
-                padding: '2px 10px',
+                padding: '0 12px',
+                height: Math.round(s(10.5) * 2),
+                lineHeight: `${Math.round(s(10.5) * 2)}px`,
                 fontSize: s(10.5),
                 fontWeight: 700,
                 letterSpacing: 0.8,
                 textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
               }}
             >
               {SEGMEN_LABELS[normalizeSegmen(d.segmen)]}
             </span>
-            <span>{d.produk || 'Produk Kredit'}</span>
+            <span
+              style={{
+                display: 'block',
+                fontSize: s(13),
+                opacity: 0.9,
+                height: Math.round(s(10.5) * 2),
+                lineHeight: `${Math.round(s(10.5) * 2)}px`,
+              }}
+            >
+              {d.produk || 'Produk Kredit'}
+            </span>
           </div>
+
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: s(12), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
