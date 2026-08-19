@@ -142,29 +142,32 @@ export const SimulasiCard = React.forwardRef<
           <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
             <span
               style={{
-                display: 'block',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 background: normalizeSegmen(d.segmen) === 'produktif' ? '#059669' : '#2563eb',
                 color: '#ffffff',
                 borderRadius: 999,
                 padding: '0 12px',
                 height: Math.round(s(10.5) * 2),
-                lineHeight: `${Math.round(s(10.5) * 2)}px`,
                 fontSize: s(10.5),
                 fontWeight: 700,
                 letterSpacing: 0.8,
                 textTransform: 'uppercase',
                 whiteSpace: 'nowrap',
+                lineHeight: 1,
               }}
             >
               {SEGMEN_LABELS[normalizeSegmen(d.segmen)]}
             </span>
             <span
               style={{
-                display: 'block',
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontSize: s(13),
                 opacity: 0.9,
                 height: Math.round(s(10.5) * 2),
-                lineHeight: `${Math.round(s(10.5) * 2)}px`,
+                lineHeight: 1,
               }}
             >
               {d.produk || 'Produk Kredit'}
