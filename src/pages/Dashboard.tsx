@@ -54,33 +54,19 @@ const Dashboard: React.FC = () => {
   const ojkUserFilter = ojkScope === 'mine' ? userName : null;
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData(ojkUserFilter);
 
-  // Storage usage query (admin only) — parallelized across ALL data tables in Bluebook
-  const { data: storageCounts } = useQuery({
-    queryKey: ['storage-counts-dashboard'],
+  // Penggunaan database (admin only) — dihitung langsung di server untuk SEMUA tabel Bluebook,
+  // tanpa terpengaruh RLS, sehingga angkanya sinkron dengan Activity Log & data sebenarnya.
+  const { data: dbUsage } = useQuery({
+    queryKey: ['db-usage'],
     queryFn: async () => {
-      const tables = [
-        'surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan',
-        'pengisian_atm', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan',
-        'agenda_kredit_entry', 'call_memo_penagihan', 'debitur_kontak',
-        'mlf_data', 'mlf_uploads', 'wa_reminder_log', 'wa_template',
-        'security_shift', 'security_log_entry', 'security_log_comment', 'security_audit_token',
-        'kondisi_kantor_template', 'atm_config',
-        'jenis_kredit', 'jenis_debitur', 'jenis_penggunaan', 'sektor_ekonomi', 'kode_fasilitas',
-        'profiles', 'user_roles', 'activity_log', 'recycle_bin',
-      ] as const;
-      const results = await Promise.all(
-        tables.map(async (table) => {
-          const { count } = await supabase.from(table as any).select('*', { count: 'exact', head: true });
-          return { table, count: count || 0 };
-        })
-      );
-      const counts: Record<string, number> = {};
-      let total = 0;
-      for (const r of results) {
-        counts[r.table] = r.count;
-        total += r.count;
-      }
-      return { counts, total };
+      const { data, error } = await supabase.rpc('get_database_usage' as any);
+      if (error) throw error;
+      const u = data as any;
+      return {
+        tables: (u?.tables ?? []) as { table: string; rows: number; bytes: number }[],
+        totalRows: Number(u?.total_rows ?? 0),
+        dbBytes: Number(u?.database_bytes ?? 0),
+      };
     },
     enabled: isAdmin,
     staleTime: 1000 * 30,
@@ -126,10 +112,16 @@ const Dashboard: React.FC = () => {
     refetchInterval: 1000 * 60,
   });
 
-  const maxRows = 100000;
-  const dbUsedPercent = storageCounts ? Math.min(Math.round((storageCounts.total / maxRows) * 100), 100) : 0;
+  // Kuota disk database (bukan batas jumlah baris) — sumber batas nyata di Lovable Cloud.
+  const maxDbBytes = 8 * 1024 * 1024 * 1024; // 8 GB
+  const dbUsedPercent = dbUsage ? Math.min(Math.round((dbUsage.dbBytes / maxDbBytes) * 100), 100) : 0;
+  const topTables = useMemo(
+    () => [...(dbUsage?.tables ?? [])].sort((a, b) => b.rows - a.rows).slice(0, 3),
+    [dbUsage],
+  );
   const maxStorageBytes = 1024 * 1024 * 1024; // 1GB
   const fileUsedPercent = fileStorageData ? Math.min(Math.round((fileStorageData.usedBytes / maxStorageBytes) * 100), 100) : 0;
+
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
