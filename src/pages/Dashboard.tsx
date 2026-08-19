@@ -54,33 +54,19 @@ const Dashboard: React.FC = () => {
   const ojkUserFilter = ojkScope === 'mine' ? userName : null;
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData(ojkUserFilter);
 
-  // Storage usage query (admin only) — parallelized across ALL data tables in Bluebook
-  const { data: storageCounts } = useQuery({
-    queryKey: ['storage-counts-dashboard'],
+  // Penggunaan database (admin only) — dihitung langsung di server untuk SEMUA tabel Bluebook,
+  // tanpa terpengaruh RLS, sehingga angkanya sinkron dengan Activity Log & data sebenarnya.
+  const { data: dbUsage } = useQuery({
+    queryKey: ['db-usage'],
     queryFn: async () => {
-      const tables = [
-        'surat_masuk', 'surat_keluar', 'sppk', 'pk', 'kkmpak', 'nomor_loan',
-        'pengisian_atm', 'penyelesaian_selisih', 'selisih_atm', 'kartu_tertelan',
-        'agenda_kredit_entry', 'call_memo_penagihan', 'debitur_kontak',
-        'mlf_data', 'mlf_uploads', 'wa_reminder_log', 'wa_template',
-        'security_shift', 'security_log_entry', 'security_log_comment', 'security_audit_token',
-        'kondisi_kantor_template', 'atm_config',
-        'jenis_kredit', 'jenis_debitur', 'jenis_penggunaan', 'sektor_ekonomi', 'kode_fasilitas',
-        'profiles', 'user_roles', 'activity_log', 'recycle_bin',
-      ] as const;
-      const results = await Promise.all(
-        tables.map(async (table) => {
-          const { count } = await supabase.from(table as any).select('*', { count: 'exact', head: true });
-          return { table, count: count || 0 };
-        })
-      );
-      const counts: Record<string, number> = {};
-      let total = 0;
-      for (const r of results) {
-        counts[r.table] = r.count;
-        total += r.count;
-      }
-      return { counts, total };
+      const { data, error } = await supabase.rpc('get_database_usage' as any);
+      if (error) throw error;
+      const u = data as any;
+      return {
+        tables: (u?.tables ?? []) as { table: string; rows: number; bytes: number }[],
+        totalRows: Number(u?.total_rows ?? 0),
+        dbBytes: Number(u?.database_bytes ?? 0),
+      };
     },
     enabled: isAdmin,
     staleTime: 1000 * 30,
@@ -126,10 +112,16 @@ const Dashboard: React.FC = () => {
     refetchInterval: 1000 * 60,
   });
 
-  const maxRows = 100000;
-  const dbUsedPercent = storageCounts ? Math.min(Math.round((storageCounts.total / maxRows) * 100), 100) : 0;
+  // Kuota disk database (bukan batas jumlah baris) — sumber batas nyata di Lovable Cloud.
+  const maxDbBytes = 8 * 1024 * 1024 * 1024; // 8 GB
+  const dbUsedPercent = dbUsage ? Math.min(Math.round((dbUsage.dbBytes / maxDbBytes) * 100), 100) : 0;
+  const topTables = useMemo(
+    () => [...(dbUsage?.tables ?? [])].sort((a, b) => b.rows - a.rows).slice(0, 3),
+    [dbUsage],
+  );
   const maxStorageBytes = 1024 * 1024 * 1024; // 1GB
   const fileUsedPercent = fileStorageData ? Math.min(Math.round((fileStorageData.usedBytes / maxStorageBytes) * 100), 100) : 0;
+
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -144,7 +136,7 @@ const Dashboard: React.FC = () => {
     // the admin storage/db usage cards so the gauges are always up-to-date.
     const invalidateUsage = () => {
       refetchAll();
-      queryClient.invalidateQueries({ queryKey: ['storage-counts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['db-usage'] });
       queryClient.invalidateQueries({ queryKey: ['file-storage-usage'] });
     };
     const tablesToWatch = [
@@ -163,7 +155,7 @@ const Dashboard: React.FC = () => {
 
     // Also refetch storage gauges when the tab regains focus
     const onFocus = () => {
-      queryClient.invalidateQueries({ queryKey: ['storage-counts-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['db-usage'] });
       queryClient.invalidateQueries({ queryKey: ['file-storage-usage'] });
     };
     window.addEventListener('focus', onFocus);
@@ -273,7 +265,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Cloud Storage Usage (Admin Only) */}
-      {isAdmin && storageCounts && (
+      {isAdmin && dbUsage && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card className="shadow-card">
             <CardContent className="p-4">
@@ -283,13 +275,13 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{storageCounts.total.toLocaleString('id-ID')} rows terpakai</span>
-                  <span>{maxRows.toLocaleString('id-ID')} rows</span>
+                  <span>{formatBytes(dbUsage.dbBytes)} terpakai</span>
+                  <span>{formatBytes(maxDbBytes)}</span>
                 </div>
                 <div className="h-3 rounded-full bg-secondary overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${dbUsedPercent}%` }}
+                    style={{ width: `${Math.max(dbUsedPercent, 1)}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-xs">
@@ -299,12 +291,19 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
-                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{100 - dbUsedPercent}%</span></span>
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{formatBytes(Math.max(maxDbBytes - dbUsage.dbBytes, 0))}</span></span>
                   </div>
+                </div>
+                <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
+                  Total {dbUsage.totalRows.toLocaleString('id-ID')} baris di {dbUsage.tables.length} tabel
+                  {topTables.length > 0 && (
+                    <> · terbesar: {topTables.map((t) => `${t.table} (${t.rows.toLocaleString('id-ID')})`).join(', ')}</>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
+
 
           <Card className="shadow-card">
             <CardContent className="p-4">
