@@ -265,7 +265,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Cloud Storage Usage (Admin Only) */}
-      {isAdmin && storageCounts && (
+      {isAdmin && dbUsage && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card className="shadow-card">
             <CardContent className="p-4">
@@ -275,13 +275,13 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{storageCounts.total.toLocaleString('id-ID')} rows terpakai</span>
-                  <span>{maxRows.toLocaleString('id-ID')} rows</span>
+                  <span>{formatBytes(dbUsage.dbBytes)} terpakai</span>
+                  <span>{formatBytes(maxDbBytes)}</span>
                 </div>
                 <div className="h-3 rounded-full bg-secondary overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${dbUsedPercent}%` }}
+                    style={{ width: `${Math.max(dbUsedPercent, 1)}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-xs">
@@ -291,12 +291,19 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
-                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{100 - dbUsedPercent}%</span></span>
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{formatBytes(Math.max(maxDbBytes - dbUsage.dbBytes, 0))}</span></span>
                   </div>
+                </div>
+                <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
+                  Total {dbUsage.totalRows.toLocaleString('id-ID')} baris di {dbUsage.tables.length} tabel
+                  {topTables.length > 0 && (
+                    <> · terbesar: {topTables.map((t) => `${t.table} (${t.rows.toLocaleString('id-ID')})`).join(', ')}</>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
+
 
           <Card className="shadow-card">
             <CardContent className="p-4">
