@@ -342,18 +342,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
     { label: 'Pipeline Kredit', href: '/kalkulator/pipeline' },
 
     ...(isAdmin
-      ? [
-          {
-            label: 'Konfigurasi',
-            children: [
-              { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
-              { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
-              { label: 'Program Promo', href: '/konfigurasi/kalkulator?tab=promo' },
-              { label: 'Promo Umum (lama)', href: '/konfigurasi/promo-kalkulator' },
-            ],
-          },
-        ]
+      ? [{ label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' }]
       : [{ label: 'Tampilan Kartu JPG', href: '/konfigurasi/kalkulator?tab=tampilan' }]),
+
   ];
 
   const atmTelihanItems = [
