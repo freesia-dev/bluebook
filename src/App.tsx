@@ -60,11 +60,8 @@ const RiwayatKalkulatorPage = lazy(() => import("./pages/kalkulator/RiwayatPage"
 const PipelineKreditPage = lazy(() => import("./pages/kalkulator/PipelinePage"));
 const ExecutiveDashboardPage = lazy(() => import("./pages/executive/ExecutiveDashboardPage"));
 
-const ProdukKalkulatorPage = lazy(() => import("./pages/konfigurasi/ProdukKalkulatorPage"));
 const KalkulatorConfigPage = lazy(() => import("./pages/konfigurasi/KalkulatorConfigPage"));
-const DaftarAOPage = lazy(() => import("./pages/konfigurasi/DaftarAOPage"));
 const SecurityDashboardPage = lazy(() => import("./pages/security/SecurityDashboardPage"));
-const KalkulatorPromoPage = lazy(() => import("./pages/konfigurasi/KalkulatorPromoPage"));
 const CIFPage = lazy(() => import("./pages/cs/CIFPage"));
 const RekeningPage = lazy(() => import("./pages/cs/RekeningPage"));
 const SIPage = lazy(() => import("./pages/cs/SIPage"));
@@ -285,7 +282,7 @@ const App = () => (
               <Suspense fallback={<TablePageSkeleton />}><KalkulatorConfigPage /></Suspense>
             } />
             <Route path="/konfigurasi/daftar-ao" element={
-              <Suspense fallback={<TablePageSkeleton />}><DaftarAOPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=ao" replace />
             } />
             <Route path="/konfigurasi/produk-kalkulator" element={
               <Navigate to="/konfigurasi/kalkulator?tab=produk" replace />
@@ -297,8 +294,9 @@ const App = () => (
               <Navigate to="/konfigurasi/kalkulator?tab=promo" replace />
             } />
             <Route path="/konfigurasi/promo-kalkulator" element={
-              <Suspense fallback={<TablePageSkeleton />}><KalkulatorPromoPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=promo" replace />
             } />
+
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>

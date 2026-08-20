@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { Search, Mail, Send, CreditCard, FileText, X, Pencil, ExternalLink } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Search, Mail, Send, CreditCard, FileText, X, Pencil, ExternalLink,
+  Users, Wallet, Landmark, Phone, PiggyBank, Calculator, Repeat, Shield, BarChart3, Loader2,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -14,9 +16,128 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK, AgendaKreditEntry } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
-type AnyRecord = SuratMasuk | SuratKeluar | SPPK | PK | KKMPAK | AgendaKreditEntry;
+type Row = Record<string, any>;
+
+interface SearchSpec {
+  table: string;
+  module: string;
+  icon: React.ElementType;
+  href: string | ((r: Row) => string);
+  badgeColor: string;
+  /** kolom teks yang dicari */
+  cols: string[];
+  title: (r: Row) => string;
+  subtitle: (r: Row) => string;
+  /** halaman mendukung ?edit=<id> */
+  editable?: boolean;
+}
+
+const rp = (v: any) => (v === null || v === undefined || v === '' ? '-' : `Rp ${Number(v).toLocaleString('id-ID')}`);
+
+const SPECS: SearchSpec[] = [
+  {
+    table: 'surat_masuk', module: 'Surat Masuk', icon: Mail, href: '/surat-masuk',
+    badgeColor: 'bg-blue-500/10 text-blue-600', editable: true,
+    cols: ['nama_pengirim', 'perihal', 'nomor_agenda', 'nomor_surat_masuk', 'kode_surat', 'tujuan_disposisi'],
+    title: (r) => r.perihal, subtitle: (r) => `${r.nomor_agenda} • ${r.nama_pengirim}`,
+  },
+  {
+    table: 'surat_keluar', module: 'Surat Keluar', icon: Send, href: '/surat-keluar',
+    badgeColor: 'bg-green-500/10 text-green-600', editable: true,
+    cols: ['nama_penerima', 'perihal', 'nomor_agenda', 'kode_surat', 'tujuan_surat'],
+    title: (r) => r.perihal, subtitle: (r) => `${r.nomor_agenda} • ${r.nama_penerima}`,
+  },
+  {
+    table: 'agenda_kredit_entry', module: 'Agenda Kredit', icon: FileText, href: '/agenda-kredit/agenda-kredit',
+    badgeColor: 'bg-indigo-500/10 text-indigo-600', editable: true,
+    cols: ['nama_pengirim', 'perihal', 'nomor_agenda', 'nomor_surat_masuk'],
+    title: (r) => r.perihal, subtitle: (r) => `${r.nomor_agenda} • ${r.nama_pengirim}`,
+  },
+  {
+    table: 'sppk', module: 'SPPK', icon: CreditCard,
+    href: (r) => `/agenda-kredit/sppk-${r.type}`,
+    badgeColor: 'bg-purple-500/10 text-purple-600', editable: true,
+    cols: ['nama_debitur', 'nomor_sppk', 'jenis_kredit', 'marketing'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `${r.nomor_sppk} • ${rp(r.plafon)}`,
+  },
+  {
+    table: 'pk', module: 'PK', icon: FileText,
+    href: (r) => `/agenda-kredit/pk-${r.type}`,
+    badgeColor: 'bg-orange-500/10 text-orange-600', editable: true,
+    cols: ['nama_debitur', 'nomor_pk', 'jenis_kredit', 'sektor_ekonomi'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `${r.nomor_pk} • ${rp(r.plafon)}`,
+  },
+  {
+    table: 'kkmpak', module: 'KK/MPAK', icon: CreditCard,
+    href: (r) => (r.type === 'telihan' ? '/agenda-kredit/kk-mpak-telihan' : '/agenda-kredit/agenda-mpak-meranti'),
+    badgeColor: 'bg-teal-500/10 text-teal-600', editable: true,
+    cols: ['nama_debitur', 'nomor_kk', 'nomor_mpak', 'jenis_kredit'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `KK: ${r.nomor_kk} • MPAK: ${r.nomor_mpak}`,
+  },
+  {
+    table: 'nomor_loan', module: 'Nomor Loan', icon: Landmark, href: '/agenda-kredit/nomor-loan',
+    badgeColor: 'bg-cyan-500/10 text-cyan-600', editable: true,
+    cols: ['nomor_loan', 'nama_debitur', 'nomor_pk', 'jenis_kredit', 'unit_kerja'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `${r.nomor_loan} • ${rp(r.plafon)}`,
+  },
+  {
+    table: 'loan_simulation', module: 'Simulasi Kredit', icon: Calculator, href: '/kalkulator/riwayat',
+    badgeColor: 'bg-sky-500/10 text-sky-600',
+    cols: ['nama_debitur', 'nomor_ktp', 'instansi', 'nama_ao', 'product_nama'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `${r.product_nama || r.segmen} • ${rp(r.plafon)}`,
+  },
+  {
+    table: 'cs_cif', module: 'CIF Nasabah', icon: Users, href: '/cs/cif',
+    badgeColor: 'bg-violet-500/10 text-violet-600',
+    cols: ['cif', 'nama'],
+    title: (r) => r.nama, subtitle: (r) => `CIF ${r.cif}`,
+  },
+  {
+    table: 'cs_rekening', module: 'Rekening', icon: Wallet,
+    href: (r) => `/cs/rekening/${String(r.produk).replace('_', '-')}`,
+    badgeColor: 'bg-emerald-500/10 text-emerald-600',
+    cols: ['nomor_rekening', 'nama', 'cif'],
+    title: (r) => r.nama, subtitle: (r) => `${r.nomor_rekening} • ${r.produk}`,
+  },
+  {
+    table: 'cs_bilyet_deposito', module: 'Bilyet Deposito', icon: PiggyBank, href: '/cs/bilyet-deposito',
+    badgeColor: 'bg-amber-500/10 text-amber-600',
+    cols: ['nomor_bilyet', 'nama', 'cif'],
+    title: (r) => r.nama, subtitle: (r) => `${r.nomor_bilyet} • ${rp(r.nominal)}`,
+  },
+  {
+    table: 'cs_si', module: 'Standing Instruction', icon: Repeat, href: '/cs/si',
+    badgeColor: 'bg-lime-500/10 text-lime-700',
+    cols: ['kode_si', 'nama_nasabah', 'rekening_debet', 'rekening_kredit'],
+    title: (r) => r.nama_nasabah || r.kode_si, subtitle: (r) => `${r.kode_si} • ${rp(r.nominal)}`,
+  },
+  {
+    table: 'call_memo_penagihan', module: 'Call Memo', icon: Phone, href: '/monitoring/dashboard',
+    badgeColor: 'bg-rose-500/10 text-rose-600',
+    cols: ['nama_debitur', 'l0lnno', 'no_hp', 'no_rek', 'petugas_penagih'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `${r.l0lnno || '-'} • ${rp(r.total_tunggakan)}`,
+  },
+  {
+    table: 'debitur_kontak', module: 'Kontak Debitur', icon: Phone, href: '/monitoring/kontak',
+    badgeColor: 'bg-pink-500/10 text-pink-600',
+    cols: ['l0lnno', 'nama', 'no_hp'],
+    title: (r) => r.nama || r.l0lnno, subtitle: (r) => `${r.l0lnno} • ${r.no_hp || '-'}`,
+  },
+  {
+    table: 'proyeksi_kredit', module: 'Proyeksi Kredit', icon: BarChart3, href: '/monitoring/kredit-produktif',
+    badgeColor: 'bg-fuchsia-500/10 text-fuchsia-600',
+    cols: ['nama_debitur', 'unit', 'jenis_kredit'],
+    title: (r) => r.nama_debitur, subtitle: (r) => `${r.unit} • ${rp(r.plafon)}`,
+  },
+  {
+    table: 'security_shift', module: 'Log Security', icon: Shield, href: '/security/log',
+    badgeColor: 'bg-slate-500/10 text-slate-600',
+    cols: ['nama_petugas', 'shift', 'serah_terima_ke_nama'],
+    title: (r) => r.nama_petugas, subtitle: (r) => `${r.tanggal} • Shift ${r.shift}`,
+  },
+];
 
 interface SearchResult {
   id: string;
@@ -27,17 +148,59 @@ interface SearchResult {
   icon: React.ElementType;
   href: string;
   badgeColor: string;
-  record: AnyRecord;
+  editable: boolean;
+  record: Row;
 }
+
+const LABELS: Record<string, string> = {
+  nomor_agenda: 'Nomor Agenda', kode_surat: 'Kode Surat', nomor_surat_masuk: 'Nomor Surat Masuk',
+  nama_pengirim: 'Nama Pengirim', nama_penerima: 'Nama Penerima', perihal: 'Perihal',
+  tujuan_disposisi: 'Tujuan Disposisi', tujuan_surat: 'Tujuan Surat', status: 'Status',
+  keterangan: 'Keterangan', user_input: 'User Input', nama_debitur: 'Nama Debitur',
+  jenis_kredit: 'Jenis Kredit', plafon: 'Plafon', jangka_waktu: 'Jangka Waktu',
+  jenis_debitur: 'Jenis Debitur', jenis_penggunaan: 'Jenis Penggunaan', sektor_ekonomi: 'Sektor Ekonomi',
+  nomor_sppk: 'Nomor SPPK', nomor_pk: 'Nomor PK', nomor_kk: 'Nomor KK', nomor_mpak: 'Nomor MPAK',
+  kode_fasilitas: 'Kode Fasilitas', marketing: 'Marketing', tanggal: 'Tanggal', tanggal_masuk: 'Tanggal Masuk',
+  nomor_loan: 'Nomor Loan', unit_kerja: 'Unit Kerja', produk_kredit: 'Produk Kredit', skema: 'Skema',
+  cif: 'CIF', nama: 'Nama', nomor_rekening: 'Nomor Rekening', produk: 'Produk', nominal: 'Nominal',
+  nomor_bilyet: 'Nomor Bilyet', kode_si: 'Kode SI', rekening_debet: 'Rekening Debet',
+  rekening_kredit: 'Rekening Kredit', l0lnno: 'Nomor Loan', no_hp: 'No. HP', no_rek: 'No. Rekening',
+  total_tunggakan: 'Total Tunggakan', petugas_penagih: 'Petugas Penagih', unit: 'Unit',
+  nama_petugas: 'Nama Petugas', shift: 'Shift', segmen: 'Segmen', product_nama: 'Produk',
+  tenor_bulan: 'Tenor (bulan)', nama_ao: 'AO', instansi: 'Instansi', pekerjaan: 'Pekerjaan',
+  gaji: 'Gaji', nomor_ktp: 'Nomor KTP', pipeline_status: 'Status Pipeline',
+};
+
+const HIDDEN = new Set([
+  'id', 'created_at', 'updated_at', 'created_by', 'user_id', 'nomor', 'nomor_urut',
+  'cif_id', 'pk_id', 'product_id', 'upload_id', 'penyelesaian_id', 'pengisian_atm_id',
+]);
+
+const formatValue = (key: string, v: any) => {
+  if (typeof v === 'number') return v > 999 ? v.toLocaleString('id-ID') : String(v);
+  if (typeof v === 'boolean') return v ? 'Ya' : 'Tidak';
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+  return String(v);
+};
+
+const escapeTerm = (q: string) => q.replace(/[,%()]/g, ' ').trim();
 
 export const GlobalSearch: React.FC = () => {
   const [query, setQuery] = useState('');
+  const [debounced, setDebounced] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim()), 300);
+    return () => clearTimeout(t);
+  }, [query]);
 
   // Keyboard shortcut Ctrl+K
   useEffect(() => {
@@ -62,75 +225,54 @@ export const GlobalSearch: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getSearchResults = useCallback((q: string): SearchResult[] => {
-    if (!q || q.length < 2) return [];
-    const lower = q.toLowerCase();
-    const results: SearchResult[] = [];
-    const maxPerModule = 5;
-
-    const suratMasuk = queryClient.getQueryData<SuratMasuk[]>(['surat-masuk']);
-    if (suratMasuk) {
-      results.push(...suratMasuk
-        .filter(s => s.namaPengirim.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower) || s.nomorSuratMasuk.toLowerCase().includes(lower))
-        .slice(0, maxPerModule)
-        .map(s => ({ id: `sm-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Surat Masuk', icon: Mail, href: '/surat-masuk', badgeColor: 'bg-blue-500/10 text-blue-600' })));
-    }
-
-    const suratKeluar = queryClient.getQueryData<SuratKeluar[]>(['surat-keluar']);
-    if (suratKeluar) {
-      results.push(...suratKeluar
-        .filter(s => s.namaPenerima.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower))
-        .slice(0, maxPerModule)
-        .map(s => ({ id: `sk-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPenerima}`, module: 'Surat Keluar', icon: Send, href: '/surat-keluar', badgeColor: 'bg-green-500/10 text-green-600' })));
-    }
-
-    const sppk = queryClient.getQueryData<SPPK[]>(['sppk']);
-    if (sppk) {
-      results.push(...sppk
-        .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorSPPK.toLowerCase().includes(lower) || s.jenisKredit.toLowerCase().includes(lower))
-        .slice(0, maxPerModule)
-        .map(s => ({ id: `sppk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `${s.nomorSPPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `SPPK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: `/agenda-kredit/sppk-${s.type}`, badgeColor: 'bg-purple-500/10 text-purple-600' })));
-    }
-
-    const pk = queryClient.getQueryData<PK[]>(['pk']);
-    if (pk) {
-      results.push(...pk
-        .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorPK.toLowerCase().includes(lower) || s.jenisKredit.toLowerCase().includes(lower))
-        .slice(0, maxPerModule)
-        .map(s => ({ id: `pk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `${s.nomorPK} • Rp ${s.plafon.toLocaleString('id-ID')}`, module: `PK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: FileText, href: `/agenda-kredit/pk-${s.type}`, badgeColor: 'bg-orange-500/10 text-orange-600' })));
-    }
-
-    const kkmpak = queryClient.getQueryData<KKMPAK[]>(['kkmpak']);
-    if (kkmpak) {
-      results.push(...kkmpak
-        .filter(s => s.namaDebitur.toLowerCase().includes(lower) || s.nomorKK.toLowerCase().includes(lower) || s.nomorMPAK.toLowerCase().includes(lower))
-        .slice(0, maxPerModule)
-        .map(s => ({ id: `kk-${s.id}`, recordId: s.id, record: s, title: s.namaDebitur, subtitle: `KK: ${s.nomorKK} • MPAK: ${s.nomorMPAK}`, module: `KK/MPAK ${s.type === 'telihan' ? 'Telihan' : 'Meranti'}`, icon: CreditCard, href: s.type === 'telihan' ? '/agenda-kredit/kk-mpak-telihan' : '/agenda-kredit/agenda-mpak-meranti', badgeColor: 'bg-teal-500/10 text-teal-600' })));
-    }
-
-    const agendaKredit = queryClient.getQueryData<AgendaKreditEntry[]>(['agenda-kredit-entry']);
-    if (agendaKredit) {
-      results.push(...agendaKredit
-        .filter(s => s.namaPengirim.toLowerCase().includes(lower) || s.perihal.toLowerCase().includes(lower) || s.nomorAgenda.toLowerCase().includes(lower))
-        .slice(0, maxPerModule)
-        .map(s => ({ id: `ak-${s.id}`, recordId: s.id, record: s, title: s.perihal, subtitle: `${s.nomorAgenda} • ${s.namaPengirim}`, module: 'Agenda Kredit', icon: FileText, href: '/agenda-kredit/agenda-kredit', badgeColor: 'bg-indigo-500/10 text-indigo-600' })));
-    }
-
-    return results;
-  }, [queryClient]);
-
-  const results = useMemo(() => getSearchResults(query), [query, getSearchResults]);
+  const { data: results = [], isFetching } = useQuery({
+    queryKey: ['global-search', debounced],
+    enabled: debounced.length >= 2,
+    staleTime: 1000 * 30,
+    queryFn: async (): Promise<SearchResult[]> => {
+      const term = escapeTerm(debounced);
+      if (term.length < 2) return [];
+      const settled = await Promise.all(
+        SPECS.map(async (spec) => {
+          try {
+            const filter = spec.cols.map((c) => `${c}.ilike.%${term}%`).join(',');
+            const { data, error } = await (supabase as any)
+              .from(spec.table)
+              .select('*')
+              .or(filter)
+              .limit(5);
+            if (error || !data) return [] as SearchResult[];
+            return (data as Row[]).map((r) => ({
+              id: `${spec.table}-${r.id}`,
+              recordId: String(r.id),
+              record: r,
+              title: String(spec.title(r) ?? '-'),
+              subtitle: String(spec.subtitle(r) ?? ''),
+              module: spec.module,
+              icon: spec.icon,
+              href: typeof spec.href === 'function' ? spec.href(r) : spec.href,
+              badgeColor: spec.badgeColor,
+              editable: !!spec.editable,
+            }));
+          } catch {
+            return [] as SearchResult[];
+          }
+        }),
+      );
+      return settled.flat();
+    },
+  });
 
   const groupedResults = useMemo(() => {
     const groups: Record<string, SearchResult[]> = {};
-    results.forEach(r => {
+    results.forEach((r) => {
       if (!groups[r.module]) groups[r.module] = [];
       groups[r.module].push(r);
     });
     return groups;
   }, [results]);
 
-  const flatResults = useMemo(() => results, [results]);
+  const flatResults = results;
 
   const [detailItem, setDetailItem] = useState<SearchResult | null>(null);
 
@@ -158,10 +300,10 @@ export const GlobalSearch: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(prev => (prev < flatResults.length - 1 ? prev + 1 : 0));
+      setSelectedIndex((prev) => (prev < flatResults.length - 1 ? prev + 1 : 0));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : flatResults.length - 1));
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : flatResults.length - 1));
     } else if (e.key === 'Enter' && selectedIndex >= 0 && flatResults[selectedIndex]) {
       e.preventDefault();
       openDetail(flatResults[selectedIndex]);
@@ -171,83 +313,15 @@ export const GlobalSearch: React.FC = () => {
     }
   };
 
-  const formatDate = (d: any) => {
-    if (!d) return '-';
-    try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }); } catch { return '-'; }
-  };
-
   const renderDetailFields = (item: SearchResult) => {
-    const r: any = item.record;
-    const fields: { label: string; value: any; full?: boolean }[] = [];
-    const push = (label: string, value: any, full = false) => {
-      if (value === undefined || value === null || value === '') return;
-      fields.push({ label, value, full });
-    };
-
-    if (item.module === 'Surat Masuk') {
-      push('Nomor Agenda', r.nomorAgenda);
-      push('Kode Surat', r.kodeSurat);
-      push('Nomor Surat Masuk', r.nomorSuratMasuk);
-      push('Nama Pengirim', r.namaPengirim);
-      push('Perihal', r.perihal, true);
-      push('Tujuan Disposisi', r.tujuanDisposisi);
-      push('Status', r.status);
-      push('Tanggal Masuk', formatDate(r.tanggalMasuk));
-      push('Keterangan', r.keterangan, true);
-      push('User Input', r.userInput);
-    } else if (item.module === 'Surat Keluar') {
-      push('Nomor Agenda', r.nomorAgenda);
-      push('Kode Surat', r.kodeSurat);
-      push('Nama Penerima', r.namaPenerima);
-      push('Tujuan Surat', r.tujuanSurat);
-      push('Perihal', r.perihal, true);
-      push('Status', r.status);
-      push('Tanggal', formatDate(r.tanggal));
-      push('Keterangan', r.keterangan, true);
-      push('User Input', r.userInput);
-    } else if (item.module.startsWith('SPPK')) {
-      push('Nomor SPPK', r.nomorSPPK);
-      push('Nama Debitur', r.namaDebitur);
-      push('Jenis Kredit', r.jenisKredit);
-      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
-      push('Jangka Waktu', r.jangkaWaktu);
-      push('Marketing', r.marketing);
-      push('Tanggal', formatDate(r.tanggal));
-    } else if (item.module.startsWith('PK')) {
-      push('Nomor PK', r.nomorPK);
-      push('Nama Debitur', r.namaDebitur);
-      push('Jenis Kredit', r.jenisKredit);
-      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
-      push('Jangka Waktu', r.jangkaWaktu);
-      push('Jenis Debitur', r.jenisDebitur);
-      push('Jenis Penggunaan', r.jenisPenggunaan);
-      push('Sektor Ekonomi', r.sektorEkonomi);
-      push('Tanggal', formatDate(r.tanggal));
-    } else if (item.module.startsWith('KK/MPAK')) {
-      push('Nomor KK', r.nomorKK);
-      push('Nomor MPAK', r.nomorMPAK);
-      push('Nama Debitur', r.namaDebitur);
-      push('Jenis Kredit', r.jenisKredit);
-      push('Plafon', `Rp ${Number(r.plafon).toLocaleString('id-ID')}`);
-      push('Jangka Waktu', r.jangkaWaktu);
-      push('Jenis Debitur', r.jenisDebitur);
-      push('Kode Fasilitas', r.kodeFasilitas);
-      push('Sektor Ekonomi', r.sektorEkonomi);
-      push('Tanggal', formatDate(r.tanggal));
-    } else if (item.module === 'Agenda Kredit') {
-      push('Nomor Agenda', r.nomorAgenda);
-      push('Kode Surat', r.kodeSurat);
-      push('Nomor Surat Masuk', r.nomorSuratMasuk);
-      push('Nama Pengirim', r.namaPengirim);
-      push('Perihal', r.perihal, true);
-      push('Tujuan Disposisi', r.tujuanDisposisi);
-      push('Status', r.status);
-      push('Tanggal Masuk', formatDate(r.tanggalMasuk));
-      push('Keterangan', r.keterangan, true);
-      push('User Input', r.userInput);
-    }
-
-    return fields;
+    const r = item.record;
+    return Object.entries(r)
+      .filter(([k, v]) => !HIDDEN.has(k) && v !== null && v !== undefined && v !== '' && typeof v !== 'object')
+      .map(([k, v]) => ({
+        label: LABELS[k] || k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        value: formatValue(k, v),
+        full: ['perihal', 'keterangan', 'catatan', 'kejadian', 'deskripsi'].includes(k),
+      }));
   };
 
   const showDropdown = isFocused && query.length >= 1;
@@ -258,7 +332,7 @@ export const GlobalSearch: React.FC = () => {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
-          placeholder="Cari data..."
+          placeholder="Cari semua data..."
           value={query}
           onChange={(e) => { setQuery(e.target.value); setSelectedIndex(-1); }}
           onFocus={() => setIsFocused(true)}
@@ -285,6 +359,10 @@ export const GlobalSearch: React.FC = () => {
             <div className="px-4 py-6 text-center text-sm text-muted-foreground">
               Ketik minimal 2 karakter untuk mencari...
             </div>
+          ) : isFetching && results.length === 0 ? (
+            <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Mencari di seluruh Bluebook...
+            </div>
           ) : results.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-muted-foreground">
               Tidak ada hasil ditemukan.
@@ -299,7 +377,7 @@ export const GlobalSearch: React.FC = () => {
                     </div>
                     {items.map((item) => {
                       const Icon = item.icon;
-                      const globalIdx = flatResults.findIndex(r => r.id === item.id);
+                      const globalIdx = flatResults.findIndex((r) => r.id === item.id);
                       const isSelected = globalIdx === selectedIndex;
                       return (
                         <button
@@ -352,9 +430,11 @@ export const GlobalSearch: React.FC = () => {
             <Button variant="outline" onClick={handleOpenPage} className="gap-1.5">
               <ExternalLink className="h-4 w-4" /> Buka Halaman
             </Button>
-            <Button onClick={handleEditFromDetail} className="gap-1.5">
-              <Pencil className="h-4 w-4" /> Edit Data
-            </Button>
+            {detailItem?.editable && (
+              <Button onClick={handleEditFromDetail} className="gap-1.5">
+                <Pencil className="h-4 w-4" /> Edit Data
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

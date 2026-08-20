@@ -342,18 +342,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
     { label: 'Pipeline Kredit', href: '/kalkulator/pipeline' },
 
     ...(isAdmin
-      ? [
-          {
-            label: 'Konfigurasi',
-            children: [
-              { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
-              { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
-              { label: 'Program Promo', href: '/konfigurasi/kalkulator?tab=promo' },
-              { label: 'Promo Umum (lama)', href: '/konfigurasi/promo-kalkulator' },
-            ],
-          },
-        ]
+      ? [{ label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' }]
       : [{ label: 'Tampilan Kartu JPG', href: '/konfigurasi/kalkulator?tab=tampilan' }]),
+
   ];
 
   const atmTelihanItems = [
@@ -407,26 +398,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
   ];
 
 
-  const konfigurasiItems = isAdmin
+  const dataReferensiItems: { label: string; href: string }[] = [
+    { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
+    { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
+    { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
+    { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
+  ];
+
+  const konfigurasiItems: ChildItem[] = isAdmin
     ? [
         { label: 'Pengaturan User', href: '/konfigurasi/users' },
         { label: 'User Online (Realtime)', href: '/konfigurasi/online-users' },
-        { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
-        { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
-        { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
-        { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
+        { label: 'Data Referensi', children: dataReferensiItems },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
-        { label: 'Konfigurasi Kalkulator', href: '/konfigurasi/kalkulator' },
-        { label: 'Daftar AO', href: '/konfigurasi/daftar-ao' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
       ]
-    : [
-        { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
-        { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
-        { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
-        { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
-      ];
+    : dataReferensiItems;
+
 
   const navOnNavigate = isMobile ? onClose : undefined;
 
