@@ -398,7 +398,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
   ];
 
 
-  const dataReferensiItems: ChildItem[] = [
+  const dataReferensiItems: { label: string; href: string }[] = [
     { label: 'Jenis Kredit', href: '/konfigurasi/jenis-kredit' },
     { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
     { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
