@@ -285,7 +285,7 @@ const App = () => (
               <Suspense fallback={<TablePageSkeleton />}><KalkulatorConfigPage /></Suspense>
             } />
             <Route path="/konfigurasi/daftar-ao" element={
-              <Suspense fallback={<TablePageSkeleton />}><DaftarAOPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=ao" replace />
             } />
             <Route path="/konfigurasi/produk-kalkulator" element={
               <Navigate to="/konfigurasi/kalkulator?tab=produk" replace />
@@ -297,8 +297,9 @@ const App = () => (
               <Navigate to="/konfigurasi/kalkulator?tab=promo" replace />
             } />
             <Route path="/konfigurasi/promo-kalkulator" element={
-              <Suspense fallback={<TablePageSkeleton />}><KalkulatorPromoPage /></Suspense>
+              <Navigate to="/konfigurasi/kalkulator?tab=promo" replace />
             } />
+
             {/* Coming soon menus for role-restricted users */}
             <Route path="/ob" element={
               <Suspense fallback={<GenericPageSkeleton />}><UnderConstruction /></Suspense>
