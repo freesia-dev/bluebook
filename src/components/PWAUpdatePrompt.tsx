@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { isPwaEnabled } from "@/lib/pwa-registration";
 
 type Phase = "idle" | "updating" | "done";
 
@@ -19,7 +20,7 @@ export const PWAUpdatePrompt = () => {
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
+    if (!isPwaEnabled || !("serviceWorker" in navigator)) return;
 
     let reg: ServiceWorkerRegistration | null = null;
     let pollId: number | undefined;

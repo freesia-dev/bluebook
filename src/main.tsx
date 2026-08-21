@@ -2,6 +2,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import "./lib/export-guard";
+import { initializePwa, isPwaEnabled } from "./lib/pwa-registration";
+
+initializePwa();
 
 // Auto-reload when a stale chunk fails to load after a new deploy
 const handleChunkError = (msg: string) => {
@@ -30,7 +33,7 @@ createRoot(document.getElementById("root")!).render(<App />);
 // PWA update detection: aggressively poll for updates so users get the latest
 // build quickly. The <PWAUpdatePrompt /> component shows a modal when a new
 // service worker is waiting and handles activation.
-if ("serviceWorker" in navigator) {
+if (isPwaEnabled && "serviceWorker" in navigator) {
   navigator.serviceWorker.ready.then((reg) => {
     const check = () => reg.update().catch(() => {});
     check();
