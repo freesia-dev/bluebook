@@ -237,7 +237,60 @@ export function calcPotongan(p: PotonganInput): PotonganResult {
 }
 
 // ================= DSR =================
-export type DsrBasis = 'gaji' | 'ttp';
+/** Kode kategori DSR — bebas (custom), 'gaji' & 'ttp' adalah bawaan. */
+export type DsrBasis = string;
+
+/** Sumber nilai yang dipakai sebagai basis perhitungan */
+export type DsrSumber = 'gaji' | 'ttp' | 'gaji_ttp';
+
+/** Konfigurasi satu kategori DSR (bisa dibuat custom di Konfigurasi Kalkulator) */
+export interface DsrRuleConfig {
+  kode: string;
+  label: string;
+  /** persentase utama, mis. 70 */
+  max_pct: number;
+  /** sumber nilai untuk batas angsuran (default: gaji untuk kode 'gaji', ttp untuk 'ttp') */
+  sumber?: DsrSumber;
+  /** persentase kedua (opsional), mis. flagging = gaji × 70% × 70% */
+  faktor2_pct?: number | null;
+  /** kurangi hasil dengan selisih Angsuran Gaji */
+  kurangi_ag?: boolean;
+  /** kurangi hasil dengan Angsuran Praja */
+  kurangi_ap?: boolean;
+  /** sumber nilai untuk penyebut persentase DSR (default gaji_ttp) */
+  sumber_penghasilan?: DsrSumber;
+}
+
+export const DSR_SUMBER_LABEL: Record<DsrSumber, string> = {
+  gaji: 'Gaji Pokok',
+  ttp: 'TTP',
+  gaji_ttp: 'Gaji Pokok + TTP',
+};
+
+/** Lengkapi rule dengan default bawaan agar kompatibel dengan data lama */
+export function normalizeDsrRule(r: Partial<DsrRuleConfig> & { kode: string; label?: string }): DsrRuleConfig {
+  const isTtp = r.kode === 'ttp';
+  return {
+    kode: r.kode,
+    label: r.label || (isTtp ? 'TTP' : 'GAJI'),
+    max_pct: r.max_pct ?? (isTtp ? 30 : 100),
+    sumber: r.sumber ?? (isTtp ? 'ttp' : 'gaji'),
+    faktor2_pct: r.faktor2_pct ?? null,
+    kurangi_ag: r.kurangi_ag ?? isTtp,
+    kurangi_ap: r.kurangi_ap ?? isTtp,
+    sumber_penghasilan: r.sumber_penghasilan ?? (isTtp ? 'ttp' : 'gaji_ttp'),
+  };
+}
+
+/** Teks rumus untuk ditampilkan di UI */
+export function describeDsrRule(r: DsrRuleConfig): string {
+  const n = normalizeDsrRule(r);
+  let s = `${DSR_SUMBER_LABEL[n.sumber!]} × ${n.max_pct}%`;
+  if (n.faktor2_pct) s += ` × ${n.faktor2_pct}%`;
+  if (n.kurangi_ag) s += ' − Selisih AG';
+  if (n.kurangi_ap) s += ' − Angsuran Praja';
+  return s;
+}
 
 export interface DsrInput {
   basis: DsrBasis;
@@ -245,6 +298,8 @@ export interface DsrInput {
   ttp: number;
   /** persentase maksimal DSR sesuai konfigurasi produk (gaji default 100, ttp default 30) */
   maxPct: number;
+  /** aturan lengkap (opsional) — bila diisi, dipakai menggantikan basis/maxPct */
+  rule?: Partial<DsrRuleConfig> | null;
   /** nilai Angsuran Gaji (jika ada) */
   angsuranGaji?: number;
   /** nilai Angsuran Praja (AP, jika ada) */
@@ -263,6 +318,7 @@ export interface DsrResult {
   dsrPct: number;
   aman: boolean | null;
   label: string;
+  rumus: string;
 }
 
 export function calcDsr(i: DsrInput): DsrResult {
@@ -273,31 +329,41 @@ export function calcDsr(i: DsrInput): DsrResult {
   const selisihAG = Math.max(0, ag - gajiPokok);
   const angsuran = Math.max(0, i.angsuranPertama || 0);
 
-  let basisNilai: number;
-  let maxAngsuran: number;
-  if (i.basis === 'ttp') {
-    basisNilai = ttp;
-    maxAngsuran = Math.max(0, Math.round((ttp * (i.maxPct || 30)) / 100) - selisihAG - ap);
-  } else {
-    basisNilai = gajiPokok + ttp;
-    maxAngsuran = Math.round((gajiPokok * (i.maxPct || 100)) / 100);
-  }
+  const rule = normalizeDsrRule({
+    kode: i.basis,
+    label: i.rule?.label,
+    max_pct: i.rule?.max_pct ?? i.maxPct,
+    sumber: i.rule?.sumber,
+    faktor2_pct: i.rule?.faktor2_pct,
+    kurangi_ag: i.rule?.kurangi_ag,
+    kurangi_ap: i.rule?.kurangi_ap,
+    sumber_penghasilan: i.rule?.sumber_penghasilan,
+  });
+
+  const nilai = (s: DsrSumber) => (s === 'gaji' ? gajiPokok : s === 'ttp' ? ttp : gajiPokok + ttp);
+
+  const basisNilai = nilai(rule.sumber_penghasilan!);
+  let maxAngsuran = (nilai(rule.sumber!) * (rule.max_pct || 0)) / 100;
+  if (rule.faktor2_pct) maxAngsuran = (maxAngsuran * rule.faktor2_pct) / 100;
+  maxAngsuran = Math.round(maxAngsuran);
+  if (rule.kurangi_ag) maxAngsuran -= selisihAG;
+  if (rule.kurangi_ap) maxAngsuran -= ap;
+  maxAngsuran = Math.max(0, maxAngsuran);
 
   return {
-    basis: i.basis,
+    basis: rule.kode,
     basisNilai,
-    maxPct: i.maxPct,
+    maxPct: rule.max_pct,
     selisihAG,
     angsuranPraja: ap,
     maxAngsuran,
     dsrPct: basisNilai > 0 && angsuran > 0 ? (angsuran / basisNilai) * 100 : 0,
     aman: maxAngsuran > 0 && angsuran > 0 ? angsuran <= maxAngsuran : null,
-    label:
-      i.basis === 'ttp'
-        ? `TTP (maks ${i.maxPct || 30}% TTP${selisihAG || ap ? ' − AG/AP' : ''})`
-        : `GAJI (maks ${i.maxPct || 100}% Gaji Pokok)`,
+    label: `${rule.label} (maks ${describeDsrRule(rule)})`,
+    rumus: describeDsrRule(rule),
   };
 }
+
 
 
 // Pelunasan dipercepat di bulan ke-N

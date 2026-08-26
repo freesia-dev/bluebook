@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,10 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber, SKEMA_LABELS, SEGMEN_LABELS, SEGMEN_BADGE_CLASS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
+import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   CancelSimulationDialog,
   StageBadge,
@@ -375,6 +378,43 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
 
 const RiwayatPage: React.FC = () => {
   const { data = [], isLoading } = useLoanSimulations();
+  const qc = useQueryClient();
+  const [search, setSearch] = useState('');
+
+  // Realtime: simulasi baru / hasil edit langsung tampil (dan naik ke atas)
+  useEffect(() => {
+    const ch = supabase
+      .channel('loan-simulation-riwayat')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_simulation' }, () => {
+        qc.invalidateQueries({ queryKey: ['loan-simulations'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const sorted = [...data].sort(
+      (a, b) =>
+        new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime(),
+    );
+    if (!q) return sorted;
+    return sorted.filter((s) =>
+      [
+        s.nama_debitur,
+        s.nomor_ktp,
+        s.product_nama,
+        s.instansi,
+        s.pekerjaan,
+        s.nama_ao,
+        s.created_by_nama,
+        s.pipeline_status,
+        String(s.plafon),
+      ]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [data, search]);
   const del = useDeleteLoanSimulation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -436,7 +476,7 @@ const RiwayatPage: React.FC = () => {
     <MainLayout>
       <PageHeader
         title="Riwayat Simulasi Kredit"
-        description={`${data.length} simulasi tersimpan`}
+        description={`${rows.length} dari ${data.length} simulasi tersimpan`}
         actions={
           <Button variant="outline" onClick={() => navigate('/kalkulator')}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Kalkulator
@@ -445,6 +485,15 @@ const RiwayatPage: React.FC = () => {
       />
       <Card>
         <CardContent className="pt-6">
+          <div className="relative mb-4 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama debitur, KTP, produk, AO, status..."
+              className="pl-9"
+            />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -467,14 +516,14 @@ const RiwayatPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               )}
-              {!isLoading && data.length === 0 && (
+              {!isLoading && rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                    Belum ada simulasi tersimpan
+                    {search ? 'Tidak ada simulasi yang cocok dengan pencarian' : 'Belum ada simulasi tersimpan'}
                   </TableCell>
                 </TableRow>
               )}
-              {data.map((s) => (
+              {rows.map((s) => (
                 <TableRow key={s.id} className={isCancelled(s) ? 'opacity-70' : ''}>
                   <TableCell>{new Date(s.created_at).toLocaleDateString('id-ID')}</TableCell>
                   <TableCell className={`font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</TableCell>

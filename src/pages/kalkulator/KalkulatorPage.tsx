@@ -29,6 +29,8 @@ import {
   calcPensiun,
   calcPPPK,
   calcDsr,
+  describeDsrRule,
+  normalizeDsrRule,
   detectPPPK,
   calcMaxPlafonByDSR,
   fmtRp,
@@ -191,7 +193,7 @@ const KalkulatorPage: React.FC = () => {
     setPilihanKarir(editRow.pilihan_karir || '');
     setTanggalSk(((editRow.hasil_ringkasan as any)?.tanggalSk as string) || '');
     const savedBasis = (editRow.dsr_basis ?? (editRow.hasil_ringkasan as any)?.dsrBasis) as DsrBasis | undefined;
-    if (savedBasis === 'gaji' || savedBasis === 'ttp') setDsrBasis(savedBasis);
+    if (savedBasis) setDsrBasis(savedBasis);
     setNamaAo(editRow.nama_ao || '');
     setProductId(editRow.product_id || '');
     setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
@@ -376,6 +378,7 @@ const KalkulatorPage: React.FC = () => {
         gajiPokok,
         ttp,
         maxPct: dsrRule?.max_pct ?? (dsrBasis === 'ttp' ? 30 : 100),
+        rule: dsrRule,
         angsuranGaji,
         angsuranPraja,
         angsuranPertama,
@@ -1299,15 +1302,13 @@ const KalkulatorPage: React.FC = () => {
                           <div key={r.kode} className="flex items-center gap-2">
                             <RadioGroupItem value={r.kode} id={`dsr-${r.kode}`} />
                             <Label htmlFor={`dsr-${r.kode}`} className="cursor-pointer font-normal">
-                              {r.label} — maks {r.max_pct}% {r.kode === 'ttp' ? 'dari TTP' : 'dari Gaji Pokok'}
+                              {r.label} — {describeDsrRule(normalizeDsrRule(r))}
                             </Label>
                           </div>
                         ))}
                       </RadioGroup>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {dsrBasis === 'ttp'
-                          ? `Angsuran maksimal = ${dsr.maxPct}% × TTP − Selisih AG − AP.`
-                          : `Angsuran maksimal = ${dsr.maxPct}% dari Gaji Pokok (TTP hanya menambah basis penghasilan).`}
+                        Angsuran maksimal = {dsr.rumus}.
                       </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
