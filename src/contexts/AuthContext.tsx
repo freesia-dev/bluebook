@@ -173,8 +173,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsPending(false);
   };
 
-  const userName = user?.user_metadata?.nama || user?.email?.split('@')[0] || 'User';
-  const permissions = getPermissions(role);
+  const { overrides } = useRoleMenuOverrides();
+  const permissions = applyRoleOverrides(role, overrides);
+
   const isAdmin = role === 'admin';
   if (typeof window !== 'undefined') { (window as any).__BLUEBOOK_IS_ADMIN__ = isAdmin; (window as any).__BLUEBOOK_CAN_EXPORT__ = isAdmin || role === 'pemimpin'; }
   const isDemo = role === 'demo';
