@@ -216,3 +216,7 @@ export const isRouteAllowedFor = (pathname: string, p: RolePermissions): boolean
   if (pathname.startsWith('/ob')) return p.comingSoonOB;
   return true;
 };
+
+export const isRouteAllowed = (pathname: string, role: AppRole): boolean =>
+  isRouteAllowedFor(pathname, getPermissions(role));
+
