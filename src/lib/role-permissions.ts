@@ -144,11 +144,44 @@ export const ROLE_PERMISSIONS: Record<AppRole, RolePermissions> = {
 export const getPermissions = (role: AppRole | null | undefined): RolePermissions =>
   role ? ROLE_PERMISSIONS[role] ?? ROLE_PERMISSIONS.user : ROLE_PERMISSIONS.user;
 
+/** Flag izin yang boleh diatur admin per role (menu yang muncul di sidebar). */
+export const MENU_PERMISSION_FLAGS: { key: keyof RolePermissions; label: string; desc?: string }[] = [
+  { key: 'dashboard', label: 'Dashboard Utama' },
+  { key: 'executiveDashboard', label: 'Executive Dashboard' },
+  { key: 'securityDashboard', label: 'Dashboard Security' },
+  { key: 'surat', label: 'Surat Masuk & Keluar' },
+  { key: 'agendaKredit', label: 'Agenda Kredit' },
+  { key: 'loanCalc', label: 'Simulasi Kredit (Kalkulator)' },
+  { key: 'atmTelihan', label: 'ATM Telihan' },
+  { key: 'customerService', label: 'Customer Service' },
+  { key: 'monitoring', label: 'Loan Monitoring' },
+  { key: 'monitoringDashboardOnly', label: 'Loan Monitoring — Dashboard saja', desc: 'Batasi Loan Monitoring hanya ke dashboard & kredit produktif' },
+  { key: 'canUpload', label: 'Upload Data MLF' },
+  { key: 'securityLog', label: 'Log Security' },
+  { key: 'konfigurasi', label: 'Konfigurasi & Log Sistem' },
+  { key: 'comingSoonOB', label: 'Menu OB' },
+  { key: 'canEdit', label: 'Boleh Menambah/Mengubah Data' },
+];
+
+/** Override per role: { admin: { surat: false }, ... } */
+export type RoleMenuOverrides = Partial<Record<AppRole, Partial<Record<keyof RolePermissions, boolean>>>>;
+
+export const ROLE_MENU_OVERRIDES_KEY = 'role_menu_overrides';
+
+export const applyRoleOverrides = (
+  role: AppRole | null | undefined,
+  overrides: RoleMenuOverrides | null | undefined,
+): RolePermissions => {
+  const base = getPermissions(role);
+  const ov = role ? overrides?.[role] : undefined;
+  if (!ov) return base;
+  return { ...base, ...ov } as RolePermissions;
+};
+
 /** Map a route path to the permission flag(s) required to access it. */
-export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
-  const p = getPermissions(role);
-  // Always-open routes
+export const isRouteAllowedFor = (pathname: string, p: RolePermissions): boolean => {
   if (
+
     pathname === '/' ||
     pathname === '/login' ||
     pathname === '/forgot-password' ||
@@ -183,3 +216,7 @@ export const isRouteAllowed = (pathname: string, role: AppRole): boolean => {
   if (pathname.startsWith('/ob')) return p.comingSoonOB;
   return true;
 };
+
+export const isRouteAllowed = (pathname: string, role: AppRole): boolean =>
+  isRouteAllowedFor(pathname, getPermissions(role));
+

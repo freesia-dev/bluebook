@@ -3,12 +3,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Menu, Eye } from 'lucide-react';
+import { Menu, Eye, Pin, PinOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
-import { isRouteAllowed } from '@/lib/role-permissions';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { isRouteAllowedFor } from '@/lib/role-permissions';
+
 import { BiruAssistant } from '@/components/biru/BiruAssistant';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
@@ -18,10 +20,15 @@ interface MainLayoutProps {
 
 /** Sidebar menutup otomatis setelah 5 detik tanpa interaksi (desktop). */
 const AUTO_COLLAPSE_MS = 5000;
+const PIN_KEY = 'bluebook-sidebar-pinned';
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isDemo, userRole } = useAuth();
+  const { isAuthenticated, isDemo, permissions } = useAuth();
   const location = useLocation();
+  const [pinned, setPinned] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(PIN_KEY) === '1';
+  });
   // Default open on desktop (lg+), closed on mobile
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -30,6 +37,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return false;
   });
   const [sidebarHovered, setSidebarHovered] = useState(false);
+
+  const togglePin = () => {
+    setPinned((v) => {
+      const next = !v;
+      try { window.localStorage.setItem(PIN_KEY, next ? '1' : '0'); } catch { /* noop */ }
+      if (next) setSidebarOpen(true);
+      return next;
+    });
+  };
 
   // Update sidebar state on window resize
   useEffect(() => {
@@ -42,22 +58,23 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Auto-collapse: tutup sidebar 5 detik setelah dibuka jika kursor tidak berada di atasnya
+  // Auto-collapse: tutup sidebar 5 detik setelah dibuka jika tidak di-pin & kursor tidak di atasnya
   useEffect(() => {
-    if (!sidebarOpen || sidebarHovered) return;
+    if (pinned || !sidebarOpen || sidebarHovered) return;
     if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
     const t = setTimeout(() => setSidebarOpen(false), AUTO_COLLAPSE_MS);
     return () => clearTimeout(t);
-  }, [sidebarOpen, sidebarHovered, location.pathname]);
+  }, [pinned, sidebarOpen, sidebarHovered, location.pathname]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   // Role-based route guard: redirect to /dashboard if current route isn't allowed
-  if (!isRouteAllowed(location.pathname, userRole)) {
+  if (!isRouteAllowedFor(location.pathname, permissions)) {
     return <Navigate to="/dashboard" replace />;
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,8 +97,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           >
             <Menu className="w-5 h-5" />
           </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={pinned ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={togglePin}
+                aria-pressed={pinned}
+                aria-label={pinned ? 'Lepas pin sidebar' : 'Pin sidebar'}
+                className="hidden lg:inline-flex"
+              >
+                {pinned ? <Pin className="w-5 h-5 text-primary" /> : <PinOff className="w-5 h-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {pinned ? 'Sidebar dipin (tidak auto-tutup)' : 'Pin sidebar agar tidak auto-tutup'}
+            </TooltipContent>
+          </Tooltip>
           <h1 className="font-display font-bold text-lg hidden sm:block">Bluebook Telihan</h1>
         </div>
+
         <div className="flex items-center gap-2">
           <GlobalSearch />
           <NotificationBell />

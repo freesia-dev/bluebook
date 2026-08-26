@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { usePrefetchData } from '@/hooks/use-prefetch-data';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, getPermissions, RolePermissions } from '@/lib/role-permissions';
+import { AppRole, applyRoleOverrides, RolePermissions } from '@/lib/role-permissions';
+import { useRoleMenuOverrides } from '@/hooks/use-role-menu';
+
 
 interface AuthContextType {
   user: User | null;
@@ -172,7 +174,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const userName = user?.user_metadata?.nama || user?.email?.split('@')[0] || 'User';
-  const permissions = getPermissions(role);
+  const { overrides } = useRoleMenuOverrides();
+
+  const permissions = applyRoleOverrides(role, overrides);
+
   const isAdmin = role === 'admin';
   if (typeof window !== 'undefined') { (window as any).__BLUEBOOK_IS_ADMIN__ = isAdmin; (window as any).__BLUEBOOK_CAN_EXPORT__ = isAdmin || role === 'pemimpin'; }
   const isDemo = role === 'demo';
