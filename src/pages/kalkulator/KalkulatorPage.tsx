@@ -191,7 +191,7 @@ const KalkulatorPage: React.FC = () => {
     setPilihanKarir(editRow.pilihan_karir || '');
     setTanggalSk(((editRow.hasil_ringkasan as any)?.tanggalSk as string) || '');
     const savedBasis = (editRow.dsr_basis ?? (editRow.hasil_ringkasan as any)?.dsrBasis) as DsrBasis | undefined;
-    if (savedBasis === 'gaji' || savedBasis === 'ttp') setDsrBasis(savedBasis);
+    if (savedBasis) setDsrBasis(savedBasis);
     setNamaAo(editRow.nama_ao || '');
     setProductId(editRow.product_id || '');
     setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
