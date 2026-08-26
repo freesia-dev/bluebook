@@ -15,11 +15,12 @@ import {
   useUpsertLoanProduct,
   useDeleteLoanProduct,
   DSR_RULES_DEFAULT,
+  DSR_RULE_PRESETS,
   type LoanProduct,
   type RateOption,
   type DsrRule,
 } from '@/hooks/use-loan-calc';
-import type { BiayaItem } from '@/lib/loan-calc';
+import { describeDsrRule, normalizeDsrRule, type BiayaItem } from '@/lib/loan-calc';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
