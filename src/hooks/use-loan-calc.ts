@@ -105,6 +105,7 @@ export interface LoanSimulationRow {
   created_by: string | null;
   created_by_nama: string | null;
   created_at: string;
+  updated_at?: string | null;
   pipeline_status?: StageOrCancel | null;
   pipeline_note?: string | null;
   pipeline_updated_at?: string | null;
@@ -258,6 +259,7 @@ export const useLoanSimulations = () =>
       const { data, error } = await (supabase as any)
         .from('loan_simulation')
         .select('*')
+        .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as LoanSimulationRow[];
@@ -313,7 +315,7 @@ export const useUpdateLoanSimulation = () => {
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<LoanSimulationInput> }) => {
       const { data, error } = await (supabase as any)
         .from('loan_simulation')
-        .update(patch)
+        .update({ ...patch, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
