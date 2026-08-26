@@ -3,12 +3,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Menu, Eye } from 'lucide-react';
+import { Menu, Eye, Pin, PinOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
-import { isRouteAllowed } from '@/lib/role-permissions';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { isRouteAllowedFor } from '@/lib/role-permissions';
+
 import { BiruAssistant } from '@/components/biru/BiruAssistant';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
