@@ -97,8 +97,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           >
             <Menu className="w-5 h-5" />
           </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={pinned ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={togglePin}
+                aria-pressed={pinned}
+                aria-label={pinned ? 'Lepas pin sidebar' : 'Pin sidebar'}
+                className="hidden lg:inline-flex"
+              >
+                {pinned ? <Pin className="w-5 h-5 text-primary" /> : <PinOff className="w-5 h-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {pinned ? 'Sidebar dipin (tidak auto-tutup)' : 'Pin sidebar agar tidak auto-tutup'}
+            </TooltipContent>
+          </Tooltip>
           <h1 className="font-display font-bold text-lg hidden sm:block">Bluebook Telihan</h1>
         </div>
+
         <div className="flex items-center gap-2">
           <GlobalSearch />
           <NotificationBell />
