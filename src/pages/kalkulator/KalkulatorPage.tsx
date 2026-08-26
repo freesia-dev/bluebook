@@ -1300,15 +1300,13 @@ const KalkulatorPage: React.FC = () => {
                           <div key={r.kode} className="flex items-center gap-2">
                             <RadioGroupItem value={r.kode} id={`dsr-${r.kode}`} />
                             <Label htmlFor={`dsr-${r.kode}`} className="cursor-pointer font-normal">
-                              {r.label} — maks {r.max_pct}% {r.kode === 'ttp' ? 'dari TTP' : 'dari Gaji Pokok'}
+                              {r.label} — {describeDsrRule(normalizeDsrRule(r))}
                             </Label>
                           </div>
                         ))}
                       </RadioGroup>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {dsrBasis === 'ttp'
-                          ? `Angsuran maksimal = ${dsr.maxPct}% × TTP − Selisih AG − AP.`
-                          : `Angsuran maksimal = ${dsr.maxPct}% dari Gaji Pokok (TTP hanya menambah basis penghasilan).`}
+                        Angsuran maksimal = {dsr.rumus}.
                       </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
