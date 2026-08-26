@@ -409,6 +409,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
     ? [
         { label: 'Pengaturan User', href: '/konfigurasi/users' },
         { label: 'User Online (Realtime)', href: '/konfigurasi/online-users' },
+        { label: 'Menu per Role', href: '/konfigurasi/menu-role' },
         { label: 'Data Referensi', children: dataReferensiItems },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
         { label: 'Activity Log', href: '/activity-log' },
