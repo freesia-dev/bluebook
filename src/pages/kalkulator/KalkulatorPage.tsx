@@ -376,6 +376,7 @@ const KalkulatorPage: React.FC = () => {
         gajiPokok,
         ttp,
         maxPct: dsrRule?.max_pct ?? (dsrBasis === 'ttp' ? 30 : 100),
+        rule: dsrRule,
         angsuranGaji,
         angsuranPraja,
         angsuranPertama,
