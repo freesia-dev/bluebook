@@ -173,7 +173,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsPending(false);
   };
 
+  const userName = user?.user_metadata?.nama || user?.email?.split('@')[0] || 'User';
   const { overrides } = useRoleMenuOverrides();
+
   const permissions = applyRoleOverrides(role, overrides);
 
   const isAdmin = role === 'admin';
