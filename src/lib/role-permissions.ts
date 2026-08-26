@@ -178,7 +178,10 @@ export const applyRoleOverrides = (
   return { ...base, ...ov } as RolePermissions;
 };
 
+/** Map a route path to the permission flag(s) required to access it. */
+export const isRouteAllowedFor = (pathname: string, p: RolePermissions): boolean => {
   if (
+
     pathname === '/' ||
     pathname === '/login' ||
     pathname === '/forgot-password' ||
