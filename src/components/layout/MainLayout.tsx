@@ -20,10 +20,15 @@ interface MainLayoutProps {
 
 /** Sidebar menutup otomatis setelah 5 detik tanpa interaksi (desktop). */
 const AUTO_COLLAPSE_MS = 5000;
+const PIN_KEY = 'bluebook-sidebar-pinned';
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isDemo, userRole } = useAuth();
+  const { isAuthenticated, isDemo, permissions } = useAuth();
   const location = useLocation();
+  const [pinned, setPinned] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(PIN_KEY) === '1';
+  });
   // Default open on desktop (lg+), closed on mobile
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -32,6 +37,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return false;
   });
   const [sidebarHovered, setSidebarHovered] = useState(false);
+
+  const togglePin = () => {
+    setPinned((v) => {
+      const next = !v;
+      try { window.localStorage.setItem(PIN_KEY, next ? '1' : '0'); } catch { /* noop */ }
+      if (next) setSidebarOpen(true);
+      return next;
+    });
+  };
 
   // Update sidebar state on window resize
   useEffect(() => {
@@ -44,22 +58,23 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Auto-collapse: tutup sidebar 5 detik setelah dibuka jika kursor tidak berada di atasnya
+  // Auto-collapse: tutup sidebar 5 detik setelah dibuka jika tidak di-pin & kursor tidak di atasnya
   useEffect(() => {
-    if (!sidebarOpen || sidebarHovered) return;
+    if (pinned || !sidebarOpen || sidebarHovered) return;
     if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
     const t = setTimeout(() => setSidebarOpen(false), AUTO_COLLAPSE_MS);
     return () => clearTimeout(t);
-  }, [sidebarOpen, sidebarHovered, location.pathname]);
+  }, [pinned, sidebarOpen, sidebarHovered, location.pathname]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   // Role-based route guard: redirect to /dashboard if current route isn't allowed
-  if (!isRouteAllowed(location.pathname, userRole)) {
+  if (!isRouteAllowedFor(location.pathname, permissions)) {
     return <Navigate to="/dashboard" replace />;
   }
+
 
   return (
     <div className="min-h-screen bg-background">
