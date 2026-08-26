@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { usePrefetchData } from '@/hooks/use-prefetch-data';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, getPermissions, RolePermissions } from '@/lib/role-permissions';
+import { AppRole, applyRoleOverrides, RolePermissions } from '@/lib/role-permissions';
+import { useRoleMenuOverrides } from '@/hooks/use-role-menu';
+
 
 interface AuthContextType {
   user: User | null;
