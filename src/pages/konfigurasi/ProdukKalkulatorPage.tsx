@@ -372,47 +372,108 @@ export const BiayaItemsEditor: React.FC<{
   );
 };
 
-/** Editor aturan DSR per basis (GAJI / TTP). */
+/** Editor aturan DSR — bebas menambah kategori custom (GAJI, TTP, FLAGGING, NAKES, dst). */
 export const DsrRulesEditor: React.FC<{
   value: DsrRule[];
   onChange: (v: DsrRule[]) => void;
 }> = ({ value, onChange }) => {
-  const update = (kode: DsrRule['kode'], patch: Partial<DsrRule>) => {
-    const exists = value.some((d) => d.kode === kode);
-    onChange(
-      exists
-        ? value.map((d) => (d.kode === kode ? { ...d, ...patch } : d))
-        : [...value, { ...(DSR_RULES_DEFAULT.find((d) => d.kode === kode) as DsrRule), ...patch }],
-    );
-  };
+  const rules = value.length ? value : DSR_RULES_DEFAULT;
+  const update = (i: number, patch: Partial<DsrRule>) =>
+    onChange(rules.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || `dsr_${rules.length + 1}`;
+
   return (
     <div className="md:col-span-2 rounded-lg border border-border p-3">
-      <Label className="text-sm font-semibold">Aturan DSR</Label>
+      <div className="flex items-center justify-between mb-1">
+        <Label className="text-sm font-semibold">Aturan DSR</Label>
+        <div className="flex gap-2">
+          <Select
+            value=""
+            onValueChange={(k) => {
+              const preset = DSR_RULE_PRESETS.find((p) => p.kode === k);
+              if (!preset || rules.some((r) => r.kode === preset.kode)) return;
+              onChange([...rules, { ...preset }]);
+            }}
+          >
+            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="Tambah preset" /></SelectTrigger>
+            <SelectContent>
+              {DSR_RULE_PRESETS.filter((p) => !rules.some((r) => r.kode === p.kode)).map((p) => (
+                <SelectItem key={p.kode} value={p.kode}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              onChange([
+                ...rules,
+                { kode: `dsr_${Date.now().toString(36)}`, label: 'Kategori Baru', max_pct: 100, sumber: 'gaji', faktor2_pct: null, kurangi_ag: false, kurangi_ap: false, sumber_penghasilan: 'gaji_ttp' },
+              ])
+            }
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" /> Kategori
+          </Button>
+        </div>
+      </div>
       <p className="text-xs text-muted-foreground mb-2">
-        Basis GAJI: angsuran maksimal = Gaji Pokok × persen. Basis TTP: (TTP × persen) − selisih Angsuran Gaji − Angsuran Praja.
+        Rumus batas angsuran: <b>Sumber × Persen (× Persen 2 bila diisi)</b>, lalu dikurangi Selisih AG / Angsuran Praja bila diaktifkan.
+        Contoh: Flagging = Gaji Pokok × 70% × 70%; Tenaga Kesehatan = (Gaji Pokok + TTP) × 70%.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {DSR_RULES_DEFAULT.map((def) => {
-          const row = value.find((d) => d.kode === def.kode) ?? def;
+      <div className="space-y-2">
+        {rules.map((r, i) => {
+          const n = normalizeDsrRule(r);
           return (
-            <div key={def.kode} className="rounded-md bg-muted/40 p-2.5">
-              <p className="text-xs font-semibold uppercase tracking-wide mb-1.5">Basis {def.kode}</p>
-              <div className="flex gap-2">
+            <div key={r.kode || i} className="rounded-md bg-muted/40 p-2.5 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
-                  value={row.label}
-                  onChange={(e) => update(def.kode, { label: e.target.value })}
-                  placeholder="Label"
-                  className="flex-1"
+                  value={r.label}
+                  onChange={(e) => update(i, { label: e.target.value, kode: r.kode || slug(e.target.value) })}
+                  placeholder="Nama kategori"
+                  className="flex-1 min-w-[140px]"
                 />
+                <Select value={n.sumber} onValueChange={(v) => update(i, { sumber: v as DsrRule['sumber'] })}>
+                  <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gaji">Gaji Pokok</SelectItem>
+                    <SelectItem value="ttp">TTP</SelectItem>
+                    <SelectItem value="gaji_ttp">Gaji Pokok + TTP</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative w-24">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={r.max_pct}
+                    onChange={(e) => update(i, { max_pct: parseFloat(e.target.value) || 0 })}
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                </div>
                 <div className="relative w-28">
                   <Input
                     type="number"
                     step="0.01"
-                    value={row.max_pct}
-                    onChange={(e) => update(def.kode, { max_pct: parseFloat(e.target.value) || 0 })}
+                    placeholder="Persen 2"
+                    value={r.faktor2_pct ?? ''}
+                    onChange={(e) => update(i, { faktor2_pct: e.target.value === '' ? null : parseFloat(e.target.value) || 0 })}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                 </div>
+                <Button type="button" size="icon" variant="ghost" onClick={() => onChange(rules.filter((_, idx) => idx !== i))}>
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 text-xs">
+                <label className="flex items-center gap-2">
+                  <Switch checked={!!n.kurangi_ag} onCheckedChange={(v) => update(i, { kurangi_ag: v })} />
+                  Kurangi Selisih Angsuran Gaji
+                </label>
+                <label className="flex items-center gap-2">
+                  <Switch checked={!!n.kurangi_ap} onCheckedChange={(v) => update(i, { kurangi_ap: v })} />
+                  Kurangi Angsuran Praja
+                </label>
+                <span className="text-muted-foreground">Rumus: <b>{describeDsrRule(n)}</b></span>
               </div>
             </div>
           );
@@ -421,5 +482,6 @@ export const DsrRulesEditor: React.FC<{
     </div>
   );
 };
+
 
 export default ProdukKalkulatorPage;
