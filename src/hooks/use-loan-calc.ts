@@ -1,22 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { SegmenKredit, LoanSkema, AmortRow, CalcSummary, PotonganResult, BiayaItem, DsrBasis } from '@/lib/loan-calc';
+import type { SegmenKredit, LoanSkema, AmortRow, CalcSummary, PotonganResult, BiayaItem, DsrBasis, DsrRuleConfig } from '@/lib/loan-calc';
 
 export interface RateOption {
   label: string;
   value: number;
 }
 
-export interface DsrRule {
-  kode: DsrBasis;
-  label: string;
-  max_pct: number;
-}
+export type DsrRule = DsrRuleConfig;
 
 export const DSR_RULES_DEFAULT: DsrRule[] = [
-  { kode: 'gaji', label: 'GAJI', max_pct: 100 },
-  { kode: 'ttp', label: 'TTP', max_pct: 30 },
+  { kode: 'gaji', label: 'GAJI', max_pct: 100, sumber: 'gaji', kurangi_ag: false, kurangi_ap: false, sumber_penghasilan: 'gaji_ttp' },
+  { kode: 'ttp', label: 'TTP', max_pct: 30, sumber: 'ttp', kurangi_ag: true, kurangi_ap: true, sumber_penghasilan: 'ttp' },
 ];
+
+/** Preset siap pakai untuk kategori DSR custom */
+export const DSR_RULE_PRESETS: DsrRule[] = [
+  ...DSR_RULES_DEFAULT,
+  { kode: 'flagging', label: 'FLAGGING', max_pct: 70, faktor2_pct: 70, sumber: 'gaji', kurangi_ag: false, kurangi_ap: false, sumber_penghasilan: 'gaji_ttp' },
+  { kode: 'nakes', label: 'TENAGA KESEHATAN', max_pct: 70, sumber: 'gaji_ttp', kurangi_ag: false, kurangi_ap: false, sumber_penghasilan: 'gaji_ttp' },
+];
+
 
 export interface LoanProduct {
   id: string;
