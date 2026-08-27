@@ -36,6 +36,11 @@ const toNumber = (value: unknown, fallback = 0) => {
 
 const getCerdas = (s: LoanSimulationRow) => (s.hasil_ringkasan as any)?.cerdas ?? null;
 
+const getPromoNama = (s: LoanSimulationRow) => {
+  const r: any = s.hasil_ringkasan || {};
+  return getCerdas(s)?.programNama || r.promoNama || 'Promo';
+};
+
 const getCerdasLabel = (s: LoanSimulationRow) => {
   const cerdas = getCerdas(s);
   if (cerdas?.skemaLabel) return cerdas.skemaLabel;
@@ -150,14 +155,14 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     ['Tenor (bulan)', s.tenor_bulan],
     ['Tanggal Akad', s.tanggal_akad || '-'],
     ['Bunga p.a.', `${s.bunga_pa}%`],
-    ['Program CERDAS', cerdasLabel || '-'],
+    ['Program Promo', cerdasLabel ? `${getPromoNama(s)} — ${cerdasLabel}` : '-'],
     ['Gaji Pokok', s.gaji_pokok ?? s.gaji ?? 0],
     ['TTP / Pendapatan Lainnya', s.ttp ?? 0],
     ['Total Penghasilan', s.gaji],
     ['Provisi', `${s.provisi_pct}%`],
     ['Sumber Asuransi Jiwa', s.asuransi_provider === 'alamin' ? "Al-Amin (AT TA'MIN UM)" : 'Pialang Asuransi'],
     ['Asuransi Jiwa — Premi Aktual', ins.premiJiwaAktual],
-    ['Asuransi Jiwa — Subsidi Bank (CERDAS)', ins.subsidiBank],
+    [`Asuransi Jiwa — Subsidi Bank${cerdasLabel ? ` (${getPromoNama(s)})` : ''}`, ins.subsidiBank],
     ['Asuransi Jiwa — Beban Debitur', ins.asuransiJiwaBeban],
     ['Asuransi Kredit — Pialang', ins.premiKredit],
     ['Total Asuransi Masuk Potongan', ins.totalAsuransi],
@@ -188,7 +193,7 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
   if (cerdas) {
     ringkasan.push(
       [],
-      ['— PROGRAM CERDAS —'],
+      [`— PROGRAM PROMO: ${getPromoNama(s)} —`],
       ['Skema', cerdasLabel || '-'],
       ['Cap Subsidi', toNumber(cerdas.capSubsidi, toNumber(s.cerdas_cap_subsidi))],
       ['Subsidi Bank', ins.subsidiBank],
@@ -293,10 +298,10 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
       ['Jenis Kelamin', ':', s.jenis_kelamin === 'L' ? 'Laki-laki' : s.jenis_kelamin === 'P' ? 'Perempuan' : '-', 'Plafon', ':', fmtRp(s.plafon)],
       ['Tgl Lahir', ':', s.tanggal_lahir ? new Date(s.tanggal_lahir).toLocaleDateString('id-ID') : '-', 'Tenor', ':', `${s.tenor_bulan} bulan`],
       ['Pekerjaan', ':', s.pekerjaan || '-', 'Tanggal Akad', ':', s.tanggal_akad ? new Date(s.tanggal_akad).toLocaleDateString('id-ID') : '-'],
-      ['Instansi', ':', s.instansi || '-', 'Bunga p.a.', ':', `${s.bunga_pa}%${cerdasLabel ? ' (CERDAS)' : ''}`],
+      ['Instansi', ':', s.instansi || '-', 'Bunga p.a.', ':', `${s.bunga_pa}%${cerdasLabel ? ` (${getPromoNama(s)})` : ''}`],
       ['Pilihan Karir', ':', s.pilihan_karir || '-', 'Gaji Pokok', ':', fmtRp(s.gaji_pokok ?? s.gaji ?? 0)],
       ['AO', ':', s.nama_ao || '-', 'TTP / Lainnya', ':', fmtRp(s.ttp ?? 0)],
-      ['CERDAS', ':', cerdasLabel || '-', 'Total Penghasilan', ':', fmtRp(s.gaji)],
+      ['Promo', ':', cerdasLabel ? `${getPromoNama(s)} — ${cerdasLabel}` : '-', 'Total Penghasilan', ':', fmtRp(s.gaji)],
       ['', '', '', 'Provisi', ':', `${s.provisi_pct}%`],
     ],
     margin: { left: M, right: M },
@@ -313,7 +318,7 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
   if (cerdas && cerdas.skema !== 'top_up') {
     summaryRows.push(
       ['Premi Jiwa Aktual', fmtNumber(ins.premiJiwaAktual)],
-      ['Subsidi Bank CERDAS', `(${fmtNumber(ins.subsidiBank)})`],
+      [`Subsidi Bank (${getPromoNama(s)})`, `(${fmtNumber(ins.subsidiBank)})`],
     );
   }
   summaryRows.push(

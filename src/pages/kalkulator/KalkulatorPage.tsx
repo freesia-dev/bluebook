@@ -463,9 +463,9 @@ const KalkulatorPage: React.FC = () => {
       },
       tabel_angsuran: result.rows,
       cerdas_skema: cerdasResult ? cerdasResult.skema : null,
-      cerdas_cap_subsidi: cerdasResult ? cerdasResult.capSubsidi : null,
-      cerdas_subsidi_bank: cerdasResult ? cerdasResult.subsidiBank : null,
-      cerdas_selisih_debitur: cerdasResult ? cerdasResult.selisihDebitur : null,
+      cerdas_cap_subsidi: cerdasResult ? cerdasResult.capSubsidi : 0,
+      cerdas_subsidi_bank: cerdasResult ? cerdasResult.subsidiBank : 0,
+      cerdas_selisih_debitur: cerdasResult ? cerdasResult.selisihDebitur : 0,
     } as any;
     try {
       if (editId) {

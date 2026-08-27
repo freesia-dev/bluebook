@@ -33,7 +33,7 @@ const SAMPLE: SimulasiCardData = {
   plafon: 250_000_000,
   tenorBulan: 120,
   bungaPa: 10.5,
-  promoNama: 'Program CERDAS',
+  promoNama: 'Program Promo',
   promoLabel: 'DEBITUR BARU',
   gajiPokok: 6_500_000,
   ttp: 3_500_000,
