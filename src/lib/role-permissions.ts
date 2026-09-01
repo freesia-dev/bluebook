@@ -207,6 +207,8 @@ export const isRouteAllowedFor = (pathname: string, p: RolePermissions): boolean
     }
     return true;
   }
+  // Konfigurasi kalkulator: admin lihat semua tab, user kalkulator hanya tab Tampilan JPG (preferensi pribadi)
+  if (pathname.startsWith('/konfigurasi/kalkulator')) return p.konfigurasi || p.loanCalc;
   if (pathname.startsWith('/konfigurasi') || pathname === '/activity-log' || pathname === '/recycle-bin') {
     return p.konfigurasi;
   }
