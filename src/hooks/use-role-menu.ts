@@ -17,8 +17,27 @@ export function useRoleMenuOverrides() {
       if (error || !data?.value) return {};
       return (data.value as RoleMenuOverrides) ?? {};
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 15 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 60 * 1000,
   });
+
+  // Realtime: perubahan pengaturan menu langsung terpakai di semua user
+  useEffect(() => {
+    const channel = supabase
+      .channel('role-menu-overrides')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'app_setting', filter: `key=eq.${ROLE_MENU_OVERRIDES_KEY}` },
+        () => qc.invalidateQueries({ queryKey: ['role-menu-overrides'] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   return { overrides: q.data ?? {}, isLoading: q.isLoading };
 }
 
