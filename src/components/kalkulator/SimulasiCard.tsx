@@ -216,31 +216,22 @@ export const SimulasiCard = React.forwardRef<
           background: primaryBg,
           color: T.headerTextColor,
           borderRadius: T.radius,
-          padding: '20px 24px',
+          padding: '22px 24px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
         }}
       >
-        <div>
-          <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
-            Angsuran per Bulan
-          </div>
-          <div style={{ fontSize: s(34), fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
-          {d.angsuranTerakhir != null && d.angsuranTerakhir > 0 && d.angsuranTerakhir !== d.angsuranPertama && (
-            <div style={{ fontSize: s(12), opacity: 0.9, marginTop: 2 }}>
-              Angsuran terakhir {fmtRp(d.angsuranTerakhir)}
-            </div>
-          )}
+        <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
+          Angsuran per Bulan
         </div>
-        <div style={{ textAlign: 'right', fontSize: s(12.5), lineHeight: 1.7, opacity: 0.95 }}>
-          <div>
-            Total Angsuran: <b>{fmtRp(d.totalAngsuran)}</b>
+        <div style={{ fontSize: s(34), fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
+        {d.angsuranTerakhir != null && d.angsuranTerakhir > 0 && d.angsuranTerakhir !== d.angsuranPertama && (
+          <div style={{ fontSize: s(12), opacity: 0.9, marginTop: 2 }}>
+            Angsuran terakhir {fmtRp(d.angsuranTerakhir)}
           </div>
-          <div>
-            Total Bunga: <b>{fmtRp(d.totalBunga)}</b>
-          </div>
-        </div>
+        )}
       </div>
     ),
     penghasilan:
