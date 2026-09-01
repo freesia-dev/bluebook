@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ROLE_MENU_OVERRIDES_KEY, RoleMenuOverrides } from '@/lib/role-permissions';
 
 /** Pengaturan menu per role (disimpan admin di app_setting, dibaca semua user). */
 export function useRoleMenuOverrides() {
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ['role-menu-overrides'],
     queryFn: async (): Promise<RoleMenuOverrides> => {
