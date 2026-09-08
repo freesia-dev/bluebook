@@ -5,7 +5,7 @@ import {
   Flame, Instagram, Linkedin,
   Mail, CreditCard, Banknote, Calculator, TrendingUp, Shield,
   FileSearch, Archive, Users, Zap, BarChart3, Smartphone,
-  Bot, UserSquare, Bell, LineChart,
+  UserSquare, Bell, LineChart,
 } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
 
@@ -19,7 +19,6 @@ const modules = [
   { icon: UserSquare, title: 'Customer Service', description: 'Logbook Kartu ATM, Buku Tabungan, Bilyet Deposito, CIF, Rekening, dan SI.' },
   { icon: Shield, title: 'Log Security', description: 'Shift, handover, BA Harian, bulk print, dan audit publik satpam.' },
   { icon: FileSearch, title: 'SLIK OJK', description: 'Permohonan per pengguna dengan alur setuju/tolak dan laporan PDF terpisah.' },
-  { icon: Bot, title: 'Asisten BIRU', description: 'Asisten internal untuk tanya jawab operasional dan pencarian data debitur.' },
   { icon: Bell, title: 'Pusat Notifikasi', description: 'Notifikasi menyesuaikan hak akses per role dan cabang, lengkap dengan tautan tindakan.' },
   { icon: Archive, title: 'Activity Log & Recycle Bin', description: 'Jejak audit menyeluruh dan pemulihan data yang terhapus.' },
 ];
@@ -53,8 +52,8 @@ const About: React.FC = () => {
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 Portal terpusat untuk administrasi surat, agenda kredit, simulasi pinjaman, operasional ATM,
-                monitoring kredit, layanan Customer Service, log security, dan SLIK OJK — dilengkapi asisten
-                internal BIRU, notifikasi sesuai role, serta jejak audit yang menyeluruh.
+                monitoring kredit, layanan Customer Service, log security, dan SLIK OJK — dilengkapi
+                notifikasi sesuai role, serta jejak audit yang menyeluruh.
               </p>
             </div>
           </div>

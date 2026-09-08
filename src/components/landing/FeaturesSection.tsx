@@ -11,7 +11,6 @@ import {
   Zap,
   BarChart3,
   Smartphone,
-  Bot,
   UserSquare,
   Bell,
   LineChart,
@@ -81,13 +80,6 @@ const FeaturesSection = () => {
       description:
         "Permohonan SLIK per pengguna dengan alur setuju/tolak dan laporan PDF yang terpisah per pengguna.",
       tag: "Per User",
-    },
-    {
-      icon: Bot,
-      title: "Asisten BIRU",
-      description:
-        "Asisten internal untuk tanya jawab operasional dan pencarian data debitur lintas modul.",
-      tag: "Asisten Internal",
     },
     {
       icon: Bell,

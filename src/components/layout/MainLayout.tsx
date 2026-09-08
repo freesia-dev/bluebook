@@ -11,7 +11,6 @@ import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { isRouteAllowedFor } from '@/lib/role-permissions';
 
-import { BiruAssistant } from '@/components/biru/BiruAssistant';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface MainLayoutProps {
@@ -141,7 +140,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {children}
         </div>
       </main>
-      <BiruAssistant />
     </div>
   );
 };
