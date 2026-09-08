@@ -318,8 +318,13 @@ export const useUpdateLoanSimulation = () => {
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
+      if (!data) {
+        throw new Error(
+          'Simulasi ini dibuat oleh pengguna lain, jadi hanya pembuatnya atau admin yang bisa memperbaruinya. Silakan simpan sebagai simulasi baru.'
+        );
+      }
       return data as LoanSimulationRow;
     },
     onSuccess: (_d, v) => {
