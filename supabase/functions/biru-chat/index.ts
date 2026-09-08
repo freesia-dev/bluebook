@@ -193,14 +193,40 @@ async function cariData(keyword: string): Promise<Record<string, unknown>> {
   };
 }
 
+// Provider AI dipilih lewat env var AI_PROVIDER ("openrouter" default, atau
+// "lovable" untuk sementara masih pakai Lovable AI Gateway selama transisi).
+// Ini yang bikin BIRU tidak lagi bergantung ke Lovable Cloud setelah migrasi.
+const AI_PROVIDER = (Deno.env.get("AI_PROVIDER") ?? "openrouter").toLowerCase();
+
+function requiredEnvForProvider(): string {
+  return AI_PROVIDER === "lovable" ? "LOVABLE_API_KEY" : "OPENROUTER_API_KEY";
+}
+
 async function callGateway(body: unknown): Promise<Response> {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY")!;
-  return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  if (AI_PROVIDER === "lovable") {
+    const apiKey = Deno.env.get("LOVABLE_API_KEY")!;
+    return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": apiKey,
+        "X-Lovable-AIG-SDK": "raw-fetch",
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  // Default: OpenRouter — endpoint OpenAI-compatible, tidak terikat akun Lovable.
+  // Daftar & ambil API key di https://openrouter.ai/keys, model tetap
+  // "google/gemini-2.5-flash" (cek nama model terbaru di openrouter.ai/models).
+  const apiKey = Deno.env.get("OPENROUTER_API_KEY")!;
+  return fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "raw-fetch",
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://bluebook-tlh.my.id",
+      "X-Title": "Bluebook Telihan - BIRU",
     },
     body: JSON.stringify(body),
   });
@@ -210,8 +236,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    if (!Deno.env.get("LOVABLE_API_KEY")) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
+    const envKey = requiredEnvForProvider();
+    if (!Deno.env.get(envKey)) {
+      return new Response(JSON.stringify({ error: `${envKey} not configured` }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
