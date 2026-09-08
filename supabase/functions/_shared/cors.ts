@@ -2,6 +2,7 @@
 const ALLOWED_ORIGINS = new Set([
   "https://bluebook.lovable.app",
   "https://bluebook-tlh.my.id",
+  "https://bluebook-d10.pages.dev",
   "https://id-preview--1c2132c5-5047-47c1-b614-dca7bf135f9a.lovable.app",
   "http://localhost:8080",
   "http://localhost:5173",

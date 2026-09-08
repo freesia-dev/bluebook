@@ -2,9 +2,15 @@
 
 Dokumen ini rangkuman audit repo `freesia-dev/bluebook` plus progres migrasi
 lepas dari Lovable Cloud, tapi project tetap jalan normal. **Update terakhir:
-8 Sep 2026** — schema sudah direplay ke project Supabase baru, BIRU sudah
-dihapus dari aplikasi, dan repo GitHub sudah ditambahin akses tapi push masih
-kegagal (lihat bagian 5).
+8 Sep 2026** — schema, data (51 tabel, 5.805 baris), 29 user Auth, dan
+seluruh 356 file storage (~995 MB) sudah pindah ke project Supabase baru;
+3 edge function sudah di-deploy dan CORS-nya sudah ditambahin buat domain
+Cloudflare Pages; Auth Site URL/Redirect URL sudah di-set; testing di
+`bluebook-d10.pages.dev` sudah dilakukan dan tidak ketemu error. BIRU sudah
+dihapus dari aplikasi. Repo GitHub sudah ditambahin akses tapi push masih
+kegagal (lihat bagian 5). **Yang masih pending: cutover domain produksi
+(bagian 7) — nunggu konfirmasi eksplisit kamu — dan upload ulang MLF Excel
+yang kamu lakuin sendiri lewat fitur "Upload MLF" di aplikasi.**
 
 ## 1. Apa saja yang sebenarnya nempel ke Lovable
 
@@ -53,43 +59,58 @@ dokumentasi resmi Supabase & Lovable). Project Supabase yang dikelola Lovable
 Cloud (project ref lama `xcoonownhvsnsljxwumi`) **"provisioned and managed
 entirely by Lovable"** dan tidak muncul di dashboard Supabase sendiri.
 
-Progres saat ini:
+Progres saat ini — **semua poin di bagian ini sudah selesai**:
 
 1. ✅ **Export data dari Lovable Cloud** — sudah dijalankan lewat
    **More → Cloud → Overview → Settings → Advanced settings → Export Lovable
-   Cloud data**. Hasilnya file `bluebook_260908.backup` (~17MB) sekarang ada
-   di Cloud Storage Lovable (bucket `database_export_08_09_26`).
-2. ⏳ **Download + proses file backup itu** — masih perlu izin kamu buat
-   didownload dari sana, baru bisa diolah datanya (ini juga jadi sumber data
-   user lama, lihat poin 4).
-3. ⏳ **Import isi tabel** ke project Supabase baru dari hasil backup.
-4. ⏳ **29 user (Supabase Auth)** — kamu sudah pilih: dibuat ulang manual
-   dengan password default **`capem143`** untuk semua, TAPI dengan ID
-   (UUID) yang **sama persis** seperti akun lama (bukan ID acak baru).
-   Ini penting karena tabel `profiles`, `user_roles`, dan beberapa tabel
-   data (surat masuk/keluar, SPPK, PK, agenda kredit, dll) menyimpan
-   referensi ke ID user itu buat catatan "siapa yang input/approve" — kalau
-   ID-nya beda, riwayat itu jadi tidak nyambung pas data lama diimport.
-   ID lama ini yang akan diambil dari file backup di poin 1-2, jadi tidak
-   perlu kamu list manual satu-satu.
-5. ⏳ **File storage** (bucket `documents` — dokumen security, lampiran call
-   memo, dll): dari sidebar Cloud Lovable yang sama, download semua file dari
-   **Storage**, lalu upload ke **Storage** project Supabase baru.
-6. ⏳ **Auth providers/redirect URL** — di project Supabase baru: Authentication
-   → Providers, aktifkan ulang metode login yang dipakai (email/password dll)
-   dan update redirect URL ke domain production yang baru.
+   Cloud data**. Hasilnya file `bluebook_260908.backup` (~17MB) ada di Cloud
+   Storage Lovable (bucket `database_export_08_09_26`) — bucket ini tidak
+   jadi dipakai di jalur final (lihat poin 3), jadi masih ngendon di sana,
+   tidak masalah kalau mau dihapus belakangan.
+2. ✅ **29 user (Supabase Auth)** — sudah dibuat ulang di project baru
+   dengan **ID (UUID) yang sama persis** seperti akun lama, supaya referensi
+   di `profiles`, `user_roles`, dan tabel data lain (surat masuk/keluar,
+   SPPK, PK, agenda kredit, dll) tetap nyambung. Sudah dicek: 29/29 user ada
+   di `auth.users` project baru, sample email cocok sama yang lama.
+3. ✅ **Import isi tabel** — seluruh 51 tabel sudah dipindah (bukan cuma
+   schema-nya). Total 5.805 baris, tabel terbesar: `activity_log` (2.438),
+   `security_log_entry` (1.279), `surat_keluar` (387), `sppk`/`pk` (118
+   masing-masing). Tabel yang kosong (`cs_*`, `mlf_data`, `loan_promo`, dll)
+   memang kosong juga di project lama — bukan gagal migrasi.
+4. ✅ **File storage** (bucket `documents`) — seluruh **356 file, ~995 MB**
+   sudah disalin: `call-memo` (35), `security-log/foto` (317),
+   `security-log/video` (2), `surat-keluar` (1), `surat-masuk` (1). Dicek
+   ulang lewat Storage API, cocok 356/356. **Catatan penting:** ini sudah
+   pakai ~97% dari kuota storage 1 GB di free tier Supabase — kalau upload
+   dokumen terus jalan, kemungkinan besar bakal kena limit dalam waktu
+   dekat dan perlu upgrade plan.
+5. ✅ **Auth providers/redirect URL** — di project Supabase baru: cuma
+   Email yang aktif (sama seperti project lama, tidak ada OAuth provider
+   lain yang perlu disetel ulang). Redirect URL sudah diisi 4:
+   `https://bluebook-d10.pages.dev/**`, `https://bluebook-tlh.my.id/**`,
+   `http://localhost:5173/**`, `http://localhost:8080/**`. Site URL diset ke
+   `https://bluebook-d10.pages.dev`.
 
-## 4. Deploy edge functions ke project baru
+## 4. Deploy edge functions ke project baru — ✅ selesai
 
-```bash
-supabase functions deploy admin-create-user
-supabase functions deploy admin-get-user
-supabase functions deploy admin-reset-password
+Ketiga function (`admin-create-user`, `admin-get-user`,
+`admin-reset-password`) sudah di-deploy ke project baru lewat dashboard
+Supabase (Edge Functions → Code editor → Deploy updates), karena CLI di sesi
+ini tidak punya akses token buat `supabase login`. `SUPABASE_URL` &
+`SUPABASE_SERVICE_ROLE_KEY` otomatis tersedia, tidak ada secret tambahan.
 
-# SUPABASE_URL & SUPABASE_SERVICE_ROLE_KEY sudah otomatis tersedia di semua
-# edge function, tidak perlu di-set manual — tidak ada secret tambahan yang
-# perlu di-set sejak BIRU dihapus.
-```
+**Bug yang ketemu & sudah diperbaiki:** daftar `ALLOWED_ORIGINS` di
+`supabase/functions/_shared/cors.ts` (dan versi yang di-inline di masing-
+masing function pas deploy) awalnya cuma isi domain Lovable lama +
+localhost — belum ada domain Cloudflare Pages, jadi ketiga admin function
+gagal dipanggil dari `bluebook-d10.pages.dev` (browser block di tahap CORS,
+sebelum request-nya nyampe ke server). Sudah ditambahin
+`https://bluebook-d10.pages.dev` ke allowlist-nya di file lokal maupun di
+ketiga function yang ter-deploy, dan sudah dites ulang — ketiganya sekarang
+bisa dipanggil dari domain Pages (balikin `401 Unauthorized` yang benar buat
+request tanpa token, bukan CORS error lagi). Domain produksi
+`bluebook-tlh.my.id` sendiri sudah ada dari awal di allowlist, jadi tidak
+perlu diapa-apain lagi pas cutover nanti.
 
 ## 5. Push perubahan kode ke GitHub — masih kegagal
 
@@ -112,8 +133,20 @@ Perubahan yang menunggu untuk di-push: `public/_redirects`, `.env.example`,
 `supabase/config.toml`, penghapusan seluruh kode BIRU (edge function +
 komponen UI + referensi di landing/About).
 
-## 6. Frontend ke Cloudflare Pages
+## 6. Frontend ke Cloudflare Pages — ✅ selesai, sudah live & dites
 
+Sudah live di `https://bluebook-d10.pages.dev`, connect ke project Supabase
+baru (`mhbcxnmsgtvkudoscfhn`). Sudah dites: landing page, login (sesi yang
+ada di browser masih nyambung ke akun Haris Fadilah, Admin IT), Dashboard +
+Executive Dashboard nampilin data asli yang cocok sama hasil migrasi (Surat
+Masuk 12, Surat Keluar 387, Agenda Kredit 355), Surat Masuk nampilin
+12/12 data asli, role-gate ke halaman `/security/log` jalan bener (redirect
+ke dashboard karena role Admin IT memang bukan role security) — tanda RLS/
+role logic ikut pindah dengan benar. Tidak ada error di console browser pas
+load Dashboard. Ketiga admin edge function juga sudah dicek bisa dipanggil
+dari domain ini (lihat catatan CORS di bagian 4).
+
+Untuk referensi, setup awalnya:
 1. Di Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git
    → pilih repo `freesia-dev/bluebook`.
 2. Build settings:
@@ -127,7 +160,7 @@ komponen UI + referensi di landing/About).
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
    - `VITE_SUPABASE_PROJECT_ID`
-4. Deploy. File `public/_redirects` bikin semua route React Router (misal
+4. File `public/_redirects` bikin semua route React Router (misal
    `/monitoring/upload`) tetap kebuka pas di-refresh langsung (tanpa ini
    biasanya muncul 404 di static hosting).
 
@@ -149,24 +182,35 @@ domain sementara (`*.pages.dev`), tinggal:
 
 1. ✅ Project Supabase baru — sudah ada, tidak ganggu yang lama sama sekali.
 2. ✅ Replay schema (bagian 2) — sudah selesai, masih tidak ganggu yang lama.
-3. Deploy edge functions (bagian 4).
-4. Deploy ke Cloudflare Pages pakai domain `*.pages.dev` dulu, test semua
-   fitur (login, upload MLF, dll) — **project lama tetap online** selama
-   proses ini jadi tidak ada downtime buat pemakai sehari-hari.
-5. Kalau sudah lolos test, baru migrasi data isi + user (bagian 3) + file
-   storage dari project lama ke baru — idealnya dilakukan pas jam sepi biar
-   tidak ada transaksi baru yang "hilang" di antara waktu export dan cutover.
-6. Ganti custom domain ke Cloudflare Pages (bagian 7).
-7. Setelah dipastikan stabil beberapa hari, baru boleh biarkan Lovable Pro
-   lapse / hapus project dari Lovable.
+3. ✅ Deploy edge functions (bagian 4) — termasuk fix CORS buat domain Pages.
+4. ✅ Deploy ke Cloudflare Pages pakai domain `*.pages.dev`, test semua fitur
+   (bagian 6) — **project lama (`bluebook-tlh.my.id`) tetap online tanpa
+   diganggu sama sekali** selama proses ini, jadi tidak ada downtime buat
+   pemakai sehari-hari.
+5. ✅ Migrasi data isi + user + file storage dari project lama ke baru
+   (bagian 3) — sudah selesai dan dicek cocok.
+6. ⏳ **Upload ulang MLF Excel** — kamu lakuin sendiri lewat fitur "Upload
+   MLF" di aplikasi (tabel `mlf_data` di project baru masih kosong, memang
+   sengaja tidak diisi dari migrasi otomatis).
+7. ⏳ Ganti custom domain ke Cloudflare Pages (bagian 7) — **nunggu
+   konfirmasi eksplisit kamu**, ini langkah terakhir yang langsung
+   berdampak ke pemakai sehari-hari.
+8. Setelah dipastikan stabil beberapa hari pasca-cutover, baru boleh
+   biarkan Lovable Pro lapse / hapus project dari Lovable.
 
 ## 9. Yang masih perlu dari kamu
 
-- Izin download file `bluebook_260908.backup` (~17MB) dari Cloud Storage
-  Lovable, biar bisa mulai proses import data + ambil daftar user lama.
+- **Cutover domain** (bagian 7/8) — semua persiapan teknis sudah selesai
+  dan sudah dites, tinggal tunggu kamu bilang "lanjut" buat pindahin
+  `bluebook-tlh.my.id` ke Cloudflare Pages.
+- **Upload ulang MLF Excel** lewat aplikasi setelah cutover (atau kapan
+  aja, tidak harus nunggu cutover — tabelnya independen).
 - Cek pengaturan task/session Claude ini buat nyoba nambahin
   `freesia-dev/bluebook` sebagai source (kalau ketemu), **atau** bilang aja
-  kalau lebih mau terima perubahan kode sebagai file/patch buat di-push manual.
-- Setup Cloudflare Pages (bagian 6) — belum dimulai, tinggal tunggu giliran.
-- Nanti di akhir: konfirmasi eksplisit buat cutover domain (bagian 7/8) —
-  ini yang paling terakhir dan langsung berdampak ke pemakai sehari-hari.
+  kalau lebih mau terima perubahan kode sebagai file/patch buat di-push
+  manual — masih ada beberapa commit lokal (termasuk fix CORS di bagian 4)
+  yang belum ke-push ke GitHub (lihat bagian 5).
+- **Perhatian kuota storage:** project Supabase baru sudah pakai ~97% dari
+  1 GB kuota storage free tier (lihat bagian 3 poin 4). Kalau pemakaian
+  upload dokumen terus jalan seperti biasa, kemungkinan besar perlu upgrade
+  ke plan berbayar dalam waktu tidak terlalu lama setelah cutover.
