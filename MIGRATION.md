@@ -12,10 +12,12 @@ nunjuk ke file itu sudah beres, supaya biaya storage tetap gratis (Supabase
 Storage berbayar kalau lanjut dipakai, R2 free tier 10 GB cukup buat
 kebutuhan ini). Repo GitHub sudah ditambahin akses tapi push dari sesi
 Claude ini masih kegagal terus (lihat bagian 5) — perubahan kode selalu
-dikirim sebagai git bundle buat kamu push manual. **Yang masih pending:
-cutover domain produksi (bagian 7) — nunggu konfirmasi eksplisit kamu —
-dan upload ulang MLF Excel yang kamu lakuin sendiri lewat fitur "Upload
-MLF" di aplikasi.**
+dikirim sebagai git bundle buat kamu push manual. **Domain produksi
+`bluebook-tlh.my.id` sudah di-cutover ke Cloudflare Pages** (9 Sep 2026,
+bagian 11) — sebelumnya sempet ketemu ada data baru di sistem lama sejak
+snapshot 8 Sep, sudah di-sync manual sebelum cutover. **Yang masih
+pending: upload ulang MLF Excel yang kamu lakuin sendiri lewat fitur
+"Upload MLF" di aplikasi (bagian 12).**
 
 ## 1. Apa saja yang sebenarnya nempel ke Lovable
 
@@ -204,9 +206,8 @@ domain sementara (`*.pages.dev`), tinggal:
 6. ⏳ **Upload ulang MLF Excel** — kamu lakuin sendiri lewat fitur "Upload
    MLF" di aplikasi (tabel `mlf_data` di project baru masih kosong, memang
    sengaja tidak diisi dari migrasi otomatis).
-7. ⏳ Ganti custom domain ke Cloudflare Pages (bagian 7) — **nunggu
-   konfirmasi eksplisit kamu**, ini langkah terakhir yang langsung
-   berdampak ke pemakai sehari-hari.
+7. ✅ Ganti custom domain ke Cloudflare Pages (bagian 7) — selesai 9 Sep
+   2026, lihat bagian 11 buat detail lengkapnya.
 8. Setelah dipastikan stabil beberapa hari pasca-cutover, baru boleh
    biarkan Lovable Pro lapse / hapus project dari Lovable.
 
@@ -257,17 +258,65 @@ lama (tidak dihapus otomatis) — aman buat dihapus manual kapan aja setelah
 kamu yakin semuanya jalan normal, biar kuota Supabase Storage lega lagi
 (walaupun kalau memang tidak dipakai lagi, tidak masalah juga dibiarkan).
 
-## 10. Yang masih perlu dari kamu
+## 11. Cutover domain ke Cloudflare Pages — ✅ selesai (9 Sep 2026, ~07:49–07:54 UTC)
 
-- **Cutover domain** (bagian 7/8) — semua persiapan teknis sudah selesai
-  dan sudah dites, tinggal tunggu kamu bilang "lanjut" buat pindahin
-  `bluebook-tlh.my.id` ke Cloudflare Pages.
-- **Upload ulang MLF Excel** lewat aplikasi setelah cutover (atau kapan
-  aja, tidak harus nunggu cutover — tabelnya independen).
+Sebelum cutover, ketauan sistem lama (masih live di `bluebook-tlh.my.id`,
+database Lovable lama) sempat nerima input baru sejak snapshot migrasi 8
+Sep — dicek manual oleh kamu lewat 7 screenshot perbandingan, lalu
+dikonfirmasi lewat query langsung ke kedua database. Sebelum DNS dipindah,
+dilakuin **delta-sync final** dua kali (dites lagi tepat sebelum cutover,
+hasilnya nol baris baru — artinya sync pertama sudah menangkap semuanya):
+
+- **14 baris baru** dipindah dari database lama ke database baru, di 6
+  tabel: `surat_keluar` (4), `agenda_kredit_entry` (2), `pk` (2), `sppk`
+  (2), `kkmpak` (1), `loan_simulation` (3). Tidak ada lampiran file di
+  baris-baris ini. Dicek ulang: jumlah baris per tabel sekarang persis
+  sama antara database lama & baru.
+- Sempat ketemu juga `mlf_data` punya 275.497 baris di database lama tapi
+  kosong di database baru — ini **bukan** data baru sejak 8 Sep, tapi
+  memang sengaja tidak ikut migrasi awal (rencananya diisi ulang lewat
+  fitur "Upload MLF"). Sesuai konfirmasi kamu, ini dilewatin dari sync.
+- ~30 tabel lain (yang punya kolom `created_at`) juga dicek satu-satu,
+  semuanya sudah cocok sejak migrasi 8 Sep, tidak ada yang ketinggalan.
+
+Proses cutover DNS-nya sendiri:
+
+1. Custom domain `bluebook-tlh.my.id` ditambahin ke project Cloudflare
+   Pages `bluebook` (lewat API Cloudflare langsung, dashboard UI-nya
+   sempat tidak responsif).
+2. Record DNS lama (`A` → `185.158.133.1`, arah ke Lovable, tidak
+   di-proxy) dihapus, diganti `CNAME` → `bluebook-d10.pages.dev`,
+   di-proxy lewat Cloudflare (orange cloud) — dilakuin manual karena
+   Cloudflare tidak auto-generate record buat domain yang tadinya sudah
+   dipakai zone lain.
+3. Verifikasi & sertifikat SSL langsung aktif dalam hitungan detik
+   (domain sudah lama di Cloudflare, jadi tidak nunggu propagasi DNS
+   dari luar) — status `active` di ketiganya: DNS, SSL, dan domain Pages.
+4. Dicek langsung: `bluebook-tlh.my.id` sudah serve build baru (hash file
+   JS beda dari yang lama), file R2 (`/api/storage/file/...`) kebuka
+   normal lewat domain baru, dan halaman login/dashboard tampil benar.
+
+**Downtime real: praktis nol** — pergantiannya di level edge Cloudflare
+(bukan nunggu propagasi DNS klasik yang bisa jam-an), jadi begitu record
+diganti, permintaan berikutnya langsung diarahin ke Pages. Record TXT
+`_lovable.bluebook-tlh.my.id` (verifikasi domain punya Lovable) masih
+dibiarin — tidak ganggu apa-apa, boleh dihapus manual kapan aja.
+
+Sejak titik ini, `bluebook-tlh.my.id` = project Cloudflare Pages baru +
+Supabase project baru + Cloudflare R2. Project Lovable (app maupun
+Supabase-nya) sudah tidak lagi dipakai user sehari-hari.
+
+## 12. Yang masih perlu dari kamu
+
+- **Upload ulang MLF Excel** lewat aplikasi (tabel `mlf_data`, lihat
+  bagian 11) — kapan aja, tidak mendesak.
 - Push kode masih harus lewat kamu (git bundle → kamu jalankan `git fetch`
   + `git push` sendiri) karena sesi Claude ini tidak punya akses push
   langsung ke `freesia-dev/bluebook` (lihat bagian 5) — pola ini kemungkinan
   akan berulang tiap ada perubahan kode baru.
-- Boleh dihapus manual kapan aja: file lama di Supabase Storage (bagian 9)
-  dan data export lama di Cloud Storage Lovable (bagian 3 poin 1) — dua-
-  duanya sudah tidak dipakai aplikasi.
+- Boleh dihapus manual kapan aja, tidak mendesak: file lama di Supabase
+  Storage (bagian 9), data export lama di Cloud Storage Lovable (bagian 3
+  poin 1), dan record DNS TXT `_lovable.*` (bagian 11) — semuanya sudah
+  tidak dipakai aplikasi.
+- Setelah dipastikan stabil beberapa hari, boleh biarkan Lovable Pro lapse
+  / hapus project dari Lovable (app & Supabase lama) sepenuhnya.
