@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { uploadFile } from '@/lib/storage';
 
 export type JenisAktivitas = 'call' | 'wa' | 'kunjungan' | 'surat_peringatan' | 'lainnya';
 export type StatusKomitmen = 'belum_ada' | 'janji_bayar' | 'sudah_bayar' | 'ingkar_janji' | 'negosiasi';
@@ -124,12 +125,7 @@ export const useDeleteCallMemo = () => {
 };
 
 export const uploadCallMemoLampiran = async (file: File): Promise<string> => {
-  const ext = file.name.split('.').pop();
-  const path = `call-memo/${Date.now()}_${Math.random().toString(36).slice(2, 9)}.${ext}`;
-  const { error } = await supabase.storage.from('documents').upload(path, file);
-  if (error) throw error;
-  const { data } = supabase.storage.from('documents').getPublicUrl(path);
-  return data.publicUrl;
+  return uploadFile(file, 'call-memo');
 };
 
 export const JENIS_AKTIVITAS_LABEL: Record<JenisAktivitas, string> = {

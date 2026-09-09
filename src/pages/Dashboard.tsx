@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { OjkReportDialog } from '@/components/ojk/OjkReportDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { getStorageUsage } from '@/lib/storage';
 import { exportAllTables } from '@/lib/export';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -74,37 +75,16 @@ const Dashboard: React.FC = () => {
     refetchInterval: 1000 * 60,
   });
 
-  // File storage usage (admin only) — scan ALL top-level folders in documents bucket
+  // File storage usage (admin only) — now backed by Cloudflare R2 (see
+  // functions/api/storage/list.ts). R2's list() is flat, so this gets the
+  // true total across every folder with no depth limit (the old Supabase
+  // Storage version only recursed one level deep and under-counted nested
+  // folders like security-log/foto).
   const { data: fileStorageData } = useQuery({
     queryKey: ['file-storage-usage'],
     queryFn: async () => {
-      const { data: rootEntries } = await supabase.storage.from('documents').list('', { limit: 1000 });
-      const folders = (rootEntries || []).filter((e: any) => !e.metadata).map((e: any) => e.name);
-      const rootFiles = (rootEntries || []).filter((e: any) => e.metadata?.size);
-
-      const folderResults = await Promise.all(
-        folders.map(async (folder) => {
-          const { data: folderFiles } = await supabase.storage.from('documents').list(folder, { limit: 1000 });
-          let bytes = 0;
-          let count = 0;
-          if (folderFiles) {
-            for (const f of folderFiles) {
-              if (f.metadata?.size) {
-                bytes += f.metadata.size;
-                count++;
-              }
-            }
-          }
-          return { bytes, count };
-        })
-      );
-      let usedBytes = folderResults.reduce((sum, r) => sum + r.bytes, 0);
-      let fileCount = folderResults.reduce((sum, r) => sum + r.count, 0);
-      for (const f of rootFiles) {
-        usedBytes += (f as any).metadata.size;
-        fileCount += 1;
-      }
-      return { usedBytes, fileCount };
+      const { totalBytes, totalFiles } = await getStorageUsage();
+      return { usedBytes: totalBytes, fileCount: totalFiles };
     },
     enabled: isAdmin,
     staleTime: 1000 * 30,
@@ -119,7 +99,7 @@ const Dashboard: React.FC = () => {
     () => [...(dbUsage?.tables ?? [])].sort((a, b) => b.rows - a.rows).slice(0, 3),
     [dbUsage],
   );
-  const maxStorageBytes = 1024 * 1024 * 1024; // 1GB
+  const maxStorageBytes = 10 * 1024 * 1024 * 1024; // 10GB — Cloudflare R2 free tier
   const fileUsedPercent = fileStorageData ? Math.min(Math.round((fileStorageData.usedBytes / maxStorageBytes) * 100), 100) : 0;
 
 
@@ -329,7 +309,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
-                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(maxStorageBytes - fileStorageData.usedBytes) : '1 GB'}</span></span>
+                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(maxStorageBytes - fileStorageData.usedBytes) : '10 GB'}</span></span>
                   </div>
                 </div>
               </div>

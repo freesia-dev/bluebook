@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadFile } from '@/lib/storage';
 import { Upload, X, Image as ImageIcon, Video, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,11 +30,7 @@ export const SecurityMediaUpload: React.FC<SecurityMediaUploadProps> = ({
   const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const upload = async (file: File, folder: string) => {
-    const ext = file.name.split('.').pop();
-    const path = `security-log/${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage.from('documents').upload(path, file);
-    if (error) throw error;
-    return supabase.storage.from('documents').getPublicUrl(path).data.publicUrl;
+    return uploadFile(file, `security-log/${folder}`);
   };
 
   const handleFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {

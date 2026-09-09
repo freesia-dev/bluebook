@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadFile } from '@/lib/storage';
 import { Upload, X, FileText, Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -53,21 +53,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+      const url = await uploadFile(file, folder);
 
       setFileName(file.name);
-      onChange(urlData.publicUrl);
+      onChange(url);
       toast({ title: 'Upload Berhasil', description: `File "${file.name}" berhasil diupload.` });
     } catch (error: any) {
       toast({ title: 'Upload Gagal', description: error.message || 'Gagal mengupload file.', variant: 'destructive' });
