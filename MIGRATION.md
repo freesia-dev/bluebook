@@ -2,15 +2,20 @@
 
 Dokumen ini rangkuman audit repo `freesia-dev/bluebook` plus progres migrasi
 lepas dari Lovable Cloud, tapi project tetap jalan normal. **Update terakhir:
-8 Sep 2026** — schema, data (51 tabel, 5.805 baris), 29 user Auth, dan
-seluruh 356 file storage (~995 MB) sudah pindah ke project Supabase baru;
-3 edge function sudah di-deploy dan CORS-nya sudah ditambahin buat domain
-Cloudflare Pages; Auth Site URL/Redirect URL sudah di-set; testing di
-`bluebook-d10.pages.dev` sudah dilakukan dan tidak ketemu error. BIRU sudah
-dihapus dari aplikasi. Repo GitHub sudah ditambahin akses tapi push masih
-kegagal (lihat bagian 5). **Yang masih pending: cutover domain produksi
-(bagian 7) — nunggu konfirmasi eksplisit kamu — dan upload ulang MLF Excel
-yang kamu lakuin sendiri lewat fitur "Upload MLF" di aplikasi.**
+9 Sep 2026** — schema, data (51 tabel, 5.805 baris), 29 user Auth sudah
+pindah ke project Supabase baru; 3 edge function sudah di-deploy dan
+CORS-nya sudah ditambahin buat domain Cloudflare Pages; Auth Site
+URL/Redirect URL sudah di-set; BIRU sudah dihapus dari aplikasi. **Storage
+file sudah dipindah lagi**, kali ini dari Supabase Storage ke Cloudflare R2
+(bagian 9) — seluruh 356 file (~995 MB) beserta 261 baris database yang
+nunjuk ke file itu sudah beres, supaya biaya storage tetap gratis (Supabase
+Storage berbayar kalau lanjut dipakai, R2 free tier 10 GB cukup buat
+kebutuhan ini). Repo GitHub sudah ditambahin akses tapi push dari sesi
+Claude ini masih kegagal terus (lihat bagian 5) — perubahan kode selalu
+dikirim sebagai git bundle buat kamu push manual. **Yang masih pending:
+cutover domain produksi (bagian 7) — nunggu konfirmasi eksplisit kamu —
+dan upload ulang MLF Excel yang kamu lakuin sendiri lewat fitur "Upload
+MLF" di aplikasi.**
 
 ## 1. Apa saja yang sebenarnya nempel ke Lovable
 
@@ -80,10 +85,14 @@ Progres saat ini — **semua poin di bagian ini sudah selesai**:
 4. ✅ **File storage** (bucket `documents`) — seluruh **356 file, ~995 MB**
    sudah disalin: `call-memo` (35), `security-log/foto` (317),
    `security-log/video` (2), `surat-keluar` (1), `surat-masuk` (1). Dicek
-   ulang lewat Storage API, cocok 356/356. **Catatan penting:** ini sudah
+   ulang lewat Storage API, cocok 356/356. ~~**Catatan penting:** ini sudah
    pakai ~97% dari kuota storage 1 GB di free tier Supabase — kalau upload
    dokumen terus jalan, kemungkinan besar bakal kena limit dalam waktu
-   dekat dan perlu upgrade plan.
+   dekat dan perlu upgrade plan.~~ **Update 9 Sep:** kekhawatiran ini yang
+   jadi alasan seluruh 356 file ini dipindah SEKALI LAGI, kali ini dari
+   Supabase Storage ke Cloudflare R2 (gratis, kuota 10 GB) — lihat bagian 9.
+   Supabase Storage sekarang cuma nyimpen salinan lama yang sudah tidak
+   dipakai aplikasi (boleh dihapus belakangan buat bebasin kuota).
 5. ✅ **Auth providers/redirect URL** — di project Supabase baru: cuma
    Email yang aktif (sama seperti project lama, tidak ada OAuth provider
    lain yang perlu disetel ulang). Redirect URL sudah diisi 4:
@@ -189,6 +198,9 @@ domain sementara (`*.pages.dev`), tinggal:
    pemakai sehari-hari.
 5. ✅ Migrasi data isi + user + file storage dari project lama ke baru
    (bagian 3) — sudah selesai dan dicek cocok.
+5b. ✅ Migrasi ulang file storage dari Supabase Storage ke Cloudflare R2
+   (bagian 9), termasuk update 261 baris database yang nunjuk ke file itu —
+   sudah selesai dan dicek cocok, supaya biaya tetap gratis.
 6. ⏳ **Upload ulang MLF Excel** — kamu lakuin sendiri lewat fitur "Upload
    MLF" di aplikasi (tabel `mlf_data` di project baru masih kosong, memang
    sengaja tidak diisi dari migrasi otomatis).
@@ -198,19 +210,64 @@ domain sementara (`*.pages.dev`), tinggal:
 8. Setelah dipastikan stabil beberapa hari pasca-cutover, baru boleh
    biarkan Lovable Pro lapse / hapus project dari Lovable.
 
-## 9. Yang masih perlu dari kamu
+## 9. Migrasi file storage: Supabase Storage → Cloudflare R2
+
+Karena kuota storage Supabase Storage 1 GB gratis sudah hampir habis
+(bagian 3 poin 4) dan project ini tidak berbayar ("thank you mas" project),
+seluruh file dipindah sekali lagi ke Cloudflare R2 (kuota gratis 10 GB).
+**Status: selesai, sudah dites end-to-end, tidak ada file yang hilang.**
+
+1. ✅ **Bucket R2 dibuat & di-bind** — `bluebook-documents`, di-bind ke
+   Pages project `bluebook` lewat binding `DOCUMENTS_BUCKET`, untuk
+   environment Production maupun Preview.
+2. ✅ **API storage baru ditulis** — 4 Cloudflare Pages Functions di
+   `functions/api/storage/`: `upload` (butuh login, siapa aja boleh),
+   `file/[[path]]` (publik, buat nampilin file), `delete` & `list`
+   (khusus admin) — meniru persis aturan akses bucket `documents` yang
+   lama. Semua kode frontend yang tadinya manggil
+   `supabase.storage.from('documents')` sudah diganti ke helper baru di
+   `src/lib/storage.ts`.
+3. ✅ **Bug ketemu & diperbaiki: `nodejs_compat` compatibility flag** —
+   setelah deploy pertama, semua endpoint `/api/storage/*` error koneksi
+   (bukan error HTTP biasa) karena kode Functions-nya import
+   `@supabase/supabase-js` yang butuh Node.js compatibility di runtime
+   Cloudflare Workers. Sempet nemu bug juga di dashboard Cloudflare-nya
+   sendiri pas nyoba nambahin flag ini lewat halaman Settings → Runtime
+   (request-nya salah format, selalu gagal dengan "unknown error") —
+   akhirnya diakalin dengan manggil API Cloudflare langsung pakai format
+   yang benar. Flag ini sekarang aktif di Production & Preview.
+4. ✅ **356 file (~995 MB) dipindah dari Supabase Storage ke R2** —
+   dijalankan langsung dari browser (pakai sesi login kamu), download tiap
+   file dari Supabase terus upload ke endpoint R2 yang baru, 6 file
+   sekaligus biar cepat. Hasil akhir: 356/356 file, total byte persis sama
+   (1.043.443.372 byte) — tidak ada yang gagal atau corrupt.
+5. ✅ **261 baris database diupdate** — kolom yang isinya link ke file lama
+   (`security_log_entry.foto_urls` & `video_url`, `call_memo_penagihan.
+   lampiran_urls`, `surat_keluar.file_url`, `surat_masuk.file_url`) sudah
+   diganti dari link Supabase Storage project Lovable lama
+   (`xcoonownhvsnsljxwumi.supabase.co`) ke link R2 yang baru
+   (`bluebook-d10.pages.dev/api/storage/file/...`). Sudah dicek ulang,
+   tidak ada link lama yang tersisa. `agenda_kredit_entry.file_url` tidak
+   ada isinya sama sekali, jadi tidak ada yang perlu diubah di situ.
+6. ✅ **Dashboard "Penyimpanan File" diupdate** — sekarang nampilin
+   pemakaian R2 (995.1 MB dari 10 GB), bukan Supabase Storage lagi.
+
+**Catatan:** file yang sama juga masih ada salinannya di Supabase Storage
+lama (tidak dihapus otomatis) — aman buat dihapus manual kapan aja setelah
+kamu yakin semuanya jalan normal, biar kuota Supabase Storage lega lagi
+(walaupun kalau memang tidak dipakai lagi, tidak masalah juga dibiarkan).
+
+## 10. Yang masih perlu dari kamu
 
 - **Cutover domain** (bagian 7/8) — semua persiapan teknis sudah selesai
   dan sudah dites, tinggal tunggu kamu bilang "lanjut" buat pindahin
   `bluebook-tlh.my.id` ke Cloudflare Pages.
 - **Upload ulang MLF Excel** lewat aplikasi setelah cutover (atau kapan
   aja, tidak harus nunggu cutover — tabelnya independen).
-- Cek pengaturan task/session Claude ini buat nyoba nambahin
-  `freesia-dev/bluebook` sebagai source (kalau ketemu), **atau** bilang aja
-  kalau lebih mau terima perubahan kode sebagai file/patch buat di-push
-  manual — masih ada beberapa commit lokal (termasuk fix CORS di bagian 4)
-  yang belum ke-push ke GitHub (lihat bagian 5).
-- **Perhatian kuota storage:** project Supabase baru sudah pakai ~97% dari
-  1 GB kuota storage free tier (lihat bagian 3 poin 4). Kalau pemakaian
-  upload dokumen terus jalan seperti biasa, kemungkinan besar perlu upgrade
-  ke plan berbayar dalam waktu tidak terlalu lama setelah cutover.
+- Push kode masih harus lewat kamu (git bundle → kamu jalankan `git fetch`
+  + `git push` sendiri) karena sesi Claude ini tidak punya akses push
+  langsung ke `freesia-dev/bluebook` (lihat bagian 5) — pola ini kemungkinan
+  akan berulang tiap ada perubahan kode baru.
+- Boleh dihapus manual kapan aja: file lama di Supabase Storage (bagian 9)
+  dan data export lama di Cloud Storage Lovable (bagian 3 poin 1) — dua-
+  duanya sudah tidak dipakai aplikasi.
