@@ -101,6 +101,7 @@ export interface PK {
   jenisDebitur: string;
   jenisPenggunaan: string;
   sektorEkonomi: string;
+  asalInstansi?: string;
   type: 'telihan' | 'meranti';
   tanggal?: Date;
   createdAt: Date;
@@ -169,6 +170,12 @@ export interface KodeFasilitas {
 }
 
 export interface SektorEkonomi {
+  id: string;
+  kode: string;
+  keterangan: string;
+}
+
+export interface AsalInstansi {
   id: string;
   kode: string;
   keterangan: string;

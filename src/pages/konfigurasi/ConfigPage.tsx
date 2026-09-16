@@ -11,7 +11,8 @@ import {
   getJenisKredit, addJenisKredit, deleteJenisKredit, updateJenisKredit,
   getJenisDebitur, addJenisDebitur, deleteJenisDebitur, updateJenisDebitur,
   getJenisPenggunaan, addJenisPenggunaan, deleteJenisPenggunaan, updateJenisPenggunaan,
-  getSektorEkonomi, addSektorEkonomi, deleteSektorEkonomi, updateSektorEkonomi
+  getSektorEkonomi, addSektorEkonomi, deleteSektorEkonomi, updateSektorEkonomi,
+  getAsalInstansi, addAsalInstansi, deleteAsalInstansi, updateAsalInstansi
 } from '@/lib/supabase-store';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +20,7 @@ import { Upload, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface ConfigPageProps {
-  type: 'jenis-kredit' | 'jenis-debitur' | 'jenis-penggunaan' | 'sektor-ekonomi';
+  type: 'jenis-kredit' | 'jenis-debitur' | 'jenis-penggunaan' | 'sektor-ekonomi' | 'asal-instansi';
 }
 
 const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
@@ -72,6 +73,16 @@ const ConfigPage: React.FC<ConfigPageProps> = ({ type }) => {
       del: deleteSektorEkonomi, 
       columns: [{ key: 'kode', header: 'Kode' }, { key: 'keterangan', header: 'Keterangan' }],
       templateData: [{ 'Kode': '0101', 'Keterangan': 'Contoh Sektor' }],
+      parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
+    },
+    'asal-instansi': { 
+      title: 'Asal Instansi', 
+      get: getAsalInstansi, 
+      add: (d: any) => addAsalInstansi({ kode: d.kode, keterangan: d.keterangan }), 
+      update: (id: string, d: any) => updateAsalInstansi(id, { kode: d.kode, keterangan: d.keterangan }),
+      del: deleteAsalInstansi, 
+      columns: [{ key: 'kode', header: 'Kode' }, { key: 'keterangan', header: 'Nama Instansi' }],
+      templateData: [{ 'Kode': 'INS-01', 'Keterangan': 'Contoh Nama Instansi' }],
       parseExcel: (row: any) => ({ kode: String(row['Kode'] || ''), keterangan: row['Keterangan'] || '' })
     },
   };

@@ -403,6 +403,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
     { label: 'Jenis Debitur', href: '/konfigurasi/jenis-debitur' },
     { label: 'Jenis Penggunaan', href: '/konfigurasi/jenis-penggunaan' },
     { label: 'Sektor Ekonomi', href: '/konfigurasi/sektor-ekonomi' },
+    { label: 'Asal Instansi', href: '/konfigurasi/asal-instansi' },
   ];
 
   const konfigurasiItems: ChildItem[] = isAdmin

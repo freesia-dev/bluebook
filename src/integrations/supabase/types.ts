@@ -691,6 +691,24 @@ export type Database = {
         }
         Relationships: []
       }
+      asal_instansi: {
+        Row: {
+          id: string
+          keterangan: string
+          kode: string
+        }
+        Insert: {
+          id?: string
+          keterangan: string
+          kode: string
+        }
+        Update: {
+          id?: string
+          keterangan?: string
+          kode?: string
+        }
+        Relationships: []
+      }
       jenis_debitur: {
         Row: {
           id: string
@@ -1601,6 +1619,7 @@ export type Database = {
       }
       pk: {
         Row: {
+          asal_instansi: string | null
           created_at: string
           id: string
           jangka_waktu: string
@@ -1616,6 +1635,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          asal_instansi?: string | null
           created_at?: string
           id?: string
           jangka_waktu: string
@@ -1631,6 +1651,7 @@ export type Database = {
           type: string
         }
         Update: {
+          asal_instansi?: string | null
           created_at?: string
           id?: string
           jangka_waktu?: string

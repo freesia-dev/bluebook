@@ -62,7 +62,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   
   // Use React Query hooks for caching
   const { data, isLoading, add, update, remove } = usePKData(type);
-  const { jenisKredit: jenisKreditOptions, jenisDebitur: jenisDebiturOptions, jenisPenggunaan: jenisPenggunaanOptions, sektorEkonomi: sektorEkonomiOptions } = useKreditOptions();
+  const { jenisKredit: jenisKreditOptions, jenisDebitur: jenisDebiturOptions, jenisPenggunaan: jenisPenggunaanOptions, sektorEkonomi: sektorEkonomiOptions, asalInstansi: asalInstansiOptions } = useKreditOptions();
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -80,6 +80,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
     jenisDebitur: '',
     jenisPenggunaan: '',
     sektorEkonomi: '',
+    asalInstansi: '',
     isKBK: false,
     tanggal: new Date(),
   });
@@ -93,6 +94,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       jenisDebitur: '',
       jenisPenggunaan: '',
       sektorEkonomi: '',
+      asalInstansi: '',
       isKBK: false,
       tanggal: new Date(),
     });
@@ -118,6 +120,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
           jenisDebitur: item.jenisDebitur,
           jenisPenggunaan: item.jenisPenggunaan,
           sektorEkonomi: item.sektorEkonomi,
+          asalInstansi: item.asalInstansi || '',
           isKBK: false,
           tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
         });
@@ -155,6 +158,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
         jenisDebitur: formData.jenisDebitur,
         jenisPenggunaan: formData.jenisPenggunaan,
         sektorEkonomi: formData.sektorEkonomi,
+        asalInstansi: formData.asalInstansi,
         type,
         isKBK: type === 'telihan' ? formData.isKBK : false,
         tanggal: formData.tanggal,
@@ -185,6 +189,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
           jenisDebitur: formData.jenisDebitur,
           jenisPenggunaan: formData.jenisPenggunaan,
           sektorEkonomi: formData.sektorEkonomi,
+          asalInstansi: formData.asalInstansi,
           tanggal: formData.tanggal,
         },
       });
@@ -215,12 +220,13 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       'No': item.nomor,
       'Nomor PK': item.nomorPK,
       'Nama Debitur': item.namaDebitur,
-      'Jenis Kredit': item.jenisKredit,
+      'Jenis Kredit': getJenisKreditLabel(item.jenisKredit),
       'Plafon': item.plafon,
       'Jangka Waktu': item.jangkaWaktu,
       'Jenis Debitur': item.jenisDebitur,
       'Jenis Penggunaan': item.jenisPenggunaan,
       'Sektor Ekonomi': item.sektorEkonomi,
+      'Asal Instansi': getAsalInstansiLabel(item.asalInstansi),
       'Tanggal': item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-',
     }));
     exportToExcel(exportData, `PK_${type.charAt(0).toUpperCase() + type.slice(1)}`, 'PK');
@@ -230,6 +236,12 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const getJenisKreditLabel = (id: string) => {
     const jk = jenisKreditOptions.find(j => j.id === id);
     return jk ? `${jk.nama} - ${jk.produkKredit}` : id;
+  };
+
+  const getAsalInstansiLabel = (kode?: string) => {
+    if (!kode) return '-';
+    const ai = asalInstansiOptions.find(a => a.kode === kode);
+    return ai ? `${ai.kode} - ${ai.keterangan}` : kode;
   };
 
   const DatePickerField = ({ value, onChange, label }: { value: Date; onChange: (date: Date) => void; label: string }) => (
@@ -262,6 +274,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
       render: (item: PK) => item.tanggal ? format(new Date(item.tanggal), 'dd/MM/yyyy') : '-'
     },
     { key: 'jenisDebitur', header: 'Jenis Debitur' },
+    { key: 'asalInstansi', header: 'Asal Instansi', render: (item: PK) => getAsalInstansiLabel(item.asalInstansi) },
   ];
 
   if (isLoading) {
@@ -289,6 +302,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
             jenisDebitur: item.jenisDebitur,
             jenisPenggunaan: item.jenisPenggunaan,
             sektorEkonomi: item.sektorEkonomi,
+            asalInstansi: item.asalInstansi || '',
             isKBK: false,
             tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),
           });
@@ -368,6 +382,15 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Asal Instansi</Label>
+              <Select value={formData.asalInstansi} onValueChange={(v) => setFormData({...formData, asalInstansi: v})}>
+                <SelectTrigger><SelectValue placeholder="Pilih asal instansi" /></SelectTrigger>
+                <SelectContent>
+                  {asalInstansiOptions.map((ai) => (<SelectItem key={ai.id} value={ai.kode}>{ai.kode} - {ai.keterangan}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>Batal</Button>
@@ -393,6 +416,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
               <div><p className="text-sm text-muted-foreground">Jenis Debitur</p><p className="font-medium">{selectedItem.jenisDebitur}</p></div>
               <div><p className="text-sm text-muted-foreground">Jenis Penggunaan</p><p className="font-medium">{selectedItem.jenisPenggunaan}</p></div>
               <div><p className="text-sm text-muted-foreground">Sektor Ekonomi</p><p className="font-medium">{selectedItem.sektorEkonomi}</p></div>
+              <div><p className="text-sm text-muted-foreground">Asal Instansi</p><p className="font-medium">{getAsalInstansiLabel(selectedItem.asalInstansi)}</p></div>
             </div>
           )}
           <DialogFooter><Button onClick={() => setIsViewOpen(false)}>Tutup</Button></DialogFooter>
@@ -430,6 +454,12 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
               <Select value={formData.sektorEkonomi} onValueChange={(v) => setFormData({...formData, sektorEkonomi: v})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{sektorEkonomiOptions.map((se) => (<SelectItem key={se.id} value={se.kode}>{se.kode} - {se.keterangan}</SelectItem>))}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Asal Instansi</Label>
+              <Select value={formData.asalInstansi} onValueChange={(v) => setFormData({...formData, asalInstansi: v})}>
+                <SelectTrigger><SelectValue placeholder="Pilih asal instansi" /></SelectTrigger>
+                <SelectContent>{asalInstansiOptions.map((ai) => (<SelectItem key={ai.id} value={ai.kode}>{ai.kode} - {ai.keterangan}</SelectItem>))}</SelectContent>
               </Select>
             </div>
           </div>
