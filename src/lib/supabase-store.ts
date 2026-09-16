@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   UserRole, SuratMasuk, SuratKeluar, SPPK, PK, KKMPAK,
-  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AgendaKreditEntry, NomorLoan, JenisPenggunaan,
+  JenisKredit, JenisDebitur, KodeFasilitas, SektorEkonomi, AsalInstansi, AgendaKreditEntry, NomorLoan, JenisPenggunaan,
   RecycleBinItem, isOjkSurat, OjkStatus
 } from '@/types';
 import type { AppRole } from '@/lib/role-permissions';
@@ -656,6 +656,7 @@ export const getPK = async (): Promise<PK[]> => {
     jenisDebitur: s.jenis_debitur,
     jenisPenggunaan: s.jenis_penggunaan,
     sektorEkonomi: s.sektor_ekonomi,
+    asalInstansi: (s as any).asal_instansi || undefined,
     type: s.type as 'telihan' | 'meranti',
     tanggal: new Date((s as any).tanggal || s.created_at),
     createdAt: new Date(s.created_at)
@@ -717,6 +718,7 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
       jenis_debitur: saveData.jenisDebitur,
       jenis_penggunaan: saveData.jenisPenggunaan,
       sektor_ekonomi: saveData.sektorEkonomi,
+      asal_instansi: saveData.asalInstansi || null,
       type: saveData.type,
       tanggal: tanggal.toISOString()
     })
@@ -736,6 +738,7 @@ export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'created
     jenisDebitur: result.jenis_debitur,
     jenisPenggunaan: result.jenis_penggunaan,
     sektorEkonomi: result.sektor_ekonomi,
+    asalInstansi: (result as any).asal_instansi || undefined,
     type: result.type as 'telihan' | 'meranti',
     tanggal: new Date((result as any).tanggal || result.created_at),
     createdAt: new Date(result.created_at)
@@ -764,6 +767,7 @@ export const updatePK = async (id: string, data: Partial<PK> & { isKBK?: boolean
   if (data.jenisDebitur !== undefined) updateData.jenis_debitur = data.jenisDebitur;
   if (data.jenisPenggunaan !== undefined) updateData.jenis_penggunaan = data.jenisPenggunaan;
   if (data.sektorEkonomi !== undefined) updateData.sektor_ekonomi = data.sektorEkonomi;
+  if (data.asalInstansi !== undefined) updateData.asal_instansi = data.asalInstansi;
   if (data.tanggal !== undefined) {
     const tanggalDate = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
     updateData.tanggal = tanggalDate.toISOString();
@@ -1212,7 +1216,59 @@ export const deleteSektorEkonomi = async (id: string): Promise<void> => {
     .from('sektor_ekonomi')
     .delete()
     .eq('id', id);
-  
+
+  if (error) throw error;
+};
+
+// ============= ASAL INSTANSI FUNCTIONS =============
+export const getAsalInstansi = async (): Promise<AsalInstansi[]> => {
+  const { data, error } = await supabase
+    .from('asal_instansi')
+    .select('*');
+
+  if (error) throw error;
+
+  return data.map(a => ({
+    id: a.id,
+    kode: a.kode,
+    keterangan: a.keterangan
+  }));
+};
+
+export const addAsalInstansi = async (data: Omit<AsalInstansi, 'id'>): Promise<AsalInstansi> => {
+  const { data: result, error } = await supabase
+    .from('asal_instansi')
+    .insert({
+      kode: data.kode,
+      keterangan: data.keterangan
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: result.id,
+    kode: result.kode,
+    keterangan: result.keterangan
+  };
+};
+
+export const updateAsalInstansi = async (id: string, data: Partial<AsalInstansi>): Promise<void> => {
+  const { error } = await supabase
+    .from('asal_instansi')
+    .update(data)
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
+export const deleteAsalInstansi = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('asal_instansi')
+    .delete()
+    .eq('id', id);
+
   if (error) throw error;
 };
 

@@ -4,7 +4,7 @@ import {
   getPK, addPK, updatePK, deletePK,
   getKKMPAK, addKKMPAK, updateKKMPAK, deleteKKMPAK,
   getNomorLoan, addNomorLoan, updateNomorLoan, deleteNomorLoan,
-  getJenisKredit, getJenisDebitur, getJenisPenggunaan, getSektorEkonomi
+  getJenisKredit, getJenisDebitur, getJenisPenggunaan, getSektorEkonomi, getAsalInstansi
 } from '@/lib/supabase-store';
 import { SPPK, PK, KKMPAK, NomorLoan } from '@/types';
 
@@ -268,12 +268,19 @@ export const useKreditOptions = () => {
     staleTime: STALE_TIME * 2,
   });
 
+  const asalInstansiQuery = useQuery({
+    queryKey: ['asal-instansi'],
+    queryFn: getAsalInstansi,
+    staleTime: STALE_TIME * 2,
+  });
+
   return {
     jenisKredit: jenisKreditQuery.data || [],
     jenisDebitur: jenisDebiturQuery.data || [],
     jenisPenggunaan: jenisPenggunaanQuery.data || [],
     kodeFasilitas: jenisPenggunaanQuery.data || [], // Alias for KKMPAK page
     sektorEkonomi: sektorEkonomiQuery.data || [],
-    isLoading: jenisKreditQuery.isLoading || jenisDebiturQuery.isLoading || jenisPenggunaanQuery.isLoading || sektorEkonomiQuery.isLoading,
+    asalInstansi: asalInstansiQuery.data || [],
+    isLoading: jenisKreditQuery.isLoading || jenisDebiturQuery.isLoading || jenisPenggunaanQuery.isLoading || sektorEkonomiQuery.isLoading || asalInstansiQuery.isLoading,
   };
 };
