@@ -49,7 +49,9 @@ export const SimulasiCard = React.forwardRef<
 >(({ data: d, theme: themeProp, scaleToFit }, ref) => {
   const { theme: themeDb } = useSimulasiTheme();
   const T = themeProp ?? themeDb ?? DEFAULT_SIMULASI_THEME;
-  const s = (n: number) => Math.round(n * T.fontScale * 10) / 10;
+  const scaleFor = (key: SimulasiSectionKey) => T.sectionFontScale?.[key] ?? 1;
+  const s = (n: number, key: SimulasiSectionKey = 'header') =>
+    Math.round(n * T.fontScale * scaleFor(key) * 10) / 10;
   const totalPenghasilan = d.gajiPokok + d.ttp;
 
   const primaryBg = T.useGradient
@@ -72,28 +74,29 @@ export const SimulasiCard = React.forwardRef<
     }[tone];
     return (
       <div style={{ background: tones.bg, border: `1px solid ${tones.bd}`, borderRadius: T.radius * 0.7, padding: '10px 14px' }}>
-        <div style={{ fontSize: s(10.5), letterSpacing: 0.8, textTransform: 'uppercase', color: T.subColor, fontWeight: 700 }}>
+        <div style={{ fontSize: s(10.5, 'chips'), letterSpacing: 0.8, textTransform: 'uppercase', color: T.subColor, fontWeight: 700 }}>
           {label}
         </div>
-        <div style={{ fontSize: s(15), fontWeight: 700, color: tones.fg, marginTop: 3 }}>{value}</div>
+        <div style={{ fontSize: s(15, 'chips'), fontWeight: 700, color: tones.fg, marginTop: 3 }}>{value}</div>
       </div>
     );
   };
 
-  const Tr: React.FC<{ label: string; value: string; bold?: boolean; tone?: 'green' | 'plain'; sub?: boolean }> = ({
-    label,
-    value,
-    bold,
-    tone = 'plain',
-    sub,
-  }) => (
+  const Tr: React.FC<{
+    label: string;
+    value: string;
+    bold?: boolean;
+    tone?: 'green' | 'plain';
+    sub?: boolean;
+    section: 'potongan' | 'pelunasan';
+  }> = ({ label, value, bold, tone = 'plain', sub, section }) => (
     <tr style={{ borderBottom: sub ? 'none' : `1px solid ${T.lineColor}` }}>
       <td
         style={{
           padding: sub ? '2px 0 6px 18px' : '9px 0',
           color: sub ? T.subColor : bold ? T.inkColor : T.subColor,
           fontWeight: bold ? 700 : 400,
-          fontSize: s(sub ? 12 : 14),
+          fontSize: s(sub ? 12 : 14, section),
         }}
       >
         {label}
@@ -103,7 +106,7 @@ export const SimulasiCard = React.forwardRef<
           padding: sub ? '2px 0 6px 0' : '9px 0',
           textAlign: 'right',
           fontWeight: bold ? 700 : sub ? 600 : 500,
-          fontSize: s(sub ? 12 : 14),
+          fontSize: s(sub ? 12 : 14, section),
           color: tone === 'green' ? T.successColor : T.inkColor,
         }}
       >
@@ -126,10 +129,10 @@ export const SimulasiCard = React.forwardRef<
         }}
       >
         <div>
-          <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
+          <div style={{ fontSize: s(11, 'header'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
           <div
             style={{
-              fontSize: s(26),
+              fontSize: s(26, 'header'),
               fontWeight: 800,
               marginTop: 6,
               letterSpacing: -0.4,
@@ -139,18 +142,18 @@ export const SimulasiCard = React.forwardRef<
           >
             {d.namaDebitur || '—'}
           </div>
-          <div style={{ marginTop: 10, fontSize: s(13), opacity: 0.9, lineHeight: 1.4 }}>
+          <div style={{ marginTop: 10, fontSize: s(13, 'header'), opacity: 0.9, lineHeight: 1.4 }}>
             {d.produk || 'Produk Kredit'}
           </div>
 
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: s(12), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
-          <div style={{ fontSize: s(15), fontWeight: 700 }}>{T.branchName}</div>
-          <div style={{ fontSize: s(11), opacity: 0.85, marginTop: 4 }}>{d.tanggal}</div>
+          <div style={{ fontSize: s(12, 'header'), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
+          <div style={{ fontSize: s(15, 'header'), fontWeight: 700 }}>{T.branchName}</div>
+          <div style={{ fontSize: s(11, 'header'), opacity: 0.85, marginTop: 4 }}>{d.tanggal}</div>
           <div
             style={{
-              fontSize: s(10.5),
+              fontSize: s(10.5, 'header'),
               fontWeight: 700,
               letterSpacing: 0.8,
               textTransform: 'uppercase',
@@ -174,10 +177,10 @@ export const SimulasiCard = React.forwardRef<
             padding: '18px 22px',
           }}
         >
-          <div style={{ fontSize: s(11.5), letterSpacing: 1.4, textTransform: 'uppercase', color: T.primaryColor, fontWeight: 700 }}>
+          <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: T.primaryColor, fontWeight: 700 }}>
             Plafon Pengajuan
           </div>
-          <div style={{ fontSize: s(40), fontWeight: 800, color: T.primaryColor, marginTop: 6, letterSpacing: -1 }}>
+          <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: T.primaryColor, marginTop: 6, letterSpacing: -1 }}>
             {fmtRp(d.plafon)}
           </div>
         </div>
@@ -189,11 +192,11 @@ export const SimulasiCard = React.forwardRef<
             padding: '18px 22px',
           }}
         >
-          <div style={{ fontSize: s(11.5), letterSpacing: 1.4, textTransform: 'uppercase', color: T.accentColor, fontWeight: 700 }}>
+          <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: T.accentColor, fontWeight: 700 }}>
             Jangka Waktu
           </div>
-          <div style={{ fontSize: s(40), fontWeight: 800, color: T.accentColor, marginTop: 6, letterSpacing: -1 }}>
-            {d.tenorBulan} <span style={{ fontSize: s(20), fontWeight: 700 }}>bulan</span>
+          <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: T.accentColor, marginTop: 6, letterSpacing: -1 }}>
+            {d.tenorBulan} <span style={{ fontSize: s(20, 'sorotan'), fontWeight: 700 }}>bulan</span>
           </div>
         </div>
       </div>
@@ -223,12 +226,12 @@ export const SimulasiCard = React.forwardRef<
           textAlign: 'center',
         }}
       >
-        <div style={{ fontSize: s(11), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
+        <div style={{ fontSize: s(11, 'angsuran'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
           Angsuran per Bulan
         </div>
-        <div style={{ fontSize: s(34), fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
+        <div style={{ fontSize: s(34, 'angsuran'), fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
         {d.angsuranTerakhir != null && d.angsuranTerakhir > 0 && d.angsuranTerakhir !== d.angsuranPertama && (
-          <div style={{ fontSize: s(12), opacity: 0.9, marginTop: 2 }}>
+          <div style={{ fontSize: s(12, 'angsuran'), opacity: 0.9, marginTop: 2 }}>
             Angsuran terakhir {fmtRp(d.angsuranTerakhir)}
           </div>
         )}
@@ -237,20 +240,20 @@ export const SimulasiCard = React.forwardRef<
     penghasilan:
       totalPenghasilan > 0 ? (
         <div style={{ padding: 16, background: T.cardColor, border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85 }}>
-          <div style={{ fontSize: s(11), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 8 }}>
+          <div style={{ fontSize: s(11, 'penghasilan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 8 }}>
             Penghasilan Debitur
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: s(14) }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: s(14, 'penghasilan') }}>
             <div>
-              <div style={{ color: T.subColor, fontSize: s(11.5) }}>Gaji Pokok</div>
+              <div style={{ color: T.subColor, fontSize: s(11.5, 'penghasilan') }}>Gaji Pokok</div>
               <div style={{ fontWeight: 700 }}>{fmtRp(d.gajiPokok)}</div>
             </div>
             <div>
-              <div style={{ color: T.subColor, fontSize: s(11.5) }}>Penghasilan Lainnya</div>
+              <div style={{ color: T.subColor, fontSize: s(11.5, 'penghasilan') }}>Penghasilan Lainnya</div>
               <div style={{ fontWeight: 700 }}>{fmtRp(d.ttp)}</div>
             </div>
             <div>
-              <div style={{ color: T.subColor, fontSize: s(11.5) }}>Total Penghasilan</div>
+              <div style={{ color: T.subColor, fontSize: s(11.5, 'penghasilan') }}>Total Penghasilan</div>
               <div style={{ fontWeight: 800, color: T.primaryColor }}>{fmtRp(totalPenghasilan)}</div>
             </div>
           </div>
@@ -258,25 +261,25 @@ export const SimulasiCard = React.forwardRef<
       ) : null,
     potongan: (
       <div style={{ border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85, padding: '14px 18px' }}>
-        <div style={{ fontSize: s(11), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 4 }}>
+        <div style={{ fontSize: s(11, 'potongan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 4 }}>
           Rincian Potongan di Muka
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
-            <Tr label={`Asuransi Jiwa (${d.asuransiJiwaProvider})`} value={fmtRp(d.asuransiJiwa)} />
+            <Tr section="potongan" label={`Asuransi Jiwa (${d.asuransiJiwaProvider})`} value={fmtRp(d.asuransiJiwa)} />
             {!!d.subsidiJiwa && d.subsidiJiwa > 0 && (
               <>
-                <Tr sub label="Premi sebelum subsidi" value={fmtRp(d.premiJiwaAktual ?? 0)} />
-                <Tr sub tone="green" label="Subsidi premi dari bank" value={`− ${fmtRp(d.subsidiJiwa)}`} />
+                <Tr section="potongan" sub label="Premi sebelum subsidi" value={fmtRp(d.premiJiwaAktual ?? 0)} />
+                <Tr section="potongan" sub tone="green" label="Subsidi premi dari bank" value={`− ${fmtRp(d.subsidiJiwa)}`} />
               </>
             )}
-            {d.asuransiKredit > 0 && <Tr label="Asuransi Kredit" value={fmtRp(d.asuransiKredit)} />}
-            <Tr label="Provisi" value={fmtRp(d.provisi)} />
+            {d.asuransiKredit > 0 && <Tr section="potongan" label="Asuransi Kredit" value={fmtRp(d.asuransiKredit)} />}
+            <Tr section="potongan" label="Provisi" value={fmtRp(d.provisi)} />
             {d.biaya.map((b, i) => (
-              <Tr key={`${b.label}-${i}`} label={b.label} value={fmtRp(b.nominal)} />
+              <Tr section="potongan" key={`${b.label}-${i}`} label={b.label} value={fmtRp(b.nominal)} />
             ))}
-            {d.blokir > 0 && <Tr label="Blokir Angsuran" value={fmtRp(d.blokir)} />}
-            <Tr label="Total Potongan" value={fmtRp(d.totalPotongan)} bold />
+            {d.blokir > 0 && <Tr section="potongan" label="Blokir Angsuran" value={fmtRp(d.blokir)} />}
+            <Tr section="potongan" label="Total Potongan" value={fmtRp(d.totalPotongan)} bold />
           </tbody>
         </table>
       </div>
@@ -291,14 +294,14 @@ export const SimulasiCard = React.forwardRef<
             borderRadius: T.radius * 0.85,
           }}
         >
-          <div style={{ fontSize: s(11), letterSpacing: 1.2, textTransform: 'uppercase', color: T.warnColor, fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ fontSize: s(11, 'pelunasan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.warnColor, fontWeight: 700, marginBottom: 4 }}>
             Pelunasan Pinjaman Lama
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
-              <Tr label="Sisa Pokok" value={fmtRp(d.pelunasan.pokok)} />
-              <Tr label="Bunga Berjalan" value={fmtRp(d.pelunasan.bunga)} />
-              <Tr label="Total Pelunasan" value={fmtRp(d.pelunasan.total)} bold />
+              <Tr section="pelunasan" label="Sisa Pokok" value={fmtRp(d.pelunasan.pokok)} />
+              <Tr section="pelunasan" label="Bunga Berjalan" value={fmtRp(d.pelunasan.bunga)} />
+              <Tr section="pelunasan" label="Total Pelunasan" value={fmtRp(d.pelunasan.total)} bold />
             </tbody>
           </table>
         </div>
@@ -316,16 +319,16 @@ export const SimulasiCard = React.forwardRef<
         }}
       >
         <div>
-          <div style={{ fontSize: s(11.5), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.9 }}>
+          <div style={{ fontSize: s(11.5, 'dana'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.9 }}>
             Dana Diterima Debitur
           </div>
           {d.pelunasan && d.pelunasan.total > 0 && (
-            <div style={{ fontSize: s(11.5), opacity: 0.9, marginTop: 4 }}>
+            <div style={{ fontSize: s(11.5, 'dana'), opacity: 0.9, marginTop: 4 }}>
               Sudah dikurangi pelunasan {fmtRp(d.pelunasan.total)}
             </div>
           )}
         </div>
-        <div style={{ fontSize: s(38), fontWeight: 800, letterSpacing: -0.8 }}>{fmtRp(d.danaDiterima)}</div>
+        <div style={{ fontSize: s(38, 'dana'), fontWeight: 800, letterSpacing: -0.8 }}>{fmtRp(d.danaDiterima)}</div>
       </div>
     ),
     footer: (
@@ -333,7 +336,7 @@ export const SimulasiCard = React.forwardRef<
         style={{
           paddingTop: 12,
           borderTop: `1px solid ${T.lineColor}`,
-          fontSize: s(11),
+          fontSize: s(11, 'footer'),
           color: T.subColor,
           display: 'flex',
           justifyContent: 'space-between',

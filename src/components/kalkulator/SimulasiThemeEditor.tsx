@@ -24,6 +24,8 @@ import {
   SimulasiSectionKey,
   SimulasiTheme,
 } from '@/lib/simulasi-theme';
+
+const SECTION_KEYS = Object.keys(SECTION_LABELS) as SimulasiSectionKey[];
 import { ArrowDown, ArrowUp, RotateCcw, Save } from 'lucide-react';
 
 const SAMPLE: SimulasiCardData = {
@@ -119,6 +121,9 @@ export const SimulasiThemeEditor: React.FC = () => {
   const set = <K extends keyof SimulasiTheme>(key: K, value: SimulasiTheme[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
+  const setSectionScale = (key: SimulasiSectionKey, value: number) =>
+    setDraft((d) => ({ ...d, sectionFontScale: { ...d.sectionFontScale, [key]: value } }));
+
   const move = (key: SimulasiSectionKey, dir: -1 | 1) =>
     setDraft((d) => {
       const order = [...d.order];
@@ -209,10 +214,10 @@ export const SimulasiThemeEditor: React.FC = () => {
               </Select>
             </div>
             <NumField
-              label="Skala Ukuran Teks"
+              label="Skala Ukuran Teks (Global)"
               value={draft.fontScale}
-              min={0.8}
-              max={1.4}
+              min={0.6}
+              max={2}
               step={0.05}
               suffix="x"
               onChange={(v) => set('fontScale', v)}
@@ -220,6 +225,40 @@ export const SimulasiThemeEditor: React.FC = () => {
             <NumField label="Lebar Kartu" value={draft.cardWidth} min={700} max={1200} step={10} suffix="px" onChange={(v) => set('cardWidth', v)} />
             <NumField label="Padding" value={draft.padding} min={16} max={64} suffix="px" onChange={(v) => set('padding', v)} />
             <NumField label="Sudut Membulat" value={draft.radius} min={0} max={28} suffix="px" onChange={(v) => set('radius', v)} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Ukuran Font per Bagian</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Kalikan skala global di atas khusus untuk satu bagian — misalnya perbesar hanya "Angsuran per Bulan" tanpa mengubah bagian lain. 1x berarti mengikuti Skala Ukuran Teks (Global) apa adanya.
+            </p>
+            {SECTION_KEYS.map((key) => (
+              <NumField
+                key={key}
+                label={SECTION_LABELS[key]}
+                value={draft.sectionFontScale[key] ?? 1}
+                min={0.5}
+                max={2.5}
+                step={0.05}
+                suffix="x"
+                onChange={(v) => setSectionScale(key, v)}
+              />
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() =>
+                setDraft((d) => ({ ...d, sectionFontScale: { ...DEFAULT_SIMULASI_THEME.sectionFontScale } }))
+              }
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset Ukuran per Bagian
+            </Button>
           </CardContent>
         </Card>
 

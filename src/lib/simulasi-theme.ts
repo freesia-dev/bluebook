@@ -31,7 +31,9 @@ export interface SimulasiTheme {
   footerNote: string;
   /** tipografi */
   fontFamily: string;
-  fontScale: number; // 0.8 - 1.4
+  fontScale: number; // skala global, dikalikan dengan skala per-bagian di bawah
+  /** skala tambahan per bagian kartu — masing-masing default 1 (ikut skala global) */
+  sectionFontScale: Record<SimulasiSectionKey, number>;
   /** ukuran */
   cardWidth: number; // px
   padding: number;
@@ -63,6 +65,17 @@ export const DEFAULT_SIMULASI_THEME: SimulasiTheme = {
   footerNote: 'Simulasi — bukan dokumen perjanjian kredit. Nilai dapat berubah sewaktu-waktu.',
   fontFamily: 'Inter, system-ui, sans-serif',
   fontScale: 1,
+  sectionFontScale: {
+    header: 1,
+    sorotan: 1,
+    chips: 1,
+    angsuran: 1,
+    penghasilan: 1,
+    potongan: 1,
+    pelunasan: 1,
+    dana: 1,
+    footer: 1,
+  },
   cardWidth: 900,
   padding: 36,
   radius: 14,
@@ -107,5 +120,12 @@ export function mergeTheme(raw: unknown): SimulasiTheme {
     ...v,
     order: [...order, ...missing],
     hidden: Array.isArray(v.hidden) ? (v.hidden as SimulasiSectionKey[]) : [],
+    // Tema lama (sebelum fitur ini) belum punya sectionFontScale sama sekali, atau
+    // belum punya entri untuk bagian yang baru ditambahkan — isi dengan default (1)
+    // supaya tampilan riwayat simulasi lama tidak berubah sampai user mengatur ulang.
+    sectionFontScale: {
+      ...DEFAULT_SIMULASI_THEME.sectionFontScale,
+      ...(v.sectionFontScale && typeof v.sectionFontScale === 'object' ? v.sectionFontScale : {}),
+    },
   };
 }
