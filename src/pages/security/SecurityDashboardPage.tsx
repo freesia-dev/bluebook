@@ -16,36 +16,21 @@ import {
   Shield, ShieldCheck, ShieldAlert, Clock, ClipboardList, CalendarDays,
   ArrowRight, AlertTriangle, CheckCircle2, Timer,
 } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
 
+/**
+ * Kartu KPI dashboard security — dibangun di atas StatCard bersama supaya
+ * gaya kartu statistik konsisten dengan dashboard Executive & Monitoring.
+ */
 const KPI: React.FC<{
   icon: React.ElementType;
   label: string;
   value: string | number;
   sub?: string;
   tint?: 'blue' | 'emerald' | 'amber' | 'rose' | 'violet';
-}> = ({ icon: Icon, label, value, sub, tint = 'blue' }) => {
-  const tones: Record<string, string> = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
-    violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-  };
-  return (
-    <Card className="border-border/60">
-      <CardContent className="p-4 flex items-start gap-3 min-w-0">
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', tones[tint])}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground truncate">{label}</p>
-          <p className="text-2xl font-bold leading-tight">{value}</p>
-          {sub && <p className="text-[11px] text-muted-foreground mt-0.5 break-words">{sub}</p>}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+}> = ({ icon, label, value, sub, tint = 'blue' }) => (
+  <StatCard compact icon={icon as any} title={label} value={value} description={sub} tint={tint} />
+);
 
 /** Dashboard khusus role Security & Team Leader Security — halaman utama setelah login. */
 const SecurityDashboardPage: React.FC = () => {

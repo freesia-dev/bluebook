@@ -113,8 +113,16 @@ const SuratKeluarPage: React.FC = () => {
 
   const handleAdd = async () => {
     if (isSubmitting) return;
-    if (!formData.kodeSurat || !formData.namaPenerima || !formData.perihal) {
-      toast({ title: 'Validasi Error', description: 'Harap isi semua field yang wajib.', variant: 'destructive' });
+    if (!formData.kodeSurat) {
+      toast({ title: 'Validasi Gagal', description: 'Kode Surat wajib dipilih.', variant: 'destructive' });
+      return;
+    }
+    if (!formData.namaPenerima) {
+      toast({ title: 'Validasi Gagal', description: 'Nama Penerima wajib diisi.', variant: 'destructive' });
+      return;
+    }
+    if (!formData.perihal) {
+      toast({ title: 'Validasi Gagal', description: 'Perihal wajib diisi.', variant: 'destructive' });
       return;
     }
 

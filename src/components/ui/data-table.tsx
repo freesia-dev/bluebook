@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Plus, Filter, Eye, Edit, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Download, Plus, Filter, Eye, Edit, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Popover,
@@ -25,6 +25,11 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+
+/** Debounce delay (ms) sebelum pencarian benar-benar diterapkan ke data. */
+const SEARCH_DEBOUNCE_MS = 300;
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export interface Column<T> {
   key: keyof T | string;
@@ -69,10 +74,26 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
   toolbarActions,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterColumn, setFilterColumn] = useState<string>('');
   const [filterValue, setFilterValue] = useState<string>('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc'); // Default: terbaru
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Debounce: baru terapkan pencarian ke data setelah user berhenti mengetik sejenak,
+  // supaya tabel besar tidak re-filter/re-render di setiap ketukan tombol.
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  // Kembali ke halaman 1 setiap kali pencarian/filter/urutan/ukuran halaman berubah,
+  // supaya tidak "nyangkut" di halaman kosong.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filterColumn, filterValue, sortOrder, pageSize]);
 
   // Get unique values for filter dropdown
   const getUniqueValues = (columnKey: string): string[] => {
@@ -96,14 +117,14 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
 
   const filteredData = useMemo(() => {
     let result = data.filter((item) => {
-      // Apply search filter
-      const matchesSearch = !search || columns.some((col) => {
+      // Apply search filter (pakai nilai yang sudah di-debounce)
+      const matchesSearch = !debouncedSearch || columns.some((col) => {
         const value = item[col.key as keyof T];
         if (typeof value === 'string') {
-          return value.toLowerCase().includes(search.toLowerCase());
+          return value.toLowerCase().includes(debouncedSearch.toLowerCase());
         }
         if (typeof value === 'number') {
-          return value.toString().includes(search);
+          return value.toString().includes(debouncedSearch);
         }
         return false;
       });
@@ -137,7 +158,14 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
     }
 
     return result;
-  }, [data, search, columns, filterColumn, filterValue, sortOrder]);
+  }, [data, debouncedSearch, columns, filterColumn, filterValue, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
 
   const clearFilter = () => {
     setFilterColumn('');
@@ -318,7 +346,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.length === 0 ? (
+            {paginatedData.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell 
                   colSpan={columns.length + (showActions ? 1 : 0)} 
@@ -333,7 +361,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData.map((item, index) => (
+              paginatedData.map((item, index) => (
                 <TableRow 
                   key={item.id} 
                   className={cn(
@@ -390,10 +418,79 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <p className="text-sm text-muted-foreground">
-          Menampilkan <span className="font-medium text-foreground">{filteredData.length}</span> dari <span className="font-medium text-foreground">{data.length}</span> data
+          {filteredData.length === 0 ? (
+            <>Menampilkan <span className="font-medium text-foreground">0</span> dari <span className="font-medium text-foreground">{data.length}</span> data</>
+          ) : (
+            <>
+              Menampilkan <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span>-
+              <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, filteredData.length)}</span> dari{' '}
+              <span className="font-medium text-foreground">{filteredData.length}</span> data
+              {filteredData.length !== data.length && <> (disaring dari {data.length})</>}
+            </>
+          )}
         </p>
+
+        {filteredData.length > 0 && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">Baris/halaman</Label>
+              <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage(1)}
+                disabled={currentPage <= 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground px-2 whitespace-nowrap">
+                Hal <span className="font-medium text-foreground">{currentPage}</span> / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage(totalPages)}
+                disabled={currentPage >= totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

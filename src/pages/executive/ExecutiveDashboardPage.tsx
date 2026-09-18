@@ -14,7 +14,17 @@ import { getUnit } from '@/lib/produktif-utils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { ArrowDownRight, ArrowUpRight, Banknote, FileSpreadsheet, FileText, Gauge, Layers, ShieldAlert, TrendingUp, Users, Wallet } from 'lucide-react';
+import { Banknote, FileSpreadsheet, FileText, Gauge, Layers, ShieldAlert, TrendingUp, Users, Wallet } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
+
+/** Tone lama KpiCard dipetakan ke palet tint StatCard bersama. */
+const KPI_TONE_TINT = {
+  primary: 'blue',
+  success: 'emerald',
+  warning: 'amber',
+  danger: 'rose',
+  info: 'sky',
+} as const;
 import { exportExecutiveExcel, exportExecutivePDF } from '@/lib/executive-report';
 
 export const BRANCHES = [
@@ -70,6 +80,11 @@ export interface ExecutiveKPI {
   pipelineTotal: { count: number; plafon: number; cair: number; cairPlafon: number; batal: number; konversi: number };
 }
 
+/**
+ * Kartu KPI dashboard eksekutif — dibangun di atas StatCard bersama (lihat
+ * src/components/ui/stat-card.tsx) supaya gaya kartu statistik konsisten
+ * dengan dashboard Monitoring & Security, bukan implementasi lokal terpisah.
+ */
 const KpiCard: React.FC<{
   icon: React.ElementType;
   label: string;
@@ -79,38 +94,17 @@ const KpiCard: React.FC<{
   delta?: number | null;
   deltaSuffix?: string;
   invertDelta?: boolean;
-}> = ({ icon: Icon, label, value, sub, tone = 'primary', delta = null, deltaSuffix = '%', invertDelta }) => {
-  const tones: Record<string, string> = {
-    primary: 'from-primary/15 to-primary/5 text-primary',
-    success: 'from-emerald-500/15 to-emerald-500/5 text-emerald-600',
-    warning: 'from-amber-500/15 to-amber-500/5 text-amber-600',
-    danger: 'from-red-500/15 to-red-500/5 text-red-600',
-    info: 'from-sky-500/15 to-sky-500/5 text-sky-600',
-  };
-  const good = delta === null ? null : invertDelta ? delta <= 0 : delta >= 0;
-  return (
-    <Card className="overflow-hidden border-border/60">
-      <CardContent className={`p-4 bg-gradient-to-br ${tones[tone]}`}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{label}</p>
-            <p className="text-2xl font-bold text-foreground mt-1 leading-tight break-words">{value}</p>
-            {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-background/70 flex items-center justify-center shrink-0">
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-        {delta !== null && (
-          <div className={`mt-3 inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5 ${good ? 'bg-emerald-500/15 text-emerald-700' : 'bg-red-500/15 text-red-700'}`}>
-            {delta >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            {delta >= 0 ? '+' : ''}{delta.toFixed(2)}{deltaSuffix} vs periode lalu
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+}> = ({ icon, label, value, sub, tone = 'primary', delta = null, deltaSuffix = '%', invertDelta }) => (
+  <StatCard
+    compact
+    icon={icon as any}
+    title={label}
+    value={value}
+    description={sub}
+    tint={KPI_TONE_TINT[tone]}
+    trend={delta !== null ? { value: delta, isPositive: delta >= 0, suffix: `${deltaSuffix} vs periode lalu`, invert: invertDelta } : undefined}
+  />
+);
 
 const ExecutiveDashboardPage: React.FC = () => {
   const { data: uploads = [] } = useMLFUploads();
