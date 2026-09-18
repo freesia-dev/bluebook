@@ -104,7 +104,23 @@ export default defineConfig(({ mode }) => ({
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
           if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
-          if (id.includes('xlsx')) return 'vendor-xlsx';
+          // xlsx SENGAJA TIDAK dipisah manual ke chunk sendiri. Alasan: src/lib/export-guard.ts
+          // dan lebih dari selusin halaman (ConfigPage, AuditPublicPage, KreditProduktifPage,
+          // LaporanBulananPage, RiwayatPage, halaman-halaman CS, dst.) semuanya melakukan
+          // `import * as XLSX from 'xlsx'` lalu export-guard.ts menimpa XLSX.writeFile satu
+          // kali secara global untuk memaksa guard permission export di seluruh app. Begitu
+          // xlsx dipaksa jadi chunk terpisah, import namespace lintas-chunk itu menjadi ES
+          // module namespace object asli yang read-only di browser (bukan lagi objek CJS
+          // interop biasa yang bisa ditimpa), sehingga penimpaan `XLSX.writeFile = ...` throw
+          // "Assignment to constant variable" saat modul dievaluasi (boot time) dan membuat
+          // seluruh app blank. Karena xlsx tidak punya default export di build ESM-nya (jadi
+          // tidak bisa disiasati dengan default import), dan guard globalnya dipakai banyak
+          // halaman tanpa masing-masing punya izin check sendiri, xlsx TIDAK BOLEH dipisah ke
+          // manualChunks sampai guard-nya direfactor jadi wrapper terpisah (bukan monkey-patch
+          // namespace). xlsx tetap lazy untuk beberapa jalur export via dynamic import('xlsx')
+          // di src/lib/export.ts, tapi halaman-halaman lain masih static-import xlsx sehingga
+          // ukurannya ikut ke chunk masing-masing/entry utama — trade-off yang lebih aman
+          // daripada app blank total.
           if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
           if (id.includes('@supabase')) return 'vendor-supabase';
           if (id.includes('date-fns')) return 'vendor-date';
