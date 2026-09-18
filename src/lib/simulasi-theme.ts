@@ -23,6 +23,39 @@ export const SECTION_LABELS: Record<SimulasiSectionKey, string> = {
   footer: 'Catatan Kaki & Account Officer',
 };
 
+/** Judul/label teks tetap di kartu yang bisa diganti admin/user (mis. "Plafon Pengajuan" -> "Plafon Diajukan"). */
+export type SimulasiLabelKey =
+  | 'sorotan.plafon'
+  | 'sorotan.tenor'
+  | 'angsuran.title'
+  | 'penghasilan.title'
+  | 'potongan.title'
+  | 'pelunasan.title'
+  | 'dana.title';
+
+export const LABEL_DEFAULTS: Record<SimulasiLabelKey, string> = {
+  'sorotan.plafon': 'Plafon Pengajuan',
+  'sorotan.tenor': 'Jangka Waktu',
+  'angsuran.title': 'Angsuran per Bulan',
+  'penghasilan.title': 'Penghasilan Debitur',
+  'potongan.title': 'Rincian Potongan di Muka',
+  'pelunasan.title': 'Pelunasan Pinjaman Lama',
+  'dana.title': 'Dana Diterima Debitur',
+};
+
+/** Nama field yang ditampilkan di editor untuk tiap SimulasiLabelKey. */
+export const LABEL_FIELD_TITLES: Record<SimulasiLabelKey, string> = {
+  'sorotan.plafon': 'Judul kartu Plafon',
+  'sorotan.tenor': 'Judul kartu Jangka Waktu',
+  'angsuran.title': 'Judul kartu Angsuran per Bulan',
+  'penghasilan.title': 'Judul kartu Penghasilan Debitur',
+  'potongan.title': 'Judul kartu Rincian Potongan',
+  'pelunasan.title': 'Judul kartu Pelunasan Pinjaman Lama',
+  'dana.title': 'Judul kartu Dana Diterima Debitur',
+};
+
+export const LABEL_KEYS = Object.keys(LABEL_DEFAULTS) as SimulasiLabelKey[];
+
 export interface SimulasiTheme {
   /** identitas */
   bankName: string;
@@ -34,6 +67,8 @@ export interface SimulasiTheme {
   fontScale: number; // skala global, dikalikan dengan skala per-bagian di bawah
   /** skala tambahan per bagian kartu — masing-masing default 1 (ikut skala global) */
   sectionFontScale: Record<SimulasiSectionKey, number>;
+  /** override judul/label teks tetap — key yang tidak diisi memakai LABEL_DEFAULTS */
+  labels: Partial<Record<SimulasiLabelKey, string>>;
   /** ukuran */
   cardWidth: number; // px
   padding: number;
@@ -76,6 +111,7 @@ export const DEFAULT_SIMULASI_THEME: SimulasiTheme = {
     dana: 1,
     footer: 1,
   },
+  labels: {},
   cardWidth: 900,
   padding: 36,
   radius: 14,
@@ -127,5 +163,15 @@ export function mergeTheme(raw: unknown): SimulasiTheme {
       ...DEFAULT_SIMULASI_THEME.sectionFontScale,
       ...(v.sectionFontScale && typeof v.sectionFontScale === 'object' ? v.sectionFontScale : {}),
     },
+    // Sama seperti sectionFontScale: tema lama belum punya `labels`, isi aman dengan {}
+    // supaya getLabel() jatuh ke LABEL_DEFAULTS sampai user mengganti sendiri.
+    labels: {
+      ...(v.labels && typeof v.labels === 'object' ? v.labels : {}),
+    },
   };
+}
+
+/** Ambil teks label (dengan fallback ke default) — dipakai SimulasiCard supaya tidak hardcode string. */
+export function getLabel(theme: Pick<SimulasiTheme, 'labels'>, key: SimulasiLabelKey): string {
+  return theme.labels?.[key] || LABEL_DEFAULTS[key];
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { fmtRp, SKEMA_LABELS, SEGMEN_LABELS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
-import { DEFAULT_SIMULASI_THEME, SimulasiSectionKey, SimulasiTheme } from '@/lib/simulasi-theme';
+import { DEFAULT_SIMULASI_THEME, SimulasiSectionKey, SimulasiTheme, getLabel } from '@/lib/simulasi-theme';
 import { useSimulasiTheme } from '@/hooks/use-simulasi-theme';
 
 export interface SimulasiCardData {
@@ -178,7 +178,7 @@ export const SimulasiCard = React.forwardRef<
           }}
         >
           <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: T.primaryColor, fontWeight: 700 }}>
-            Plafon Pengajuan
+            {getLabel(T, 'sorotan.plafon')}
           </div>
           <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: T.primaryColor, marginTop: 6, letterSpacing: -1 }}>
             {fmtRp(d.plafon)}
@@ -193,7 +193,7 @@ export const SimulasiCard = React.forwardRef<
           }}
         >
           <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: T.accentColor, fontWeight: 700 }}>
-            Jangka Waktu
+            {getLabel(T, 'sorotan.tenor')}
           </div>
           <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: T.accentColor, marginTop: 6, letterSpacing: -1 }}>
             {d.tenorBulan} <span style={{ fontSize: s(20, 'sorotan'), fontWeight: 700 }}>bulan</span>
@@ -227,7 +227,7 @@ export const SimulasiCard = React.forwardRef<
         }}
       >
         <div style={{ fontSize: s(11, 'angsuran'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
-          Angsuran per Bulan
+          {getLabel(T, 'angsuran.title')}
         </div>
         <div style={{ fontSize: s(34, 'angsuran'), fontWeight: 800, marginTop: 4 }}>{fmtRp(d.angsuranPertama)}</div>
         {d.angsuranTerakhir != null && d.angsuranTerakhir > 0 && d.angsuranTerakhir !== d.angsuranPertama && (
@@ -241,7 +241,7 @@ export const SimulasiCard = React.forwardRef<
       totalPenghasilan > 0 ? (
         <div style={{ padding: 16, background: T.cardColor, border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85 }}>
           <div style={{ fontSize: s(11, 'penghasilan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 8 }}>
-            Penghasilan Debitur
+            {getLabel(T, 'penghasilan.title')}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: s(14, 'penghasilan') }}>
             <div>
@@ -262,7 +262,7 @@ export const SimulasiCard = React.forwardRef<
     potongan: (
       <div style={{ border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85, padding: '14px 18px' }}>
         <div style={{ fontSize: s(11, 'potongan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 4 }}>
-          Rincian Potongan di Muka
+          {getLabel(T, 'potongan.title')}
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
@@ -295,7 +295,7 @@ export const SimulasiCard = React.forwardRef<
           }}
         >
           <div style={{ fontSize: s(11, 'pelunasan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.warnColor, fontWeight: 700, marginBottom: 4 }}>
-            Pelunasan Pinjaman Lama
+            {getLabel(T, 'pelunasan.title')}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
@@ -320,7 +320,7 @@ export const SimulasiCard = React.forwardRef<
       >
         <div>
           <div style={{ fontSize: s(11.5, 'dana'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.9 }}>
-            Dana Diterima Debitur
+            {getLabel(T, 'dana.title')}
           </div>
           {d.pelunasan && d.pelunasan.total > 0 && (
             <div style={{ fontSize: s(11.5, 'dana'), opacity: 0.9, marginTop: 4 }}>

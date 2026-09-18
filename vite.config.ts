@@ -92,4 +92,27 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Pisahkan library pihak ketiga yang berat ke chunk vendor tersendiri.
+        // Rollup sudah otomatis memisahkan sebagian (lihat chunk BarChart/PieChart
+        // hasil code-splitting recharts per halaman lazy-load), tapi manualChunks
+        // di sini memastikan library besar (chart, export Excel/PDF, tanggal) tidak
+        // ikut tercampur ke bundle utama dan bisa di-cache terpisah oleh browser
+        // karena jarang berubah dibanding kode aplikasi sendiri.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+          if (id.includes('xlsx')) return 'vendor-xlsx';
+          if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
+          if (id.includes('@supabase')) return 'vendor-supabase';
+          if (id.includes('date-fns')) return 'vendor-date';
+          if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) return 'vendor-react';
+          if (id.includes('@radix-ui')) return 'vendor-radix';
+          return undefined;
+        },
+      },
+    },
+  },
 }));

@@ -1,8 +1,12 @@
-import * as XLSX from 'xlsx';
-import { 
-  getSuratMasuk, getSuratKeluar, getSPPK, getPK, getKKMPAK 
+import {
+  getSuratMasuk, getSuratKeluar, getSPPK, getPK, getKKMPAK
 } from './supabase-store';
 import { toast } from 'sonner';
+
+// xlsx cukup berat (~beberapa ratus KB) dan cuma dibutuhkan saat user benar-benar
+// menekan tombol Export, jadi di-import dinamis di sini alih-alih di top-level —
+// supaya tidak ikut terbawa ke bundle awal halaman yang punya tombol Export.
+const loadXLSX = () => import('xlsx');
 
 export const isExportAllowed = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -17,8 +21,9 @@ const guardExport = (): boolean => {
   return true;
 };
 
-export const exportToExcel = (data: any[], filename: string, sheetName: string = 'Sheet1') => {
+export const exportToExcel = async (data: any[], filename: string, sheetName: string = 'Sheet1') => {
   if (!guardExport()) return;
+  const XLSX = await loadXLSX();
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
@@ -27,6 +32,7 @@ export const exportToExcel = (data: any[], filename: string, sheetName: string =
 
 export const exportAllTables = async () => {
   if (!guardExport()) return;
+  const XLSX = await loadXLSX();
   const workbook = XLSX.utils.book_new();
   
   try {
