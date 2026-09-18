@@ -93,42 +93,23 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        // Pisahkan library pihak ketiga yang berat ke chunk vendor tersendiri.
-        // Rollup sudah otomatis memisahkan sebagian (lihat chunk BarChart/PieChart
-        // hasil code-splitting recharts per halaman lazy-load), tapi manualChunks
-        // di sini memastikan library besar (chart, export Excel/PDF, tanggal) tidak
-        // ikut tercampur ke bundle utama dan bisa di-cache terpisah oleh browser
-        // karena jarang berubah dibanding kode aplikasi sendiri.
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined;
-          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
-          // xlsx SENGAJA TIDAK dipisah manual ke chunk sendiri. Alasan: src/lib/export-guard.ts
-          // dan lebih dari selusin halaman (ConfigPage, AuditPublicPage, KreditProduktifPage,
-          // LaporanBulananPage, RiwayatPage, halaman-halaman CS, dst.) semuanya melakukan
-          // `import * as XLSX from 'xlsx'` lalu export-guard.ts menimpa XLSX.writeFile satu
-          // kali secara global untuk memaksa guard permission export di seluruh app. Begitu
-          // xlsx dipaksa jadi chunk terpisah, import namespace lintas-chunk itu menjadi ES
-          // module namespace object asli yang read-only di browser (bukan lagi objek CJS
-          // interop biasa yang bisa ditimpa), sehingga penimpaan `XLSX.writeFile = ...` throw
-          // "Assignment to constant variable" saat modul dievaluasi (boot time) dan membuat
-          // seluruh app blank. Karena xlsx tidak punya default export di build ESM-nya (jadi
-          // tidak bisa disiasati dengan default import), dan guard globalnya dipakai banyak
-          // halaman tanpa masing-masing punya izin check sendiri, xlsx TIDAK BOLEH dipisah ke
-          // manualChunks sampai guard-nya direfactor jadi wrapper terpisah (bukan monkey-patch
-          // namespace). xlsx tetap lazy untuk beberapa jalur export via dynamic import('xlsx')
-          // di src/lib/export.ts, tapi halaman-halaman lain masih static-import xlsx sehingga
-          // ukurannya ikut ke chunk masing-masing/entry utama — trade-off yang lebih aman
-          // daripada app blank total.
-          if (id.includes('jspdf') || id.includes('html2canvas')) return 'vendor-pdf';
-          if (id.includes('@supabase')) return 'vendor-supabase';
-          if (id.includes('date-fns')) return 'vendor-date';
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) return 'vendor-react';
-          if (id.includes('@radix-ui')) return 'vendor-radix';
-          return undefined;
-        },
-      },
-    },
+    // CATATAN: sempat dicoba manualChunks untuk memisahkan library pihak ketiga
+    // (recharts/d3, xlsx, dst.) ke chunk vendor tersendiri demi bundle awal yang
+    // lebih kecil. Ternyata itu memicu DUA jenis crash "halaman blank total" yang
+    // berbeda di produksi:
+    // 1. xlsx dipisah chunk -> src/lib/export-guard.ts (dan >10 halaman lain) yang
+    //    melakukan `import * as XLSX from 'xlsx'` lalu menimpa XLSX.writeFile jadi
+    //    memutasi ES module namespace object asli lintas-chunk yang read-only di
+    //    browser -> "Assignment to constant variable" saat boot.
+    // 2. recharts/d3 dipisah ke 'vendor-charts' -> circular-dependency/TDZ issue
+    //    antar chunk hasil Rollup -> "Cannot access 'S' before initialization"
+    //    saat boot.
+    // Karena manualChunks kustom di sini terus memunculkan crash baru setiap
+    // library dipisah manual (butuh audit dependency graph tiap library satu per
+    // satu untuk aman), untuk sekarang bundling dikembalikan ke default Vite/Rollup
+    // (otomatis, tanpa manualChunks kustom). Code-splitting per halaman via
+    // React.lazy() di routing tetap jalan seperti biasa. Kalau mau optimasi bundle
+    // vendor lagi nanti, lakukan satu library dalam satu waktu + full regression
+    // test tiap kali, jangan sekaligus banyak seperti sebelumnya.
   },
 }));
