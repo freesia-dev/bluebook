@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/page-skeleton";
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
+import { CommandPalette } from "@/components/search/CommandPalette";
 import { DailyGreetingOverlay } from "@/components/greeting/DailyGreetingOverlay";
 
 // Lazy load pages for better performance
@@ -119,6 +120,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+          <CommandPalette />
           <Routes>
             <Route path="/" element={
               <Suspense fallback={<LoginLoader />}><Index /></Suspense>
