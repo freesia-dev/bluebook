@@ -1,7 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
@@ -32,7 +31,7 @@ const versionFilePlugin = (): Plugin => ({
   },
 });
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(() => ({
   define: {
     __APP_BUILD_ID__: JSON.stringify(APP_BUILD_ID),
     __APP_BUILT_AT__: JSON.stringify(APP_BUILT_AT),
@@ -43,7 +42,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     versionFilePlugin(),
     VitePWA({
       registerType: "autoUpdate",
