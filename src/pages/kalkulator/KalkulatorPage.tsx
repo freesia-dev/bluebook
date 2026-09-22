@@ -66,6 +66,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { SimulasiCard } from '@/components/kalkulator/SimulasiCard';
+import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
 
@@ -869,11 +870,9 @@ const KalkulatorPage: React.FC = () => {
         imageTimeout: 0,
         logging: false,
       });
-      const url = canvas.toDataURL('image/jpeg', 1.0);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.jpg`;
-      a.click();
+      const blob = await canvasToJpegBlob(canvas);
+      // lewat downloadBlob supaya tetap ter-download di mode PWA (installed app)
+      downloadBlob(blob, `Simulasi_${namaDebitur || 'Loan'}_${Date.now()}.jpg`);
       toast({ title: 'Gambar simulasi diunduh' });
     } catch (e: any) {
       toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });
