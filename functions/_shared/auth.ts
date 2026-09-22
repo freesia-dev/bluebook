@@ -34,6 +34,17 @@ export async function requireUser(request: Request, env: Env) {
 
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) return null;
+
+  // Akun yang belum di-approve (atau ditolak) admin tidak boleh mengakses file.
+  // Kalau pengecekan status gagal karena hal lain (mis. jaringan), jangan
+  // blokir — supaya user yang sah tidak ikut terkunci.
+  const { data: profile, error: profileError } = await client
+    .from("profiles")
+    .select("status")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (!profileError && profile && profile.status !== "approved") return null;
+
   return { user: data.user, client };
 }
 
