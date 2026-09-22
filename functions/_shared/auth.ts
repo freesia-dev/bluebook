@@ -53,7 +53,7 @@ export async function requireUser(request: Request, env: Env) {
  * 'admin' role in `user_roles`. Mirrors the check used by the admin-* edge
  * functions elsewhere in this project.
  */
-export async function isAdmin(client: ReturnType<typeof createClient>, userId: string) {
+export async function isAdmin(client: { from: (table: string) => any }, userId: string) {
   const { data } = await client
     .from("user_roles")
     .select("role")

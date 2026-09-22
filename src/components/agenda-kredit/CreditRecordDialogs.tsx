@@ -34,9 +34,11 @@ interface CreditFormDialogProps<V extends Record<string, any>> {
   mode: 'add' | 'edit';
   entityTitle: string; // contoh: "PK Telihan"
   description?: string;
-  fields: CreditField<V>[];
+  // V ditentukan dari `values` saja (NoInfer), supaya bisa langsung mengoper
+  // setState (`onChange={setFormData}`) tanpa TypeScript salah menebak tipe.
+  fields: CreditField<NoInfer<V>>[];
   values: V;
-  onChange: (values: V) => void;
+  onChange: (values: NoInfer<V>) => void;
   onSubmit: () => void;
   isSubmitting?: boolean;
   extraContent?: React.ReactNode; // konten tambahan sebelum field (mis. ringkasan PK terpilih)
