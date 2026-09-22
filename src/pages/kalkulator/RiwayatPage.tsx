@@ -4,7 +4,6 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber, SKEMA_LABELS, SEGMEN_LABELS, SEGMEN_BADGE_CLASS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +21,8 @@ import {
   stageBeforeCancel,
 } from '@/components/kalkulator/CancelSimulationDialog';
 import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
+import { SimulasiPreviewDialog } from '@/components/kalkulator/SimulasiPreviewDialog';
+import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
 
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -429,6 +430,7 @@ const RiwayatPage: React.FC = () => {
   const [cancelTarget, setCancelTarget] = useState<LoanSimulationRow | null>(null);
   const [jpgTarget, setJpgTarget] = useState<LoanSimulationRow | null>(null);
   const jpgRef = useRef<HTMLDivElement>(null);
+  const detailCardData = useMemo(() => (detail ? rowToCardData(detail) : null), [detail]);
 
   const handleCancel = (reason: string) => {
     if (!cancelTarget) return;
@@ -463,11 +465,9 @@ const RiwayatPage: React.FC = () => {
       const canvas = await html2canvas(jpgRef.current, {
         scale: 4, backgroundColor: '#ffffff', useCORS: true, imageTimeout: 0, logging: false,
       });
-      const url = canvas.toDataURL('image/jpeg', 1.0);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.jpg`;
-      a.click();
+      const blob = await canvasToJpegBlob(canvas);
+      // lewat downloadBlob supaya tetap ter-download di mode PWA (installed app)
+      downloadBlob(blob, `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.jpg`);
       toast({ title: 'Gambar simulasi diunduh' });
     } catch (e: any) {
       toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });
@@ -604,63 +604,14 @@ const RiwayatPage: React.FC = () => {
 
 
 
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-3 pr-6">
-              <span>{detail?.nama_debitur} — {detail?.product_nama}</span>
-              {detail && (
-                <div className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => exportRowToExcel(detail)}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 mr-1" /> Excel
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => exportRowToPDF(detail)}>
-                    <FileText className="w-3.5 h-3.5 mr-1" /> PDF
-                  </Button>
-                </div>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          {detail && (
-            <div className="space-y-4">
-              <div className="rounded-xl border overflow-hidden bg-white">
-                <div style={{ zoom: 0.82 }}>
-                  <SimulasiCard data={rowToCardData(detail)} />
-                </div>
-              </div>
-
-              {detail.tabel_angsuran && (
-                <div className="max-h-[400px] overflow-auto border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>No</TableHead>
-                        <TableHead>Tgl</TableHead>
-                        <TableHead className="text-right">Pokok</TableHead>
-                        <TableHead className="text-right">Bunga</TableHead>
-                        <TableHead className="text-right">Angsuran</TableHead>
-                        <TableHead className="text-right">Saldo</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {detail.tabel_angsuran.map((r) => (
-                        <TableRow key={r.bulan}>
-                          <TableCell>{r.bulan}</TableCell>
-                          <TableCell>{new Date(r.tanggal).toLocaleDateString('id-ID')}</TableCell>
-                          <TableCell className="text-right">{fmtNumber(r.pokok)}</TableCell>
-                          <TableCell className="text-right">{fmtNumber(r.bunga)}</TableCell>
-                          <TableCell className="text-right font-medium">{fmtNumber(r.angsuran)}</TableCell>
-                          <TableCell className="text-right">{fmtNumber(r.saldo)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <SimulasiPreviewDialog
+        row={detail}
+        cardData={detailCardData}
+        onOpenChange={(o) => !o && setDetail(null)}
+        onExportJpg={handleExportJpg}
+        onExportExcel={exportRowToExcel}
+        onExportPdf={exportRowToPDF}
+      />
 
       {/* Off-screen JPG card — memakai tema yang sama dengan pratinjau */}
       <div style={{ position: 'fixed', left: '-10000px', top: 0, pointerEvents: 'none' }}>

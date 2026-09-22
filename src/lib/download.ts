@@ -58,3 +58,27 @@ export function downloadBlob(blob: Blob, filename: string) {
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
 }
+
+/**
+ * Ubah canvas (hasil html2canvas) jadi Blob JPEG. Dipakai export JPG supaya
+ * bisa lewat downloadBlob (aman di PWA) — data: URL via <a download> sering
+ * gagal diam-diam di mode standalone, sama seperti blob: URL.
+ */
+export function canvasToJpegBlob(canvas: HTMLCanvasElement, quality = 1.0): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (typeof canvas.toBlob === 'function') {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Gagal membuat gambar'))), 'image/jpeg', quality);
+      return;
+    }
+    // Fallback browser lama: konversi dari data URL
+    try {
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      const bin = atob(dataUrl.split(',')[1]);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      resolve(new Blob([arr], { type: 'image/jpeg' }));
+    } catch (e) {
+      reject(e);
+    }
+  });
+}

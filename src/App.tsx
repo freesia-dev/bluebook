@@ -14,7 +14,10 @@ import {
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { CommandPalette } from "@/components/search/CommandPalette";
+import { LivePresence } from "@/components/presence/LivePresence";
+import { SilentBoundary, RouteErrorBoundary } from "@/components/ErrorBoundary";
 import { DailyGreetingOverlay } from "@/components/greeting/DailyGreetingOverlay";
+import { AppVersionWatcher } from "@/components/app-update/AppVersionWatcher";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -116,11 +119,14 @@ const App = () => (
         <AuthProvider>
           <InactivityHandler />
           <PWAUpdatePrompt />
-          <DailyGreetingOverlay />
+          <SilentBoundary name="greeting"><DailyGreetingOverlay /></SilentBoundary>
+          <SilentBoundary name="version-watcher"><AppVersionWatcher /></SilentBoundary>
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <CommandPalette />
+          <SilentBoundary name="command-palette"><CommandPalette /></SilentBoundary>
+          <SilentBoundary name="presence"><LivePresence /></SilentBoundary>
+          <RouteErrorBoundary>
           <Routes>
             <Route path="/" element={
               <Suspense fallback={<LoginLoader />}><Index /></Suspense>
@@ -356,6 +362,7 @@ const App = () => (
               <Suspense fallback={<GenericPageSkeleton />}><NotFound /></Suspense>
             } />
           </Routes>
+          </RouteErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

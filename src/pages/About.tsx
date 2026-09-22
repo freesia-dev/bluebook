@@ -8,6 +8,7 @@ import {
   UserSquare, Bell, LineChart,
 } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
+import { AppUpdateCard } from '@/components/app-update/AppUpdateCard';
 
 const modules = [
   { icon: Mail, title: 'Manajemen Surat', description: 'Registrasi surat masuk dan keluar dengan penomoran otomatis dan lampiran.' },
@@ -110,6 +111,9 @@ const About: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* Versi & update */}
+        <AppUpdateCard />
 
         {/* Tech stack chips */}
         <div className="rounded-2xl border border-border bg-card p-6">

@@ -12,6 +12,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { isRouteAllowedFor } from '@/lib/role-permissions';
 
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { PresenceBar } from '@/components/presence/PresenceBar';
+import { ErrorBoundary, PageErrorFallback, SilentBoundary } from '@/components/ErrorBoundary';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -117,6 +119,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          <SilentBoundary name="presence-bar"><PresenceBar /></SilentBoundary>
           <GlobalSearch />
           <NotificationBell />
           <ThemeToggle />
@@ -137,7 +140,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </AlertDescription>
             </Alert>
           )}
-          {children}
+          <ErrorBoundary
+            name="page"
+            resetKey={location.pathname}
+            fallback={(error, reset) => <PageErrorFallback error={error} onRetry={reset} />}
+          >
+            {children}
+          </ErrorBoundary>
         </div>
       </main>
     </div>

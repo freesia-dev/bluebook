@@ -1,0 +1,17 @@
+# Header cache untuk Cloudflare Pages.
+# File "penentu versi" harus SELALU diambil ulang dari server, supaya
+# browser/PWA langsung tahu ada update tanpa user perlu hapus cache.
+/index.html
+  Cache-Control: no-cache, must-revalidate
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/registerSW.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/version.json
+  Cache-Control: no-cache, no-store, must-revalidate
+/manifest.webmanifest
+  Cache-Control: no-cache, must-revalidate
+
+# Aset hasil build punya hash di nama file-nya, jadi aman di-cache lama.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
