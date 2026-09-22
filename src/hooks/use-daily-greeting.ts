@@ -42,16 +42,25 @@ export function useDailyGreeting(): DailyGreeting {
       if (lastShown === todayKey) return; // sudah tampil hari ini
 
       setShow(true);
-      // Tandai sudah ditampilkan hari ini (best-effort, tidak menghalangi UI)
-      await supabase
-        .from('profiles')
-        .update({ last_greeting_date: todayKey })
-        .eq('user_id', user.id);
     })();
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user?.id]);
 
-  return { show, quote, dismiss: () => setShow(false) };
+  // Tanggal baru ditandai SETELAH sapaan benar-benar tampil & ditutup
+  // (klik / 5 detik). Sebelumnya ditandai begitu muncul, jadi kalau halaman
+  // langsung reload (mis. auto-update PWA sesaat setelah dibuka), sapaan
+  // "hangus" padahal belum sempat terlihat.
+  const dismiss = () => {
+    setShow(false);
+    if (!user) return;
+    void supabase
+      .from('profiles')
+      .update({ last_greeting_date: todayKey })
+      .eq('user_id', user.id)
+      .then(() => undefined, () => undefined);
+  };
+
+  return { show, quote, dismiss };
 }
