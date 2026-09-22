@@ -13,16 +13,17 @@ import { useMLFArrears, fmtHariTunggak } from '@/hooks/use-mlf-arrears';
 import { fmtIDR, fmtNum, KOL_LABEL, KOL_COLOR, kolDisplay } from '@/lib/mlf-utils';
 import { getUnit, isProduktif, UNIT_LABEL } from '@/lib/produktif-utils';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { UploadMLFPanel } from '@/pages/monitoring/UploadDataPage';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2, Gift, Upload } from 'lucide-react';
+import { Users, Wallet, AlertTriangle, TrendingDown, FileSpreadsheet, Percent, Activity, ShieldAlert, Gauge, CalendarClock, Sparkles, CheckCircle2, Gift, Upload, MonitorPlay } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { StatCard } from '@/components/ui/stat-card';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ControlRoomMode } from '@/components/monitoring/ControlRoomMode';
 
 // Badge kecil Telihan/Meranti berdasarkan Nomor PK (hanya relevan untuk Capem 143)
 const UnitBadge: React.FC<{ row: any; show: boolean }> = ({ row, show }) => {
@@ -44,6 +45,23 @@ const MonitoringDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { permissions } = useAuth();
   const [uploadOpen, setUploadOpen] = useState(false);
+  // Mode ruang kontrol (layar penuh untuk TV). Bisa dibuka langsung lewat ?mode=kontrol
+  const [searchParams, setSearchParams] = useSearchParams();
+  const controlRoomOpen = searchParams.get('mode') === 'kontrol';
+  const setControlRoomOpen = React.useCallback(
+    (open: boolean) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (open) next.set('mode', 'kontrol');
+          else next.delete('mode');
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const { data: uploads = [] } = useMLFUploads();
   const [selectedUpload, setSelectedUpload] = useState<string | undefined>(undefined);
   const [selectedBranch, setSelectedBranch] = useState<string>('143');
@@ -236,6 +254,18 @@ const MonitoringDashboardPage: React.FC = () => {
           title="Dashboard Monitoring KKR & NPL"
           description={`Rangkuman pengolahan data Master Loan Filter — Cabang ${selectedBranch}${selectedBranchInfo ? ` (${selectedBranchInfo.name})` : ''}`}
         />
+        <div className="flex shrink-0 flex-wrap gap-2">
+        {uploads.length > 0 && (
+          <Button
+            variant="outline"
+            className="shrink-0 border-cyan-500/40 text-cyan-700 hover:bg-cyan-500/10 dark:text-cyan-300"
+            onClick={() => setControlRoomOpen(true)}
+            title="Tampilan layar penuh untuk dipajang di TV/monitor"
+          >
+            <MonitorPlay className="w-4 h-4 mr-2" />
+            Mode Ruang Kontrol
+          </Button>
+        )}
         {permissions.canUpload && (
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
@@ -255,7 +285,20 @@ const MonitoringDashboardPage: React.FC = () => {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
+
+      <ControlRoomMode
+        open={controlRoomOpen && uploads.length > 0}
+        onClose={() => setControlRoomOpen(false)}
+        branchLabel={`Cabang ${selectedBranch}${selectedBranchInfo ? ` — ${selectedBranchInfo.name}` : ''}`}
+        jobdate={selectedUploadInfo?.jobdate}
+        stats={stats}
+        baruCair={{ count: baruCair.items.length, plafon: baruCair.plafon, available: baruCair.available }}
+        baruLunas={{ count: baruLunas.items.length, baki: baruLunas.baki, available: baruLunas.available }}
+        akanLunas={{ count: akanLunas.total, baki: akanLunas.baki, rangeLabel: akanLunas.rangeLabel }}
+        arrearsMap={arrearsMap as any}
+      />
 
 
 
