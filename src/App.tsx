@@ -15,6 +15,7 @@ import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { CommandPalette } from "@/components/search/CommandPalette";
 import { DailyGreetingOverlay } from "@/components/greeting/DailyGreetingOverlay";
+import { AppVersionWatcher } from "@/components/app-update/AppVersionWatcher";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -117,6 +118,7 @@ const App = () => (
           <InactivityHandler />
           <PWAUpdatePrompt />
           <DailyGreetingOverlay />
+          <AppVersionWatcher />
           <Toaster />
           <Sonner />
           <BrowserRouter>

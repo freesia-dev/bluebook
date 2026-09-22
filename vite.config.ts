@@ -1,11 +1,42 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
+// Identitas build untuk fitur "Cek Update" (halaman About) & pengecek versi
+// otomatis. Di Cloudflare Pages, CF_PAGES_COMMIT_SHA otomatis tersedia saat
+// build, jadi ID build = commit yang sedang ter-deploy.
+const APP_BUILT_AT = new Date().toISOString();
+const APP_BUILD_ID =
+  (process.env.CF_PAGES_COMMIT_SHA || "").slice(0, 7) ||
+  Date.now().toString(36);
+
+/**
+ * Menulis /version.json saat build. Aplikasi membandingkan isi file ini
+ * (selalu diambil fresh dari server, tanpa cache) dengan ID build yang
+ * tertanam di bundle-nya sendiri — kalau beda, berarti ada versi baru.
+ * Sengaja TIDAK ikut di-precache service worker (globPatterns tidak
+ * mencakup .json), supaya selalu mencerminkan deploy terbaru.
+ */
+const versionFilePlugin = (): Plugin => ({
+  name: "bluebook-version-file",
+  apply: "build",
+  generateBundle() {
+    this.emitFile({
+      type: "asset",
+      fileName: "version.json",
+      source: JSON.stringify({ build: APP_BUILD_ID, builtAt: APP_BUILT_AT }),
+    });
+  },
+});
+
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(APP_BUILD_ID),
+    __APP_BUILT_AT__: JSON.stringify(APP_BUILT_AT),
+  },
   server: {
     host: "::",
     port: 8080,
@@ -13,6 +44,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    versionFilePlugin(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
