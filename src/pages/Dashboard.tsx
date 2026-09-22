@@ -21,8 +21,10 @@ import {
   XCircle,
   CheckCircle2,
   FileBarChart,
+  LayoutGrid,
 } from 'lucide-react';
 import { OjkReportDialog } from '@/components/ojk/OjkReportDialog';
+import { CustomizableGrid, type WidgetDef } from '@/components/dashboard/CustomizableGrid';
 import { supabase } from '@/integrations/supabase/client';
 import { getStorageUsage } from '@/lib/storage';
 import { exportAllTables } from '@/lib/export';
@@ -50,7 +52,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isAdmin, userName } = useAuth();
+  const { isAdmin, userName, user } = useAuth();
   const [ojkScope, setOjkScope] = React.useState<'mine' | 'all'>(isAdmin ? 'all' : 'mine');
   const ojkUserFilter = ojkScope === 'mine' ? userName : null;
   const { suratMasuk, suratKeluar, sppk, pk, kkmpak, isLoading, refetchAll, counts, ojkStats } = useDashboardData(ojkUserFilter);
@@ -224,102 +226,110 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  return (
-    <MainLayout>
-      <PageHeader 
-        title="Dashboard" 
-        description="Selamat datang di Bluebook Telihan - Sistem Manajemen Arsip"
-        actions={
-          <Button onClick={handleExportAll} className="gap-2">
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Export Semua Data</span>
-          </Button>
-        }
-      />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Surat Masuk" value={counts.suratMasuk} icon={Mail} variant="primary" />
-        <StatCard title="Surat Keluar" value={counts.suratKeluar} icon={Send} variant="secondary" />
-        <StatCard title="Agenda Kredit" value={totalAgendaKredit} icon={CreditCard} variant="success" />
-        <StatCard title="Total Dokumen" value={counts.suratMasuk + counts.suratKeluar + totalAgendaKredit} icon={FileText} variant="warning" />
-      </div>
-
-      {/* Cloud Storage Usage (Admin Only) */}
-      {isAdmin && dbUsage && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Database className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">Penggunaan Database</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{formatBytes(dbUsage.dbBytes)} terpakai</span>
-                  <span>{formatBytes(maxDbBytes)}</span>
-                </div>
-                <div className="h-3 rounded-full bg-secondary overflow-hidden">
-                  <div 
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${Math.max(dbUsedPercent, 1)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-sm bg-primary" />
-                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{dbUsedPercent}%</span></span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
-                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{formatBytes(Math.max(maxDbBytes - dbUsage.dbBytes, 0))}</span></span>
-                  </div>
-                </div>
-                <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
-                  Total {dbUsage.totalRows.toLocaleString('id-ID')} baris di {dbUsage.tables.length} tabel
-                  {topTables.length > 0 && (
-                    <> · terbesar: {topTables.map((t) => `${t.table} (${t.rows.toLocaleString('id-ID')})`).join(', ')}</>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <HardDrive className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">Penyimpanan File</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'} terpakai ({fileStorageData?.fileCount || 0} file)</span>
-                  <span>1 GB</span>
-                </div>
-                <div className="h-3 rounded-full bg-secondary overflow-hidden">
-                  <div 
-                    className="h-full rounded-full bg-primary transition-all duration-500"
-                    style={{ width: `${Math.max(fileUsedPercent, 1)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-sm bg-primary" />
-                    <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'}</span></span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
-                    <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(maxStorageBytes - fileStorageData.usedBytes) : '10 GB'}</span></span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  // Widget dashboard — susunan, ukuran & visibilitasnya bisa diatur tiap user
+  const widgets: WidgetDef[] = [
+    {
+      id: 'ringkasan',
+      title: 'Ringkasan Dokumen',
+      defaultSize: 'l',
+      render: () => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 content-start">
+          <StatCard title="Surat Masuk" value={counts.suratMasuk} icon={Mail} variant="primary" />
+          <StatCard title="Surat Keluar" value={counts.suratKeluar} icon={Send} variant="secondary" />
+          <StatCard title="Agenda Kredit" value={totalAgendaKredit} icon={CreditCard} variant="success" />
+          <StatCard title="Total Dokumen" value={counts.suratMasuk + counts.suratKeluar + totalAgendaKredit} icon={FileText} variant="warning" />
         </div>
-      )}
-
-      {/* Quick Actions & Pie Chart */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      ),
+    },
+    ...(isAdmin && dbUsage
+      ? ([
+        {
+          id: 'database',
+          title: 'Penggunaan Database',
+          defaultSize: 'm',
+          render: () => (
+            <Card className="shadow-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Database className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Penggunaan Database</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{formatBytes(dbUsage.dbBytes)} terpakai</span>
+                    <span>{formatBytes(maxDbBytes)}</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${Math.max(dbUsedPercent, 1)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-sm bg-primary" />
+                      <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{dbUsedPercent}%</span></span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
+                      <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{formatBytes(Math.max(maxDbBytes - dbUsage.dbBytes, 0))}</span></span>
+                    </div>
+                  </div>
+                  <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
+                    Total {dbUsage.totalRows.toLocaleString('id-ID')} baris di {dbUsage.tables.length} tabel
+                    {topTables.length > 0 && (
+                      <> · terbesar: {topTables.map((t) => `${t.table} (${t.rows.toLocaleString('id-ID')})`).join(', ')}</>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ),
+        },
+        {
+          id: 'penyimpanan',
+          title: 'Penyimpanan File',
+          defaultSize: 'm',
+          render: () => (
+            <Card className="shadow-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <HardDrive className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Penyimpanan File</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'} terpakai ({fileStorageData?.fileCount || 0} file)</span>
+                    <span>1 GB</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${Math.max(fileUsedPercent, 1)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-sm bg-primary" />
+                      <span className="text-muted-foreground">Digunakan: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(fileStorageData.usedBytes) : '0 B'}</span></span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-sm bg-secondary border border-border" />
+                      <span className="text-muted-foreground">Sisa: <span className="font-medium text-foreground">{fileStorageData ? formatBytes(maxStorageBytes - fileStorageData.usedBytes) : '10 GB'}</span></span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ),
+        },
+        ] as WidgetDef[])
+      : []),
+    {
+      id: 'aksi-cepat',
+      title: 'Quick Actions',
+      defaultSize: 'm',
+      render: () => (
         <Card className="shadow-card hover:shadow-card-hover transition-shadow">
           <CardHeader className="pb-3">
             <CardTitle className="font-display text-lg flex items-center gap-2">
@@ -360,7 +370,13 @@ const Dashboard: React.FC = () => {
             </button>
           </CardContent>
         </Card>
-
+      ),
+    },
+    {
+      id: 'distribusi',
+      title: 'Distribusi Dokumen',
+      defaultSize: 'm',
+      render: () => (
         <Card className="shadow-card">
           <CardHeader className="pb-3">
             <CardTitle className="font-display text-lg flex items-center gap-2">
@@ -391,91 +407,104 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Bar Chart */}
-      <Card className="shadow-card mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="font-display text-lg">Statistik Arsip</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-xs" tick={{ fontSize: 10 }} />
-                <YAxis className="text-xs" />
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pengajuan SLIK OJK */}
-      <Card className="shadow-card mb-6 overflow-hidden border-primary/10">
-        <div className="bg-gradient-to-r from-primary/5 via-primary/[0.03] to-transparent border-b border-border/60 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Landmark className="w-5 h-5 text-primary" />
+      ),
+    },
+    {
+      id: 'statistik-arsip',
+      title: 'Statistik Arsip',
+      defaultSize: 'l',
+      render: () => (
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-lg">Statistik Arsip</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis className="text-xs" />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div>
-              <h2 className="text-base font-display font-semibold leading-tight">Pengajuan SLIK OJK</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {ojkScope === 'mine'
-                  ? `Menampilkan data yang Anda input (${userName})`
-                  : 'Menampilkan seluruh data dari semua user input'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <div className="inline-flex rounded-lg border border-border bg-background p-0.5 text-xs">
-                <button
-                  onClick={() => setOjkScope('mine')}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${ojkScope === 'mine' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Milik Saya
-                </button>
-                <button
-                  onClick={() => setOjkScope('all')}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${ojkScope === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Semua
-                </button>
+          </CardContent>
+        </Card>
+      ),
+    },
+    {
+      id: 'slik-ojk',
+      title: 'Pengajuan SLIK OJK',
+      defaultSize: 'l',
+      render: () => (
+        <Card className="shadow-card overflow-hidden border-primary/10">
+          <div className="bg-gradient-to-r from-primary/5 via-primary/[0.03] to-transparent border-b border-border/60 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Landmark className="w-5 h-5 text-primary" />
               </div>
-            )}
-            <OjkReportDialog
-              generatedBy={userName}
-              userInputFilter={ojkUserFilter}
-              trigger={
-                <Button size="sm" className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                  <FileBarChart className="w-4 h-4" />
-                  Generate Laporan
-                </Button>
-              }
-            />
+              <div>
+                <h2 className="text-base font-display font-semibold leading-tight">Pengajuan SLIK OJK</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {ojkScope === 'mine'
+                    ? `Menampilkan data yang Anda input (${userName})`
+                    : 'Menampilkan seluruh data dari semua user input'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <div className="inline-flex rounded-lg border border-border bg-background p-0.5 text-xs">
+                  <button
+                    onClick={() => setOjkScope('mine')}
+                    className={`px-3 py-1.5 rounded-md font-medium transition-colors ${ojkScope === 'mine' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Milik Saya
+                  </button>
+                  <button
+                    onClick={() => setOjkScope('all')}
+                    className={`px-3 py-1.5 rounded-md font-medium transition-colors ${ojkScope === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Semua
+                  </button>
+                </div>
+              )}
+              <OjkReportDialog
+                generatedBy={userName}
+                userInputFilter={ojkUserFilter}
+                trigger={
+                  <Button size="sm" className="gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <FileBarChart className="w-4 h-4" />
+                    Generate Laporan
+                  </Button>
+                }
+              />
+            </div>
           </div>
-        </div>
-        <CardContent className="p-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              title="Total Pengajuan"
-              value={ojkStats.total}
-              icon={Landmark}
-              variant="primary"
-              description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
-            />
-            <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
-            <StatCard title="Disetujui" value={ojkStats.selesai} icon={CheckCircle2} variant="success" />
-            <StatCard title="Ditolak" value={ojkStats.ditolak} icon={XCircle} variant="default" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Data Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <CardContent className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                title="Total Pengajuan"
+                value={ojkStats.total}
+                icon={Landmark}
+                variant="primary"
+                description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
+              />
+              <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
+              <StatCard title="Disetujui" value={ojkStats.selesai} icon={CheckCircle2} variant="success" />
+              <StatCard title="Ditolak" value={ojkStats.ditolak} icon={XCircle} variant="default" />
+            </div>
+          </CardContent>
+        </Card>
+      ),
+    },
+    {
+      id: 'surat-masuk-terbaru',
+      title: 'Surat Masuk Terbaru',
+      defaultSize: 's',
+      render: () => (
         <Card className="shadow-card">
           <CardHeader className="pb-3">
             <CardTitle className="font-display text-lg flex items-center gap-2">
@@ -499,7 +528,13 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-
+      ),
+    },
+    {
+      id: 'surat-keluar-terbaru',
+      title: 'Surat Keluar Terbaru',
+      defaultSize: 's',
+      render: () => (
         <Card className="shadow-card">
           <CardHeader className="pb-3">
             <CardTitle className="font-display text-lg flex items-center gap-2">
@@ -523,7 +558,13 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-
+      ),
+    },
+    {
+      id: 'agenda-kredit-terbaru',
+      title: 'Agenda Kredit Terbaru',
+      defaultSize: 's',
+      render: () => (
         <Card className="shadow-card">
           <CardHeader className="pb-3">
             <CardTitle className="font-display text-lg flex items-center gap-2">
@@ -547,8 +588,35 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      ),
+    },
+  ];
 
+  return (
+    <MainLayout>
+      <CustomizableGrid
+        storageKey="dashboard"
+        userId={user?.id}
+        widgets={widgets}
+        renderToggle={({ editing, toggle }) => (
+          <PageHeader
+            title="Dashboard"
+            description="Selamat datang di Bluebook Telihan - Sistem Manajemen Arsip"
+            actions={
+              <div className="flex items-center gap-2">
+                <Button variant={editing ? 'secondary' : 'outline'} onClick={toggle} className="gap-2">
+                  <LayoutGrid className="w-4 h-4" />
+                  <span className="hidden sm:inline">{editing ? 'Selesai mengatur' : 'Atur dashboard'}</span>
+                </Button>
+                <Button onClick={handleExportAll} className="gap-2">
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export Semua Data</span>
+                </Button>
+              </div>
+            }
+          />
+        )}
+      />
     </MainLayout>
   );
 };
