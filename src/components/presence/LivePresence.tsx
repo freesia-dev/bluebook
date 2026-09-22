@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { colorForUser, presenceStore, usePresence, type PresencePeer } from '@/lib/presence-store';
+import { colorForUser, presenceStore, usePresence, SESSION_ID, type PresencePeer } from '@/lib/presence-store';
 
 /* -------------------------------------------------------------------------- */
 /*  Presence "lobby": siapa online & sedang di halaman mana                   */
@@ -36,7 +36,10 @@ export const LivePresence: React.FC = () => {
   useEffect(() => {
     if (!enabled || !user) return;
     const color = colorForUser(user.id);
-    const ch = supabase.channel(LOBBY, { config: { presence: { key: user.id } } });
+    // Kunci presence per TAB (bukan per akun) supaya akun yang sama di HP & laptop
+    // tetap terlihat sebagai dua sesi.
+    const ch = supabase.channel(LOBBY, { config: { presence: { key: `${user.id}:${SESSION_ID}` } } });
+    presenceStore.setStatus('connecting');
     channelRef.current = ch;
 
     const sync = () => {
@@ -45,12 +48,18 @@ export const LivePresence: React.FC = () => {
         const map = new Map<string, PresencePeer>();
         Object.values(st).forEach((arr) =>
           arr.forEach((p: any) => {
-            if (!p?.user_id || p.user_id === user.id) return;
-            const cur = map.get(p.user_id);
-            if (!cur || new Date(p.at) > new Date(cur.at)) map.set(p.user_id, p as PresencePeer);
+            if (!p?.user_id) return;
+            if (p.session === SESSION_ID) return; // tab ini sendiri
+            const isMe = p.user_id === user.id;
+            // user lain: satu entri per orang; akun sendiri: satu entri per perangkat lain
+            const key = isMe ? `me:${p.session}` : p.user_id;
+            const cur = map.get(key);
+            if (!cur || new Date(p.at) > new Date(cur.at)) map.set(key, { ...(p as PresencePeer), isMe });
           }),
         );
-        presenceStore.setPeers(Array.from(map.values()).sort((a, b) => a.nama.localeCompare(b.nama)));
+        presenceStore.setPeers(
+          Array.from(map.values()).sort((a, b) => Number(!!a.isMe) - Number(!!b.isMe) || a.nama.localeCompare(b.nama)),
+        );
       } catch {
         /* noop */
       }
@@ -59,15 +68,24 @@ export const LivePresence: React.FC = () => {
     const track = () => {
       if (document.visibilityState === 'hidden') return;
       void ch
-        .track({ user_id: user.id, nama: userName, role: userRole, path: pathRef.current, color, at: new Date().toISOString() })
+        .track({ user_id: user.id, session: SESSION_ID, nama: userName, role: userRole, path: pathRef.current, color, at: new Date().toISOString() })
         .catch(() => {});
     };
 
     ch.on('presence', { event: 'sync' }, sync);
     ch.on('presence', { event: 'join' }, sync);
     ch.on('presence', { event: 'leave' }, sync);
-    ch.subscribe((status) => {
-      if (status === 'SUBSCRIBED') track();
+    ch.subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        presenceStore.setStatus('online');
+        track();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        presenceStore.setStatus('error');
+        // eslint-disable-next-line no-console
+        console.warn('[presence] gagal terhubung ke realtime:', status, err);
+      } else if (status === 'CLOSED') {
+        presenceStore.setStatus('off');
+      }
     });
 
     const hb = window.setInterval(track, HEARTBEAT_MS);
@@ -82,6 +100,7 @@ export const LivePresence: React.FC = () => {
       document.removeEventListener('visibilitychange', onVis);
       channelRef.current = null;
       presenceStore.setPeers([]);
+      presenceStore.setStatus('off');
       try {
         void ch.untrack();
       } catch {
@@ -98,6 +117,7 @@ export const LivePresence: React.FC = () => {
     void ch
       .track({
         user_id: user.id,
+        session: SESSION_ID,
         nama: userName,
         role: userRole,
         path,
@@ -153,7 +173,7 @@ const LiveCursors: React.FC<{ path: string; userId: string; nama: string }> = ({
 
     ch.on('broadcast', { event: 'cursor' }, ({ payload }) => {
       const p = payload as Partial<RemoteCursor> & { gone?: boolean };
-      if (!p?.u || p.u === userId) return;
+      if (!p?.u || p.u === `${userId}:${SESSION_ID}`) return;
       setCursors((prev) => {
         if (p.gone) {
           if (!prev[p.u!]) return prev;
@@ -180,13 +200,13 @@ const LiveCursors: React.FC<{ path: string; userId: string; nama: string }> = ({
         .send({
           type: 'broadcast',
           event: 'cursor',
-          payload: { u: userId, n: nama, c: color, x: (e.clientX - r.left) / r.width, y: e.clientY - r.top },
+          payload: { u: `${userId}:${SESSION_ID}`, n: nama, c: color, x: (e.clientX - r.left) / r.width, y: e.clientY - r.top },
         })
         .catch(() => {});
     };
     const onLeave = () => {
       if (!ready) return;
-      void ch.send({ type: 'broadcast', event: 'cursor', payload: { u: userId, gone: true } }).catch(() => {});
+      void ch.send({ type: 'broadcast', event: 'cursor', payload: { u: `${userId}:${SESSION_ID}`, gone: true } }).catch(() => {});
     };
     window.addEventListener('pointermove', onMove, { passive: true });
     document.documentElement.addEventListener('pointerleave', onLeave);

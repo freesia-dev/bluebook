@@ -6,6 +6,10 @@ import { COMMAND_PAGES } from '@/lib/command-pages';
 
 export interface PresencePeer {
   user_id: string;
+  /** ID sesi/tab — satu akun bisa online di beberapa perangkat sekaligus */
+  session?: string;
+  /** true kalau ini akun yang sama dengan user sendiri, tapi di perangkat/tab lain */
+  isMe?: boolean;
   nama: string;
   role?: string;
   path: string;
@@ -14,8 +18,11 @@ export interface PresencePeer {
   at: string;
 }
 
+export type PresenceStatus = 'off' | 'connecting' | 'online' | 'error';
+
 interface PresenceState {
-  peers: PresencePeer[]; // tidak termasuk diri sendiri
+  peers: PresencePeer[]; // tidak termasuk sesi/tab ini sendiri
+  status: PresenceStatus;
   myPath: string;
   showCursors: boolean;
   shareCursor: boolean;
@@ -38,6 +45,7 @@ const loadPrefs = (): Pick<PresenceState, 'showCursors' | 'shareCursor'> => {
 
 let state: PresenceState = {
   peers: [],
+  status: 'off',
   myPath: typeof window !== 'undefined' ? window.location.pathname : '/',
   ...(typeof window !== 'undefined' ? loadPrefs() : { showCursors: true, shareCursor: true }),
 };
@@ -53,6 +61,11 @@ export const presenceStore = {
   },
   setPeers: (peers: PresencePeer[]) => {
     state = { ...state, peers };
+    emit();
+  },
+  setStatus: (status: PresenceStatus) => {
+    if (state.status === status) return;
+    state = { ...state, status };
     emit();
   },
   setMyPath: (myPath: string) => {
@@ -81,6 +94,12 @@ export function usePresence(): PresenceState {
 /* ------------------------------------------------------------------ util ---- */
 
 const PALETTE = ['#2563eb', '#16a34a', '#db2777', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#dc2626', '#4f46e5', '#059669'];
+
+/**
+ * ID unik per tab / per kali halaman dibuka. Dipakai sebagai kunci presence,
+ * supaya akun yang sama di HP & laptop tetap tercatat sebagai dua sesi.
+ */
+export const SESSION_ID: string = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
 /** Warna konsisten per user (dari hash user id). */
 export function colorForUser(id: string): string {

@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ROLE_LABELS } from '@/lib/role-permissions';
 import { cn } from '@/lib/utils';
 import { initials, pageLabel, presenceStore, usePresence, type PresencePeer } from '@/lib/presence-store';
-import { MousePointer2, Users } from 'lucide-react';
+import { MousePointer2, Users, WifiOff } from 'lucide-react';
 
 const Avatar: React.FC<{ peer: PresencePeer; size?: 'sm' | 'md'; here?: boolean; className?: string }> = ({
   peer,
@@ -39,11 +39,69 @@ const Avatar: React.FC<{ peer: PresencePeer; size?: 'sm' | 'md'; here?: boolean;
  * semua orang + halaman yang sedang mereka buka, dan pengaturan kursor live.
  */
 export const PresenceBar: React.FC = () => {
-  const { peers, myPath, showCursors, shareCursor } = usePresence();
+  const { peers, myPath, showCursors, shareCursor, status } = usePresence();
   const navigate = useNavigate();
 
-  if (peers.length === 0) return null;
+  // Presence belum aktif sama sekali (mis. belum login) → tidak usah tampil
+  if (status === 'off' && peers.length === 0) return null;
 
+  // Gagal konek ke server realtime → tampilkan indikator abu-abu supaya ketahuan
+  if (status === 'error' && peers.length === 0) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground" aria-label="Presence offline">
+            <WifiOff className="h-4 w-4" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>Status online tidak terhubung ke server realtime. Coba muat ulang.</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Cuma kamu yang online → indikator kecil, tetap bisa buka pengaturan kursor
+  if (peers.length === 0) {
+    return (
+      <Popover>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+                aria-label="Hanya kamu yang online"
+              >
+                <span className="relative flex h-2.5 w-2.5">
+                  {status === 'online' && (
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  )}
+                  <span
+                    className={cn(
+                      'relative inline-flex h-2.5 w-2.5 rounded-full',
+                      status === 'online' ? 'bg-emerald-500' : 'bg-amber-400',
+                    )}
+                  />
+                </span>
+                <span className="hidden md:inline">{status === 'online' ? 'Online' : 'Menghubungkan…'}</span>
+              </button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            {status === 'online' ? 'Terhubung · saat ini cuma kamu yang online' : 'Menghubungkan ke server realtime…'}
+          </TooltipContent>
+        </Tooltip>
+        <PopoverContent align="end" className="w-72 p-4">
+          <p className="text-sm font-semibold">Belum ada orang lain online</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Begitu rekan kerja membuka Bluebook, avatar mereka muncul di sini beserta halaman yang sedang dibuka.
+          </p>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  const others = peers.filter((p) => !p.isMe);
+  const mine = peers.filter((p) => p.isMe);
   const here = peers.filter((p) => p.path === myPath);
   const elsewhere = peers.filter((p) => p.path !== myPath);
   const ordered = [...here, ...elsewhere];
@@ -62,7 +120,7 @@ export const PresenceBar: React.FC = () => {
             >
               <span className="flex -space-x-2">
                 {shown.map((p) => (
-                  <Avatar key={p.user_id} peer={p} here={p.path === myPath} className="hidden sm:inline-flex" />
+                  <Avatar key={`${p.user_id}:${p.session ?? ""}`} peer={p} here={p.path === myPath} className="hidden sm:inline-flex" />
                 ))}
               </span>
               <span className="flex items-center gap-1 px-1.5 text-xs font-medium text-muted-foreground sm:hidden">
@@ -84,13 +142,16 @@ export const PresenceBar: React.FC = () => {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="border-b px-4 py-3">
           <p className="text-sm font-semibold">Sedang online</p>
-          <p className="text-xs text-muted-foreground">{peers.length} orang selain kamu</p>
+          <p className="text-xs text-muted-foreground">
+            {others.length} orang selain kamu
+            {mine.length > 0 && ` · kamu juga aktif di ${mine.length} perangkat lain`}
+          </p>
         </div>
         <ul className="max-h-72 overflow-y-auto py-1">
           {ordered.map((p) => {
             const same = p.path === myPath;
             return (
-              <li key={p.user_id}>
+              <li key={`${p.user_id}:${p.session ?? ""}`}>
                 <button
                   type="button"
                   onClick={() => !same && navigate(p.path)}
@@ -102,7 +163,9 @@ export const PresenceBar: React.FC = () => {
                 >
                   <Avatar peer={p} size="md" here={same} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{p.nama}</span>
+                    <span className="block truncate text-sm font-medium">
+                      {p.isMe ? 'Kamu · perangkat lain' : p.nama}
+                    </span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {same ? (
                         <span className="font-medium text-primary">● Di halaman ini</span>
