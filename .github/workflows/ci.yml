@@ -1,0 +1,48 @@
+# Pengecekan otomatis untuk setiap Pull Request (dan push ke main).
+# Kalau salah satu langkah gagal, PR diberi tanda merah — jangan di-merge dulu.
+name: Cek Bluebook
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cek:
+    name: Cek kode, build & buka halaman
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependensi
+        run: npm install --no-audit --no-fund
+
+      - name: Cek tipe data (aplikasi)
+        run: npx tsc --noEmit -p tsconfig.app.json
+
+      - name: Cek tipe data (Cloudflare Functions)
+        run: npx tsc --noEmit -p functions/tsconfig.json
+
+      - name: Build produksi
+        run: npm run build
+
+      - name: Siapkan browser untuk tes
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+
+      - name: Tes buka halaman (anti blank screen)
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 --strictPort &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173 >/dev/null && break; sleep 2; done
+          node scripts/smoke-test.mjs

@@ -34,6 +34,17 @@ export async function requireUser(request: Request, env: Env) {
 
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) return null;
+
+  // Akun yang belum di-approve (atau ditolak) admin tidak boleh mengakses file.
+  // Kalau pengecekan status gagal karena hal lain (mis. jaringan), jangan
+  // blokir — supaya user yang sah tidak ikut terkunci.
+  const { data: profile, error: profileError } = await client
+    .from("profiles")
+    .select("status")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  if (!profileError && profile && profile.status !== "approved") return null;
+
   return { user: data.user, client };
 }
 
@@ -42,7 +53,7 @@ export async function requireUser(request: Request, env: Env) {
  * 'admin' role in `user_roles`. Mirrors the check used by the admin-* edge
  * functions elsewhere in this project.
  */
-export async function isAdmin(client: ReturnType<typeof createClient>, userId: string) {
+export async function isAdmin(client: { from: (table: string) => any }, userId: string) {
   const { data } = await client
     .from("user_roles")
     .select("role")

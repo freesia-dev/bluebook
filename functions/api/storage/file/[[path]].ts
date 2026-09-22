@@ -34,11 +34,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   // R2 returns an object with no body (but metadata) when the conditional
   // GET's precondition fails, i.e. the client's cached copy is still fresh.
-  if (!object.body) {
+  const body = 'body' in object ? object.body : null;
+  if (!body) {
     return new Response(null, { status: 304, headers });
   }
 
-  return new Response(object.body, { headers });
+  return new Response(body, { headers });
 };
 
 export const onRequestOptions: PagesFunction<Env> = async () => {

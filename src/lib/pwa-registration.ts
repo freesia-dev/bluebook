@@ -1,18 +1,16 @@
 import { registerSW } from "virtual:pwa-register";
 
-const hostname = window.location.hostname;
-const isLovablePreview =
-  window.self !== window.top ||
-  hostname.startsWith("id-preview--") ||
-  hostname.startsWith("preview--") ||
-  hostname === "lovableproject.com" ||
-  hostname.endsWith(".lovableproject.com") ||
-  hostname === "lovableproject-dev.com" ||
-  hostname.endsWith(".lovableproject-dev.com") ||
-  hostname === "beta.lovable.dev" ||
-  hostname.endsWith(".beta.lovable.dev");
+// Jangan pasang service worker kalau aplikasi dibuka di dalam iframe
+// (mis. pratinjau), supaya cache-nya tidak nyangkut di tempat lain.
+const isFramed = (() => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+})();
 
-export const isPwaEnabled = import.meta.env.PROD && !isLovablePreview && !new URLSearchParams(window.location.search).has("sw");
+export const isPwaEnabled = import.meta.env.PROD && !isFramed && !new URLSearchParams(window.location.search).has("sw");
 
 const clearStaleAppWorker = async () => {
   if (!("serviceWorker" in navigator)) return;
