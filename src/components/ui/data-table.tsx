@@ -485,7 +485,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                   {sisa.map((col) => (
                     <div key={col.key as string} className="flex items-baseline justify-between gap-3">
                       <dt className="shrink-0 text-xs text-muted-foreground">{col.header}</dt>
-                      <dd className="min-w-0 text-right text-sm">
+                      <dd className={cn('min-w-0 text-right text-sm', col.className?.includes('text-right') && 'tabular-nums')}>
                         {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
                       </dd>
                     </div>
@@ -530,7 +530,16 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                   )}
                 >
                   {columns.map((col) => (
-                    <TableCell key={col.key as string} className={cn("py-3.5", col.className)}>
+                    <TableCell
+                      key={col.key as string}
+                      className={cn(
+                        'py-3.5',
+                        // Kolom angka (rata kanan) pakai angka berlebar sama supaya
+                        // digit rupiah lurus dari baris ke baris
+                        col.className?.includes('text-right') && 'tabular-nums',
+                        col.className,
+                      )}
+                    >
                       {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
                     </TableCell>
                   ))}

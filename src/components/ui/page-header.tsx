@@ -8,14 +8,14 @@ interface PageHeaderProps {
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, actions }) => {
   return (
-    <div className="flex items-start justify-between mb-8">
-      <div>
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
         <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground tracking-tight">{title}</h1>
         {description && (
           <p className="mt-2 text-muted-foreground text-sm md:text-base">{description}</p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-3">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 sm:gap-3">{actions}</div>}
     </div>
   );
 };
