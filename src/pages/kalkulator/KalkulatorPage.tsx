@@ -67,6 +67,7 @@ import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { SimulasiCard } from '@/components/kalkulator/SimulasiCard';
 import { DebiturSuggestions } from '@/components/kalkulator/DebiturSuggestions';
+import { bacaNik } from '@/lib/nik';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
@@ -121,6 +122,32 @@ const KalkulatorPage: React.FC = () => {
   const [pilihanKarir, setPilihanKarir] = useState('');
   const [tanggalSk, setTanggalSk] = useState('');
   const [namaAo, setNamaAo] = useState('');
+
+  /* ---- Pengisian otomatis dari NIK (tanggal lahir & jenis kelamin) --------- */
+  const nikInfo = useMemo(() => bacaNik(nomorKtp), [nomorKtp]);
+  const nikTerpakaiRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!nikInfo.valid || !nikInfo.tanggalLahir) return;
+    // Sekali saja per NIK, dan hanya mengisi kolom yang masih kosong —
+    // isian manual user tidak pernah ditimpa.
+    if (nikTerpakaiRef.current === nomorKtp) return;
+    nikTerpakaiRef.current = nomorKtp;
+    setTanggalLahir((t) => t || nikInfo.tanggalLahir!);
+    setJenisKelamin((j) => j || nikInfo.jenisKelamin!);
+  }, [nikInfo, nomorKtp]);
+
+  /** Isian dari NIK berbeda dengan yang ada di form → tawarkan tombol "Terapkan". */
+  const nikBedaDenganForm =
+    nikInfo.valid &&
+    ((!!nikInfo.tanggalLahir && tanggalLahir !== nikInfo.tanggalLahir) ||
+      (!!nikInfo.jenisKelamin && jenisKelamin !== nikInfo.jenisKelamin));
+
+  const terapkanNik = () => {
+    if (!nikInfo.valid) return;
+    if (nikInfo.tanggalLahir) setTanggalLahir(nikInfo.tanggalLahir);
+    if (nikInfo.jenisKelamin) setJenisKelamin(nikInfo.jenisKelamin);
+    toast({ title: 'Tanggal lahir & jenis kelamin diisi dari NIK' });
+  };
 
   // Loan
   const [productId, setProductId] = useState('');
@@ -984,6 +1011,35 @@ const KalkulatorPage: React.FC = () => {
                       onBlur={() => setSaranField((f) => (f === 'ktp' ? null : f))}
                       placeholder="16 digit"
                     />
+                    {nomorKtp.length === 16 && nikInfo.valid && (
+                      <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>
+                          {nikInfo.jenisKelamin === 'P' ? 'Perempuan' : 'Laki-laki'} ·{' '}
+                          {new Date(nikInfo.tanggalLahir!).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                          {nikInfo.wilayah ? ` · ${nikInfo.wilayah}` : ''}
+                        </span>
+                        {nikBedaDenganForm && (
+                          <button
+                            type="button"
+                            onClick={terapkanNik}
+                            className="font-semibold text-primary underline underline-offset-2"
+                          >
+                            Terapkan ke form
+                          </button>
+                        )}
+                      </p>
+                    )}
+                    {/* Peringatan hanya kalau sudah selesai mengetik — biar tidak nyinyir di tengah jalan */}
+                    {!nikInfo.valid && nikInfo.pesan && (nomorKtp.length === 16 || saranField !== 'ktp') && (
+                      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {nikInfo.pesan}
+                      </p>
+                    )}
                     {saranField === 'ktp' && (
                       <DebiturSuggestions query={nomorKtp} field="ktp" excludeId={sumberId} onPick={pakaiUlangSimulasi} />
                     )}
