@@ -68,6 +68,7 @@ import html2canvas from 'html2canvas';
 import { SimulasiCard } from '@/components/kalkulator/SimulasiCard';
 import { DebiturSuggestions } from '@/components/kalkulator/DebiturSuggestions';
 import { bacaNik } from '@/lib/nik';
+import { useFormDraft, hapusDraf } from '@/hooks/use-form-draft';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
@@ -189,6 +190,73 @@ const KalkulatorPage: React.FC = () => {
   const dsrRule = dsrRules.find((r) => r.kode === dsrBasis) ?? dsrRules[0];
 
   const skipProductResetRef = useRef(false);
+
+  /* ---- Draf isian tersimpan otomatis di perangkat ------------------------- */
+  // Kumpulan isian form yang layak dipulihkan. Sengaja bukan hasil hitungan —
+  // hasilnya selalu dihitung ulang dari isian ini.
+  const isianForm = {
+    nomorKtp, namaDebitur, tanggalLahir, jenisKelamin, pekerjaan, instansi, pilihanKarir, tanggalSk, namaAo,
+    productId, plafonStr, tenor, tanggalAkad, gajiPokokStr, ttpStr, bunga, bungaMode,
+    adaAngsuranGaji, angsuranGajiStr, adaAngsuranPraja, angsuranPrajaStr,
+    asuransiProvider, asuransiJiwaStr, asuransiKreditStr,
+    provisi, provisiMode, biayaRows, blokir,
+    adaPelunasan, outstandingPokok, outstandingBunga, dsrBasis,
+    promoOn, promoId, cerdasSkema,
+  };
+  type IsianForm = typeof isianForm;
+
+  const { draf, buang: buangDraf, tutup: tutupDraf } = useFormDraft<IsianForm>({
+    key: 'kalkulator',
+    values: isianForm,
+    // Mode edit / pakai ulang punya sumber datanya sendiri, dan form yang masih
+    // kosong tidak perlu disimpan.
+    enabled: !editId && !dariId && (!!namaDebitur.trim() || !!nomorKtp || !!plafonStr),
+  });
+
+  const pulihkanDraf = () => {
+    const d = draf?.data;
+    if (!d) return;
+    // Produk diisi dari draf, jadi jangan sampai effect produk mereset isian lain
+    skipProductResetRef.current = true;
+    setNomorKtp(d.nomorKtp ?? '');
+    setNamaDebitur(d.namaDebitur ?? '');
+    setTanggalLahir(d.tanggalLahir ?? '');
+    setJenisKelamin(d.jenisKelamin ?? '');
+    setPekerjaan(d.pekerjaan ?? '');
+    setInstansi(d.instansi ?? '');
+    setPilihanKarir(d.pilihanKarir ?? '');
+    setTanggalSk(d.tanggalSk ?? '');
+    setNamaAo(d.namaAo ?? '');
+    setProductId(d.productId ?? '');
+    setPlafonStr(d.plafonStr ?? '');
+    setTenor(d.tenor ?? '60');
+    setTanggalAkad(d.tanggalAkad || new Date().toISOString().slice(0, 10));
+    setGajiPokokStr(d.gajiPokokStr ?? '');
+    setTtpStr(d.ttpStr ?? '');
+    setBunga(d.bunga ?? '');
+    setBungaMode(d.bungaMode ?? 'preset');
+    setAdaAngsuranGaji(!!d.adaAngsuranGaji);
+    setAngsuranGajiStr(d.angsuranGajiStr ?? '');
+    setAdaAngsuranPraja(!!d.adaAngsuranPraja);
+    setAngsuranPrajaStr(d.angsuranPrajaStr ?? '');
+    setAsuransiProvider(d.asuransiProvider ?? 'manual');
+    setAsuransiJiwaStr(d.asuransiJiwaStr ?? '');
+    setAsuransiKreditStr(d.asuransiKreditStr ?? '');
+    setProvisi(d.provisi ?? '0');
+    setProvisiMode(d.provisiMode ?? 'preset');
+    setBiayaRows(Array.isArray(d.biayaRows) ? d.biayaRows : []);
+    setBlokir(d.blokir ?? '0');
+    setAdaPelunasan(!!d.adaPelunasan);
+    setOutstandingPokok(d.outstandingPokok ?? '');
+    setOutstandingBunga(d.outstandingBunga ?? '');
+    if (d.dsrBasis) setDsrBasis(d.dsrBasis);
+    setPromoOn(!!d.promoOn);
+    setPromoId(d.promoId ?? '');
+    setCerdasSkema(d.cerdasSkema ?? 'debitur_baru');
+    tutupDraf();
+    toast({ title: 'Isian sebelumnya dipulihkan', description: 'Cek lagi datanya sebelum menyimpan.' });
+  };
+
   useEffect(() => {
     if (!selectedProduct) return;
     if (skipProductResetRef.current) {
@@ -524,6 +592,8 @@ const KalkulatorPage: React.FC = () => {
         navigate('/kalkulator/riwayat');
       } else {
         await save.mutateAsync(payload);
+        // Sudah aman tersimpan di server → draf lokal tidak diperlukan lagi
+        hapusDraf('kalkulator');
         toast({ title: 'Simulasi tersimpan' });
       }
     } catch (e: any) {
@@ -968,6 +1038,30 @@ const KalkulatorPage: React.FC = () => {
           </div>
         }
       />
+
+      {/* Tawaran lanjutkan draf — hanya kalau form masih kosong (baru masuk halaman) */}
+      {draf && !editId && !dariId && !namaDebitur && !nomorKtp && !plafonStr && (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+          <History className="h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-[12rem] flex-1">
+            <p className="font-semibold">Lanjutkan isian tadi?</p>
+            <p className="text-xs text-muted-foreground">
+              Ada isian kalkulator yang belum disimpan
+              {draf.data?.namaDebitur ? ` untuk ${draf.data.namaDebitur}` : ''} —{' '}
+              {new Date(draf.at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              . Tersimpan di perangkat ini saja.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={buangDraf}>
+              Buang
+            </Button>
+            <Button size="sm" onClick={pulihkanDraf}>
+              Lanjutkan
+            </Button>
+          </div>
+        </div>
+      )}
 
       {dariId && editRow && (
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-300/70 bg-amber-50 p-4 text-sm dark:border-amber-500/40 dark:bg-amber-500/10">
