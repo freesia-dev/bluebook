@@ -16,6 +16,8 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PresenceBar } from '@/components/presence/PresenceBar';
 import { ErrorBoundary, PageErrorFallback, SilentBoundary } from '@/components/ErrorBoundary';
 import { HeaderBreadcrumb } from './HeaderBreadcrumb';
+import { AppTour } from '@/components/tour/AppTour';
+import { WhatsNewDialog } from '@/components/WhatsNewDialog';
 import { catatBukaHarian } from '@/lib/wrapped-events';
 
 interface MainLayoutProps {
@@ -130,11 +132,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <SilentBoundary name="presence-bar"><PresenceBar /></SilentBoundary>
-          <GlobalSearch />
-          <NotificationBell />
-          <FontSizeToggle />
-          <ThemeToggle />
+          <span data-tur="presence">
+            <SilentBoundary name="presence-bar"><PresenceBar /></SilentBoundary>
+          </span>
+          <span data-tur="cari">
+            <GlobalSearch />
+          </span>
+          <span data-tur="notifikasi">
+            <NotificationBell />
+          </span>
+          <span data-tur="tampilan" className="flex items-center gap-2">
+            <FontSizeToggle />
+            <ThemeToggle />
+          </span>
         </div>
       </header>
 
@@ -161,6 +171,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </ErrorBoundary>
         </div>
       </main>
+
+      {/* Tur pengenalan (pegawai baru) & ringkasan pembaruan — keduanya
+          menampilkan diri sendiri hanya kalau memang perlu. */}
+      <SilentBoundary name="tur"><AppTour /></SilentBoundary>
+      <SilentBoundary name="apa-yang-baru"><WhatsNewDialog /></SilentBoundary>
     </div>
   );
 };

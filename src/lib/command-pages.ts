@@ -17,6 +17,7 @@ export const COMMAND_PAGES: CommandPage[] = [
   { label: 'Activity Log', path: '/activity-log', group: 'Umum', keywords: ['audit', 'riwayat perubahan'] },
   { label: 'Recycle Bin', path: '/recycle-bin', group: 'Umum', keywords: ['sampah', 'hapus'] },
   { label: 'Panduan', path: '/panduan', group: 'Umum', keywords: ['bantuan', 'help'] },
+  { label: 'Bluebook Wrapped', path: '/wrapped', group: 'Umum', keywords: ['rangkuman', 'setahun', 'statistik saya'] },
 
   { label: 'Agenda Kredit', path: '/agenda-kredit/agenda-kredit', group: 'Agenda Kredit' },
   { label: 'SPPK Telihan', path: '/agenda-kredit/sppk-telihan', group: 'Agenda Kredit' },

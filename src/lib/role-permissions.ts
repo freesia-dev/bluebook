@@ -188,6 +188,8 @@ export const isRouteAllowedFor = (pathname: string, p: RolePermissions): boolean
     pathname === '/reset-password' ||
     pathname === '/about' ||
     pathname === '/panduan' ||
+    // Wrapped cuma merangkum pekerjaan orang itu sendiri, jadi boleh untuk semua role
+    pathname === '/wrapped' ||
     pathname === '/install' ||
 
     pathname.startsWith('/verify/') ||
