@@ -1,6 +1,15 @@
 import React from 'react';
 import { fmtRp, SKEMA_LABELS, SEGMEN_LABELS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
-import { DEFAULT_SIMULASI_THEME, SimulasiSectionKey, SimulasiTheme, getLabel } from '@/lib/simulasi-theme';
+import {
+  DEFAULT_SIMULASI_THEME,
+  SimulasiSectionKey,
+  SimulasiTheme,
+  getLabel,
+  warnaBagian,
+  cssRataMendatar,
+  flexRataMendatar,
+  flexRataTegak,
+} from '@/lib/simulasi-theme';
 import { useSimulasiTheme } from '@/hooks/use-simulasi-theme';
 
 export interface SimulasiCardData {
@@ -54,12 +63,22 @@ export const SimulasiCard = React.forwardRef<
     Math.round(n * T.fontScale * scaleFor(key) * 10) / 10;
   const totalPenghasilan = d.gajiPokok + d.ttp;
 
-  const primaryBg = T.useGradient
-    ? `linear-gradient(120deg, ${T.primaryColor} 0%, ${T.primaryColor2} 100%)`
-    : T.primaryColor;
-  const successBg = T.useGradient
-    ? `linear-gradient(120deg, ${T.successColor} 0%, ${T.successColor2} 100%)`
-    : T.successColor;
+  /* Warna per bagian: kalau bagian itu punya warna sendiri, itu yang dipakai;
+     kalau tidak, ikut warna global seperti sebelumnya. */
+  const w = (key: SimulasiSectionKey, bidang: 'color' | 'color2' | 'textColor', bawaan: string) =>
+    warnaBagian(T, key, bidang, bawaan);
+
+  /** Latar blok berwarna (header, angsuran, dana) dengan warna khusus bagiannya. */
+  const latar = (key: SimulasiSectionKey, c1: string, c2: string) => {
+    const a = w(key, 'color', c1);
+    const b = w(key, 'color2', c2);
+    return T.useGradient ? `linear-gradient(120deg, ${a} 0%, ${b} 100%)` : a;
+  };
+
+  const gaya = (key: SimulasiSectionKey) => T.sectionStyle?.[key];
+
+  const warnaChip = warnaBagian(T, 'chips', 'color', T.primaryColor);
+  const warnaChip2 = warnaBagian(T, 'chips', 'color2', T.accentColor);
 
   const Chip: React.FC<{ label: string; value: string; tone?: 'blue' | 'amber' | 'violet' | 'slate' }> = ({
     label,
@@ -67,13 +86,13 @@ export const SimulasiCard = React.forwardRef<
     tone = 'slate',
   }) => {
     const tones = {
-      blue: { bg: hexToRgba(T.primaryColor, 0.08), bd: hexToRgba(T.primaryColor, 0.25), fg: T.primaryColor },
+      blue: { bg: hexToRgba(warnaChip, 0.08), bd: hexToRgba(warnaChip, 0.25), fg: warnaChip },
       amber: { bg: hexToRgba(T.warnColor, 0.1), bd: hexToRgba(T.warnColor, 0.28), fg: T.warnColor },
-      violet: { bg: hexToRgba(T.accentColor, 0.08), bd: hexToRgba(T.accentColor, 0.25), fg: T.accentColor },
+      violet: { bg: hexToRgba(warnaChip2, 0.08), bd: hexToRgba(warnaChip2, 0.25), fg: warnaChip2 },
       slate: { bg: T.cardColor, bd: T.lineColor, fg: T.inkColor },
     }[tone];
     return (
-      <div style={{ background: tones.bg, border: `1px solid ${tones.bd}`, borderRadius: T.radius * 0.7, padding: '10px 14px' }}>
+      <div style={{ background: tones.bg, border: `1px solid ${tones.bd}`, borderRadius: T.radius * 0.7, padding: '10px 14px', textAlign: cssRataMendatar(T.sectionStyle?.chips?.align) }}>
         <div style={{ fontSize: s(10.5, 'chips'), letterSpacing: 0.8, textTransform: 'uppercase', color: T.subColor, fontWeight: 700 }}>
           {label}
         </div>
@@ -119,16 +138,17 @@ export const SimulasiCard = React.forwardRef<
     header: (
       <div
         style={{
-          background: primaryBg,
+          background: latar('header', T.primaryColor, T.primaryColor2),
           borderRadius: T.radius,
           padding: '20px 24px',
-          color: T.headerTextColor,
+          color: w('header', 'textColor', T.headerTextColor),
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          justifyContent: gaya('header')?.align ? flexRataMendatar(gaya('header')!.align) : 'space-between',
+          alignItems: flexRataTegak(gaya('header')?.valign ?? 'tengah'),
+          gap: gaya('header')?.align ? 24 : 0,
         }}
       >
-        <div>
+        <div style={{ textAlign: cssRataMendatar(gaya('header')?.align) }}>
           <div style={{ fontSize: s(11, 'header'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>{T.title}</div>
           <div
             style={{
@@ -147,7 +167,7 @@ export const SimulasiCard = React.forwardRef<
           </div>
 
         </div>
-        <div style={{ textAlign: 'right' }}>
+        <div style={{ textAlign: gaya('header')?.align ? cssRataMendatar(gaya('header')!.align) : 'right' }}>
           <div style={{ fontSize: s(12, 'header'), letterSpacing: 1.4, textTransform: 'uppercase', opacity: 0.85 }}>{T.bankName}</div>
           <div style={{ fontSize: s(15, 'header'), fontWeight: 700 }}>{T.branchName}</div>
           <div style={{ fontSize: s(11, 'header'), opacity: 0.85, marginTop: 4 }}>{d.tanggal}</div>
@@ -171,31 +191,33 @@ export const SimulasiCard = React.forwardRef<
       <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16 }}>
         <div
           style={{
-            background: hexToRgba(T.primaryColor, 0.07),
-            border: `1px solid ${hexToRgba(T.primaryColor, 0.22)}`,
+            background: hexToRgba(w('sorotan', 'color', T.primaryColor), 0.07),
+            border: `1px solid ${hexToRgba(w('sorotan', 'color', T.primaryColor), 0.22)}`,
             borderRadius: T.radius,
             padding: '18px 22px',
+            textAlign: cssRataMendatar(gaya('sorotan')?.align),
           }}
         >
-          <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: T.primaryColor, fontWeight: 700 }}>
+          <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: w('sorotan', 'color', T.primaryColor), fontWeight: 700 }}>
             {getLabel(T, 'sorotan.plafon')}
           </div>
-          <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: T.primaryColor, marginTop: 6, letterSpacing: -1 }}>
+          <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: w('sorotan', 'color', T.primaryColor), marginTop: 6, letterSpacing: -1 }}>
             {fmtRp(d.plafon)}
           </div>
         </div>
         <div
           style={{
-            background: hexToRgba(T.accentColor, 0.07),
-            border: `1px solid ${hexToRgba(T.accentColor, 0.22)}`,
+            background: hexToRgba(w('sorotan', 'color2', T.accentColor), 0.07),
+            border: `1px solid ${hexToRgba(w('sorotan', 'color2', T.accentColor), 0.22)}`,
             borderRadius: T.radius,
             padding: '18px 22px',
+            textAlign: cssRataMendatar(gaya('sorotan')?.align),
           }}
         >
-          <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: T.accentColor, fontWeight: 700 }}>
+          <div style={{ fontSize: s(11.5, 'sorotan'), letterSpacing: 1.4, textTransform: 'uppercase', color: w('sorotan', 'color2', T.accentColor), fontWeight: 700 }}>
             {getLabel(T, 'sorotan.tenor')}
           </div>
-          <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: T.accentColor, marginTop: 6, letterSpacing: -1 }}>
+          <div style={{ fontSize: s(40, 'sorotan'), fontWeight: 800, color: w('sorotan', 'color2', T.accentColor), marginTop: 6, letterSpacing: -1 }}>
             {d.tenorBulan} <span style={{ fontSize: s(20, 'sorotan'), fontWeight: 700 }}>bulan</span>
           </div>
         </div>
@@ -216,14 +238,14 @@ export const SimulasiCard = React.forwardRef<
     angsuran: (
       <div
         style={{
-          background: primaryBg,
-          color: T.headerTextColor,
+          background: latar('angsuran', T.primaryColor, T.primaryColor2),
+          color: w('angsuran', 'textColor', T.headerTextColor),
           borderRadius: T.radius,
           padding: '22px 24px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
+          alignItems: gaya('angsuran')?.align ? flexRataMendatar(gaya('angsuran')!.align) : 'center',
+          textAlign: gaya('angsuran')?.align ? cssRataMendatar(gaya('angsuran')!.align) : 'center',
         }}
       >
         <div style={{ fontSize: s(11, 'angsuran'), letterSpacing: 1.6, textTransform: 'uppercase', opacity: 0.85 }}>
@@ -239,7 +261,7 @@ export const SimulasiCard = React.forwardRef<
     ),
     penghasilan:
       totalPenghasilan > 0 ? (
-        <div style={{ padding: 16, background: T.cardColor, border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85 }}>
+        <div style={{ padding: 16, background: T.cardColor, border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85, textAlign: cssRataMendatar(gaya('penghasilan')?.align) }}>
           <div style={{ fontSize: s(11, 'penghasilan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 8 }}>
             {getLabel(T, 'penghasilan.title')}
           </div>
@@ -254,14 +276,14 @@ export const SimulasiCard = React.forwardRef<
             </div>
             <div>
               <div style={{ color: T.subColor, fontSize: s(11.5, 'penghasilan') }}>Total Penghasilan</div>
-              <div style={{ fontWeight: 800, color: T.primaryColor }}>{fmtRp(totalPenghasilan)}</div>
+              <div style={{ fontWeight: 800, color: w('penghasilan', 'color', T.primaryColor) }}>{fmtRp(totalPenghasilan)}</div>
             </div>
           </div>
         </div>
       ) : null,
     potongan: (
       <div style={{ border: `1px solid ${T.lineColor}`, borderRadius: T.radius * 0.85, padding: '14px 18px' }}>
-        <div style={{ fontSize: s(11, 'potongan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.subColor, fontWeight: 700, marginBottom: 4 }}>
+        <div style={{ fontSize: s(11, 'potongan'), letterSpacing: 1.2, textTransform: 'uppercase', color: w('potongan', 'color', T.subColor), fontWeight: 700, marginBottom: 4, textAlign: cssRataMendatar(gaya('potongan')?.align) }}>
           {getLabel(T, 'potongan.title')}
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -289,12 +311,12 @@ export const SimulasiCard = React.forwardRef<
         <div
           style={{
             padding: '14px 18px',
-            background: hexToRgba(T.warnColor, 0.08),
-            border: `1px solid ${hexToRgba(T.warnColor, 0.25)}`,
+            background: hexToRgba(w('pelunasan', 'color', T.warnColor), 0.08),
+            border: `1px solid ${hexToRgba(w('pelunasan', 'color', T.warnColor), 0.25)}`,
             borderRadius: T.radius * 0.85,
           }}
         >
-          <div style={{ fontSize: s(11, 'pelunasan'), letterSpacing: 1.2, textTransform: 'uppercase', color: T.warnColor, fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ fontSize: s(11, 'pelunasan'), letterSpacing: 1.2, textTransform: 'uppercase', color: w('pelunasan', 'color', T.warnColor), fontWeight: 700, marginBottom: 4, textAlign: cssRataMendatar(gaya('pelunasan')?.align) }}>
             {getLabel(T, 'pelunasan.title')}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -310,12 +332,14 @@ export const SimulasiCard = React.forwardRef<
       <div
         style={{
           padding: '22px 24px',
-          background: successBg,
-          color: T.headerTextColor,
+          background: latar('dana', T.successColor, T.successColor2),
+          color: w('dana', 'textColor', T.headerTextColor),
           borderRadius: T.radius,
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          justifyContent: gaya('dana')?.align ? flexRataMendatar(gaya('dana')!.align) : 'space-between',
+          alignItems: flexRataTegak(gaya('dana')?.valign ?? 'tengah'),
+          gap: gaya('dana')?.align ? 20 : 0,
+          textAlign: cssRataMendatar(gaya('dana')?.align),
         }}
       >
         <div>
@@ -337,9 +361,10 @@ export const SimulasiCard = React.forwardRef<
           paddingTop: 12,
           borderTop: `1px solid ${T.lineColor}`,
           fontSize: s(11, 'footer'),
-          color: T.subColor,
+          color: w('footer', 'color', T.subColor),
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: gaya('footer')?.align ? flexRataMendatar(gaya('footer')!.align) : 'space-between',
+          alignItems: flexRataTegak(gaya('footer')?.valign),
           gap: 16,
         }}
       >

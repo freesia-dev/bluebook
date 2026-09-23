@@ -27,9 +27,15 @@ import {
   SECTION_LABELS,
   SimulasiLabelKey,
   SimulasiSectionKey,
+  SimulasiSectionStyle,
   SimulasiTheme,
+  RATA_MENDATAR_LABEL,
+  RATA_TEGAK_LABEL,
+  type RataMendatar,
+  type RataTegak,
 } from '@/lib/simulasi-theme';
-import { ArrowDown, ArrowUp, RotateCcw, Save, Sparkles, Palette, Type, LayoutList, Tag } from 'lucide-react';
+import { ArrowDown, ArrowUp, RotateCcw, Save, Sparkles, Palette, Type, LayoutList,
+  SlidersHorizontal, Tag } from 'lucide-react';
 
 const SECTION_KEYS = Object.keys(SECTION_LABELS) as SimulasiSectionKey[];
 
@@ -86,6 +92,95 @@ const ColorField: React.FC<{ label: string; value: string; onChange: (v: string)
   </div>
 );
 
+/** Nama warna yang masuk akal untuk tiap bagian (dua warna utama yang dipakainya). */
+const SECTION_COLOR_LABEL: Partial<Record<SimulasiSectionKey, [string, string]>> = {
+  header: ['Latar header', 'Latar header (gradien)'],
+  sorotan: ['Warna kartu Plafon', 'Warna kartu Jangka Waktu'],
+  chips: ['Warna chip biru', 'Warna chip ungu'],
+  angsuran: ['Latar blok angsuran', 'Latar blok (gradien)'],
+  penghasilan: ['Warna Total Penghasilan', '—'],
+  potongan: ['Warna judul', '—'],
+  pelunasan: ['Warna blok pelunasan', '—'],
+  dana: ['Latar blok dana', 'Latar blok (gradien)'],
+  footer: ['Warna teks catatan kaki', '—'],
+};
+
+/** Bagian yang punya latar berwarna penuh, jadi warna teks di atasnya bisa diatur. */
+const BAGIAN_BERLATAR: SimulasiSectionKey[] = ['header', 'angsuran', 'dana'];
+
+/** Warna global yang sedang berlaku untuk satu bidang bagian — dipakai sebagai contoh di editor. */
+const warnaBawaanBagian = (t: SimulasiTheme, key: SimulasiSectionKey, bidang: 'color' | 'color2'): string => {
+  const peta: Record<SimulasiSectionKey, [string, string]> = {
+    header: [t.primaryColor, t.primaryColor2],
+    sorotan: [t.primaryColor, t.accentColor],
+    chips: [t.primaryColor, t.accentColor],
+    angsuran: [t.primaryColor, t.primaryColor2],
+    penghasilan: [t.primaryColor, t.primaryColor],
+    potongan: [t.subColor, t.subColor],
+    pelunasan: [t.warnColor, t.warnColor],
+    dana: [t.successColor, t.successColor2],
+    footer: [t.subColor, t.subColor],
+  };
+  return peta[key][bidang === 'color' ? 0 : 1];
+};
+
+/** Pemilih warna yang boleh kosong (kosong = ikut warna global). */
+const WarnaOpsional: React.FC<{
+  label: string;
+  value?: string;
+  bawaan: string;
+  onChange: (v: string | undefined) => void;
+}> = ({ label, value, bawaan, onChange }) => {
+  if (label === '—') return <div />;
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[11px] text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="color"
+          value={value || bawaan}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-9 cursor-pointer rounded border bg-background p-0.5"
+          aria-label={label}
+        />
+        {value ? (
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-[11px]" onClick={() => onChange(undefined)}>
+            Ikut global
+          </Button>
+        ) : (
+          <span className="text-[11px] text-muted-foreground">Ikut global</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** Tombol pilihan perataan (kiri/tengah/kanan atau atas/tengah/bawah), boleh kosong. */
+const PilihanRata: React.FC<{
+  label: string;
+  nilai?: string;
+  opsi: Record<string, string>;
+  onChange: (v: string | undefined) => void;
+}> = ({ label, nilai, opsi, onChange }) => (
+  <div className="space-y-1.5">
+    <Label className="text-[11px] text-muted-foreground">{label}</Label>
+    <div className="flex gap-1">
+      {Object.entries(opsi).map(([v, teks]) => (
+        <Button
+          key={v}
+          type="button"
+          variant={nilai === v ? 'default' : 'outline'}
+          size="sm"
+          className="h-8 flex-1 px-0 text-[11px]"
+          onClick={() => onChange(nilai === v ? undefined : v)}
+        >
+          {teks}
+        </Button>
+      ))}
+    </div>
+  </div>
+);
+
 const NumField: React.FC<{
   label: string;
   value: number;
@@ -128,6 +223,16 @@ export const SimulasiThemeEditor: React.FC = () => {
 
   const setSectionScale = (key: SimulasiSectionKey, value: number) =>
     setDraft((d) => ({ ...d, sectionFontScale: { ...d.sectionFontScale, [key]: value } }));
+
+  const setSectionStyle = (key: SimulasiSectionKey, value: SimulasiSectionStyle) =>
+    setDraft((d) => {
+      const next = { ...(d.sectionStyle ?? {}) };
+      // Kosong berarti "ikut global" — hapus saja entrinya supaya tema tetap ramping
+      const bersih = Object.fromEntries(Object.entries(value).filter(([, v]) => v)) as SimulasiSectionStyle;
+      if (Object.keys(bersih).length === 0) delete next[key];
+      else next[key] = bersih;
+      return { ...d, sectionStyle: next };
+    });
 
   const setLabel = (key: SimulasiLabelKey, value: string) =>
     setDraft((d) => ({ ...d, labels: { ...d.labels, [key]: value } }));
@@ -177,11 +282,12 @@ export const SimulasiThemeEditor: React.FC = () => {
     <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_1fr]">
       <div className="space-y-4">
         <Tabs defaultValue="identitas" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="identitas" title="Identitas & Teks" className="flex-col gap-1 py-2 text-[11px]"><Sparkles className="h-4 w-4" />Info</TabsTrigger>
             <TabsTrigger value="label" title="Label Kartu" className="flex-col gap-1 py-2 text-[11px]"><Tag className="h-4 w-4" />Label</TabsTrigger>
             <TabsTrigger value="tipografi" title="Tipografi & Ukuran" className="flex-col gap-1 py-2 text-[11px]"><Type className="h-4 w-4" />Font</TabsTrigger>
             <TabsTrigger value="warna" title="Warna" className="flex-col gap-1 py-2 text-[11px]"><Palette className="h-4 w-4" />Warna</TabsTrigger>
+            <TabsTrigger value="bagian" title="Warna & Posisi per Bagian" className="flex-col gap-1 py-2 text-[11px]"><SlidersHorizontal className="h-4 w-4" />Bagian</TabsTrigger>
             <TabsTrigger value="susunan" title="Susunan & Visibilitas" className="flex-col gap-1 py-2 text-[11px]"><LayoutList className="h-4 w-4" />Susun</TabsTrigger>
           </TabsList>
 
@@ -342,6 +448,91 @@ export const SimulasiThemeEditor: React.FC = () => {
                     <ColorField label="Sukses (Gradien)" value={draft.successColor2} onChange={(v) => set('successColor2', v)} />
                     <ColorField label="Peringatan" value={draft.warnColor} onChange={(v) => set('warnColor', v)} />
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="bagian" className="mt-0">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Warna &amp; Posisi per Bagian</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Tiap bagian bisa punya warna sendiri, lepas dari warna global di tab Warna. Yang dibiarkan kosong
+                    tetap ikut warna global. Perataan tegak hanya terasa di bagian yang isinya berjajar (header, dana
+                    diterima, catatan kaki).
+                  </p>
+
+                  {SECTION_KEYS.map((key) => {
+                    const g = draft.sectionStyle?.[key] ?? {};
+                    const adaUbahan = !!(g.color || g.color2 || g.textColor || g.align || g.valign);
+                    return (
+                      <div key={key} className="space-y-3 rounded-lg border p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label className="text-sm font-medium">{SECTION_LABELS[key]}</Label>
+                          {adaUbahan && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => setSectionStyle(key, {})}
+                            >
+                              <RotateCcw className="mr-1 h-3 w-3" /> Ikut global
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <WarnaOpsional
+                            label={SECTION_COLOR_LABEL[key]?.[0] ?? 'Warna utama'}
+                            value={g.color}
+                            bawaan={warnaBawaanBagian(draft, key, 'color')}
+                            onChange={(v) => setSectionStyle(key, { ...g, color: v })}
+                          />
+                          <WarnaOpsional
+                            label={SECTION_COLOR_LABEL[key]?.[1] ?? 'Warna kedua'}
+                            value={g.color2}
+                            bawaan={warnaBawaanBagian(draft, key, 'color2')}
+                            onChange={(v) => setSectionStyle(key, { ...g, color2: v })}
+                          />
+                          {BAGIAN_BERLATAR.includes(key) && (
+                            <WarnaOpsional
+                              label="Warna teks di atasnya"
+                              value={g.textColor}
+                              bawaan={draft.headerTextColor}
+                              onChange={(v) => setSectionStyle(key, { ...g, textColor: v })}
+                            />
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <PilihanRata
+                            label="Posisi mendatar"
+                            nilai={g.align}
+                            opsi={RATA_MENDATAR_LABEL}
+                            onChange={(v) => setSectionStyle(key, { ...g, align: v as RataMendatar | undefined })}
+                          />
+                          <PilihanRata
+                            label="Posisi tegak"
+                            nilai={g.valign}
+                            opsi={RATA_TEGAK_LABEL}
+                            onChange={(v) => setSectionStyle(key, { ...g, valign: v as RataTegak | undefined })}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setDraft((d) => ({ ...d, sectionStyle: {} }))}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Kembalikan Semua Bagian ke Warna Global
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>

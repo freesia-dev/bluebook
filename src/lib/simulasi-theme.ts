@@ -56,6 +56,37 @@ export const LABEL_FIELD_TITLES: Record<SimulasiLabelKey, string> = {
 
 export const LABEL_KEYS = Object.keys(LABEL_DEFAULTS) as SimulasiLabelKey[];
 
+/** Perataan mendatar & tegak isi tiap bagian kartu. */
+export type RataMendatar = 'kiri' | 'tengah' | 'kanan';
+export type RataTegak = 'atas' | 'tengah' | 'bawah';
+
+export const RATA_MENDATAR_LABEL: Record<RataMendatar, string> = {
+  kiri: 'Kiri',
+  tengah: 'Tengah',
+  kanan: 'Kanan',
+};
+
+export const RATA_TEGAK_LABEL: Record<RataTegak, string> = {
+  atas: 'Atas',
+  tengah: 'Tengah',
+  bawah: 'Bawah',
+};
+
+/**
+ * Pengaturan khusus satu bagian kartu. Semua boleh kosong — yang kosong ikut
+ * warna/perataan global, jadi tema lama tetap tampil persis seperti sebelumnya.
+ */
+export interface SimulasiSectionStyle {
+  /** Warna utama bagian ini (judul, angka besar, latar blok berwarna). */
+  color?: string;
+  /** Pasangan gradien untuk warna di atas (kalau gradien dinyalakan). */
+  color2?: string;
+  /** Warna teks di atas blok berwarna (header & dana diterima). */
+  textColor?: string;
+  align?: RataMendatar;
+  valign?: RataTegak;
+}
+
 export interface SimulasiTheme {
   /** identitas */
   bankName: string;
@@ -88,6 +119,11 @@ export interface SimulasiTheme {
   warnColor: string;
   headerTextColor: string;
   useGradient: boolean;
+  /**
+   * Pengaturan per bagian: warna sendiri dan perataan teks. Dipakai supaya tiap
+   * bagian tidak lagi terikat ke satu warna primer/aksen yang sama.
+   */
+  sectionStyle: Partial<Record<SimulasiSectionKey, SimulasiSectionStyle>>;
   /** susunan & visibilitas */
   order: SimulasiSectionKey[];
   hidden: SimulasiSectionKey[];
@@ -112,6 +148,7 @@ export const DEFAULT_SIMULASI_THEME: SimulasiTheme = {
     footer: 1,
   },
   labels: {},
+  sectionStyle: {},
   cardWidth: 900,
   padding: 36,
   radius: 14,
@@ -168,7 +205,37 @@ export function mergeTheme(raw: unknown): SimulasiTheme {
     labels: {
       ...(v.labels && typeof v.labels === 'object' ? v.labels : {}),
     },
+    // Tema lama belum punya pengaturan per bagian; kosong berarti "ikut global",
+    // jadi kartu yang sudah ada tidak berubah sedikit pun.
+    sectionStyle: {
+      ...(v.sectionStyle && typeof v.sectionStyle === 'object' ? v.sectionStyle : {}),
+    },
   };
+}
+
+/** Warna khusus bagian ini kalau diatur, kalau tidak pakai warna global. */
+export function warnaBagian(
+  theme: Pick<SimulasiTheme, 'sectionStyle'>,
+  key: SimulasiSectionKey,
+  bidang: 'color' | 'color2' | 'textColor',
+  bawaan: string,
+): string {
+  return theme.sectionStyle?.[key]?.[bidang] || bawaan;
+}
+
+/** Nilai CSS untuk perataan mendatar sebuah bagian. */
+export function cssRataMendatar(r?: RataMendatar): 'left' | 'center' | 'right' {
+  return r === 'tengah' ? 'center' : r === 'kanan' ? 'right' : 'left';
+}
+
+/** Nilai CSS flex untuk perataan mendatar (dipakai bagian yang isinya berjajar). */
+export function flexRataMendatar(r?: RataMendatar): 'flex-start' | 'center' | 'flex-end' {
+  return r === 'tengah' ? 'center' : r === 'kanan' ? 'flex-end' : 'flex-start';
+}
+
+/** Nilai CSS flex untuk perataan tegak. */
+export function flexRataTegak(r?: RataTegak): 'flex-start' | 'center' | 'flex-end' {
+  return r === 'tengah' ? 'center' : r === 'bawah' ? 'flex-end' : 'flex-start';
 }
 
 /** Ambil teks label (dengan fallback ke default) — dipakai SimulasiCard supaya tidak hardcode string. */
