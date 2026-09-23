@@ -5,10 +5,13 @@ import {
   Flame, Instagram, Linkedin,
   Mail, CreditCard, Banknote, Calculator, TrendingUp, Shield,
   FileSearch, Archive, Users, Zap, BarChart3, Smartphone,
-  UserSquare, Bell, LineChart,
+  UserSquare, Bell, LineChart, Compass, Sparkles,
 } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
 import { AppUpdateCard } from '@/components/app-update/AppUpdateCard';
+import { Button } from '@/components/ui/button';
+import { mulaiTurLagi } from '@/lib/tur-state';
+import { bukaApaYangBaru } from '@/components/WhatsNewDialog';
 
 const modules = [
   { icon: Mail, title: 'Manajemen Surat', description: 'Registrasi surat masuk dan keluar dengan penomoran otomatis dan lampiran.' },
@@ -114,6 +117,24 @@ const About: React.FC = () => {
 
         {/* Versi & update */}
         <AppUpdateCard />
+
+        {/* Bantuan: ulangi tur & catatan pembaruan */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 text-center">
+            <h3 className="font-display text-lg font-bold text-foreground">Baru di Bluebook?</h3>
+            <p className="text-xs text-muted-foreground">
+              Tur pengenalan bisa diulang kapan saja, dan catatan pembaruan selalu bisa dibuka lagi.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="outline" onClick={mulaiTurLagi}>
+              <Compass className="mr-2 h-4 w-4" /> Mulai tur pengenalan
+            </Button>
+            <Button variant="outline" onClick={bukaApaYangBaru}>
+              <Sparkles className="mr-2 h-4 w-4" /> Apa yang baru
+            </Button>
+          </div>
+        </div>
 
         {/* Tech stack chips */}
         <div className="rounded-2xl border border-border bg-card p-6">

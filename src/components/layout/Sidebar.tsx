@@ -456,6 +456,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
       
       {/* Sidebar - expanded (w-64) atau collapsed rail (w-[76px]) di desktop */}
       <aside
+        data-tur="sidebar"
         onMouseEnter={() => onHoverChange?.(true)}
         onMouseLeave={() => onHoverChange?.(false)}
         className={cn(
