@@ -164,8 +164,16 @@ export const BAPengisianDokumen: React.FC<BAPengisianDokumenProps> = ({
       {/* ── Lampiran & hasil pemeriksaan ─────────────────────────────────── */}
       <p style={{ textAlign: 'justify', margin: 0 }}>
         Sebagai lampiran kami sampaikan struk jurnal mesin sebelum dan setelah dilakukan pengisian. Selain itu, kami
-        telah melakukan pemeriksaan terhadap mesin ATM tersebut di atas, di mana terdapat selisih Rp.
-        {Math.abs(selisih).toLocaleString('id-ID')},-.
+        telah melakukan pemeriksaan terhadap mesin ATM tersebut di atas, di mana terdapat{' '}
+        {selisih === 0 ? (
+          <>selisih Rp.0,-</>
+        ) : (
+          <>
+            <b>selisih {selisih < 0 ? 'kurang' : 'lebih'}</b> sebesar{' '}
+            <b>Rp.{Math.abs(selisih).toLocaleString('id-ID')},-</b>
+          </>
+        )}
+        .
       </p>
       <p style={{ margin: 0 }}>&nbsp;</p>
 
