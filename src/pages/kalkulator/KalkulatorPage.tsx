@@ -66,6 +66,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { SimulasiCard } from '@/components/kalkulator/SimulasiCard';
+import { DebiturSuggestions } from '@/components/kalkulator/DebiturSuggestions';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
@@ -82,6 +83,9 @@ const KalkulatorPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const editId = searchParams.get('edit') || undefined;
+  // ?dari=<id> → pakai ulang data simulasi lama untuk hitungan BARU (tidak menimpa yang lama)
+  const dariId = searchParams.get('dari') || undefined;
+  const sumberId = editId || dariId;
   const { canEdit } = useAuth();
   const { data: products = [] } = useLoanProducts(true);
   const { data: pensionRules = [] } = usePensionRules();
@@ -92,7 +96,20 @@ const KalkulatorPage: React.FC = () => {
   const { data: promoPrograms = [] } = usePromoPrograms(true);
   const save = useSaveLoanSimulation();
   const update = useUpdateLoanSimulation();
-  const { data: editRow } = useLoanSimulation(editId);
+  const { data: editRow } = useLoanSimulation(sumberId);
+
+  // Saran "pernah dihitung sebelumnya" — field mana yang sedang difokus
+  const [saranField, setSaranField] = useState<'nama' | 'ktp' | null>(null);
+
+  /**
+   * Pakai ulang data simulasi lama: cukup ubah URL ke ?dari=<id>, prefill-nya
+   * ditangani effect hydrate di bawah (satu jalur, jadi tidak ada logika ganda).
+   */
+  const pakaiUlangSimulasi = (row: { id: string }) => {
+    setSaranField(null);
+    setSearchParams({ dari: row.id });
+    toast({ title: 'Data debitur diisi dari riwayat', description: 'Cek lagi gaji & TTP sebelum menyimpan.' });
+  };
 
   // Debitur
   const [nomorKtp, setNomorKtp] = useState('');
@@ -180,10 +197,12 @@ const KalkulatorPage: React.FC = () => {
   }, [promoPrograms, tanggalAkad, promoId]);
 
   // Prefill state saat mode edit riwayat
-  const hydratedRef = useRef(false);
+  // Simpan ID yang sudah di-prefill, bukan cuma true/false: kalau user memilih
+  // saran debitur lain, form boleh diisi ulang dari simulasi yang baru dipilih.
+  const hydratedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!editRow || hydratedRef.current) return;
-    hydratedRef.current = true;
+    if (!editRow || hydratedRef.current === editRow.id) return;
+    hydratedRef.current = editRow.id;
     skipProductResetRef.current = true;
     setNomorKtp(editRow.nomor_ktp || '');
     setNamaDebitur(editRow.nama_debitur || '');
@@ -199,7 +218,8 @@ const KalkulatorPage: React.FC = () => {
     setProductId(editRow.product_id || '');
     setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
     setTenor(String(editRow.tenor_bulan || 0));
-    setTanggalAkad(editRow.tanggal_akad || new Date().toISOString().slice(0, 10));
+    // Hitungan baru selalu memakai tanggal akad hari ini, bukan tanggal simulasi lama
+    setTanggalAkad(dariId ? new Date().toISOString().slice(0, 10) : editRow.tanggal_akad || new Date().toISOString().slice(0, 10));
     const gp = editRow.gaji_pokok ?? editRow.gaji ?? 0;
     const tt = editRow.ttp ?? 0;
     setGajiPokokStr(gp ? formatCurrencyInput(String(gp)) : '');
@@ -310,7 +330,9 @@ const KalkulatorPage: React.FC = () => {
   const cerdasResult: CerdasApplyResult | null = useMemo(() => {
     if (!promoOn || !promoCfg) return null;
     const savedCerdas = (editRow?.hasil_ringkasan as any)?.cerdas;
-    if (editRow && savedCerdas) {
+    // Hanya mode edit yang boleh memakai hasil promo tersimpan; mode "hitung baru
+    // dari data ini" harus dihitung ulang dari awal.
+    if (editId && editRow && savedCerdas) {
       const savedSkema = (savedCerdas.skema ?? editRow.cerdas_skema) as CerdasSkema | null;
       const savedPremiAktual = Number(savedCerdas.premiAsuransiAktual ?? 0);
       const savedProvisiAwal = Number(savedCerdas.provisiPctAsli ?? provisiInput);
@@ -893,10 +915,21 @@ const KalkulatorPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title={editId ? 'Edit Simulasi Kredit' : 'Kalkulator Kredit'}
-        description={editId ? 'Menyunting simulasi kredit tersimpan — perubahan akan menimpa data lama.' : 'Satu kalkulator untuk kredit konsumtif maupun produktif — produk menentukan skema dan segmennya.'}
+        title={editId ? 'Edit Simulasi Kredit' : dariId ? 'Hitungan Baru dari Data Lama' : 'Kalkulator Kredit'}
+        description={
+          editId
+            ? 'Menyunting simulasi kredit tersimpan — perubahan akan menimpa data lama.'
+            : dariId
+              ? 'Data debitur sudah terisi dari simulasi sebelumnya. Simulasi lama tetap utuh — ini akan tersimpan sebagai simulasi baru.'
+              : 'Satu kalkulator untuk kredit konsumtif maupun produktif — produk menentukan skema dan segmennya.'
+        }
         actions={
           <div className="flex gap-2">
+            {dariId && (
+              <Button variant="ghost" onClick={() => { setSearchParams({}); window.location.reload(); }}>
+                Kosongkan Form
+              </Button>
+            )}
             {editId && (
               <Button variant="ghost" onClick={() => { setSearchParams({}); navigate('/kalkulator/riwayat'); }}>
                 Batal Edit
@@ -908,6 +941,23 @@ const KalkulatorPage: React.FC = () => {
           </div>
         }
       />
+
+      {dariId && editRow && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-300/70 bg-amber-50 p-4 text-sm dark:border-amber-500/40 dark:bg-amber-500/10">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold text-amber-900 dark:text-amber-200">
+              Data diambil dari simulasi{' '}
+              {new Date(editRow.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+              {editRow.product_nama ? ` (${editRow.product_nama})` : ''}
+            </p>
+            <p className="mt-0.5 text-amber-800 dark:text-amber-300/90">
+              Cek lagi gaji &amp; TTP-nya — bisa jadi sudah berubah. Produk boleh diganti, dan hasilnya akan tersimpan
+              sebagai simulasi baru.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         {/* FORM — TABBED */}
@@ -925,13 +975,30 @@ const KalkulatorPage: React.FC = () => {
               <Card>
                 <CardHeader><CardTitle className="text-base">Data Calon Debitur</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <Label>Nomor KTP</Label>
-                    <Input value={nomorKtp} onChange={(e) => setNomorKtp(e.target.value.replace(/\D/g, '').slice(0, 16))} placeholder="16 digit" />
+                    <Input
+                      value={nomorKtp}
+                      onChange={(e) => setNomorKtp(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                      onFocus={() => setSaranField('ktp')}
+                      onBlur={() => setSaranField((f) => (f === 'ktp' ? null : f))}
+                      placeholder="16 digit"
+                    />
+                    {saranField === 'ktp' && (
+                      <DebiturSuggestions query={nomorKtp} field="ktp" excludeId={sumberId} onPick={pakaiUlangSimulasi} />
+                    )}
                   </div>
-                  <div>
+                  <div className="relative">
                     <Label>Nama Calon Debitur *</Label>
-                    <Input value={namaDebitur} onChange={(e) => setNamaDebitur(e.target.value)} />
+                    <Input
+                      value={namaDebitur}
+                      onChange={(e) => setNamaDebitur(e.target.value)}
+                      onFocus={() => setSaranField('nama')}
+                      onBlur={() => setSaranField((f) => (f === 'nama' ? null : f))}
+                    />
+                    {saranField === 'nama' && (
+                      <DebiturSuggestions query={namaDebitur} field="nama" excludeId={sumberId} onPick={pakaiUlangSimulasi} />
+                    )}
                   </div>
                   <div>
                     <Label>Tanggal Lahir</Label>

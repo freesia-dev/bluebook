@@ -8,6 +8,7 @@ import type { LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber, SKEMA_LABELS, type LoanSkema } from '@/lib/loan-calc';
 import { cn } from '@/lib/utils';
 import {
+  Calculator,
   ChevronDown,
   FileSpreadsheet,
   FileText,
@@ -24,6 +25,8 @@ interface Props {
   onExportJpg: (row: LoanSimulationRow) => void;
   onExportExcel: (row: LoanSimulationRow) => void;
   onExportPdf: (row: LoanSimulationRow) => void;
+  /** Pakai ulang data simulasi ini untuk hitungan baru (opsional). */
+  onHitungBaru?: (row: LoanSimulationRow) => void;
 }
 
 const InfoRow: React.FC<{ label: string; value: React.ReactNode; strong?: boolean }> = ({ label, value, strong }) => (
@@ -118,6 +121,7 @@ export const SimulasiPreviewDialog: React.FC<Props> = ({
   onExportJpg,
   onExportExcel,
   onExportPdf,
+  onHitungBaru,
 }) => {
   const [showTable, setShowTable] = useState(false);
   const [fitMode, setFitMode] = useState<'contain' | 'width'>('contain');
@@ -144,6 +148,11 @@ export const SimulasiPreviewDialog: React.FC<Props> = ({
       <Button size="sm" variant="outline" className="h-8" onClick={() => onExportPdf(row)}>
         <FileText className="mr-1 h-3.5 w-3.5 text-rose-600" /> PDF
       </Button>
+      {onHitungBaru && (
+        <Button size="sm" className="h-8" onClick={() => onHitungBaru(row)}>
+          <Calculator className="mr-1 h-3.5 w-3.5" /> Hitung baru dari data ini
+        </Button>
+      )}
     </div>
   );
 

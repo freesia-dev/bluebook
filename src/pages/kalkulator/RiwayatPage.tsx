@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber, SKEMA_LABELS, SEGMEN_LABELS, SEGMEN_BADGE_CLASS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
+import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -446,6 +446,15 @@ const RiwayatPage: React.FC = () => {
   };
 
 
+  /**
+   * Pakai ulang data debitur untuk hitungan baru — sering kepakai saat PNS yang
+   * sama datang lagi minta dihitung produk lain. Simulasi lama tidak disentuh.
+   */
+  const handleHitungBaru = (s: LoanSimulationRow) => {
+    setDetail(null);
+    navigate(`/kalkulator?dari=${s.id}`);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus simulasi ini?')) return;
     try {
@@ -560,6 +569,16 @@ const RiwayatPage: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </Button>
                     {canEdit && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleHitungBaru(s)}
+                        title="Hitung baru dari data ini"
+                      >
+                        <Calculator className="w-4 h-4 text-primary" />
+                      </Button>
+                    )}
+                    {canEdit && (
                       <Button size="icon" variant="ghost" onClick={() => navigate(`/kalkulator?edit=${s.id}`)} title="Edit simulasi">
                         <Pencil className="w-4 h-4 text-blue-600" />
                       </Button>
@@ -611,6 +630,7 @@ const RiwayatPage: React.FC = () => {
         onExportJpg={handleExportJpg}
         onExportExcel={exportRowToExcel}
         onExportPdf={exportRowToPDF}
+        onHitungBaru={canEdit ? handleHitungBaru : undefined}
       />
 
       {/* Off-screen JPG card — memakai tema yang sama dengan pratinjau */}
