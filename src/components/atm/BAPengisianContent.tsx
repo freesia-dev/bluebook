@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { PengisianATM, ATMConfig, KartuTertelan, SelisihATM } from '@/types';
-import { getPengisianATM, getATMConfig, getKartuTertelan, getSelisihATM, angkaTerbilang, formatRupiah, addKartuTertelan, deleteKartuTertelan } from '@/lib/atm-store';
+import { getPengisianATM, getATMConfig, getKartuTertelan, getSelisihATM, formatRupiah, addKartuTertelan, deleteKartuTertelan } from '@/lib/atm-store';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { FileText, Printer, Plus, Trash2 } from 'lucide-react';
-import logoBankaltimtara from '@/assets/logo-bankaltimtara.png';
-import logoBpd from '@/assets/logo-bpd.png';
+import { Checkbox } from '@/components/ui/checkbox';
+import BAPengisianDokumen from '@/components/atm/BAPengisianDokumen';
 
 const BAPengisianContent = () => {
   const { toast } = useToast();
@@ -25,6 +25,11 @@ const BAPengisianContent = () => {
   const [selisihList, setSelisihList] = useState<SelisihATM[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Isian khusus berita acara (tidak ikut tersimpan — cukup untuk sekali cetak)
+  const [nomorBA, setNomorBA] = useState('');
+  const [petugasTerpilih, setPetugasTerpilih] = useState<string[]>([]);
+  const [pemimpinTerpilih, setPemimpinTerpilih] = useState('');
+
   const [newKartuNomor, setNewKartuNomor] = useState('');
   const [newKartuNama, setNewKartuNama] = useState('');
   const [newKartuBank, setNewKartuBank] = useState('BANKALTIMTARA');
@@ -112,6 +117,23 @@ const BAPengisianContent = () => {
 
   const getPemimpinList = () => configOptions.filter(c => c.jabatan.includes('PEMIMPIN'));
 
+  // Petugas & pemimpin diisi otomatis dari data pengisian dan daftar pegawai,
+  // tapi tetap boleh diubah sebelum dicetak.
+  useEffect(() => {
+    if (!selectedData) return;
+    const bawaan = [selectedData.yangMenyerahkan, selectedData.namaTeller]
+      .map(n => (n || '').trim())
+      .filter(Boolean);
+    setPetugasTerpilih(bawaan.length ? bawaan : configOptions
+      .filter(c => ['STAFF KCP', 'TELLER'].some(j => c.jabatan.includes(j)))
+      .slice(0, 2)
+      .map(c => c.nama));
+    setPemimpinTerpilih(prev => prev || getPemimpinList()[0]?.nama || '');
+  }, [selectedData, configOptions]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const togglePetugas = (nama: string) =>
+    setPetugasTerpilih(prev => (prev.includes(nama) ? prev.filter(n => n !== nama) : [...prev, nama]));
+
   const handlePrint = () => {
     if (!printRef.current) return;
     const printWindow = window.open('', '_blank');
@@ -123,15 +145,19 @@ const BAPengisianContent = () => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>BA Pengisian ATM - ATM-143-01</title>
+        <title>Berita Acara Pengisian ATM</title>
         <style>
-          @page { size: A4; margin: 15mm 20mm; }
+          /* Ukuran & margin mengikuti berkas Word acuan (A4, tepi 2,54 cm) */
+          @page { size: A4; margin: 15mm 25mm 25mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.3; color: #000; }
-          .ba-container { max-width: 210mm; margin: 0 auto; }
-          table.data-table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 10pt; }
-          table.data-table th, table.data-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
-          table.data-table th { background: #f5f5f5; font-weight: bold; text-align: center; }
+          body {
+            font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.3;
+            color: #000;
+          }
+          table { border-collapse: collapse; width: 100%; }
+          td { vertical-align: top; }
           @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         </style>
       </head>
@@ -207,201 +233,77 @@ const BAPengisianContent = () => {
               <CardTitle className="text-lg">Preview Berita Acara</CardTitle>
             </CardHeader>
             <CardContent>
-              <div ref={printRef} className="bg-white p-6 text-black" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '11pt', lineHeight: '1.3' }}>
-                <div className="ba-container">
-                  {/* Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div style={{ width: '120px' }}>
-                      <img src={logoBankaltimtara} alt="Bankaltimtara" style={{ maxWidth: '100%', height: 'auto' }} />
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'center', padding: '0 15px' }}>
-                      <div style={{ fontSize: '12pt', fontWeight: 'bold' }}>PT. BPD Kaltim Kaltara</div>
-                      <div style={{ fontSize: '10pt', fontWeight: 'bold', color: '#0066cc', textDecoration: 'underline' }}>KANTOR CABANG PEMBANTU TELIHAN</div>
-                      <div style={{ fontSize: '9pt' }}>Jl.Letjend S.Parman No.14-15 – Kota Bontang 75383</div>
-                      <div style={{ fontSize: '9pt' }}>Telp: 0548 - 26567</div>
-                      <div style={{ fontSize: '9pt' }}>Email:<span style={{ color: '#0066cc', textDecoration: 'underline' }}>kcp.telihan@bankaltimtara.co.id</span></div>
-                      <div style={{ fontSize: '9pt' }}>www.bankaltimtara.co.id</div>
-                    </div>
-                    <div style={{ width: '100px', textAlign: 'right' }}>
-                      <img src={logoBpd} alt="BPD" style={{ maxWidth: '100%', height: 'auto' }} />
-                    </div>
-                  </div>
-                  <div style={{ borderBottom: '2px solid #000', margin: '8px 0 15px' }}></div>
-
-                  <div style={{ fontSize: '10pt', marginBottom: '10px' }}>ATM-143-01</div>
-                  <div style={{ fontSize: '13pt', fontWeight: 'bold', textAlign: 'left', marginBottom: '15px' }}>
-                    BERITA ACARA KAS ATM, DISKET MUTASI TRANSAKSI ATM,<br />
-                    STRUK ATM DAN KARTU TERTELAN
-                  </div>
-
-                  {/* Section A: KAS ATM */}
-                  <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>A. KAS ATM</div>
-                  <div style={{ textAlign: 'justify', marginBottom: '8px' }}>
-                    Pada hari ini {selectedData.hari.toUpperCase()} Tanggal {format(selectedData.tanggal, 'dd MMMM yyyy', { locale: id })} Jam {selectedData.jam}, kami yang bertanda tangan di bawah ini telah melakukan cash opname pada mesin ATM di KTM14301 dan selanjutnya mengisi/menambah uang pada mesin ATM tersebut.
-                  </div>
-                  <div style={{ marginBottom: '8px' }}>
-                    Sisa uang pada saat dilakukan cash opname, jumlah uang yang ditambahkan dan sisa terakhir saat selesai dilakukan cash opname adalah sebagai berikut:
-                  </div>
-
-                  <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0 12px', fontSize: '10pt' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center', width: '30px' }}>No.</th>
-                        <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'left' }}>Rincian</th>
-                        <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center', width: '100px' }}>Jumlah Lembar</th>
-                        <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center', width: '120px' }}>Jumlah Nominal</th>
-                        <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'left' }}>Keterangan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>1</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>SALDO BUKU BESAR</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{values.saldoLembar.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {selectedData.saldoBukuBesar.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}></td>
-                      </tr>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>2</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>JUMLAH SISA DALAM KASET</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{values.sisaTotal.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {values.sisaNominal.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>ATM={values.saldoLembar} FISIK={values.sisaTotal}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>3</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>JUMLAH UANG YANG DI TAMBAHKAN</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{values.tambahTotal.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {values.tambahNominal.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}></td>
-                      </tr>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>4</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>JUMLAH SELISIH LEBIH / KURANG</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{Math.abs(selectedData.jumlahSelisih) > 0 ? Math.floor(Math.abs(selectedData.jumlahSelisih) / 100000).toLocaleString('id-ID') : '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{Math.abs(selectedData.jumlahSelisih) > 0 ? `Rp ${Math.abs(selectedData.jumlahSelisih).toLocaleString('id-ID')}` : '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{selectedData.jumlahSelisih !== 0 ? `SELISIH ${selectedData.keteranganSelisih}` : '-'}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>5</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>JUMLAH YANG DI SETOR KE TELLER</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{selectedData.jumlahDisetor > 0 ? Math.floor(selectedData.jumlahDisetor / 100000).toLocaleString('id-ID') : '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{selectedData.jumlahDisetor > 0 ? `Rp ${selectedData.jumlahDisetor.toLocaleString('id-ID')}` : '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{selectedData.jumlahDisetor > 0 && selectedData.yangMenyerahkan && selectedData.namaTeller ? `Disetor oleh ${selectedData.yangMenyerahkan} ke ${selectedData.namaTeller}` : '-'}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>6</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>JUMLAH YANG DI SETOR KE REK TITIPAN ATM</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{selectedData.setorKeRekTitipan > 0 ? Math.floor(selectedData.setorKeRekTitipan / 100000).toLocaleString('id-ID') : '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{selectedData.setorKeRekTitipan > 0 ? `Rp ${selectedData.setorKeRekTitipan.toLocaleString('id-ID')}` : '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{selectedData.setorKeRekTitipan > 0 && selectedData.yangMenyerahkan && selectedData.namaTeller ? `Disetor oleh ${selectedData.yangMenyerahkan} ke ${selectedData.namaTeller}` : '-'}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>7</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px' }}>POSISI KAS ATM SETELAH CASHOPNAME</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{(values.tambahTotal).toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {values.tambahNominal.toLocaleString('id-ID')}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', fontWeight: 'bold' }}>{angkaTerbilang(values.tambahNominal).toUpperCase()} RUPIAH.</td>
-                      </tr>
-                    </tbody>
-                  </table>
-
-                  <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>B. DISKET MUTASI TRANSAKSI ATM DAN STRUK ATM (Terlampir)</div>
-
-                  <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>C. KARTU TERTELAN</div>
-                  <div style={{ marginBottom: '8px' }}>
-                    Disamping itu pada kotak kartu tertelan ditemukan {kartuTertelan.length} ( {kartuTertelan.length === 0 ? 'Nol' : angkaTerbilang(kartuTertelan.length)} ) Buah Kartu sebagai berikut:
-                  </div>
-
-                  {kartuTertelan.length > 0 && (
-                    <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0 12px', fontSize: '10pt' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center', width: '40px' }}>NO.</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>NOMOR KARTU</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>NAMA NASABAH</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>BANK</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {kartuTertelan.map((kt, idx) => (
-                          <tr key={kt.id}>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>{idx + 1}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{kt.nomorKartu}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{kt.namaNasabah || '-'}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{kt.bank}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-
-                  <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>D. SELISIH</div>
-                  {selisihList.length > 0 ? (
-                    <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', margin: '8px 0 12px', fontSize: '10pt' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center', width: '40px' }}>NO.</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>TANGGAL</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>NOMINAL</th>
-                          <th style={{ border: '1px solid #000', padding: '4px 6px', background: '#f5f5f5', fontWeight: 'bold', textAlign: 'center' }}>KETERANGAN</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selisihList.map((sl, idx) => (
-                          <tr key={sl.id}>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>{idx + 1}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{format(sl.tanggal, 'dd MMMM yyyy', { locale: id })}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {sl.nominal.toLocaleString('id-ID')}</td>
-                            <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{sl.keterangan || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div style={{ marginBottom: '8px' }}>Tidak ada selisih.</div>
-                  )}
-
-                  {selectedData.catatanTambahan && selectedData.catatanTambahan.trim() && (
-                    <>
-                      <div style={{ fontWeight: 'bold', margin: '12px 0 6px' }}>E. KETERANGAN / CATATAN TAMBAHAN</div>
-                      <div style={{ textAlign: 'justify', marginBottom: '8px', whiteSpace: 'pre-wrap' }}>
-                        {selectedData.catatanTambahan}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Signature */}
-                  <div style={{ marginTop: '25px' }}>
-                    <div style={{ marginBottom: '15px' }}>Demikian Berita Acara ini dibuat dengan sebenarnya oleh :</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <div style={{ width: '30%', textAlign: 'center' }}>
-                        <div style={{ marginBottom: '8px' }}>Staff KCP,</div>
-                        <div style={{ marginBottom: '60px' }}></div>
-                        <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
-                          {selectedData.yangMenyerahkan || configOptions.find(c => c.jabatan === 'STAFF KCP')?.nama || '................................'}
-                        </div>
-                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>STAFF KCP</div>
-                      </div>
-                      <div style={{ width: '30%', textAlign: 'center' }}>
-                        <div style={{ marginBottom: '8px' }}>Teller,</div>
-                        <div style={{ marginBottom: '60px' }}></div>
-                        <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
-                          {selectedData.namaTeller || configOptions.find(c => c.jabatan === 'TELLER')?.nama || '................................'}
-                        </div>
-                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>TELLER</div>
-                      </div>
-                      <div style={{ width: '30%', textAlign: 'center' }}>
-                        <div style={{ marginBottom: '8px' }}>Mengetahui,</div>
-                        <div style={{ marginBottom: '60px' }}></div>
-                        <div style={{ borderTop: '1px solid #000', paddingTop: '4px' }}>
-                          {getPemimpinList()[0]?.nama || '................................'}
-                        </div>
-                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>PIMPINAN</div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="overflow-x-auto bg-white p-6 text-black">
+                <div ref={printRef} style={{ minWidth: '620px' }}>
+                  <BAPengisianDokumen
+                    data={selectedData}
+                    kartuTertelan={kartuTertelan}
+                    petugas={petugasTerpilih}
+                    pemimpin={pemimpinTerpilih}
+                    nomor={nomorBA}
+                  />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Isian khusus berita acara */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Isian Berita Acara</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <Label className="mb-2 block">Nomor Berita Acara</Label>
+                  <Input
+                    value={nomorBA}
+                    onChange={(e) => setNomorBA(e.target.value)}
+                    placeholder="Kosongkan untuk titik-titik"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-2 block">Mengetahui (Pemimpin)</Label>
+                  <Select value={pemimpinTerpilih} onValueChange={setPemimpinTerpilih}>
+                    <SelectTrigger><SelectValue placeholder="Pilih pemimpin..." /></SelectTrigger>
+                    <SelectContent>
+                      {getPemimpinList().map((c) => (
+                        <SelectItem key={c.id} value={c.nama}>{c.nama}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Petugas Pelaksana</Label>
+                {configOptions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Daftar pegawai belum diisi di Konfigurasi ATM.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {configOptions.map((c) => (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-lg border p-2.5 text-sm transition-colors hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          checked={petugasTerpilih.includes(c.nama)}
+                          onCheckedChange={() => togglePetugas(c.nama)}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {c.nama}
+                          <span className="ml-1 text-xs text-muted-foreground">({c.jabatan})</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Urutan penomoran mengikuti urutan dipilih. Kalau belum ada yang dipilih, dua baris tanda tangan
+                  tetap dicetak kosong.
+                </p>
               </div>
             </CardContent>
           </Card>
