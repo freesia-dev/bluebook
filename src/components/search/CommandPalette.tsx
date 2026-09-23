@@ -96,7 +96,7 @@ export const CommandPalette: React.FC = () => {
         value={query}
         onValueChange={setQuery}
       />
-      <CommandList>
+      <CommandList className="max-h-[60vh]">
         {matchedPages.length === 0 && dataResults.length === 0 && !isFetching && (
           <CommandEmpty>Tidak ada hasil. Coba kata kunci lain.</CommandEmpty>
         )}
@@ -108,9 +108,13 @@ export const CommandPalette: React.FC = () => {
                 key={p.path}
                 value={`page-${p.path}-${p.label}`}
                 onSelect={() => goToPage(p.path)}
+                className="gap-3"
               >
-                <ArrowRight className="opacity-50" />
-                <span>{p.label}</span>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+                <span className="flex-1">{p.label}</span>
+                <span className="text-xs text-muted-foreground">Buka halaman</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -131,8 +135,11 @@ export const CommandPalette: React.FC = () => {
                       key={item.id}
                       value={`data-${item.id}-${item.title}`}
                       onSelect={() => goToRecord(item)}
+                      className="gap-3"
                     >
-                      <Icon className="opacity-60" />
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <Icon className="h-4 w-4" />
+                      </span>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate">{item.title}</span>
                         <span className="truncate text-xs text-muted-foreground">{item.subtitle}</span>

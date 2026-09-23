@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -93,22 +94,38 @@ export function CreditFormFields<V extends Record<string, any>>({
                 />
               </div>
             );
-          case 'select':
+          case 'select': {
+            // Daftar panjang (mis. Jenis Kredit, Sektor Ekonomi) pakai dropdown
+            // yang bisa diketik; daftar pendek tetap dropdown biasa supaya tidak
+            // ada kotak cari yang mubazir.
+            const panjang = f.options.length > 6;
             return (
               <div className="space-y-2" key={f.key}>
                 {labelNode}
-                <Select value={(values[f.key] as string) ?? ''} onValueChange={(v) => setField(f.key, v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={f.placeholder || `Pilih ${f.label.toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {f.options.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {panjang ? (
+                  <SearchableSelect
+                    id={f.key}
+                    value={(values[f.key] as string) ?? ''}
+                    onValueChange={(v) => setField(f.key, v)}
+                    options={f.options}
+                    placeholder={f.placeholder || `Pilih ${f.label.toLowerCase()}`}
+                    searchPlaceholder={`Cari ${f.label.toLowerCase()}...`}
+                  />
+                ) : (
+                  <Select value={(values[f.key] as string) ?? ''} onValueChange={(v) => setField(f.key, v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={f.placeholder || `Pilih ${f.label.toLowerCase()}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {f.options.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             );
+          }
           case 'checkbox':
             return (
               <div className="flex items-center space-x-2" key={f.key}>

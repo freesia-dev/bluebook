@@ -9,7 +9,16 @@ import { fmtRp, fmtNumber, SKEMA_LABELS, SEGMEN_LABELS, SEGMEN_BADGE_CLASS, norm
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BandingkanSimulasiDialog } from '@/components/kalkulator/BandingkanSimulasiDialog';
-import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2, Calculator, Columns3 } from 'lucide-react';
+import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2, Calculator, Columns3, MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -387,6 +396,118 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
   catatKejadian('export', { format: 'pdf' });
 };
 
+interface AksiProps {
+  s: LoanSimulationRow;
+  canEdit: boolean;
+  onLihat: (s: LoanSimulationRow) => void;
+  onHitungBaru: (s: LoanSimulationRow) => void;
+  onEdit: (s: LoanSimulationRow) => void;
+  onBatal: (s: LoanSimulationRow) => void;
+  onUndo: (s: LoanSimulationRow) => void;
+  onJpg: (s: LoanSimulationRow) => void;
+  onExcel: (s: LoanSimulationRow) => void;
+  onPdf: (s: LoanSimulationRow) => void;
+  onHapus: (s: LoanSimulationRow) => void;
+}
+
+/**
+ * Aksi per baris yang ringkas — sama polanya dengan tabel-tabel lain di
+ * Bluebook: dua tombol yang paling sering dipakai langsung terlihat (Lihat &
+ * Hitung baru), sisanya masuk menu "⋯", dan Hapus selalu paling bawah berwarna
+ * merah supaya tidak kepencet saat buru-buru.
+ */
+const AksiSimulasi: React.FC<AksiProps> = ({
+  s, canEdit, onLihat, onHitungBaru, onEdit, onBatal, onUndo, onJpg, onExcel, onPdf, onHapus,
+}) => (
+  <div className="flex items-center justify-end gap-0.5">
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary"
+          onClick={() => onLihat(s)}
+          aria-label="Lihat detail"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Lihat detail</TooltipContent>
+    </Tooltip>
+
+    {canEdit && (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            onClick={() => onHitungBaru(s)}
+            aria-label="Hitung baru dari data ini"
+          >
+            <Calculator className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Hitung baru dari data ini</TooltipContent>
+      </Tooltip>
+    )}
+
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted"
+          aria-label="Aksi lain"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        {canEdit && (
+          <DropdownMenuItem onClick={() => onEdit(s)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit simulasi
+          </DropdownMenuItem>
+        )}
+        {canEdit &&
+          (isCancelled(s) ? (
+            <DropdownMenuItem onClick={() => onUndo(s)}>
+              <Undo2 className="mr-2 h-4 w-4" /> Batalkan pembatalan
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => onBatal(s)}>
+              <Ban className="mr-2 h-4 w-4" /> Batalkan simulasi
+            </DropdownMenuItem>
+          ))}
+        {canEdit && <DropdownMenuSeparator />}
+        <DropdownMenuLabel className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Unduh
+        </DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => onJpg(s)}>
+          <ImageIcon className="mr-2 h-4 w-4" /> Gambar (JPG)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onExcel(s)}>
+          <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onPdf(s)}>
+          <FileText className="mr-2 h-4 w-4" /> PDF
+        </DropdownMenuItem>
+        {canEdit && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+              onClick={() => onHapus(s)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Hapus
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+);
+
 const RiwayatPage: React.FC = () => {
   const { data = [], isLoading } = useLoanSimulations();
   const qc = useQueryClient();
@@ -533,7 +654,84 @@ const RiwayatPage: React.FC = () => {
               className="pl-9"
             />
           </div>
-          <Table>
+          {/* Kartu — tampilan HP/PWA */}
+          <div className="space-y-3 md:hidden">
+            {isLoading && <p className="py-8 text-center text-muted-foreground">Memuat...</p>}
+            {!isLoading && rows.length === 0 && (
+              <p className="py-8 text-center text-muted-foreground">
+                {search ? 'Tidak ada simulasi yang cocok dengan pencarian' : 'Belum ada simulasi tersimpan'}
+              </p>
+            )}
+            {rows.map((s) => (
+              <div
+                key={s.id}
+                className={`rounded-xl border bg-card p-4 shadow-sm ${isCancelled(s) ? 'opacity-70' : ''}`}
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    className="mt-1"
+                    checked={pilihan.includes(s.id)}
+                    onCheckedChange={() => togglePilih(s.id)}
+                    aria-label={`Pilih ${s.nama_debitur} untuk dibandingkan`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-semibold leading-snug ${isCancelled(s) ? 'line-through' : ''}`}>
+                      {s.nama_debitur}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {new Date(s.created_at).toLocaleDateString('id-ID')} · {s.created_by_nama || '-'}
+                    </p>
+                  </div>
+                  <AksiSimulasi
+                    s={s}
+                    canEdit={canEdit}
+                    onLihat={setDetail}
+                    onHitungBaru={handleHitungBaru}
+                    onEdit={(row) => navigate(`/kalkulator?edit=${row.id}`)}
+                    onBatal={setCancelTarget}
+                    onUndo={handleUndoCancel}
+                    onJpg={handleExportJpg}
+                    onExcel={exportRowToExcel}
+                    onPdf={exportRowToPDF}
+                    onHapus={(row) => handleDelete(row.id)}
+                  />
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className={`text-[10px] ${SEGMEN_BADGE_CLASS[normalizeSegmen(s.segmen)]}`}>
+                    {SEGMEN_LABELS[normalizeSegmen(s.segmen)]}
+                  </Badge>
+                  <StageBadge status={s.pipeline_status} note={s.pipeline_note} />
+                </div>
+                <p className="mt-2 text-sm">{s.product_nama || '-'}</p>
+                <p className="text-[11px] text-muted-foreground">{SKEMA_LABELS[s.skema as LoanSkema] ?? s.skema}</p>
+
+                <dl className="mt-3 space-y-1.5 border-t pt-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-xs text-muted-foreground">Plafon</dt>
+                    <dd className="text-sm font-medium tabular-nums">{fmtRp(s.plafon)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-xs text-muted-foreground">Tenor</dt>
+                    <dd className="text-sm tabular-nums">{s.tenor_bulan} bln</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-xs text-muted-foreground">Angsuran</dt>
+                    <dd className="text-sm font-semibold tabular-nums">
+                      {fmtRp(s.hasil_ringkasan?.angsuranPertama ?? 0)}
+                    </dd>
+                  </div>
+                </dl>
+
+                {isCancelled(s) && s.pipeline_note && (
+                  <p className="mt-2 text-[11px] text-muted-foreground">Alasan batal: {s.pipeline_note}</p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Tabel — tampilan layar lebar */}
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10" aria-label="Pilih untuk dibandingkan" />
@@ -544,21 +742,20 @@ const RiwayatPage: React.FC = () => {
                 <TableHead>Tenor</TableHead>
                 <TableHead className="text-right">Angsuran</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Dibuat oleh</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Memuat...
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     {search ? 'Tidak ada simulasi yang cocok dengan pencarian' : 'Belum ada simulasi tersimpan'}
                   </TableCell>
                 </TableRow>
@@ -573,7 +770,12 @@ const RiwayatPage: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>{new Date(s.created_at).toLocaleDateString('id-ID')}</TableCell>
-                  <TableCell className={`font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</TableCell>
+                  <TableCell>
+                    <span className={`block font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</span>
+                    {s.created_by_nama && (
+                      <span className="block text-[11px] text-muted-foreground">oleh {s.created_by_nama}</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className={`text-[10px] ${SEGMEN_BADGE_CLASS[normalizeSegmen(s.segmen)]}`}>
@@ -596,49 +798,20 @@ const RiwayatPage: React.FC = () => {
                       </p>
                     )}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{s.created_by_nama || '-'}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => setDetail(s)} title="Lihat detail">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {canEdit && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleHitungBaru(s)}
-                        title="Hitung baru dari data ini"
-                      >
-                        <Calculator className="w-4 h-4 text-primary" />
-                      </Button>
-                    )}
-                    {canEdit && (
-                      <Button size="icon" variant="ghost" onClick={() => navigate(`/kalkulator?edit=${s.id}`)} title="Edit simulasi">
-                        <Pencil className="w-4 h-4 text-blue-600" />
-                      </Button>
-                    )}
-                    {canEdit && (isCancelled(s) ? (
-                      <Button size="icon" variant="ghost" onClick={() => handleUndoCancel(s)} title="Undo pembatalan">
-                        <Undo2 className="w-4 h-4 text-emerald-600" />
-                      </Button>
-                    ) : (
-                      <Button size="icon" variant="ghost" onClick={() => setCancelTarget(s)} title="Batalkan simulasi">
-                        <Ban className="w-4 h-4 text-rose-500" />
-                      </Button>
-                    ))}
-                    <Button size="icon" variant="ghost" onClick={() => handleExportJpg(s)} title="Export JPG">
-                      <ImageIcon className="w-4 h-4 text-amber-600" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => exportRowToExcel(s)} title="Export Excel">
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => exportRowToPDF(s)} title="Export PDF">
-                      <FileText className="w-4 h-4 text-rose-600" />
-                    </Button>
-                    {canEdit && (
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(s.id)} title="Hapus">
-                        <Trash2 className="w-4 h-4 text-rose-600" />
-                      </Button>
-                    )}
+                    <AksiSimulasi
+                      s={s}
+                      canEdit={canEdit}
+                      onLihat={setDetail}
+                      onHitungBaru={handleHitungBaru}
+                      onEdit={(row) => navigate(`/kalkulator?edit=${row.id}`)}
+                      onBatal={setCancelTarget}
+                      onUndo={handleUndoCancel}
+                      onJpg={handleExportJpg}
+                      onExcel={exportRowToExcel}
+                      onPdf={exportRowToPDF}
+                      onHapus={(row) => handleDelete(row.id)}
+                    />
                   </TableCell>
                 </TableRow>
 

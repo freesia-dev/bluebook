@@ -26,7 +26,10 @@ interface CommandDialogProps extends DialogProps {}
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
+      {/* Lebih lebar & sedikit lebih ke atas supaya daftar hasilnya kebaca
+          banyak sekaligus; tombol X bawaan disembunyikan karena kotak ini sudah
+          punya petunjuk Esc di bawahnya. */}
+      <DialogContent className="top-[12vh] max-w-2xl translate-y-0 overflow-hidden p-0 shadow-2xl [&>button.absolute]:hidden">
         <DialogTitle className="sr-only">Command bar</DialogTitle>
         <DialogDescription className="sr-only">Cari halaman atau data, lalu tekan Enter.</DialogDescription>
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
