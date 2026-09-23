@@ -25,6 +25,7 @@ import {
 import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
 import { SimulasiPreviewDialog } from '@/components/kalkulator/SimulasiPreviewDialog';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
+import { catatKejadian } from '@/lib/wrapped-events';
 
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -217,6 +218,7 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ang), 'Tabel Angsuran');
   }
   XLSX.writeFile(wb, `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.xlsx`);
+  catatKejadian('export', { format: 'excel' });
 };
 
 const exportRowToPDF = async (s: LoanSimulationRow) => {
@@ -382,6 +384,7 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
   }
 
   doc.save(`Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.pdf`);
+  catatKejadian('export', { format: 'pdf' });
 };
 
 const RiwayatPage: React.FC = () => {
@@ -498,6 +501,7 @@ const RiwayatPage: React.FC = () => {
       const blob = await canvasToJpegBlob(canvas);
       // lewat downloadBlob supaya tetap ter-download di mode PWA (installed app)
       downloadBlob(blob, `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.jpg`);
+      catatKejadian('export', { format: 'jpg' });
       toast({ title: 'Gambar simulasi diunduh' });
     } catch (e: any) {
       toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });

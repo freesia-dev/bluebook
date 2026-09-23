@@ -69,6 +69,7 @@ import { SimulasiCard } from '@/components/kalkulator/SimulasiCard';
 import { DebiturSuggestions } from '@/components/kalkulator/DebiturSuggestions';
 import { bacaNik } from '@/lib/nik';
 import { useFormDraft, hapusDraf } from '@/hooks/use-form-draft';
+import { catatKejadian } from '@/lib/wrapped-events';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
 import { useAuth } from '@/contexts/AuthContext';
 import logoBpd from '@/assets/logo-bankaltimtara.png';
@@ -594,6 +595,7 @@ const KalkulatorPage: React.FC = () => {
         await save.mutateAsync(payload);
         // Sudah aman tersimpan di server → draf lokal tidak diperlukan lagi
         hapusDraf('kalkulator');
+        catatKejadian('simulasi_simpan', { segmen, skema });
         toast({ title: 'Simulasi tersimpan' });
       }
     } catch (e: any) {

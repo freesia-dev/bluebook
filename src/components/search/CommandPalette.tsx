@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isRouteAllowedFor } from '@/lib/role-permissions';
 import { COMMAND_PAGES } from '@/lib/command-pages';
 import { useGlobalDataSearch } from '@/hooks/use-global-data-search';
+import { catatKejadian } from '@/lib/wrapped-events';
 
 /** Tampilan tombol keyboard di penunjuk bawah command bar. */
 const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -44,7 +45,10 @@ export const CommandPalette: React.FC = () => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((o) => !o);
+        setOpen((o) => {
+          if (!o) catatKejadian('command_palette');
+          return !o;
+        });
       }
     };
     document.addEventListener('keydown', down);

@@ -16,6 +16,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PresenceBar } from '@/components/presence/PresenceBar';
 import { ErrorBoundary, PageErrorFallback, SilentBoundary } from '@/components/ErrorBoundary';
 import { HeaderBreadcrumb } from './HeaderBreadcrumb';
+import { catatBukaHarian } from '@/lib/wrapped-events';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -49,6 +50,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       return next;
     });
   };
+
+  // Catat sekali per hari bahwa user membuka Bluebook (bahan runtutan hari di Wrapped)
+  useEffect(() => {
+    if (isAuthenticated) catatBukaHarian();
+  }, [isAuthenticated]);
 
   // Update sidebar state on window resize
   useEffect(() => {
