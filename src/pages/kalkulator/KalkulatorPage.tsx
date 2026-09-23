@@ -68,6 +68,7 @@ import html2canvas from 'html2canvas';
 import { SimulasiCard } from '@/components/kalkulator/SimulasiCard';
 import { DebiturSuggestions } from '@/components/kalkulator/DebiturSuggestions';
 import { bacaNik } from '@/lib/nik';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useFormDraft, hapusDraf } from '@/hooks/use-form-draft';
 import { catatKejadian } from '@/lib/wrapped-events';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
@@ -1171,14 +1172,16 @@ const KalkulatorPage: React.FC = () => {
                   </div>
                   <div>
                     <Label>Pilihan Karir</Label>
-                    <Select value={pilihanKarir} onValueChange={setPilihanKarir}>
-                      <SelectTrigger><SelectValue placeholder="Pilih karir" /></SelectTrigger>
-                      <SelectContent>
-                        {(pensionRules.length ? pensionRules.map((r) => r.pilihan_karir) : PILIHAN_KARIR_DEFAULT).map((k) => (
-                          <SelectItem key={k} value={k}>{k}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={pilihanKarir}
+                      onValueChange={setPilihanKarir}
+                      placeholder="Pilih karir"
+                      searchPlaceholder="Cari pilihan karir..."
+                      options={(pensionRules.length ? pensionRules.map((r) => r.pilihan_karir) : PILIHAN_KARIR_DEFAULT).map((k) => ({
+                        value: k,
+                        label: k,
+                      }))}
+                    />
                   </div>
                   {jenisPPPK && (
                     <div>
@@ -1223,16 +1226,16 @@ const KalkulatorPage: React.FC = () => {
                   <div className="md:col-span-2">
                     <Label>Nama AO</Label>
                     {aoList.length ? (
-                      <Select value={namaAo} onValueChange={setNamaAo}>
-                        <SelectTrigger><SelectValue placeholder="Pilih AO" /></SelectTrigger>
-                        <SelectContent>
-                          {aoList.map((a) => (
-                            <SelectItem key={a.id} value={a.nama}>
-                              {a.nama}{a.jabatan ? ` — ${a.jabatan}` : ''}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={namaAo}
+                        onValueChange={setNamaAo}
+                        placeholder="Pilih AO"
+                        searchPlaceholder="Cari nama AO..."
+                        options={aoList.map((a) => ({
+                          value: a.nama,
+                          label: `${a.nama}${a.jabatan ? ` — ${a.jabatan}` : ''}`,
+                        }))}
+                      />
                     ) : (
                       <Input value={namaAo} onChange={(e) => setNamaAo(e.target.value)} placeholder="Daftar AO belum diatur di konfigurasi" />
                     )}
@@ -1248,22 +1251,18 @@ const KalkulatorPage: React.FC = () => {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <Label>Produk Kredit</Label>
-                    <Select value={productId} onValueChange={setProductId}>
-                      <SelectTrigger><SelectValue placeholder="Pilih produk" /></SelectTrigger>
-                      <SelectContent>
-                        {products.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            <span className="flex items-center gap-2">
-                              <Badge variant="outline" className={`text-[10px] ${SEGMEN_BADGE_CLASS[normalizeSegmen(p.segmen)]}`}>
-                                {SEGMEN_LABELS[normalizeSegmen(p.segmen)]}
-                              </Badge>
-                              {p.nama}
-                              <span className="text-muted-foreground">— {SKEMA_LABELS[p.skema as LoanSkema] ?? p.skema}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={productId}
+                      onValueChange={setProductId}
+                      placeholder="Pilih produk"
+                      searchPlaceholder="Cari produk, skema, atau segmen..."
+                      options={products.map((p) => ({
+                        value: p.id,
+                        label: `${p.nama} — ${SKEMA_LABELS[p.skema as LoanSkema] ?? p.skema}`,
+                        // segmen ikut dicari walau tidak ditulis di label
+                        keywords: SEGMEN_LABELS[normalizeSegmen(p.segmen)],
+                      }))}
+                    />
                   </div>
                   <div>
                     <Label>Plafon Pengajuan</Label>
