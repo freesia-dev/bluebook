@@ -167,6 +167,20 @@ const Flyout: React.FC<{
   );
 };
 
+/**
+ * Garis biru tipis di sisi kiri menu yang sedang dibuka. Sebelumnya menu aktif
+ * hanya dibedakan lewat latar samar, yang sulit terlihat di sidebar gelap.
+ */
+const PenandaAktif: React.FC<{ pendek?: boolean }> = ({ pendek }) => (
+  <span
+    aria-hidden
+    className={cn(
+      'absolute left-0 top-1/2 w-[3px] -translate-y-1/2 rounded-r-full bg-sidebar-primary',
+      pendek ? 'h-6' : 'h-7',
+    )}
+  />
+);
+
 const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, isActive, collapsed, onNavigate, openGroup, setOpenGroup }) => {
   const location = useLocation();
   // Auto-expand if any (nested) child is active
@@ -227,6 +241,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
         onMouseEnter={openFlyout}
         onMouseLeave={closeFlyout}
       >
+        {active && <PenandaAktif pendek />}
         {children ? (
           <button className="w-full">{iconBox}</button>
         ) : (
@@ -252,13 +267,16 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
       <div>
         <button
           onClick={() => setOpenGroup?.(isOpen ? null : label)}
+          title={label}
+          aria-expanded={isOpen}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 glass-item",
+            "relative w-full flex items-center gap-3 px-4 py-3 glass-item",
             "text-sidebar-foreground",
             hasActiveChild && "bg-white/5 border-white/10"
           )}
         >
-          <Icon className="w-5 h-5 opacity-90 shrink-0" />
+          {hasActiveChild && <PenandaAktif />}
+          <Icon className={cn("w-5 h-5 opacity-90 shrink-0", hasActiveChild && "text-sidebar-primary opacity-100")} />
           <span className="flex-1 text-left font-medium text-sm truncate">{label}</span>
           <ChevronDown className={cn("w-4 h-4 opacity-60 transition-transform", isOpen && "rotate-180")} />
         </button>
@@ -273,6 +291,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
                   key={child.href || `${child.label}-${idx}`}
                   to={child.href!}
                   onClick={onNavigate}
+                  title={child.label}
+                  aria-current={location.pathname === child.href ? 'page' : undefined}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 text-sm glass-item",
                     "text-sidebar-foreground/70 hover:text-sidebar-foreground",
@@ -297,12 +317,15 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, href, children, is
     <Link
       to={href || '/'}
       onClick={onNavigate}
+      title={label}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 glass-item",
+        "relative flex items-center gap-3 px-4 py-3 glass-item",
         "text-sidebar-foreground",
         isActive && "glass-item-active font-semibold"
       )}
     >
+      {isActive && <PenandaAktif />}
       <Icon className={cn("w-5 h-5 opacity-90 shrink-0", isActive && "text-sidebar-primary opacity-100")} />
       <span className="font-medium text-sm truncate">{label}</span>
     </Link>

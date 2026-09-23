@@ -7,6 +7,7 @@ import { Menu, Eye, Pin, PinOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { FontSizeToggle } from '@/components/FontSizeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { isRouteAllowedFor } from '@/lib/role-permissions';
@@ -14,6 +15,8 @@ import { isRouteAllowedFor } from '@/lib/role-permissions';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PresenceBar } from '@/components/presence/PresenceBar';
 import { ErrorBoundary, PageErrorFallback, SilentBoundary } from '@/components/ErrorBoundary';
+import { HeaderBreadcrumb } from './HeaderBreadcrumb';
+import { catatBukaHarian } from '@/lib/wrapped-events';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -48,12 +51,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     });
   };
 
+  // Catat sekali per hari bahwa user membuka Bluebook (bahan runtutan hari di Wrapped)
+  useEffect(() => {
+    if (isAuthenticated) catatBukaHarian();
+  }, [isAuthenticated]);
+
   // Update sidebar state on window resize
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      }
+      // Di bawah lg sidebar jadi panel melayang yang menutupi isi halaman,
+      // jadi saat layar mengecil (putar HP / perkecil jendela) ia ditutup.
+      setSidebarOpen(window.innerWidth >= 1024);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -88,7 +96,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* Header with menu button */}
       <header className={cn(
         "fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300",
-        sidebarOpen ? "left-64" : "left-0 lg:left-[76px]"
+        // Di HP sidebar berupa panel melayang, jadi header tidak ikut bergeser
+        sidebarOpen ? "left-0 lg:left-64" : "left-0 lg:left-[76px]"
       )}>
         <div className="flex items-center gap-3">
           <Button 
@@ -115,13 +124,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {pinned ? 'Sidebar dipin (tidak auto-tutup)' : 'Pin sidebar agar tidak auto-tutup'}
             </TooltipContent>
           </Tooltip>
-          <h1 className="font-display font-bold text-lg hidden sm:block">Bluebook Telihan</h1>
+          {/* Layar lebar: jejak halaman. HP/tablet: judul aplikasi saja. */}
+          <h1 className="hidden font-display text-lg font-bold sm:block lg:hidden">Bluebook Telihan</h1>
+          <HeaderBreadcrumb />
         </div>
 
         <div className="flex items-center gap-2">
           <SilentBoundary name="presence-bar"><PresenceBar /></SilentBoundary>
           <GlobalSearch />
           <NotificationBell />
+          <FontSizeToggle />
           <ThemeToggle />
         </div>
       </header>

@@ -412,3 +412,11 @@
     page-break-before: always;
   }
 }
+
+/* ── Mode huruf besar ────────────────────────────────────────────────────────
+   Semua ukuran teks Tailwind memakai satuan rem, jadi cukup menaikkan ukuran
+   huruf dasar di <html> — tata letak ikut menyesuaikan sendiri tanpa perlu
+   mengubah kelas di ratusan tempat. Dipasang oleh <FontSizeToggle />. */
+html[data-huruf='besar'] {
+  font-size: 18px; /* dari 16px bawaan → semua teks naik ~12,5% */
+}

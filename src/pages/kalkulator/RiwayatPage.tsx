@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useLoanSimulations, useDeleteLoanSimulation, useUpdatePipelineStage, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { fmtRp, fmtNumber, SKEMA_LABELS, SEGMEN_LABELS, SEGMEN_BADGE_CLASS, normalizeSegmen, type LoanSkema } from '@/lib/loan-calc';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BandingkanSimulasiDialog } from '@/components/kalkulator/BandingkanSimulasiDialog';
+import { Search, Trash2, Eye, ArrowLeft, FileSpreadsheet, FileText, Pencil, Image as ImageIcon, Ban, Undo2, Calculator, Columns3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +25,7 @@ import {
 import { SimulasiCard, type SimulasiCardData } from '@/components/kalkulator/SimulasiCard';
 import { SimulasiPreviewDialog } from '@/components/kalkulator/SimulasiPreviewDialog';
 import { downloadBlob, canvasToJpegBlob } from '@/lib/download';
+import { catatKejadian } from '@/lib/wrapped-events';
 
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -215,6 +218,7 @@ const exportRowToExcel = (s: LoanSimulationRow) => {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ang), 'Tabel Angsuran');
   }
   XLSX.writeFile(wb, `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.xlsx`);
+  catatKejadian('export', { format: 'excel' });
 };
 
 const exportRowToPDF = async (s: LoanSimulationRow) => {
@@ -380,6 +384,7 @@ const exportRowToPDF = async (s: LoanSimulationRow) => {
   }
 
   doc.save(`Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.pdf`);
+  catatKejadian('export', { format: 'pdf' });
 };
 
 const RiwayatPage: React.FC = () => {
@@ -429,6 +434,25 @@ const RiwayatPage: React.FC = () => {
   const [detail, setDetail] = useState<LoanSimulationRow | null>(null);
   const [cancelTarget, setCancelTarget] = useState<LoanSimulationRow | null>(null);
   const [jpgTarget, setJpgTarget] = useState<LoanSimulationRow | null>(null);
+  // Simulasi yang dicentang untuk dibandingkan (maksimal 3 supaya tetap terbaca)
+  const [pilihan, setPilihan] = useState<string[]>([]);
+  const [bandingkanOn, setBandingkanOn] = useState(false);
+  const MAKS_BANDING = 3;
+
+  const togglePilih = (id: string) =>
+    setPilihan((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= MAKS_BANDING) {
+        toast({ title: `Maksimal ${MAKS_BANDING} simulasi sekaligus`, description: 'Lepas centang salah satu dulu.' });
+        return prev;
+      }
+      return [...prev, id];
+    });
+
+  const rowsDibandingkan = useMemo(
+    () => pilihan.map((id) => data.find((s) => s.id === id)).filter(Boolean) as LoanSimulationRow[],
+    [pilihan, data],
+  );
   const jpgRef = useRef<HTMLDivElement>(null);
   const detailCardData = useMemo(() => (detail ? rowToCardData(detail) : null), [detail]);
 
@@ -445,6 +469,15 @@ const RiwayatPage: React.FC = () => {
     toast({ title: 'Pembatalan dibatalkan', description: `${s.nama_debitur} dikembalikan ke tahap sebelumnya.` });
   };
 
+
+  /**
+   * Pakai ulang data debitur untuk hitungan baru — sering kepakai saat PNS yang
+   * sama datang lagi minta dihitung produk lain. Simulasi lama tidak disentuh.
+   */
+  const handleHitungBaru = (s: LoanSimulationRow) => {
+    setDetail(null);
+    navigate(`/kalkulator?dari=${s.id}`);
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus simulasi ini?')) return;
@@ -468,6 +501,7 @@ const RiwayatPage: React.FC = () => {
       const blob = await canvasToJpegBlob(canvas);
       // lewat downloadBlob supaya tetap ter-download di mode PWA (installed app)
       downloadBlob(blob, `Simulasi_${s.nama_debitur.replace(/\s+/g, '_')}_${s.id.slice(0, 8)}.jpg`);
+      catatKejadian('export', { format: 'jpg' });
       toast({ title: 'Gambar simulasi diunduh' });
     } catch (e: any) {
       toast({ title: 'Gagal membuat gambar', description: e.message, variant: 'destructive' });
@@ -502,6 +536,7 @@ const RiwayatPage: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10" aria-label="Pilih untuk dibandingkan" />
                 <TableHead>Tanggal</TableHead>
                 <TableHead>Nama Debitur</TableHead>
                 <TableHead>Produk</TableHead>
@@ -516,20 +551,27 @@ const RiwayatPage: React.FC = () => {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     Memuat...
                   </TableCell>
                 </TableRow>
               )}
               {!isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     {search ? 'Tidak ada simulasi yang cocok dengan pencarian' : 'Belum ada simulasi tersimpan'}
                   </TableCell>
                 </TableRow>
               )}
               {rows.map((s) => (
                 <TableRow key={s.id} className={isCancelled(s) ? 'opacity-70' : ''}>
+                  <TableCell className="w-10">
+                    <Checkbox
+                      checked={pilihan.includes(s.id)}
+                      onCheckedChange={() => togglePilih(s.id)}
+                      aria-label={`Pilih ${s.nama_debitur} untuk dibandingkan`}
+                    />
+                  </TableCell>
                   <TableCell>{new Date(s.created_at).toLocaleDateString('id-ID')}</TableCell>
                   <TableCell className={`font-medium ${isCancelled(s) ? 'line-through' : ''}`}>{s.nama_debitur}</TableCell>
                   <TableCell>
@@ -559,6 +601,16 @@ const RiwayatPage: React.FC = () => {
                     <Button size="icon" variant="ghost" onClick={() => setDetail(s)} title="Lihat detail">
                       <Eye className="w-4 h-4" />
                     </Button>
+                    {canEdit && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleHitungBaru(s)}
+                        title="Hitung baru dari data ini"
+                      >
+                        <Calculator className="w-4 h-4 text-primary" />
+                      </Button>
+                    )}
                     {canEdit && (
                       <Button size="icon" variant="ghost" onClick={() => navigate(`/kalkulator?edit=${s.id}`)} title="Edit simulasi">
                         <Pencil className="w-4 h-4 text-blue-600" />
@@ -596,6 +648,28 @@ const RiwayatPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Bilah pembanding — menempel di bawah layar begitu ada yang dicentang */}
+      {pilihan.length > 0 && (
+        <div className="sticky bottom-4 z-20 mt-4 flex flex-wrap items-center gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur">
+          <span className="text-sm">
+            <span className="font-semibold">{pilihan.length}</span> simulasi dipilih
+            {pilihan.length < 2 && <span className="text-muted-foreground"> — pilih 1 lagi untuk membandingkan</span>}
+          </span>
+          <div className="flex-1" />
+          <Button variant="ghost" size="sm" onClick={() => setPilihan([])}>
+            Bersihkan
+          </Button>
+          <Button size="sm" disabled={pilihan.length < 2} onClick={() => setBandingkanOn(true)}>
+            <Columns3 className="mr-2 h-4 w-4" /> Bandingkan
+          </Button>
+        </div>
+      )}
+
+      <BandingkanSimulasiDialog
+        rows={bandingkanOn ? rowsDibandingkan : []}
+        onOpenChange={(o) => !o && setBandingkanOn(false)}
+      />
+
       <CancelSimulationDialog
         row={cancelTarget}
         onOpenChange={(o) => !o && setCancelTarget(null)}
@@ -611,6 +685,7 @@ const RiwayatPage: React.FC = () => {
         onExportJpg={handleExportJpg}
         onExportExcel={exportRowToExcel}
         onExportPdf={exportRowToPDF}
+        onHitungBaru={canEdit ? handleHitungBaru : undefined}
       />
 
       {/* Off-screen JPG card — memakai tema yang sama dengan pratinjau */}

@@ -48,6 +48,32 @@ import {
 
 const COLORS = ['hsl(217, 91%, 45%)', 'hsl(45, 93%, 47%)', 'hsl(142, 76%, 36%)'];
 
+/** Berapa bulan terakhir yang digambar di grafik mini kartu statistik. */
+const BULAN_SPARKLINE = 6;
+
+/** Jumlah data per bulan untuk 6 bulan terakhir (urut: paling lama → bulan ini). */
+function riwayatBulanan(items?: { createdAt: Date }[]): number[] {
+  const sekarang = new Date();
+  const ember = new Array<number>(BULAN_SPARKLINE).fill(0);
+  (items ?? []).forEach((it) => {
+    const d = it?.createdAt;
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return;
+    const selisih = (sekarang.getFullYear() - d.getFullYear()) * 12 + (sekarang.getMonth() - d.getMonth());
+    if (selisih >= 0 && selisih < BULAN_SPARKLINE) ember[BULAN_SPARKLINE - 1 - selisih] += 1;
+  });
+  return ember;
+}
+
+/** Perubahan bulan ini dibanding bulan lalu, untuk ditampilkan di kartu. */
+function trenBulanan(data: number[]) {
+  const ini = data[data.length - 1] ?? 0;
+  const lalu = data[data.length - 2] ?? 0;
+  // Bulan lalu nol → persentasenya tidak bermakna, lebih baik tidak ditampilkan
+  if (!lalu) return undefined;
+  const pct = ((ini - lalu) / lalu) * 100;
+  return { value: pct, isPositive: pct >= 0, suffix: '% dari bulan lalu' };
+}
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -151,6 +177,15 @@ const Dashboard: React.FC = () => {
   // Memoize computed values
   const totalAgendaKredit = useMemo(() => counts.sppk + counts.pk + counts.kkmpak, [counts]);
 
+  // Grafik mini + tren bulanan untuk kartu Ringkasan Dokumen
+  const spark = useMemo(() => {
+    const masuk = riwayatBulanan(suratMasuk as any);
+    const keluar = riwayatBulanan(suratKeluar as any);
+    const kredit = riwayatBulanan([...(sppk as any ?? []), ...(pk as any ?? []), ...(kkmpak as any ?? [])]);
+    const semua = masuk.map((v, i) => v + keluar[i] + kredit[i]);
+    return { masuk, keluar, kredit, semua };
+  }, [suratMasuk, suratKeluar, sppk, pk, kkmpak]);
+
   const barChartData = useMemo(() => [
     { name: 'Surat Masuk', value: counts.suratMasuk, fill: 'hsl(217, 91%, 45%)' },
     { name: 'Surat Keluar', value: counts.suratKeluar, fill: 'hsl(45, 93%, 47%)' },
@@ -234,10 +269,38 @@ const Dashboard: React.FC = () => {
       defaultSize: 'l',
       render: () => (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 content-start">
-          <StatCard title="Surat Masuk" value={counts.suratMasuk} icon={Mail} variant="primary" />
-          <StatCard title="Surat Keluar" value={counts.suratKeluar} icon={Send} variant="secondary" />
-          <StatCard title="Agenda Kredit" value={totalAgendaKredit} icon={CreditCard} variant="success" />
-          <StatCard title="Total Dokumen" value={counts.suratMasuk + counts.suratKeluar + totalAgendaKredit} icon={FileText} variant="warning" />
+          <StatCard
+            title="Surat Masuk"
+            value={counts.suratMasuk}
+            icon={Mail}
+            tint="blue"
+            sparkline={spark.masuk}
+            trend={trenBulanan(spark.masuk)}
+          />
+          <StatCard
+            title="Surat Keluar"
+            value={counts.suratKeluar}
+            icon={Send}
+            tint="sky"
+            sparkline={spark.keluar}
+            trend={trenBulanan(spark.keluar)}
+          />
+          <StatCard
+            title="Agenda Kredit"
+            value={totalAgendaKredit}
+            icon={CreditCard}
+            tint="emerald"
+            sparkline={spark.kredit}
+            trend={trenBulanan(spark.kredit)}
+          />
+          <StatCard
+            title="Total Dokumen"
+            value={counts.suratMasuk + counts.suratKeluar + totalAgendaKredit}
+            icon={FileText}
+            tint="violet"
+            sparkline={spark.semua}
+            trend={trenBulanan(spark.semua)}
+          />
         </div>
       ),
     },
@@ -492,7 +555,7 @@ const Dashboard: React.FC = () => {
                 variant="primary"
                 description={ojkStats.diajukan > 0 ? `${ojkStats.diajukan} menunggu aksi` : undefined}
               />
-              <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} variant="warning" />
+              <StatCard title="Diproses" value={ojkStats.diproses} icon={Loader2} tint="amber" attention={ojkStats.diproses > 0} />
               <StatCard title="Disetujui" value={ojkStats.selesai} icon={CheckCircle2} variant="success" />
               <StatCard title="Ditolak" value={ojkStats.ditolak} icon={XCircle} variant="default" />
             </div>

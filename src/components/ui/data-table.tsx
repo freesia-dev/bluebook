@@ -9,7 +9,15 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Plus, Filter, Eye, Edit, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, SearchX, Inbox, Download, Plus, Filter, Eye, Edit, Trash2, X, MoreHorizontal, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
   Popover,
@@ -54,9 +62,124 @@ interface DataTableProps<T> {
   canDelete?: boolean;
   canEdit?: boolean;
   toolbarActions?: React.ReactNode;
+  /** Item tambahan untuk menu "⋯" per baris (di atas tombol Hapus). */
+  rowMenuItems?: (item: T) => React.ReactNode;
 }
 
 type SortOrder = 'asc' | 'desc' | null;
+
+/**
+ * Keadaan kosong yang ramah: bukan cuma tulisan "Tidak ada data", tapi juga
+ * penjelasan singkat dan tombol untuk langsung menambah data pertama.
+ */
+const EmptyState: React.FC<{ search: string; onAdd?: () => void; addLabel: string }> = ({ search, onAdd, addLabel }) => (
+  <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
+    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+      {search ? (
+        <SearchX className="h-6 w-6 text-muted-foreground/70" />
+      ) : (
+        <Inbox className="h-6 w-6 text-muted-foreground/70" />
+      )}
+    </div>
+    <p className="font-medium text-foreground">{search ? 'Tidak ada yang cocok' : 'Belum ada data'}</p>
+    <p className="max-w-xs text-sm text-muted-foreground">
+      {search
+        ? `Tidak ada data yang cocok dengan "${search}". Coba kata kunci lain atau hapus filternya.`
+        : 'Data yang ditambahkan akan muncul di sini.'}
+    </p>
+    {!search && onAdd && (
+      <Button size="sm" className="mt-2 gap-2" onClick={onAdd}>
+        <Plus className="h-4 w-4" /> {addLabel}
+      </Button>
+    )}
+  </div>
+);
+
+interface RowActionsProps<T> {
+  item: T;
+  onView?: (item: T) => void;
+  onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void;
+  canEdit: boolean;
+  canDelete: boolean;
+  rowMenuItems?: (item: T) => React.ReactNode;
+}
+
+/**
+ * Aksi per baris yang ringkas: Lihat & Edit langsung terlihat, sisanya masuk
+ * menu "⋯". Hapus selalu paling bawah dan berwarna merah, dipisah garis, supaya
+ * tidak kepencet saat buru-buru.
+ */
+function RowActions<T>({ item, onView, onEdit, onDelete, canEdit, canDelete, rowMenuItems }: RowActionsProps<T>) {
+  const bolehHapus = !!onDelete && canDelete;
+  const isiMenu = rowMenuItems?.(item);
+  const adaMenu = bolehHapus || !!isiMenu;
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {onView && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              onClick={() => onView(item)}
+              aria-label="Lihat detail"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Lihat detail</TooltipContent>
+        </Tooltip>
+      )}
+      {onEdit && canEdit && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              onClick={() => onEdit(item)}
+              aria-label="Edit"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Edit</TooltipContent>
+        </Tooltip>
+      )}
+      {adaMenu && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted"
+              aria-label="Aksi lain"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {isiMenu}
+            {bolehHapus && (
+              <>
+                {isiMenu ? <DropdownMenuSeparator /> : null}
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  onClick={() => onDelete!(item)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
+  );
+}
 
 export function DataTable<T extends { id: string; created_at?: string; nomor?: number }>({
   data,
@@ -72,6 +195,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
   canDelete = true,
   canEdit = true,
   toolbarActions,
+  rowMenuItems,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -332,8 +456,72 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-border/50 bg-card shadow-card overflow-hidden">
+      {/* Kartu — tampilan HP / PWA (tabel lebar tidak nyaman di layar kecil) */}
+      <div className="space-y-3 md:hidden">
+        {paginatedData.length === 0 ? (
+          <EmptyState search={debouncedSearch} onAdd={onAdd && canEdit ? onAdd : undefined} addLabel={addLabel} />
+        ) : (
+          paginatedData.map((item) => {
+            // Judul kartu sebaiknya yang bisa dibaca orang (perihal, nama, nomor
+            // surat), bukan nomor urut — nomor urutnya ditaruh sebagai label kecil.
+            const iNomor = columns.findIndex((c) => /^(no|nomor|#)$/i.test(c.header.trim()));
+            // Pilih kolom pertama yang benar-benar ada isinya, supaya judul kartu
+            // tidak berupa "-" gara-gara kolom itu memang kosong di baris ini.
+            const adaIsi = (c: Column<T>) => {
+              const v = item[c.key as keyof T];
+              return v !== null && v !== undefined && String(v).trim() !== '';
+            };
+            const iUtama = (() => {
+              const kandidat = columns.map((c, i) => ({ c, i })).filter(({ i }) => i !== iNomor);
+              return (kandidat.find(({ c }) => adaIsi(c)) ?? kandidat[0])?.i ?? 0;
+            })();
+            const utama = columns[iUtama] ?? columns[0];
+            const kolomNomor = iNomor >= 0 ? columns[iNomor] : null;
+            const sisa = columns.filter((_, i) => i !== iUtama && i !== iNomor);
+            return (
+              <div key={item.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    {kolomNomor && (
+                      <span className="mb-0.5 block text-[11px] text-muted-foreground">
+                        {kolomNomor.header}{' '}
+                        {kolomNomor.render ? kolomNomor.render(item) : String(item[kolomNomor.key as keyof T] ?? '-')}
+                      </span>
+                    )}
+                    <span className="block font-semibold leading-snug">
+                      {utama?.render ? utama.render(item) : String(item[utama?.key as keyof T] ?? '-')}
+                    </span>
+                  </div>
+                  {showActions && (
+                    <RowActions
+                      item={item}
+                      onView={onView}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      rowMenuItems={rowMenuItems}
+                    />
+                  )}
+                </div>
+                <dl className="mt-3 space-y-1.5">
+                  {sisa.map((col) => (
+                    <div key={col.key as string} className="flex items-baseline justify-between gap-3">
+                      <dt className="shrink-0 text-xs text-muted-foreground">{col.header}</dt>
+                      <dd className={cn('min-w-0 text-right text-sm', col.className?.includes('text-right') && 'tabular-nums')}>
+                        {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Tabel — tampilan layar lebar */}
+      <div className="hidden rounded-xl border border-border/50 bg-card shadow-card overflow-hidden md:block">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/60 hover:bg-muted/60 border-b-2 border-border/30">
@@ -342,7 +530,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                   {col.header}
                 </TableHead>
               ))}
-              {showActions && <TableHead className="w-[120px] text-center">Aksi</TableHead>}
+              {showActions && <TableHead className="w-[110px] text-center">Aksi</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -350,14 +538,9 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
               <TableRow className="hover:bg-transparent">
                 <TableCell 
                   colSpan={columns.length + (showActions ? 1 : 0)} 
-                  className="h-32 text-center text-muted-foreground"
+                  className="p-0"
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
-                      <Search className="w-5 h-5 text-muted-foreground/50" />
-                    </div>
-                    <span>Tidak ada data</span>
-                  </div>
+                  <EmptyState search={debouncedSearch} onAdd={onAdd && canEdit ? onAdd : undefined} addLabel={addLabel} />
                 </TableCell>
               </TableRow>
             ) : (
@@ -370,43 +553,31 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
                   )}
                 >
                   {columns.map((col) => (
-                    <TableCell key={col.key as string} className={cn("py-3.5", col.className)}>
+                    <TableCell
+                      key={col.key as string}
+                      className={cn(
+                        'py-3.5',
+                        // Kolom angka (rata kanan) pakai angka berlebar sama supaya
+                        // digit rupiah lurus dari baris ke baris
+                        col.className?.includes('text-right') && 'tabular-nums',
+                        col.className,
+                      )}
+                    >
                       {col.render ? col.render(item) : String(item[col.key as keyof T] ?? '-')}
                     </TableCell>
                   ))}
                   {showActions && (
                     <TableCell className="py-3.5">
-                      <div className="flex items-center justify-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                        {onView && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                            onClick={() => onView(item)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {onEdit && canEdit && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-warning hover:text-warning hover:bg-warning/10 transition-colors"
-                            onClick={() => onEdit(item)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {onDelete && canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => onDelete(item)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                      <div className="flex items-center justify-center">
+                        <RowActions
+                          item={item}
+                          onView={onView}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          canEdit={canEdit}
+                          canDelete={canDelete}
+                          rowMenuItems={rowMenuItems}
+                        />
                       </div>
                     </TableCell>
                   )}

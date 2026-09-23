@@ -14,6 +14,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isRouteAllowedFor } from '@/lib/role-permissions';
 import { COMMAND_PAGES } from '@/lib/command-pages';
 import { useGlobalDataSearch } from '@/hooks/use-global-data-search';
+import { catatKejadian } from '@/lib/wrapped-events';
+
+/** Tampilan tombol keyboard di penunjuk bawah command bar. */
+const Kbd: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <kbd className="rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium text-foreground">{children}</kbd>
+);
 
 /**
  * Command bar utama Bluebook (Ctrl+K / Cmd+K dari mana saja). Menggabungkan
@@ -39,7 +45,10 @@ export const CommandPalette: React.FC = () => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((o) => !o);
+        setOpen((o) => {
+          if (!o) catatKejadian('command_palette');
+          return !o;
+        });
       }
     };
     document.addEventListener('keydown', down);
@@ -139,6 +148,23 @@ export const CommandPalette: React.FC = () => {
           </CommandGroup>
         )}
       </CommandList>
+      {/* Penunjuk tombol — banyak yang tidak tahu bisa pilih pakai panah lalu Enter */}
+      <div className="hidden items-center justify-between gap-3 border-t px-3 py-2 text-[11px] text-muted-foreground sm:flex">
+        <span className="flex items-center gap-3">
+          <span>
+            <Kbd>↑</Kbd> <Kbd>↓</Kbd> pilih
+          </span>
+          <span>
+            <Kbd>Enter</Kbd> buka
+          </span>
+          <span>
+            <Kbd>Esc</Kbd> tutup
+          </span>
+        </span>
+        <span>
+          <Kbd>Ctrl</Kbd> + <Kbd>K</Kbd> dari mana saja
+        </span>
+      </div>
     </CommandDialog>
   );
 };

@@ -3,8 +3,12 @@ import App from "./App.tsx";
 import "./index.css";
 import "./lib/export-guard";
 import { initializePwa, isPwaEnabled } from "./lib/pwa-registration";
+import { pasangHurufBesarAwal } from "./components/FontSizeToggle";
 
 initializePwa();
+
+// Pasang pilihan ukuran huruf sebelum React render, supaya tidak ada kedipan
+pasangHurufBesarAwal();
 
 // Auto-reload when a stale chunk fails to load after a new deploy
 const handleChunkError = (msg: string) => {
