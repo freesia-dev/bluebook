@@ -1,11 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Flame, Instagram, Linkedin,
   Mail, CreditCard, Banknote, Calculator, TrendingUp, Shield,
   FileSearch, Archive, Users, Zap, BarChart3, Smartphone,
-  UserSquare, Bell, LineChart, Compass, Sparkles,
+  UserSquare, Bell, LineChart, Compass, Sparkles, PartyPopper,
 } from 'lucide-react';
 import logoImage from '@/assets/logo_bluebook.png';
 import { AppUpdateCard } from '@/components/app-update/AppUpdateCard';
@@ -35,6 +36,7 @@ const platformPerks = [
 ];
 
 const About: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <MainLayout>
       <div className="max-w-5xl mx-auto py-8 space-y-12">
@@ -132,6 +134,9 @@ const About: React.FC = () => {
             </Button>
             <Button variant="outline" onClick={bukaApaYangBaru}>
               <Sparkles className="mr-2 h-4 w-4" /> Apa yang baru
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/wrapped')}>
+              <PartyPopper className="mr-2 h-4 w-4" /> Bluebook Wrapped
             </Button>
           </div>
         </div>
