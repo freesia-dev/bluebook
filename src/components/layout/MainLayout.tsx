@@ -59,9 +59,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // Update sidebar state on window resize
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(true);
-      }
+      // Di bawah lg sidebar jadi panel melayang yang menutupi isi halaman,
+      // jadi saat layar mengecil (putar HP / perkecil jendela) ia ditutup.
+      setSidebarOpen(window.innerWidth >= 1024);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -96,7 +96,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {/* Header with menu button */}
       <header className={cn(
         "fixed top-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between transition-all duration-300",
-        sidebarOpen ? "left-64" : "left-0 lg:left-[76px]"
+        // Di HP sidebar berupa panel melayang, jadi header tidak ikut bergeser
+        sidebarOpen ? "left-0 lg:left-64" : "left-0 lg:left-[76px]"
       )}>
         <div className="flex items-center gap-3">
           <Button 

@@ -462,12 +462,35 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
           <EmptyState search={debouncedSearch} onAdd={onAdd && canEdit ? onAdd : undefined} addLabel={addLabel} />
         ) : (
           paginatedData.map((item) => {
-            const [utama, ...sisa] = columns;
+            // Judul kartu sebaiknya yang bisa dibaca orang (perihal, nama, nomor
+            // surat), bukan nomor urut — nomor urutnya ditaruh sebagai label kecil.
+            const iNomor = columns.findIndex((c) => /^(no|nomor|#)$/i.test(c.header.trim()));
+            // Pilih kolom pertama yang benar-benar ada isinya, supaya judul kartu
+            // tidak berupa "-" gara-gara kolom itu memang kosong di baris ini.
+            const adaIsi = (c: Column<T>) => {
+              const v = item[c.key as keyof T];
+              return v !== null && v !== undefined && String(v).trim() !== '';
+            };
+            const iUtama = (() => {
+              const kandidat = columns.map((c, i) => ({ c, i })).filter(({ i }) => i !== iNomor);
+              return (kandidat.find(({ c }) => adaIsi(c)) ?? kandidat[0])?.i ?? 0;
+            })();
+            const utama = columns[iUtama] ?? columns[0];
+            const kolomNomor = iNomor >= 0 ? columns[iNomor] : null;
+            const sisa = columns.filter((_, i) => i !== iUtama && i !== iNomor);
             return (
               <div key={item.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 font-semibold leading-snug">
-                    {utama?.render ? utama.render(item) : String(item[utama?.key as keyof T] ?? '-')}
+                  <div className="min-w-0 flex-1">
+                    {kolomNomor && (
+                      <span className="mb-0.5 block text-[11px] text-muted-foreground">
+                        {kolomNomor.header}{' '}
+                        {kolomNomor.render ? kolomNomor.render(item) : String(item[kolomNomor.key as keyof T] ?? '-')}
+                      </span>
+                    )}
+                    <span className="block font-semibold leading-snug">
+                      {utama?.render ? utama.render(item) : String(item[utama?.key as keyof T] ?? '-')}
+                    </span>
                   </div>
                   {showActions && (
                     <RowActions
