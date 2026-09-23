@@ -14,6 +14,7 @@ import { isRouteAllowedFor } from '@/lib/role-permissions';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PresenceBar } from '@/components/presence/PresenceBar';
 import { ErrorBoundary, PageErrorFallback, SilentBoundary } from '@/components/ErrorBoundary';
+import { HeaderBreadcrumb } from './HeaderBreadcrumb';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -115,7 +116,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {pinned ? 'Sidebar dipin (tidak auto-tutup)' : 'Pin sidebar agar tidak auto-tutup'}
             </TooltipContent>
           </Tooltip>
-          <h1 className="font-display font-bold text-lg hidden sm:block">Bluebook Telihan</h1>
+          {/* Layar lebar: jejak halaman. HP/tablet: judul aplikasi saja. */}
+          <h1 className="hidden font-display text-lg font-bold sm:block lg:hidden">Bluebook Telihan</h1>
+          <HeaderBreadcrumb />
         </div>
 
         <div className="flex items-center gap-2">
