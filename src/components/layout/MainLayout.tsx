@@ -7,6 +7,7 @@ import { Menu, Eye, Pin, PinOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { FontSizeToggle } from '@/components/FontSizeToggle';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { isRouteAllowedFor } from '@/lib/role-permissions';
@@ -125,6 +126,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <SilentBoundary name="presence-bar"><PresenceBar /></SilentBoundary>
           <GlobalSearch />
           <NotificationBell />
+          <FontSizeToggle />
           <ThemeToggle />
         </div>
       </header>
