@@ -15,10 +15,10 @@ import logoBpd from '@/assets/logo-bpd.png';
 /*  dengan nominal rata kanan berformat 261,000,000.00, lalu blok tanda        */
 /*  tangan petugas dan pemimpin.                                              */
 /*                                                                            */
-/*  Catatan: dua salah ketik di dokumen asli ("Kalimatan" dan "kamu telah      */
-/*  melakukan pemeriksaan") sengaja DIPERTAHANKAN supaya hasilnya benar-benar  */
-/*  sama dengan berkas acuan. Kalau nanti mau dirapikan, ubah di dua tempat    */
-/*  yang ditandai komentar di bawah.                                          */
+/*  Catatan: beberapa salah ketik di berkas Word acuan sudah dibetulkan di     */
+/*  sini atas permintaan — "Kalimatan" jadi "Kalimantan", "kamu telah          */
+/*  melakukan pemeriksaan" jadi "kami", "mesin atm" jadi "mesin ATM", dan      */
+/*  "Dimana" jadi "di mana". Selain itu susunannya tetap sama persis.          */
 /* -------------------------------------------------------------------------- */
 
 export interface BAPengisianDokumenProps {
@@ -141,9 +141,8 @@ export const BAPengisianDokumen: React.FC<BAPengisianDokumenProps> = ({
         Pada hari <b>{hari}</b> tanggal <b>{angkaTerbilang(tanggal.getDate())}</b> bulan{' '}
         <b>{BULAN[tanggal.getMonth()]}</b> <b> </b>tahun <b>{angkaTerbilang(tanggal.getFullYear())}</b> (
         {format(tanggal, 'dd/MM/yyyy')}) pukul <b>{data.jam} WITA</b> telah dilakukan pengisian Kas ATM (Cash
-        Opname) pada mesin ATM PT Bank Pembangunan Daerah Kalimantan Timur dan Kalimatan Utara KCP Telihan (Device{' '}
+        Opname) pada mesin ATM PT Bank Pembangunan Daerah Kalimantan Timur dan Kalimantan Utara KCP Telihan (Device{' '}
         {device}). Dengan rincian sebagai berikut:
-        {/* "Kalimatan" di atas mengikuti berkas asli — ubah di sini kalau mau dibetulkan */}
       </p>
       <p style={{ margin: 0 }}>&nbsp;</p>
 
@@ -164,10 +163,9 @@ export const BAPengisianDokumen: React.FC<BAPengisianDokumenProps> = ({
 
       {/* ── Lampiran & hasil pemeriksaan ─────────────────────────────────── */}
       <p style={{ textAlign: 'justify', margin: 0 }}>
-        Sebagai lampiran kami sampaikan struk jurnal mesin sebelum dan setelah dilakukan pengisian. Selain itu, kamu
-        telah melakukan pemeriksaan terhadap mesin atm tersebut di atas, Dimana terdapat selisih Rp.
+        Sebagai lampiran kami sampaikan struk jurnal mesin sebelum dan setelah dilakukan pengisian. Selain itu, kami
+        telah melakukan pemeriksaan terhadap mesin ATM tersebut di atas, di mana terdapat selisih Rp.
         {Math.abs(selisih).toLocaleString('id-ID')},-.
-        {/* "kamu telah melakukan" mengikuti berkas asli — ubah di sini kalau mau dibetulkan */}
       </p>
       <p style={{ margin: 0 }}>&nbsp;</p>
 
