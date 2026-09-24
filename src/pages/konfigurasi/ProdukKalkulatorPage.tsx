@@ -359,7 +359,7 @@ export const BiayaItemsEditor: React.FC<{
             />
             <Input
               placeholder="Nominal"
-              value={b.nominal ? formatCurrencyInput(String(b.nominal)) : ''}
+              value={b.nominal ? formatCurrencyInput(b.nominal) : ''}
               onChange={(e) => update(i, { nominal: parseCurrencyValue(e.target.value) })}
               className="w-40"
             />

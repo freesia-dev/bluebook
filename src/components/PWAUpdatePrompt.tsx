@@ -1,119 +1,75 @@
-import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { isPwaEnabled } from "@/lib/pwa-registration";
-
-type Phase = "idle" | "updating" | "done";
+import { muatUlangUntukVersiBaru } from "@/lib/app-refresh";
 
 /**
- * Fully automatic PWA updater.
- * - Detects new service worker
- * - Activates it immediately (SKIP_WAITING)
- * - Clears all caches to bust stale assets
- * - Reloads the page
- * No user interaction required.
+ * Pemasang versi baru yang berjalan diam-diam.
+ *
+ * Sebelumnya bagian ini memunculkan dialog "Memperbarui Bluebook…" dengan
+ * bilah progres, menghapus seluruh cache, lalu reload — dan justru itu yang
+ * membuat halaman gagal muat sesudahnya (cache precache milik service worker
+ * baru ikut terhapus). Sekarang urusannya diserahkan ke service worker:
+ * begitu versi baru selesai dipasang dan mengambil alih halaman, Bluebook
+ * hanya memuat ulang alamat yang sedang dibuka. Tidak ada dialog, tidak ada
+ * cache yang dihapus, dan pengguna tetap berada di halaman yang sama.
+ *
+ * Komponen ini tidak menggambar apa pun.
  */
 export const PWAUpdatePrompt = () => {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [progress, setProgress] = useState(0);
-  const startedRef = useRef(false);
+  const sudahJalan = useRef(false);
 
   useEffect(() => {
     if (!isPwaEnabled || !("serviceWorker" in navigator)) return;
 
-    let reg: ServiceWorkerRegistration | null = null;
-    let pollId: number | undefined;
+    let idPoll: number | undefined;
+    let batal = false;
 
-    const triggerAutoUpdate = (worker: ServiceWorker | null) => {
-      if (startedRef.current) return;
-      startedRef.current = true;
-      setPhase("updating");
-      setProgress(10);
+    const pasangVersiBaru = (pekerjaBaru: ServiceWorker | null) => {
+      if (sudahJalan.current) return;
+      sudahJalan.current = true;
 
-      const tick = window.setInterval(() => {
-        setProgress((p) => (p < 90 ? p + Math.max(1, Math.round((92 - p) / 6)) : p));
-      }, 200);
+      // Versi baru diminta langsung aktif; begitu ia mengambil alih halaman,
+      // barulah halaman dimuat ulang — jadi berkas yang diminta pasti sudah ada.
+      const lanjut = () => muatUlangUntukVersiBaru("service worker versi baru aktif");
+      navigator.serviceWorker.addEventListener("controllerchange", lanjut, { once: true });
 
-      const finalize = async () => {
-        window.clearInterval(tick);
-        try {
-          if ("caches" in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map((k) => caches.delete(k)));
-          }
-        } catch {
-          /* ignore */
-        }
-        setProgress(100);
-        setPhase("done");
-        setTimeout(() => window.location.reload(), 500);
-      };
-
-      navigator.serviceWorker.addEventListener("controllerchange", finalize, { once: true });
-
-      // Ask the waiting worker to activate now
       try {
-        worker?.postMessage({ type: "SKIP_WAITING" });
+        pekerjaBaru?.postMessage({ type: "SKIP_WAITING" });
       } catch {
-        /* ignore */
+        /* noop */
       }
 
-      // Safety net: force reload even if controllerchange doesn't fire
-      setTimeout(finalize, 6000);
+      // Jaring aman: kalau controllerchange tidak pernah datang (mis. SKIP_WAITING
+      // tidak terdengar), muat ulang sendiri setelah beberapa detik.
+      window.setTimeout(() => {
+        if (!batal) lanjut();
+      }, 8000);
     };
 
     navigator.serviceWorker.ready.then((registration) => {
-      reg = registration;
-      if (registration.waiting) triggerAutoUpdate(registration.waiting);
+      if (batal) return;
+      if (registration.waiting) pasangVersiBaru(registration.waiting);
+
       registration.addEventListener("updatefound", () => {
-        const nw = registration.installing;
-        if (!nw) return;
-        nw.addEventListener("statechange", () => {
-          if (nw.state === "installed" && navigator.serviceWorker.controller) {
-            triggerAutoUpdate(nw);
+        const baru = registration.installing;
+        if (!baru) return;
+        baru.addEventListener("statechange", () => {
+          // Hanya kalau sudah ada controller — kalau belum, ini pemasangan pertama
+          // (belum pernah ada versi lama), tidak perlu muat ulang apa pun.
+          if (baru.state === "installed" && navigator.serviceWorker.controller) {
+            pasangVersiBaru(baru);
           }
         });
       });
-      pollId = window.setInterval(() => registration.update().catch(() => {}), 20_000);
+
+      idPoll = window.setInterval(() => registration.update().catch(() => {}), 60_000);
     });
 
     return () => {
-      if (pollId) window.clearInterval(pollId);
-      reg = null;
+      batal = true;
+      if (idPoll) window.clearInterval(idPoll);
     };
   }, []);
 
-  if (phase === "idle") return null;
-
-  return (
-    <Dialog open onOpenChange={() => { /* non-dismissible */ }}>
-      <DialogContent
-        className="sm:max-w-md [&>button]:hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
-        <DialogHeader>
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
-            {phase === "updating" && <Loader2 className="w-7 h-7 text-primary animate-spin" />}
-            {phase === "done" && <CheckCircle2 className="w-7 h-7 text-emerald-500" />}
-          </div>
-          <DialogTitle className="text-center">
-            {phase === "updating" && "Memperbarui Bluebook…"}
-            {phase === "done" && "Pembaruan Selesai"}
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            {phase === "updating" && "Versi terbaru sedang dipasang otomatis. Mohon tunggu, jangan tutup jendela ini."}
-            {phase === "done" && "Bluebook akan dimuat ulang sebentar lagi."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-2 pt-2">
-          <Progress value={progress} />
-          <p className="text-xs text-center text-muted-foreground">{progress}%</p>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  return null;
 };

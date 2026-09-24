@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -318,15 +319,15 @@ export const CallMemoDialog: React.FC<Props> = ({ open, onClose, memo, prefillL0
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Pokok (Rp)</Label>
-                <Input type="number" min={0} value={form.tunggakan_pokok} onChange={(e) => setForm({ ...form, tunggakan_pokok: Number(e.target.value) || 0 })} />
+                <Input inputMode="numeric" value={formatCurrencyInput(form.tunggakan_pokok)} onChange={(e) => setForm({ ...form, tunggakan_pokok: parseCurrencyValue(e.target.value) })} />
               </div>
               <div>
                 <Label className="text-xs">Bunga (Rp)</Label>
-                <Input type="number" min={0} value={form.tunggakan_bunga} onChange={(e) => setForm({ ...form, tunggakan_bunga: Number(e.target.value) || 0 })} />
+                <Input inputMode="numeric" value={formatCurrencyInput(form.tunggakan_bunga)} onChange={(e) => setForm({ ...form, tunggakan_bunga: parseCurrencyValue(e.target.value) })} />
               </div>
               <div>
                 <Label className="text-xs">Total (Rp)</Label>
-                <Input type="number" value={form.total_tunggakan} readOnly className="bg-muted font-semibold" />
+                <Input value={formatCurrencyInput(form.total_tunggakan)} readOnly className="bg-muted font-semibold" />
               </div>
             </div>
           </div>
@@ -372,7 +373,7 @@ export const CallMemoDialog: React.FC<Props> = ({ open, onClose, memo, prefillL0
               </div>
               <div>
                 <Label className="text-xs">Nominal Janji Bayar (Rp)</Label>
-                <Input type="number" min={0} value={form.janji_bayar_nominal ?? ''} onChange={(e) => setForm({ ...form, janji_bayar_nominal: e.target.value ? Number(e.target.value) : null })} />
+                <Input inputMode="numeric" value={formatCurrencyInput(form.janji_bayar_nominal ?? '')} onChange={(e) => setForm({ ...form, janji_bayar_nominal: e.target.value ? parseCurrencyValue(e.target.value) : null })} />
               </div>
             </div>
           </div>

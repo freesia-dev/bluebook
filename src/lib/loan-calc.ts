@@ -1,3 +1,4 @@
+import { formatAngka, formatRupiah } from '@/lib/uang';
 // Pure calculation functions for the loan calculator.
 // All money is integer rupiah; rates are in percent per annum (e.g., 12 = 12%).
 
@@ -495,8 +496,6 @@ export function calcMaxPlafonByDSR(input: {
   return Math.floor(angsuranMax / (1 / input.tenorBulan + r));
 }
 
-export const fmtRp = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0);
+export const fmtRp = (n: number) => formatRupiah(n);
 
-export const fmtNumber = (n: number) =>
-  new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(n || 0);
+export const fmtNumber = (n: number) => formatAngka(n);

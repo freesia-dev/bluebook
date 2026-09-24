@@ -418,6 +418,5 @@ export const angkaTerbilang = (angka: number): string => {
   return angkaTerbilang(Math.floor(angka / 1000000000000)) + ' Triliun' + (angka % 1000000000000 > 0 ? ' ' + angkaTerbilang(angka % 1000000000000) : '');
 };
 
-export const formatRupiah = (angka: number): string => {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
-};
+/** Dipertahankan sebagai re-export supaya impor lama tetap jalan. */
+export { formatRupiah } from '@/lib/uang';

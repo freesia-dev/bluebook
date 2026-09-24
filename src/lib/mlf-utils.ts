@@ -1,7 +1,8 @@
-export const fmtIDR = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0);
+import { formatAngka, formatRupiah } from '@/lib/uang';
 
-export const fmtNum = (n: number) => new Intl.NumberFormat('id-ID').format(n || 0);
+export const fmtIDR = (n: number) => formatRupiah(n);
+
+export const fmtNum = (n: number) => formatAngka(n);
 
 export const KOL_LABEL: Record<number, string> = {
   0: 'Ekstrakomtabel',

@@ -201,9 +201,15 @@ const PenyelesaianSelisihPage = () => {
 
         {/* Tabs: Detail Selisih & Berita Acara */}
         <Tabs defaultValue="selisih" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="selisih">Detail Selisih per Pengisian</TabsTrigger>
-            <TabsTrigger value="penyelesaian">Berita Acara Penyelesaian</TabsTrigger>
+          {/* Dua label ini panjang; di HP dibuat dua kolom penuh dengan teks lebih
+              kecil supaya baris tab tidak menonjol keluar layar. */}
+          <TabsList className="grid h-auto w-full grid-cols-2 sm:inline-flex sm:h-10 sm:w-auto">
+            <TabsTrigger value="selisih" className="whitespace-normal px-2 text-xs leading-tight sm:whitespace-nowrap sm:px-3 sm:text-sm">
+              Detail Selisih per Pengisian
+            </TabsTrigger>
+            <TabsTrigger value="penyelesaian" className="whitespace-normal px-2 text-xs leading-tight sm:whitespace-nowrap sm:px-3 sm:text-sm">
+              Berita Acara Penyelesaian
+            </TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Selisih per Pengisian */}
@@ -249,7 +255,56 @@ const PenyelesaianSelisihPage = () => {
                     Belum ada berita acara penyelesaian.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  {/* Layar kecil: kartu, supaya tidak melebar ke samping di PWA */}
+                  <div className="space-y-2 md:hidden">
+                    {penyelesaianList.map((item) => (
+                      <div key={item.id} className="rounded-lg border p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="min-w-0 break-all font-mono text-sm font-medium">
+                            {generateBANumber(item.nomor, item.tanggalPengaduan)}
+                          </p>
+                          <div className="shrink-0">{getStatusBadge(item)}</div>
+                        </div>
+                        <dl className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                          <div className="flex gap-1">
+                            <dt>Pengaduan:</dt>
+                            <dd className="text-foreground">{format(item.tanggalPengaduan, 'dd/MM/yyyy')}</dd>
+                          </div>
+                          <div className="flex gap-1">
+                            <dt>Penyelesaian:</dt>
+                            <dd className="text-foreground">
+                              {item.tanggalPenyelesaian ? format(item.tanggalPenyelesaian, 'dd/MM/yyyy') : '-'}
+                            </dd>
+                          </div>
+                          <div className="flex gap-1">
+                            <dt>Petugas:</dt>
+                            <dd className="min-w-0 truncate text-foreground">{item.petugas}</dd>
+                          </div>
+                        </dl>
+                        <div className="mt-2 flex items-center gap-1 border-t pt-2">
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedPenyelesaian(item); setShowDetailDialog(true); }}>
+                            Detail
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/atm-telihan/ba-pengisian?tab=penyelesaian&id=${item.id}`)}>
+                            <FileText className="mr-1 h-4 w-4" /> Cetak
+                          </Button>
+                          {item.status === 'Dalam Proses' && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => handleMarkComplete(item)} title="Tandai selesai">
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)} title="Hapus">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -303,6 +358,7 @@ const PenyelesaianSelisihPage = () => {
                       </TableBody>
                     </Table>
                   </div>
+                  </>
                 )}
               </CardContent>
             </Card>

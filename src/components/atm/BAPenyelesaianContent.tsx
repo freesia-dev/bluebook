@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { formatRupiah } from '@/lib/uang';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -199,13 +200,13 @@ const BAPenyelesaianContent: React.FC<BAPenyelesaianContentProps> = ({ initialId
                         <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>{format(s.tanggal, 'dd MMMM yyyy', { locale: idLocale })}</td>
                         <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{s.namaNasabah || '-'}</td>
                         <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{s.nomorKartu || '-'}</td>
-                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>Rp {s.nominal.toLocaleString('id-ID')}</td>
+                        <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right' }}>{formatRupiah(s.nominal)}</td>
                         <td style={{ border: '1px solid #000', padding: '4px 6px' }}>{s.keterangan || '-'}</td>
                       </tr>
                     ))}
                     <tr>
                       <td colSpan={4} style={{ border: '1px solid #000', padding: '4px 6px', fontWeight: 'bold', textAlign: 'center' }}>Total</td>
-                      <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>Rp {totalNominal.toLocaleString('id-ID')}</td>
+                      <td style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'right', fontWeight: 'bold' }}>{formatRupiah(totalNominal)}</td>
                       <td style={{ border: '1px solid #000', padding: '4px 6px' }}></td>
                     </tr>
                   </tbody>

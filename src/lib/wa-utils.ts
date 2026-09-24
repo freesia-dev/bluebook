@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/uang';
 /**
  * WhatsApp utilities — phone normalization, template rendering, wa.me URL builder.
  */
@@ -23,10 +24,7 @@ export const formatPhoneDisplay = (n: string | null | undefined): string => {
   return s.replace(/^(62)(\d{3})(\d{4})(\d+)$/, '+$1 $2 $3 $4');
 };
 
-const fmtIDRPlain = (n: number): string => {
-  if (!n) return 'Rp 0';
-  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
-};
+const fmtIDRPlain = (n: number): string => formatRupiah(n);
 
 export interface TemplateData {
   nama?: string | null;

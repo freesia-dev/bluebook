@@ -45,7 +45,7 @@ const KalkulatorPromoPage: React.FC = () => {
       ...p,
       bunga_override: p.bunga_override == null ? '' : String(p.bunga_override),
       provisi_diskon_pct: String(p.provisi_diskon_pct ?? 0),
-      cap_subsidi_str: formatCurrencyInput(String(p.cap_subsidi ?? 0)),
+      cap_subsidi_str: formatCurrencyInput(p.cap_subsidi ?? 0),
     });
     setOpen(true);
   };

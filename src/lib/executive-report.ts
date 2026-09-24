@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import type { ExecutiveKPI } from '@/pages/executive/ExecutiveDashboardPage';
+import { formatNominal } from '@/lib/uang';
 
 const IDR = '#,##0;(#,##0);"-"';
 const PCT = '0.00"%"';
@@ -126,7 +127,7 @@ export const exportExecutiveExcel = (k: ExecutiveKPI) => {
   XLSX.writeFile(wb, `Executive-Dashboard_${k.cabang.replace(/\s+/g, '-')}_${format(new Date(), 'yyyyMMdd')}.xlsx`);
 };
 
-const money = (n: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(n || 0);
+const money = (n: number) => formatNominal(n);
 
 export const exportExecutivePDF = (k: ExecutiveKPI) => {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });

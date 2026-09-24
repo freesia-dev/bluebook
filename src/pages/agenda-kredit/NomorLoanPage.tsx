@@ -33,13 +33,13 @@ import {
   CreditSuccessDialog,
   CreditViewDialog,
 } from "@/components/agenda-kredit/CreditRecordDialogs";
+import { formatRupiah } from '@/lib/uang';
 
 const STARTING_LOAN_NUMBER = 14306840;
 const SKEMA_OPTIONS = ['Supermikro', 'Mikro', 'Kecil'];
 const UNIT_KERJA_OPTIONS = ['KCP Telihan', 'Meranti'];
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+const formatCurrency = (value: number) => formatRupiah(value);
 
 interface NomorLoanFormData {
   nomorLoan: string;

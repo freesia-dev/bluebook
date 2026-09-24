@@ -28,7 +28,7 @@ const MONEY_FIELDS = [
 
 const toForm = (p: Partial<PromoProgram>) => {
   const f: any = { ...p };
-  MONEY_FIELDS.forEach((k) => { f[`${k}_str`] = formatCurrencyInput(String((p as any)[k] ?? 0)); });
+  MONEY_FIELDS.forEach((k) => { f[`${k}_str`] = formatCurrencyInput((p as any)[k] ?? 0); });
   return f;
 };
 
