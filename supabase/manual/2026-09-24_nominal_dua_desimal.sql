@@ -120,6 +120,30 @@ BEGIN
 END $$;
 
 -- ----------------------------------------------------------------------------
+-- Laporan: kolom bernama seperti nominal uang yang MASIH bilangan bulat.
+-- Idealnya kosong. Kalau ada isinya, kolom itu belum ikut dilebarkan — kirim
+-- hasilnya supaya bisa ditambahkan ke daftar di atas.
+-- (Kolom jumlah/pencacah seperti nomor, retracts, kartu_tertelan memang
+-- sengaja tetap bilangan bulat dan tidak muncul di sini.)
+-- ----------------------------------------------------------------------------
+SELECT table_name, column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND data_type IN ('bigint', 'integer', 'smallint')
+  AND (
+    column_name LIKE '%plafon%' OR column_name LIKE '%nominal%' OR
+    column_name LIKE '%saldo%'  OR column_name LIKE '%gaji%'    OR
+    column_name LIKE '%angsuran%' OR column_name LIKE '%premi%' OR
+    column_name LIKE '%asuransi%' OR column_name LIKE '%biaya%' OR
+    column_name LIKE '%tunggakan%' OR column_name LIKE '%outstanding%' OR
+    column_name LIKE '%subsidi%' OR column_name LIKE '%cap_%'   OR
+    column_name LIKE '%selisih%' OR column_name LIKE '%setor%'  OR
+    column_name LIKE '%disetor%' OR column_name = 'ttp'
+  )
+  AND column_name NOT IN ('blokir_angsuran', 'pelunasan_bulan_ke')
+ORDER BY table_name, column_name;
+
+-- ----------------------------------------------------------------------------
 -- Pemeriksaan sesudahnya — semua baris harus bertipe numeric
 -- ----------------------------------------------------------------------------
 -- SELECT table_name, column_name, data_type, numeric_precision, numeric_scale

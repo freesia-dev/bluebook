@@ -49,7 +49,22 @@ export const InputNominal = React.forwardRef<HTMLInputElement, InputNominalProps
           onValueChange(teks, parseCurrencyValue(teks));
         }}
         onFocus={(e) => {
-          setDraf(e.target.value);
+          // Buang ",00" begitu kolom disentuh lagi. Tanpa ini kursor mendarat
+          // di belakang koma, sehingga angka yang diketik berikutnya masuk ke
+          // bagian desimal dan langsung terpotong — kolomnya terasa macet.
+          // Desimal yang memang berisi (",22") tetap dipertahankan.
+          const bersih = e.target.value.replace(/,00$/, '');
+          setDraf(bersih);
+          if (bersih !== e.target.value) {
+            // Pindahkan kursor ke ujung teks yang baru
+            requestAnimationFrame(() => {
+              try {
+                e.target.setSelectionRange(bersih.length, bersih.length);
+              } catch {
+                /* input type tertentu tidak mendukung setSelectionRange */
+              }
+            });
+          }
           onFocus?.(e);
         }}
         onBlur={(e) => {
