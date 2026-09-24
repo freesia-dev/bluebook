@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { FileText, Printer, Plus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import BAPengisianDokumen from '@/components/atm/BAPengisianDokumen';
+import BAPengisianDokumen, { nomorBAOtomatis } from '@/components/atm/BAPengisianDokumen';
 
 const BAPengisianContent = () => {
   const { toast } = useToast();
@@ -129,6 +129,8 @@ const BAPengisianContent = () => {
       .slice(0, 2)
       .map(c => c.nama));
     setPemimpinTerpilih(prev => prev || getPemimpinList()[0]?.nama || '');
+    // Nomor BA ikut data yang dipilih; tetap boleh diketik ulang sesudahnya.
+    setNomorBA(nomorBAOtomatis(selectedData));
   }, [selectedData, configOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePetugas = (nama: string) =>
@@ -259,8 +261,12 @@ const BAPengisianContent = () => {
                   <Input
                     value={nomorBA}
                     onChange={(e) => setNomorBA(e.target.value)}
-                    placeholder="Kosongkan untuk titik-titik"
+                    placeholder={nomorBAOtomatis(selectedData)}
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Terisi otomatis dari nomor urut data pengisian, bulan Romawi, dan tahun.
+                    Ubah di sini kalau nomor suratnya berbeda.
+                  </p>
                 </div>
                 <div>
                   <Label className="mb-2 block">Mengetahui (Pemimpin)</Label>

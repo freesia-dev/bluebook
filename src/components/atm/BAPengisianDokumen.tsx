@@ -30,11 +30,29 @@ export interface BAPengisianDokumenProps {
   pemimpin: string;
   /** Jabatan yang dicetak di bawah nama pemimpin */
   jabatanPemimpin?: string;
-  /** Nomor berita acara; kosong → titik-titik seperti di format asli */
+  /** Nomor berita acara; kosong → dibentuk otomatis dari data pengisian */
   nomor?: string;
   /** Kode device mesin ATM */
   device?: string;
 }
+
+/** Bulan dalam angka Romawi — dipakai di nomor surat (September → IX). */
+const BULAN_ROMAWI = [
+  'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII',
+] as const;
+
+/**
+ * Nomor berita acara otomatis: nomor urut data pengisian + bulan Romawi +
+ * tahun, mengikuti format surat KCP Telihan — misal 12/BA-ATM/KCP-TLH/IX/2026.
+ * Nomor urut diambil dari data pengisian yang dipilih, tanggalnya dari tanggal
+ * pengisian, jadi nomor selalu konsisten walau BA dicetak ulang di lain hari.
+ */
+export const nomorBAOtomatis = (data: Pick<PengisianATM, 'nomor' | 'tanggal'>): string => {
+  const tanggal = data.tanggal instanceof Date ? data.tanggal : new Date(data.tanggal);
+  const valid = !Number.isNaN(tanggal.getTime()) ? tanggal : new Date();
+  const urut = String(data.nomor ?? '').trim() || '-';
+  return `${urut}/BA-ATM/KCP-TLH/${BULAN_ROMAWI[valid.getMonth()]}/${valid.getFullYear()}`;
+};
 
 /** Format angka gaya dokumen asli: 261,000,000.00 (koma ribuan, dua desimal). */
 const nominal = (n: number): string =>
@@ -114,16 +132,11 @@ export const BAPengisianDokumen: React.FC<BAPengisianDokumenProps> = ({
         <img src={logoBankaltimtara} alt="" style={{ width: '120px', height: 'auto' }} />
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{ fontSize: '13pt', fontWeight: 'bold' }}>PT. BPD Kaltim Kaltara</div>
-          <div style={{ fontSize: '11pt', fontWeight: 'bold', color: '#0066cc', textDecoration: 'underline' }}>
-            KANTOR CABANG PEMBANTU TELIHAN
-          </div>
+          <div style={{ fontSize: '11pt', fontWeight: 'bold' }}>KANTOR CABANG PEMBANTU TELIHAN</div>
           <div style={{ fontSize: '9.5pt' }}>Jl.Letjend S.Parman No.14-15 – Kota Bontang 75383</div>
           <div style={{ fontSize: '9.5pt' }}>Telp: 0548 - 26567</div>
-          <div style={{ fontSize: '9.5pt' }}>
-            Email:
-            <span style={{ color: '#0066cc', textDecoration: 'underline' }}>kcp.telihan@bankaltimtara.co.id</span>
-          </div>
-          <div style={{ fontSize: '9.5pt', color: '#0066cc', textDecoration: 'underline' }}>www.bankaltimtara.co.id</div>
+          <div style={{ fontSize: '9.5pt' }}>Email: kcp.telihan@bankaltimtara.co.id</div>
+          <div style={{ fontSize: '9.5pt' }}>www.bankaltimtara.co.id</div>
         </div>
         <img src={logoBpd} alt="" style={{ width: '95px', height: 'auto' }} />
       </div>
@@ -133,7 +146,7 @@ export const BAPengisianDokumen: React.FC<BAPengisianDokumenProps> = ({
       <p style={{ textAlign: 'center', fontWeight: 'bold', textDecoration: 'underline', margin: 0 }}>
         BERITA ACARA PENGISIAN ATM
       </p>
-      <p style={{ textAlign: 'center', margin: 0 }}>Nomor: {nomor?.trim() || '……………….'}</p>
+      <p style={{ textAlign: 'center', margin: 0 }}>Nomor: {nomor?.trim() || nomorBAOtomatis(data)}</p>
       <p style={{ margin: 0 }}>&nbsp;</p>
 
       {/* ── Paragraf pembuka ─────────────────────────────────────────────── */}
