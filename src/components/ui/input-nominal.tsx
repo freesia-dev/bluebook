@@ -68,6 +68,15 @@ export const InputNominal = React.forwardRef<HTMLInputElement, InputNominalProps
           onFocus?.(e);
         }}
         onBlur={(e) => {
+          // Alt+Tab ke jendela lain juga memicu blur, padahal kursor masih di
+          // kolom ini. Kalau dirapikan di situ, begitu kembali kolomnya sudah
+          // berisi ",00" dengan kursor di belakang koma — ketikan tidak bisa
+          // dilanjutkan sampai kursor digeser sendiri. Jadi perapian hanya
+          // dilakukan kalau fokus benar-benar berpindah di dalam halaman.
+          if (!document.hasFocus()) {
+            onBlur?.(e);
+            return;
+          }
           const rapi = rapikanNominalInput(e.target.value);
           setDraf(null);
           onValueChange(rapi, parseCurrencyValue(rapi));
