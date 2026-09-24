@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { InputNominal } from '@/components/ui/input-nominal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -206,9 +207,9 @@ const ProgramPromoManager: React.FC = () => {
             {([1, 2, 3] as const).map((t) => (
               <div key={t}>
                 <Label>Plafon Maks Tier {t}</Label>
-                <Input
+                <InputNominal
                   value={form[`plafon_tier_${t}_max_str`] || ''}
-                  onChange={(e) => setForm({ ...form, [`plafon_tier_${t}_max_str`]: formatCurrencyInput(e.target.value) })}
+                  onValueChange={(teks) => setForm({ ...form, [`plafon_tier_${t}_max_str`]: teks })}
                 />
               </div>
             ))}
@@ -222,16 +223,16 @@ const ProgramPromoManager: React.FC = () => {
                 </div>
                 <div>
                   <Label className="text-xs">Cap Debitur Baru</Label>
-                  <Input
+                  <InputNominal
                     value={form[`cap_tier_${t}_baru_str`] || ''}
-                    onChange={(e) => setForm({ ...form, [`cap_tier_${t}_baru_str`]: formatCurrencyInput(e.target.value) })}
+                    onValueChange={(teks) => setForm({ ...form, [`cap_tier_${t}_baru_str`]: teks })}
                   />
                 </div>
                 <div>
                   <Label className="text-xs">Cap Take Over</Label>
-                  <Input
+                  <InputNominal
                     value={form[`cap_tier_${t}_takeover_str`] || ''}
-                    onChange={(e) => setForm({ ...form, [`cap_tier_${t}_takeover_str`]: formatCurrencyInput(e.target.value) })}
+                    onValueChange={(teks) => setForm({ ...form, [`cap_tier_${t}_takeover_str`]: teks })}
                   />
                 </div>
               </div>

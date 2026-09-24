@@ -3,20 +3,13 @@ import { formatNominal, formatRupiah } from '@/lib/uang';
 /* -------------------------------------------------------------------------- */
 /*  Format isian nominal saat diketik                                          */
 /*                                                                            */
-/*  Semua field nominal di Bluebook memakai fungsi ini supaya pemisah ribuan   */
-/*  muncul otomatis ("10000000" → "10.000.000") tanpa pengguna mengetik titik. */
+/*  Semua kolom uang di Bluebook memakai aturan yang sama: pemisah ribuan       */
+/*  titik muncul otomatis sambil mengetik, koma jadi pemisah desimal, dan       */
+/*  begitu kursor pindah angkanya dirapikan ke dua desimal penuh.              */
 /*                                                                            */
-/*  Sebagian kolom di database masih bilangan bulat (BIGINT), jadi desimal     */
-/*  tidak dinyalakan di semua field — kalau dinyalakan padahal kolomnya bulat, */
-/*  simpanan justru gagal. Field yang kolomnya numeric (Bilyet Deposito,       */
-/*  Standing Instruction) memanggilnya dengan opsi { desimal: true } sehingga   */
-/*  sen benar-benar tersimpan.                                                 */
+/*  Biasanya dipakai lewat <InputNominal> (src/components/ui/input-nominal.tsx) */
+/*  supaya perilakunya tidak perlu diulang di tiap halaman.                    */
 /* -------------------------------------------------------------------------- */
-
-export interface OpsiIsianNominal {
-  /** Izinkan koma desimal (maksimal 2 angka). Default: tidak. */
-  desimal?: boolean;
-}
 
 const pisahRibuan = (angkaBulat: string): string => {
   const bersih = angkaBulat.replace(/^0+(?=\d)/, '');
@@ -25,27 +18,26 @@ const pisahRibuan = (angkaBulat: string): string => {
 };
 
 /**
- * Format teks yang sedang diketik pengguna. Titik dianggap pemisah ribuan
- * (diabaikan), koma dianggap pemisah desimal. Desimal yang sedang setengah
- * diketik ("10.000," atau "10.000,2") sengaja dibiarkan apa adanya supaya
- * kursor tidak melompat — pembulatan ke dua angka baru terjadi saat disimpan.
+ * Format teks yang sedang diketik. Titik dianggap pemisah ribuan (diabaikan),
+ * koma dianggap pemisah desimal. Desimal yang baru setengah diketik ("10.000,"
+ * atau "10.000,2") dibiarkan apa adanya supaya kursor tidak melompat —
+ * perapian ke dua desimal dilakukan rapikanNominalInput() saat kolom dilepas.
  */
-export const formatCurrencyInput = (
-  value: string | number | null | undefined,
-  opsi: OpsiIsianNominal = {},
-): string => {
+export const formatCurrencyInput = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined || value === '') return '';
 
-  // Angka (mis. saat mengisi ulang form dari data tersimpan) langsung diformat
+  // Angka (mis. mengisi ulang form dari data tersimpan) langsung diformat penuh
   if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return '';
-    if (opsi.desimal) return formatNominal(value);
-    return pisahRibuan(String(Math.round(Math.abs(value)) * (value < 0 ? -1 : 1)).replace('-', ''));
+    return Number.isFinite(value) ? formatNominal(value) : '';
   }
 
-  if (!opsi.desimal) {
-    const digit = value.replace(/\D/g, '');
-    return pisahRibuan(digit);
+  // Angka mentah yang datang sebagai teks — kolom numeric di Supabase dibaca
+  // sebagai string ("150000000.00"), begitu juga String(1000.5). Titik di situ
+  // pemisah desimal, bukan pemisah ribuan. Aman dibedakan karena teks hasil
+  // formatter ini selalu berkelompok tiga angka, jadi tidak pernah berbentuk
+  // "…​.5" atau "….00".
+  if (/^-?\d+\.\d{1,2}$/.test(value.trim())) {
+    return formatNominal(Number.parseFloat(value.trim()));
   }
 
   const bersih = value.replace(/[^\d,]/g, '');
@@ -57,15 +49,20 @@ export const formatCurrencyInput = (
   return `${depan || '0'},${desimal}`;
 };
 
-/**
- * Teks isian → angka bulat rupiah. Dipakai untuk kolom BIGINT: kalau pengguna
- * mengetik sen, nilainya dibulatkan ke rupiah terdekat.
- */
-export const parseCurrencyValue = (formatted: string | number | null | undefined): number =>
-  Math.round(parseCurrencyDecimal(formatted));
+/** Rapikan jadi dua desimal penuh: "500" → "500,00", "" tetap kosong. */
+export const rapikanNominalInput = (value: string | number | null | undefined): string => {
+  if (value === null || value === undefined || value === '') return '';
+  const angka = parseCurrencyValue(value);
+  if (typeof value === 'string' && value.replace(/[^\d]/g, '') === '') return '';
+  return formatNominal(angka);
+};
 
-/** Teks isian → angka dengan sen utuh. Untuk kolom numeric. */
-export const parseCurrencyDecimal = (formatted: string | number | null | undefined): number => {
+/**
+ * Teks isian → angka, sen ikut terbawa. Kolom uang di database sudah
+ * numeric(18,2) (lihat supabase/manual/2026-09-24_nominal_dua_desimal.sql),
+ * jadi nilai pecahan memang disimpan apa adanya.
+ */
+export const parseCurrencyValue = (formatted: string | number | null | undefined): number => {
   if (formatted === null || formatted === undefined || formatted === '') return 0;
   if (typeof formatted === 'number') return Number.isFinite(formatted) ? formatted : 0;
   const bersih = formatted.replace(/[^\d,-]/g, '').replace(',', '.');
@@ -73,6 +70,10 @@ export const parseCurrencyDecimal = (formatted: string | number | null | undefin
   if (!Number.isFinite(n)) return 0;
   return Math.round(n * 100) / 100;
 };
+
+/** Untuk kolom yang memang harus bilangan bulat (jumlah lembar, dsb). */
+export const parseCurrencyBulat = (formatted: string | number | null | undefined): number =>
+  Math.round(parseCurrencyValue(formatted));
 
 /** Tampilan dengan simbol mata uang — selalu dua angka desimal. */
 export const formatCurrencyDisplay = (value: number): string => formatRupiah(value);

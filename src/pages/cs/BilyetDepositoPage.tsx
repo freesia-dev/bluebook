@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatRupiah } from '@/lib/uang';
-import { formatCurrencyInput, parseCurrencyDecimal } from '@/hooks/use-currency-input';
+import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
+import { InputNominal } from '@/components/ui/input-nominal';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -149,14 +150,7 @@ const BilyetDepositoPage: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Nominal</Label>
-          <Input
-            inputMode="decimal"
-            value={formatCurrencyInput(form.nominal, { desimal: true })}
-            onChange={(e) =>
-              setForm({ ...form, nominal: parseCurrencyDecimal(formatCurrencyInput(e.target.value, { desimal: true })) })
-            }
-            placeholder="0,00"
-          />
+          <InputNominal value={form.nominal} onValueChange={(_, n) => setForm({ ...form, nominal: n })} />
         </div>
         <div className="space-y-1"><Label>Jangka Waktu (bulan)</Label><Input type="number" value={form.jangka_waktu_bulan} onChange={(e) => setForm({ ...form, jangka_waktu_bulan: Number(e.target.value) })} /></div>
       </div>
