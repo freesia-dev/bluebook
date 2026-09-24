@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLoanPromos, useUpsertLoanPromo, useDeleteLoanPromo, type LoanPromo } from '@/hooks/use-loan-promo';
 import { fmtRp } from '@/lib/loan-calc';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
+import { InputNominal } from '@/components/ui/input-nominal';
 import ProgramCerdasManager from '@/components/cerdas/ProgramCerdasManager';
 
 const emptyForm: any = {
@@ -253,9 +254,8 @@ const KalkulatorPromoPage: React.FC = () => {
             </div>
             <div>
               <Label>Cap Subsidi Asuransi (Rp)</Label>
-              <Input value={form.cap_subsidi_str}
-                onChange={(e) => setForm({ ...form, cap_subsidi_str: formatCurrencyInput(e.target.value) })}
-                placeholder="0" />
+              <InputNominal value={form.cap_subsidi_str}
+                onValueChange={(teks) => setForm({ ...form, cap_subsidi_str: teks })} />
             </div>
             <div className="flex items-end gap-3 rounded-lg border p-3 bg-muted/30">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />

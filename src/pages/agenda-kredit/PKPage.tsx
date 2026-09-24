@@ -74,7 +74,7 @@ const PKPage: React.FC<PKPageProps> = ({ type, title }) => {
   const toFormData = (item: PK): PKFormData => ({
     namaDebitur: item.namaDebitur,
     jenisKredit: item.jenisKredit,
-    plafon: formatCurrencyInput(item.plafon.toString()),
+    plafon: formatCurrencyInput(Number(item.plafon)),
     jangkaWaktu: item.jangkaWaktu,
     jenisDebitur: item.jenisDebitur,
     jenisPenggunaan: item.jenisPenggunaan,

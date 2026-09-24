@@ -1,4 +1,5 @@
 import React from "react";
+import { InputNominal } from '@/components/ui/input-nominal';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,11 +173,10 @@ export function DatabasePengisianATMFormFields({
         <CardContent className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="flex items-center gap-2">Saldo Buku Besar <span className="text-destructive">*</span></Label>
-            <DebouncedInput
-              inputMode="numeric"
+            <InputNominal
               value={formData.saldoBukuBesar}
-              onValueChange={(v) => setFormData((p) => ({ ...p, saldoBukuBesar: formatSaldoInput(v) }))}
-              placeholder="1.000.000"
+              onValueChange={(teks) => setFormData((p) => ({ ...p, saldoBukuBesar: teks }))}
+              placeholder="1.000.000,00"
               className="font-mono"
             />
           </div>

@@ -18,6 +18,7 @@ import {
   useUnresolveSelisihItem,
 } from '@/hooks/use-penyelesaian-data';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
+import { InputNominal } from '@/components/ui/input-nominal';
 import { formatRupiah } from '@/lib/atm-store';
 import { format } from 'date-fns';
 import { Plus, Trash2, CheckCircle, Undo2, Pencil } from 'lucide-react';
@@ -364,11 +365,7 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nominal (Rp) *</Label>
-              <Input
-                value={formNominal}
-                onChange={e => setFormNominal(formatCurrencyInput(e.target.value))}
-                placeholder="0"
-              />
+              <InputNominal value={formNominal} onValueChange={(teks) => setFormNominal(teks)} />
             </div>
             <div className="space-y-2">
               <Label>Nama Nasabah</Label>

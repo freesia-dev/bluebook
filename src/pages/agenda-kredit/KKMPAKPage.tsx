@@ -70,7 +70,7 @@ const KKMPAKPage: React.FC<KKMPAKPageProps> = ({ type, title }) => {
   const toFormData = (item: KKMPAK): KKMPAKFormData => ({
     namaDebitur: item.namaDebitur,
     jenisKredit: item.jenisKredit,
-    plafon: formatCurrencyInput(item.plafon.toString()),
+    plafon: formatCurrencyInput(Number(item.plafon)),
     jangkaWaktu: item.jangkaWaktu,
     jenisDebitur: item.jenisDebitur,
     kodeFasilitas: item.kodeFasilitas,

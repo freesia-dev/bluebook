@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { InputNominal } from '@/components/ui/input-nominal';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -358,8 +359,8 @@ const KalkulatorPage: React.FC = () => {
     setBiayaRows(savedBiaya.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(b.nominal) : '' })));
     setBlokir(String(editRow.blokir_angsuran ?? 0));
     setAdaPelunasan(!!editRow.ada_pelunasan);
-    if (editRow.outstanding_pokok != null) setOutstandingPokok(String(editRow.outstanding_pokok));
-    if (editRow.outstanding_bunga != null) setOutstandingBunga(String(editRow.outstanding_bunga));
+    if (editRow.outstanding_pokok != null) setOutstandingPokok(formatCurrencyInput(Number(editRow.outstanding_pokok)));
+    if (editRow.outstanding_bunga != null) setOutstandingBunga(formatCurrencyInput(Number(editRow.outstanding_bunga)));
     if (editRow.cerdas_skema) {
       setPromoOn(true);
       setCerdasSkema(editRow.cerdas_skema as CerdasSkema);
@@ -478,8 +479,8 @@ const KalkulatorPage: React.FC = () => {
 
   const pelunasan = useMemo(() => {
     if (!adaPelunasan) return null;
-    const pokok = parseInt(outstandingPokok) || 0;
-    const bunga = parseInt(outstandingBunga) || 0;
+    const pokok = parseCurrencyValue(outstandingPokok);
+    const bunga = parseCurrencyValue(outstandingBunga);
     if (pokok <= 0 && bunga <= 0) return null;
     return { sisaPokok: pokok, bungaBerjalan: bunga, totalPelunasan: pokok + bunga };
   }, [adaPelunasan, outstandingPokok, outstandingBunga]);
@@ -563,8 +564,8 @@ const KalkulatorPage: React.FC = () => {
       blokir_angsuran: blokirN,
       ada_pelunasan: adaPelunasan,
       pelunasan_bulan_ke: null,
-      outstanding_pokok: adaPelunasan ? (parseInt(outstandingPokok) || 0) : null,
-      outstanding_bunga: adaPelunasan ? (parseInt(outstandingBunga) || 0) : null,
+      outstanding_pokok: adaPelunasan ? parseCurrencyValue(outstandingPokok) : null,
+      outstanding_bunga: adaPelunasan ? parseCurrencyValue(outstandingBunga) : null,
       nama_ao: namaAo || null,
       hasil_ringkasan: {
         ...result.summary,
@@ -1266,7 +1267,7 @@ const KalkulatorPage: React.FC = () => {
                   </div>
                   <div>
                     <Label>Plafon Pengajuan</Label>
-                    <Input value={plafonStr} onChange={(e) => setPlafonStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                    <InputNominal value={plafonStr} onValueChange={(teks) => setPlafonStr(teks)} placeholder="0" />
                   </div>
                   <div>
                     <Label>Jangka Waktu (bulan)</Label>
@@ -1320,11 +1321,11 @@ const KalkulatorPage: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 rounded-lg border border-dashed p-3 bg-muted/20">
                         <div>
                           <Label>Outstanding Pokok (Rp)</Label>
-                          <Input type="number" inputMode="numeric" value={outstandingPokok} onChange={(e) => setOutstandingPokok(e.target.value)} placeholder="Lihat di core" />
+                          <InputNominal value={outstandingPokok} onValueChange={(teks) => setOutstandingPokok(teks)} placeholder="Lihat di core" />
                         </div>
                         <div>
                           <Label>Outstanding Bunga (Rp)</Label>
-                          <Input type="number" inputMode="numeric" value={outstandingBunga} onChange={(e) => setOutstandingBunga(e.target.value)} placeholder="Lihat di core" />
+                          <InputNominal value={outstandingBunga} onValueChange={(teks) => setOutstandingBunga(teks)} placeholder="Lihat di core" />
                         </div>
                         <p className="md:col-span-2 text-xs text-muted-foreground">Diisi manual sesuai data outstanding di core banking.</p>
                       </div>
@@ -1470,17 +1471,17 @@ const KalkulatorPage: React.FC = () => {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Gaji Pokok / Bulan</Label>
-                    <Input value={gajiPokokStr} onChange={(e) => setGajiPokokStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                    <InputNominal value={gajiPokokStr} onValueChange={(teks) => setGajiPokokStr(teks)} placeholder="0" />
                     <div className="flex items-center gap-2 mt-2">
                       <Checkbox id="ag" checked={adaAngsuranGaji} onCheckedChange={(c) => setAdaAngsuranGaji(!!c)} />
                       <Label htmlFor="ag" className="cursor-pointer font-normal text-sm">Angsuran Gaji (jika ada)</Label>
                     </div>
                     {adaAngsuranGaji && (
                       <>
-                        <Input
+                        <InputNominal
                           className="mt-2"
                           value={angsuranGajiStr}
-                          onChange={(e) => setAngsuranGajiStr(formatCurrencyInput(e.target.value))}
+                          onValueChange={(teks) => setAngsuranGajiStr(teks)}
                           placeholder="0"
                         />
                         {dsr.selisihAG > 0 ? (
@@ -1495,16 +1496,16 @@ const KalkulatorPage: React.FC = () => {
                   </div>
                   <div>
                     <Label>Pendapatan Lainnya (TTP)</Label>
-                    <Input value={ttpStr} onChange={(e) => setTtpStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                    <InputNominal value={ttpStr} onValueChange={(teks) => setTtpStr(teks)} placeholder="0" />
                     <div className="flex items-center gap-2 mt-2">
                       <Checkbox id="ap" checked={adaAngsuranPraja} onCheckedChange={(c) => setAdaAngsuranPraja(!!c)} />
                       <Label htmlFor="ap" className="cursor-pointer font-normal text-sm">Angsuran Praja (jika ada)</Label>
                     </div>
                     {adaAngsuranPraja && (
-                      <Input
+                      <InputNominal
                         className="mt-2"
                         value={angsuranPrajaStr}
-                        onChange={(e) => setAngsuranPrajaStr(formatCurrencyInput(e.target.value))}
+                        onValueChange={(teks) => setAngsuranPrajaStr(teks)}
                         placeholder="0"
                       />
                     )}
@@ -1610,11 +1611,11 @@ const KalkulatorPage: React.FC = () => {
                           value={b.label}
                           onChange={(e) => updateBiaya(i, { label: e.target.value })}
                         />
-                        <Input
+                        <InputNominal
                           className="w-48"
                           placeholder="0"
                           value={b.nominalStr}
-                          onChange={(e) => updateBiaya(i, { nominalStr: formatCurrencyInput(e.target.value) })}
+                          onValueChange={(teks) => updateBiaya(i, { nominalStr: teks })}
                         />
                         <Button type="button" size="icon" variant="ghost" onClick={() => setBiayaRows(biayaRows.filter((_, idx) => idx !== i))}>
                           <X className="w-4 h-4 text-rose-600" />
@@ -1647,7 +1648,7 @@ const KalkulatorPage: React.FC = () => {
                     {asuransiProvider === 'manual' && (
                       <div>
                         <Label>Premi Asuransi Jiwa (Rp) — Pialang</Label>
-                        <Input value={asuransiJiwaStr} onChange={(e) => setAsuransiJiwaStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                        <InputNominal value={asuransiJiwaStr} onValueChange={(teks) => setAsuransiJiwaStr(teks)} placeholder="0" />
                         <p className="text-xs text-muted-foreground mt-1">Nominal premi jiwa dari quotation Pialang Asuransi.</p>
                       </div>
                     )}
@@ -1712,7 +1713,7 @@ const KalkulatorPage: React.FC = () => {
                     </div>
                     <div>
                       <Label>Premi Asuransi Kredit (Rp)</Label>
-                      <Input value={asuransiKreditStr} onChange={(e) => setAsuransiKreditStr(formatCurrencyInput(e.target.value))} placeholder="0" />
+                      <InputNominal value={asuransiKreditStr} onValueChange={(teks) => setAsuransiKreditStr(teks)} placeholder="0" />
                     </div>
                   </div>
                 </CardContent>

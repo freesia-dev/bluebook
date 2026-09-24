@@ -330,7 +330,7 @@ const DatabasePengisianATM = () => {
               tambahCartridge2: item.tambahCartridge2.toString(),
               tambahCartridge3: item.tambahCartridge3.toString(),
               tambahCartridge4: item.tambahCartridge4.toString(),
-              saldoBukuBesar: formatCurrencyInput(item.saldoBukuBesar.toString()),
+              saldoBukuBesar: formatCurrencyInput(Number(item.saldoBukuBesar)),
               kartuTertelan: item.kartuTertelan.toString(),
               yangMenyerahkan: item.yangMenyerahkan,
               namaTeller: item.namaTeller,

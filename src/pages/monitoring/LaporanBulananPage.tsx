@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
+import { InputNominal } from '@/components/ui/input-nominal';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -230,7 +231,7 @@ const ProyeksiManual: React.FC<{ unit: 'telihan' | 'meranti'; rows: ProyeksiRow[
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Plafon (Rp)</Label>
-                        <Input inputMode="numeric" value={formatCurrencyInput(form.plafon)} onChange={(e) => setForm({ ...form, plafon: parseCurrencyValue(e.target.value) })} />
+                        <InputNominal value={form.plafon} onValueChange={(_, n) => setForm({ ...form, plafon: n })} />
                       </div>
                       <div>
                         <Label>Jangka Waktu (bulan)</Label>

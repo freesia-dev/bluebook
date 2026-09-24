@@ -66,7 +66,7 @@ const SPPKPage: React.FC<SPPKPageProps> = ({ type, title }) => {
   const toFormData = (item: SPPK): SPPKFormData => ({
     namaDebitur: item.namaDebitur,
     jenisKredit: item.jenisKredit,
-    plafon: formatCurrencyInput(item.plafon.toString()),
+    plafon: formatCurrencyInput(Number(item.plafon)),
     jangkaWaktu: item.jangkaWaktu,
     marketing: item.marketing,
     tanggal: item.tanggal ? new Date(item.tanggal) : new Date(),

@@ -1,4 +1,5 @@
 import React from 'react';
+import { InputNominal } from '@/components/ui/input-nominal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -86,11 +87,11 @@ export function CreditFormFields<V extends Record<string, any>>({
             return (
               <div className="space-y-2" key={f.key}>
                 {labelNode}
-                <Input
+                <InputNominal
                   id={f.key}
                   value={(values[f.key] as string) ?? ''}
-                  placeholder={f.placeholder || '1.000.000'}
-                  onChange={(e) => setField(f.key, formatCurrencyInput(e.target.value))}
+                  placeholder={f.placeholder || '1.000.000,00'}
+                  onValueChange={(teks) => setField(f.key, teks)}
                 />
               </div>
             );
