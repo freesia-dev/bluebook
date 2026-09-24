@@ -43,6 +43,8 @@ DECLARE
     ['cerdas_config',          'cap_tier_1_takeover'],
     ['cerdas_config',          'cap_tier_2_takeover'],
     ['cerdas_config',          'cap_tier_3_takeover'],
+    ['cerdas_config',          'cap_tier_4_baru'],
+    ['cerdas_config',          'cap_tier_4_takeover'],
 
     ['loan_promo_program',     'plafon_tier_1_max'],
     ['loan_promo_program',     'plafon_tier_2_max'],
@@ -53,6 +55,8 @@ DECLARE
     ['loan_promo_program',     'cap_tier_1_takeover'],
     ['loan_promo_program',     'cap_tier_2_takeover'],
     ['loan_promo_program',     'cap_tier_3_takeover'],
+    ['loan_promo_program',     'cap_tier_4_baru'],
+    ['loan_promo_program',     'cap_tier_4_takeover'],
 
     ['loan_promo',             'cap_subsidi'],
     ['loan_product_config',    'biaya_notaris'],
@@ -118,6 +122,30 @@ BEGIN
 
   RAISE NOTICE 'Selesai: % kolom diubah, % kolom dilewati.', jumlah_diubah, jumlah_dilewati;
 END $$;
+
+-- ----------------------------------------------------------------------------
+-- Laporan: kolom bernama seperti nominal uang yang MASIH bilangan bulat.
+-- Idealnya kosong. Kalau ada isinya, kolom itu belum ikut dilebarkan — kirim
+-- hasilnya supaya bisa ditambahkan ke daftar di atas.
+-- (Kolom jumlah/pencacah seperti nomor, retracts, kartu_tertelan memang
+-- sengaja tetap bilangan bulat dan tidak muncul di sini.)
+-- ----------------------------------------------------------------------------
+SELECT table_name, column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND data_type IN ('bigint', 'integer', 'smallint')
+  AND (
+    column_name LIKE '%plafon%' OR column_name LIKE '%nominal%' OR
+    column_name LIKE '%saldo%'  OR column_name LIKE '%gaji%'    OR
+    column_name LIKE '%angsuran%' OR column_name LIKE '%premi%' OR
+    column_name LIKE '%asuransi%' OR column_name LIKE '%biaya%' OR
+    column_name LIKE '%tunggakan%' OR column_name LIKE '%outstanding%' OR
+    column_name LIKE '%subsidi%' OR column_name LIKE '%cap_%'   OR
+    column_name LIKE '%selisih%' OR column_name LIKE '%setor%'  OR
+    column_name LIKE '%disetor%' OR column_name = 'ttp'
+  )
+  AND column_name NOT IN ('blokir_angsuran', 'pelunasan_bulan_ke')
+ORDER BY table_name, column_name;
 
 -- ----------------------------------------------------------------------------
 -- Pemeriksaan sesudahnya — semua baris harus bertipe numeric
