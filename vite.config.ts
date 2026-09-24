@@ -83,18 +83,15 @@ export default defineConfig(() => ({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        navigateFallbackDenylist: [/^\/~oauth/],
+        // Semua navigasi dilayani dari index.html yang ikut di-precache. Dulu
+        // navigasi memakai NetworkFirst dengan batas 3 detik: di jaringan
+        // kantor yang lambat batas itu sering terlampaui sementara cache-nya
+        // kosong, hasilnya halaman gagal muat dan alamat harus diketik ulang.
+        // Versi baru tetap sampai ke pengguna karena service worker mengecek
+        // pembaruan sendiri (lihat src/components/PWAUpdatePrompt.tsx).
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/version\.json/, /^\/_/],
         runtimeCaching: [
-          {
-            // HTML navigations — always try the network first so new deploys
-            // reach installed home-screen apps without a manual reinstall.
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "html-pages",
-              networkTimeoutSeconds: 3,
-            },
-          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",

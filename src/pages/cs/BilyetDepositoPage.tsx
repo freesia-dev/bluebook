@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatRupiah } from '@/lib/uang';
+import { formatCurrencyInput, parseCurrencyDecimal } from '@/hooks/use-currency-input';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -145,7 +147,17 @@ const BilyetDepositoPage: React.FC = () => {
         <div className="space-y-1"><Label>Nama Nasabah</Label><Input value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1"><Label>Nominal</Label><Input type="number" value={form.nominal} onChange={(e) => setForm({ ...form, nominal: Number(e.target.value) })} /></div>
+        <div className="space-y-1">
+          <Label>Nominal</Label>
+          <Input
+            inputMode="decimal"
+            value={formatCurrencyInput(form.nominal, { desimal: true })}
+            onChange={(e) =>
+              setForm({ ...form, nominal: parseCurrencyDecimal(formatCurrencyInput(e.target.value, { desimal: true })) })
+            }
+            placeholder="0,00"
+          />
+        </div>
         <div className="space-y-1"><Label>Jangka Waktu (bulan)</Label><Input type="number" value={form.jangka_waktu_bulan} onChange={(e) => setForm({ ...form, jangka_waktu_bulan: Number(e.target.value) })} /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -200,7 +212,7 @@ const BilyetDepositoPage: React.FC = () => {
           { key: 'nomor_bilyet', header: 'Nomor Bilyet', filterable: true },
           { key: 'cif', header: 'CIF', filterable: true },
           { key: 'nama', header: 'Nama' },
-          { key: 'nominal', header: 'Nominal', render: (r) => `Rp ${Number(r.nominal).toLocaleString('id-ID')}` },
+          { key: 'nominal', header: 'Nominal', render: (r) => formatRupiah(r.nominal) },
           { key: 'jangka_waktu_bulan', header: 'JW (bln)' },
           { key: 'tanggal_terbit', header: 'Terbit' },
           { key: 'tanggal_jatuh_tempo', header: 'Jatuh Tempo' },

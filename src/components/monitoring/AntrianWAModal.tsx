@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatRupiah } from '@/lib/uang';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -132,7 +133,7 @@ export const AntrianWAModal: React.FC<Props> = ({ open, items, onClose }) => {
                 </div>
                 <div className="text-right">
                   <Badge variant="outline" className="font-mono">{formatPhoneDisplay(current.no_hp)}</Badge>
-                  <p className="text-xs text-amber-600 mt-1">KOL {current.kol} • Tunggakan Rp {Math.round(current.tunggakan).toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-amber-600 mt-1">KOL {current.kol} • Tunggakan {formatRupiah(current.tunggakan)}</p>
                 </div>
               </div>
               <Textarea value={current.pesan} readOnly className="font-mono text-xs h-48 resize-none" />

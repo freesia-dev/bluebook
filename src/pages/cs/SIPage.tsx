@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatRupiah } from '@/lib/uang';
+import { formatCurrencyInput, parseCurrencyDecimal } from '@/hooks/use-currency-input';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
@@ -145,7 +147,17 @@ const SIPage: React.FC = () => {
         <div className="space-y-1"><Label>Rekening Kredit</Label><Input value={form.rekening_kredit} onChange={(e) => setForm({ ...form, rekening_kredit: e.target.value })} /></div>
       </div>
       <div className="space-y-1"><Label>Nama Nasabah</Label><Input value={form.nama_nasabah} onChange={(e) => setForm({ ...form, nama_nasabah: e.target.value })} /></div>
-      <div className="space-y-1"><Label>Nominal</Label><Input type="number" value={form.nominal} onChange={(e) => setForm({ ...form, nominal: Number(e.target.value) })} /></div>
+      <div className="space-y-1">
+        <Label>Nominal</Label>
+        <Input
+          inputMode="decimal"
+          value={formatCurrencyInput(form.nominal, { desimal: true })}
+          onChange={(e) =>
+            setForm({ ...form, nominal: parseCurrencyDecimal(formatCurrencyInput(e.target.value, { desimal: true })) })
+          }
+          placeholder="0,00"
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1"><Label>Tanggal Mulai</Label><Input type="date" value={form.tanggal_mulai} onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })} /></div>
         <div className="space-y-1"><Label>Tanggal Berakhir</Label><Input type="date" value={form.tanggal_berakhir} onChange={(e) => setForm({ ...form, tanggal_berakhir: e.target.value })} /></div>
@@ -201,7 +213,7 @@ const SIPage: React.FC = () => {
           { key: 'rekening_debet', header: 'Rek. Debet', filterable: true },
           { key: 'rekening_kredit', header: 'Rek. Kredit', filterable: true },
           { key: 'nama_nasabah', header: 'Nama' },
-          { key: 'nominal', header: 'Nominal', render: (r) => r.nominal?.toLocaleString('id-ID') },
+          { key: 'nominal', header: 'Nominal', render: (r) => formatRupiah(r.nominal) },
           { key: 'tanggal_mulai', header: 'Mulai' },
           { key: 'tanggal_berakhir', header: 'Berakhir' },
           { key: 'status', header: 'Status', filterable: true },

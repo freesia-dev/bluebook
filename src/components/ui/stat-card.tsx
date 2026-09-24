@@ -109,6 +109,27 @@ const Sparkline: React.FC<{ data: number[]; className?: string }> = ({ data, cla
 };
 
 /**
+ * Ukuran huruf angka menyesuaikan panjangnya. Kolom angka di kartu statistik
+ * hanya selebar beberapa puluh piksel di layar HP, jadi "Rp 1.234.567.890,00"
+ * dan "12" tidak bisa memakai ukuran yang sama. Di layar lebar (sm ke atas)
+ * ukurannya kembali seperti semula.
+ */
+const ukuranAngka = (teks: string, compact: boolean): string => {
+  const n = teks.length;
+  if (compact) {
+    if (n <= 6) return 'text-xl';
+    if (n <= 10) return 'text-lg';
+    if (n <= 14) return 'text-base';
+    return 'text-sm sm:text-base';
+  }
+  if (n <= 6) return 'text-2xl sm:text-3xl';
+  if (n <= 10) return 'text-xl sm:text-2xl';
+  if (n <= 14) return 'text-lg sm:text-2xl';
+  if (n <= 18) return 'text-base sm:text-xl';
+  return 'text-sm sm:text-lg';
+};
+
+/**
  * Kartu angka penting. Sengaja tenang: badan kartu putih (atau gelap di dark
  * mode), warna cuma dipakai di ikon, tren, dan grafik mini — kecuali kartu yang
  * ditandai `attention`, yang boleh oranye karena memang perlu ditindaklanjuti.
@@ -135,21 +156,29 @@ export const StatCard: React.FC<StatCardProps> = ({
     <div
       className={cn(
         'relative overflow-hidden rounded-xl border bg-card transition-shadow duration-200 hover:shadow-card-hover',
-        compact ? 'p-4' : 'p-5',
+        compact ? 'p-3 sm:p-4' : 'p-3.5 sm:p-5',
         attention ? 'border-amber-400/70 shadow-[inset_3px_0_0_0_hsl(var(--warning))]' : 'border-border/60 shadow-card',
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0 flex-1">
           <p className={cn('font-medium text-muted-foreground', compact ? 'text-[11px] uppercase tracking-wide' : 'text-sm')}>
             {title}
           </p>
+          {/* Angka tidak boleh pecah di tengah digit. Dulu kelas break-words
+              membuat "Rp 10.000.000,00" di layar HP terbelah jadi dua baris
+              dengan sisa satu-dua angka menggantung sendirian di bawah.
+              Sekarang: ukuran huruf menyesuaikan panjang angkanya, dan kalau
+              tetap tidak muat barisnya hanya boleh patah di spasi — jadi
+              deretan angkanya selalu utuh. */}
           <p
             className={cn(
-              'font-display font-bold tracking-tight tabular-nums break-words text-foreground',
-              compact ? 'mt-1 text-xl' : 'mt-2 text-3xl',
+              'font-display font-bold tracking-tight tabular-nums text-foreground [overflow-wrap:normal] [word-break:normal]',
+              compact ? 'mt-1' : 'mt-2',
+              ukuranAngka(String(value ?? ''), compact),
             )}
+            title={String(value ?? '')}
           >
             {value}
           </p>
@@ -179,8 +208,8 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className={cn('rounded-xl', compact ? 'p-2' : 'p-2.5', ACCENT_BG[aksen], ACCENT[aksen])}>
-            <Icon className={compact ? 'h-4 w-4' : 'h-5 w-5'} />
+          <div className={cn('rounded-xl', compact ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5', ACCENT_BG[aksen], ACCENT[aksen])}>
+            <Icon className={compact ? 'h-4 w-4' : 'h-4 w-4 sm:h-5 sm:w-5'} />
           </div>
           {sparkline && sparkline.length >= 2 && <Sparkline data={sparkline} className={ACCENT[aksen]} />}
         </div>

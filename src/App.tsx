@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/page-skeleton";
 import { useInactivityLogout } from "@/hooks/use-inactivity-logout";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
+import { tandaiMuatBerhasil } from "@/lib/app-refresh";
 import { CommandPalette } from "@/components/search/CommandPalette";
 import { LivePresence } from "@/components/presence/LivePresence";
 import { SilentBoundary, RouteErrorBoundary } from "@/components/ErrorBoundary";
@@ -113,12 +114,21 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Menandai halaman berhasil dimuat, supaya penjaga muat-ulang kembali nol. */
+const PenandaMuatBerhasil = () => {
+  useEffect(() => {
+    tandaiMuatBerhasil();
+  }, []);
+  return null;
+};
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <InactivityHandler />
+          <PenandaMuatBerhasil />
           <PWAUpdatePrompt />
           <SilentBoundary name="greeting"><DailyGreetingOverlay /></SilentBoundary>
           <SilentBoundary name="version-watcher"><AppVersionWatcher /></SilentBoundary>

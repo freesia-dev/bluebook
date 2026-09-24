@@ -81,7 +81,7 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
     setFormNomorKartu(item.nomorKartu || '');
     setFormNoReff(item.noReff || '');
     setFormKeterangan(item.keterangan || '');
-    setFormNominal(formatCurrencyInput(String(item.nominal)));
+    setFormNominal(formatCurrencyInput(item.nominal));
     setEditingItem(item);
     setShowAddDialog(true);
   };
@@ -176,7 +176,7 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
                 Pengisian #{pengisian.nomor} — {format(pengisian.tanggal, 'dd/MM/yyyy')}
               </CardTitle>
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span>Total Selisih: <strong className="text-foreground">{formatRupiah(pengisian.jumlahSelisih)}</strong></span>
+                <span className="whitespace-nowrap">Total Selisih: <strong className="text-foreground">{formatRupiah(pengisian.jumlahSelisih)}</strong></span>
                 <span>•</span>
                 <span>{pengisian.keteranganSelisih}</span>
               </div>
@@ -215,7 +215,71 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
               Belum ada detail selisih. Klik "Tambah Detail" untuk memecah total selisih {formatRupiah(originalTotal)} menjadi beberapa transaksi.
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              {/* Layar kecil: satu kartu per baris. Tabel 8 kolom ini dulu
+                  melebar ke samping di HP/PWA sampai kolom Aksi tidak terjangkau. */}
+              <div className="space-y-2 md:hidden">
+                {selisihList.map((item, idx) => (
+                  <div key={item.id} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{item.namaNasabah || `Detail ${idx + 1}`}</p>
+                        <p className="font-mono text-xs text-muted-foreground">{item.nomorKartu || '-'}</p>
+                      </div>
+                      {item.status === 'Sudah Diselesaikan' ? (
+                        <Badge className="shrink-0 border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">Selesai</Badge>
+                      ) : item.status === 'Dalam Proses' ? (
+                        <Badge className="shrink-0 border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-400">Proses</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0">Belum</Badge>
+                      )}
+                    </div>
+                    <p className="mt-2 text-lg font-semibold tabular-nums">{formatRupiah(item.nominal)}</p>
+                    <dl className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      <div className="flex gap-1">
+                        <dt className="shrink-0">No. Reff EJ:</dt>
+                        <dd className="min-w-0 truncate font-mono text-foreground">{item.noReff || '-'}</dd>
+                      </div>
+                      {item.keterangan && (
+                        <div className="flex gap-1">
+                          <dt className="shrink-0">Keterangan:</dt>
+                          <dd className="min-w-0 text-foreground">{item.keterangan}</dd>
+                        </div>
+                      )}
+                    </dl>
+                    <div className="mt-2 flex items-center gap-1 border-t pt-2">
+                      {item.status !== 'Sudah Diselesaikan' ? (
+                        <>
+                          <Button variant="ghost" size="sm" className="text-emerald-600" onClick={() => handleResolve(item.id)}>
+                            <CheckCircle className="mr-1 h-4 w-4" /> Selesaikan
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(item)}>
+                            <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="ghost" size="sm" className="text-amber-600" onClick={() => handleUnresolve(item.id)}>
+                          <Undo2 className="mr-1 h-4 w-4" /> Batalkan
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)} title="Hapus">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {selisihList.length > 1 && (
+                  <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+                    <span className="text-muted-foreground">Total dipecah </span>
+                    <span className="font-semibold tabular-nums">{formatRupiah(totalDetail)}</span>
+                    <span className="text-muted-foreground"> dari {formatRupiah(originalTotal)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -285,7 +349,8 @@ const SelisihDetailTable = ({ pengisian }: SelisihDetailTableProps) => {
                   )}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

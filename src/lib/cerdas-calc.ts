@@ -1,3 +1,4 @@
+import { formatRupiah } from '@/lib/uang';
 // Program CERDAS — Promo CERDAS Divisi Kredit Ritel & Konsumer Bankaltimtara.
 // 3 skema: debitur_baru, take_over, top_up.
 // - debitur_baru & take_over: gratis AJK sesuai cap tier plafon (cap berbeda untuk masing-masing skema).
@@ -162,5 +163,4 @@ export function applyCerdas(input: CerdasApplyInput): CerdasApplyResult {
   };
 }
 
-const formatRp = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+const formatRp = (n: number) => formatRupiah(n);

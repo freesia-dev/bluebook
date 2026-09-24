@@ -20,11 +20,11 @@ const ProgramCerdasManager: React.FC = () => {
     if (!cfg) return;
     const f: any = { ...cfg };
     (['plafon_tier_1_max', 'plafon_tier_2_max', 'plafon_tier_3_max'] as const).forEach((k) => {
-      f[`${k}_str`] = formatCurrencyInput(String((cfg as any)[k]));
+      f[`${k}_str`] = formatCurrencyInput((cfg as any)[k]);
     });
     ([1, 2, 3, 4] as const).forEach((t) => {
-      f[`cap_tier_${t}_baru_str`] = formatCurrencyInput(String((cfg as any)[`cap_tier_${t}_baru`]));
-      f[`cap_tier_${t}_takeover_str`] = formatCurrencyInput(String((cfg as any)[`cap_tier_${t}_takeover`]));
+      f[`cap_tier_${t}_baru_str`] = formatCurrencyInput((cfg as any)[`cap_tier_${t}_baru`]);
+      f[`cap_tier_${t}_takeover_str`] = formatCurrencyInput((cfg as any)[`cap_tier_${t}_takeover`]);
     });
     setForm(f);
   }, [cfg]);

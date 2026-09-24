@@ -6,6 +6,7 @@ import {
   Mail, Send, CreditCard, FileText,
   Users, Wallet, Landmark, Phone, PiggyBank, Calculator, Repeat, Shield, BarChart3,
 } from 'lucide-react';
+import { formatRupiahAtauStrip } from '@/lib/uang';
 
 export type Row = Record<string, any>;
 
@@ -36,7 +37,7 @@ export interface SearchResult {
   record: Row;
 }
 
-const rp = (v: any) => (v === null || v === undefined || v === '' ? '-' : `Rp ${Number(v).toLocaleString('id-ID')}`);
+const rp = (v: any) => formatRupiahAtauStrip(v);
 
 export const SEARCH_SPECS: SearchSpec[] = [
   {

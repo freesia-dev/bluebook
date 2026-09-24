@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -290,7 +291,7 @@ const ReminderTunggakanPage: React.FC = () => {
           </div>
           <div>
             <Label className="text-xs">Min Tunggakan</Label>
-            <Input type="number" value={minTunggakan} onChange={(e) => setMinTunggakan(e.target.value)} />
+            <Input inputMode="numeric" value={formatCurrencyInput(minTunggakan)} onChange={(e) => setMinTunggakan(String(parseCurrencyValue(e.target.value) || ''))} />
           </div>
           <div>
             <Label className="text-xs">AO</Label>

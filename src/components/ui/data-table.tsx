@@ -603,8 +603,11 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
           )}
         </p>
 
+        {/* Di HP baris ini dulu lebih lebar dari layar sehingga halaman bisa
+            digeser ke samping; sekarang boleh turun baris dan tombol lompat ke
+            awal/akhir disembunyikan di layar sempit. */}
         {filteredData.length > 0 && (
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
             <div className="flex items-center gap-2">
               <Label className="text-xs text-muted-foreground whitespace-nowrap">Baris/halaman</Label>
               <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
@@ -623,7 +626,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="hidden h-8 w-8 sm:inline-flex"
                 onClick={() => setPage(1)}
                 disabled={currentPage <= 1}
               >
@@ -653,7 +656,7 @@ export function DataTable<T extends { id: string; created_at?: string; nomor?: n
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="hidden h-8 w-8 sm:inline-flex"
                 onClick={() => setPage(totalPages)}
                 disabled={currentPage >= totalPages}
               >

@@ -8,6 +8,8 @@
 //    no-store). Kalau beda → ada versi baru, dan forceUpdateAndReload() bisa
 //    memasangnya dengan bersih (update SW, hapus cache, reload).
 
+import { muatUlangUntukVersiBaru } from '@/lib/app-refresh';
+
 export const CURRENT_BUILD_ID: string =
   typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'dev';
 export const CURRENT_BUILT_AT: string =
@@ -58,12 +60,16 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
 let updating = false;
 
 /**
- * Pasang versi terbaru secara bersih lalu muat ulang:
- * - minta service worker ambil versi baru & langsung aktif
- * - hapus semua cache aplikasi (bukan data login / localStorage)
- * - lepas service worker lama (akan terpasang ulang otomatis setelah reload)
- * - reload
- * Aman dipanggil berkali-kali; tidak menyentuh sesi login.
+ * Pasang versi terbaru lalu muat ulang halaman yang sedang dibuka.
+ *
+ * CATATAN PENTING (pernah jadi bug): jangan menghapus cache atau melepas
+ * service worker di sini. Versi lama fungsi ini menghapus semua cache lalu
+ * reload — termasuk precache milik service worker yang baru saja terpasang —
+ * sehingga setelah reload tidak ada berkas yang bisa dilayani dan halaman
+ * gagal muat. Di browser alamatnya harus diketik ulang, di PWA aplikasinya
+ * harus di-force close. Cukup minta versi baru aktif, tunggu ia mengambil
+ * alih halaman, lalu muat ulang. Pembersihan cache lama sudah ditangani
+ * workbox lewat cleanupOutdatedCaches.
  */
 export async function forceUpdateAndReload(): Promise<void> {
   if (updating) return;
@@ -72,11 +78,19 @@ export async function forceUpdateAndReload(): Promise<void> {
   const withTimeout = <T,>(p: Promise<T>, ms: number) =>
     Promise.race([p, new Promise<undefined>((r) => setTimeout(() => r(undefined), ms))]);
 
+  let ambilAlih: Promise<unknown> = Promise.resolve();
+
   try {
     if ('serviceWorker' in navigator) {
+      ambilAlih = withTimeout(
+        new Promise<void>((resolve) =>
+          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true }),
+        ),
+        6000,
+      );
       const regs = await withTimeout(navigator.serviceWorker.getRegistrations(), 3000);
       if (regs) {
-        await withTimeout(Promise.all(regs.map((r) => r.update().catch(() => {}))), 4000);
+        await withTimeout(Promise.all(regs.map((r) => r.update().catch(() => {}))), 5000);
         regs.forEach((r) => {
           try {
             r.waiting?.postMessage({ type: 'SKIP_WAITING' });
@@ -84,23 +98,18 @@ export async function forceUpdateAndReload(): Promise<void> {
             /* noop */
           }
         });
-        await withTimeout(Promise.all(regs.map((r) => r.unregister().catch(() => false))), 3000);
       }
     }
   } catch {
     /* noop */
   }
 
-  try {
-    if ('caches' in window) {
-      const keys = await withTimeout(caches.keys(), 3000);
-      if (keys) await withTimeout(Promise.all(keys.map((k) => caches.delete(k))), 3000);
-    }
-  } catch {
-    /* noop */
-  }
+  await ambilAlih;
 
-  window.location.reload();
+  if (!muatUlangUntukVersiBaru('tombol perbarui ditekan')) {
+    // Baru saja muat ulang — paksa sekali lagi supaya tombolnya tidak terasa mati
+    window.location.replace(window.location.pathname + window.location.search);
+  }
 }
 
 /** Format waktu build untuk ditampilkan, mis. "22 Sep 2026, 14.05". */

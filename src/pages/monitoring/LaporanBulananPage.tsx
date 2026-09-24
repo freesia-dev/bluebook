@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatCurrencyInput, parseCurrencyValue } from '@/hooks/use-currency-input';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -229,7 +230,7 @@ const ProyeksiManual: React.FC<{ unit: 'telihan' | 'meranti'; rows: ProyeksiRow[
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Plafon (Rp)</Label>
-                        <Input type="number" value={form.plafon} onChange={(e) => setForm({ ...form, plafon: Number(e.target.value) })} />
+                        <Input inputMode="numeric" value={formatCurrencyInput(form.plafon)} onChange={(e) => setForm({ ...form, plafon: parseCurrencyValue(e.target.value) })} />
                       </div>
                       <div>
                         <Label>Jangka Waktu (bulan)</Label>

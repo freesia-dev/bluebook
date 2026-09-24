@@ -275,7 +275,7 @@ const KalkulatorPage: React.FC = () => {
           ...(selectedProduct.biaya_notaris ? [{ label: 'Biaya Notaris', nominal: selectedProduct.biaya_notaris }] : []),
           ...(selectedProduct.biaya_perikatan ? [{ label: 'Biaya Perikatan', nominal: selectedProduct.biaya_perikatan }] : []),
         ];
-    setBiayaRows(items.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(String(b.nominal)) : '' })));
+    setBiayaRows(items.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(b.nominal) : '' })));
     setBlokir(String(selectedProduct.blokir_angsuran ?? 0));
     const firstRule = selectedProduct.dsr_rules?.[0]?.kode;
     if (firstRule) setDsrBasis(firstRule);
@@ -313,21 +313,21 @@ const KalkulatorPage: React.FC = () => {
     if (savedBasis) setDsrBasis(savedBasis);
     setNamaAo(editRow.nama_ao || '');
     setProductId(editRow.product_id || '');
-    setPlafonStr(editRow.plafon ? formatCurrencyInput(String(editRow.plafon)) : '');
+    setPlafonStr(editRow.plafon ? formatCurrencyInput(editRow.plafon) : '');
     setTenor(String(editRow.tenor_bulan || 0));
     // Hitungan baru selalu memakai tanggal akad hari ini, bukan tanggal simulasi lama
     setTanggalAkad(dariId ? new Date().toISOString().slice(0, 10) : editRow.tanggal_akad || new Date().toISOString().slice(0, 10));
     const gp = editRow.gaji_pokok ?? editRow.gaji ?? 0;
     const tt = editRow.ttp ?? 0;
-    setGajiPokokStr(gp ? formatCurrencyInput(String(gp)) : '');
-    setTtpStr(tt ? formatCurrencyInput(String(tt)) : '');
+    setGajiPokokStr(gp ? formatCurrencyInput(gp) : '');
+    setTtpStr(tt ? formatCurrencyInput(tt) : '');
     if (editRow.angsuran_gaji) {
       setAdaAngsuranGaji(true);
-      setAngsuranGajiStr(formatCurrencyInput(String(editRow.angsuran_gaji)));
+      setAngsuranGajiStr(formatCurrencyInput(editRow.angsuran_gaji));
     }
     if (editRow.angsuran_praja) {
       setAdaAngsuranPraja(true);
-      setAngsuranPrajaStr(formatCurrencyInput(String(editRow.angsuran_praja)));
+      setAngsuranPrajaStr(formatCurrencyInput(editRow.angsuran_praja));
     }
     setBunga(String(editRow.bunga_pa ?? ''));
     setBungaMode('manual');
@@ -347,15 +347,15 @@ const KalkulatorPage: React.FC = () => {
       savedCerdas?.premiAsuransiAktual ??
       ((editRow.asuransi_jiwa_beban ?? Math.max((editRow.asuransi_nominal ?? 0) - (editRow.premi_kredit ?? 0), 0)) + savedSubsidiJiwa)
     );
-    setAsuransiJiwaStr(savedPremiJiwaAktual ? formatCurrencyInput(String(savedPremiJiwaAktual)) : '');
-    setAsuransiKreditStr(editRow.premi_kredit ? formatCurrencyInput(String(editRow.premi_kredit)) : '');
+    setAsuransiJiwaStr(savedPremiJiwaAktual ? formatCurrencyInput(savedPremiJiwaAktual) : '');
+    setAsuransiKreditStr(editRow.premi_kredit ? formatCurrencyInput(editRow.premi_kredit) : '');
     const savedBiaya: BiayaItem[] = Array.isArray(editRow.biaya_items) && editRow.biaya_items.length
       ? (editRow.biaya_items as BiayaItem[])
       : [
           ...(editRow.biaya_notaris ? [{ label: 'Biaya Notaris', nominal: editRow.biaya_notaris }] : []),
           ...(editRow.biaya_perikatan ? [{ label: 'Biaya Perikatan', nominal: editRow.biaya_perikatan }] : []),
         ];
-    setBiayaRows(savedBiaya.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(String(b.nominal)) : '' })));
+    setBiayaRows(savedBiaya.map((b) => ({ ...b, nominalStr: b.nominal ? formatCurrencyInput(b.nominal) : '' })));
     setBlokir(String(editRow.blokir_angsuran ?? 0));
     setAdaPelunasan(!!editRow.ada_pelunasan);
     if (editRow.outstanding_pokok != null) setOutstandingPokok(String(editRow.outstanding_pokok));
@@ -519,7 +519,7 @@ const KalkulatorPage: React.FC = () => {
       bungaPa,
       skema,
     });
-    setPlafonStr(formatCurrencyInput(String(max)));
+    setPlafonStr(formatCurrencyInput(max));
     toast({ title: 'Max plafon dihitung', description: fmtRp(max) });
   };
 
