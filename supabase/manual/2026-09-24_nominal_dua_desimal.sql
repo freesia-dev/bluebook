@@ -43,6 +43,8 @@ DECLARE
     ['cerdas_config',          'cap_tier_1_takeover'],
     ['cerdas_config',          'cap_tier_2_takeover'],
     ['cerdas_config',          'cap_tier_3_takeover'],
+    ['cerdas_config',          'cap_tier_4_baru'],
+    ['cerdas_config',          'cap_tier_4_takeover'],
 
     ['loan_promo_program',     'plafon_tier_1_max'],
     ['loan_promo_program',     'plafon_tier_2_max'],
@@ -53,6 +55,8 @@ DECLARE
     ['loan_promo_program',     'cap_tier_1_takeover'],
     ['loan_promo_program',     'cap_tier_2_takeover'],
     ['loan_promo_program',     'cap_tier_3_takeover'],
+    ['loan_promo_program',     'cap_tier_4_baru'],
+    ['loan_promo_program',     'cap_tier_4_takeover'],
 
     ['loan_promo',             'cap_subsidi'],
     ['loan_product_config',    'biaya_notaris'],
