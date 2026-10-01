@@ -71,7 +71,24 @@ export interface CalcResult {
   summary: CalcSummary;
 }
 
-const round = (n: number) => Math.round(n);
+/**
+ * Pembulatan ke sen (dua angka di belakang koma).
+ *
+ * Dulu seluruh perhitungan dibulatkan ke rupiah penuh, sehingga angsuran
+ * anuitas Rp 1.544.001,62 muncul sebagai Rp 1.544.002 — meleset 38 sen per
+ * bulan, dan lebih jauh lagi kalau dikali tenor. Sekarang semua angka
+ * dipertahankan sampai sen.
+ *
+ * Pembulatan tetap dilakukan per baris (bukan hanya di akhir) supaya tabel
+ * angsurannya benar-benar tutup: jumlah pokok persis sama dengan plafon dan
+ * saldo berakhir di nol, sama seperti jadwal angsuran yang dicetak bank.
+ */
+const sen = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
+
+/** Pembulatan ke sen ke BAWAH — untuk batas atas, supaya tidak pernah terlampaui. */
+const senBawah = (n: number) => Math.floor((Number.isFinite(n) ? n : 0) * 100) / 100;
+
+const round = (n: number) => sen(n);
 
 const addMonths = (d: Date, m: number) => {
   const x = new Date(d);
@@ -90,76 +107,76 @@ export function calcAmortization(input: CalcInput): CalcResult {
   let saldo = plafon;
 
   if (skema === 'anuitas') {
-    const angsuran = r === 0 ? plafon / tenorBulan : (plafon * r) / (1 - Math.pow(1 + r, -tenorBulan));
+    const angsuran = sen(r === 0 ? plafon / tenorBulan : (plafon * r) / (1 - Math.pow(1 + r, -tenorBulan)));
     for (let i = 1; i <= tenorBulan; i++) {
-      const bunga = saldo * r;
-      let pokok = angsuran - bunga;
-      if (i === tenorBulan) pokok = saldo; // ensure last installment closes balance
-      const angAct = pokok + bunga;
-      saldo = Math.max(0, saldo - pokok);
+      const bunga = sen(saldo * r);
+      // Angsuran terakhir menutup sisa saldo apa adanya, supaya tidak ada
+      // sen yang tertinggal akibat pembulatan di baris-baris sebelumnya.
+      const pokok = i === tenorBulan ? sen(saldo) : sen(angsuran - bunga);
+      saldo = sen(Math.max(0, saldo - pokok));
       rows.push({
         bulan: i,
         tanggal: isoDate(addMonths(akad, i)),
-        pokok: round(pokok),
-        bunga: round(bunga),
-        angsuran: round(angAct),
-        saldo: round(saldo),
+        pokok,
+        bunga,
+        angsuran: sen(pokok + bunga),
+        saldo,
       });
     }
   } else if (skema === 'sliding') {
     // Sliding / menurun: pokok tetap (P/n), bunga dari saldo sisa → angsuran menurun.
-    const pokokTetap = plafon / tenorBulan;
+    const pokokTetap = sen(plafon / tenorBulan);
     for (let i = 1; i <= tenorBulan; i++) {
-      const bunga = saldo * r;
-      const pokok = i === tenorBulan ? saldo : pokokTetap;
-      saldo = Math.max(0, saldo - pokok);
+      const bunga = sen(saldo * r);
+      const pokok = i === tenorBulan ? sen(saldo) : pokokTetap;
+      saldo = sen(Math.max(0, saldo - pokok));
       rows.push({
         bulan: i,
         tanggal: isoDate(addMonths(akad, i)),
-        pokok: round(pokok),
-        bunga: round(bunga),
-        angsuran: round(pokok + bunga),
-        saldo: round(saldo),
+        pokok,
+        bunga,
+        angsuran: sen(pokok + bunga),
+        saldo,
       });
     }
   } else if (skema === 'efektif') {
     // Efektif rata-rata: total bunga sama dengan sliding, dibagi rata sehingga
     // pokok dan bunga tetap sampai akhir angsuran.
     const totalBungaEfektif = plafon * r * ((tenorBulan + 1) / 2);
-    const bungaRata = tenorBulan > 0 ? totalBungaEfektif / tenorBulan : 0;
-    const pokokTetap = plafon / tenorBulan;
+    const bungaRata = sen(tenorBulan > 0 ? totalBungaEfektif / tenorBulan : 0);
+    const pokokTetap = sen(plafon / tenorBulan);
     for (let i = 1; i <= tenorBulan; i++) {
-      const pokok = i === tenorBulan ? saldo : pokokTetap;
-      saldo = Math.max(0, saldo - pokok);
+      const pokok = i === tenorBulan ? sen(saldo) : pokokTetap;
+      saldo = sen(Math.max(0, saldo - pokok));
       rows.push({
         bulan: i,
         tanggal: isoDate(addMonths(akad, i)),
-        pokok: round(pokok),
-        bunga: round(bungaRata),
-        angsuran: round(pokok + bungaRata),
-        saldo: round(saldo),
+        pokok,
+        bunga: bungaRata,
+        angsuran: sen(pokok + bungaRata),
+        saldo,
       });
     }
   } else {
     // flat: bunga konstan dihitung dari plafon awal, pokok tetap → angsuran tetap.
-    const pokokTetap = plafon / tenorBulan;
-    const bungaTetap = plafon * r;
+    const pokokTetap = sen(plafon / tenorBulan);
+    const bungaTetap = sen(plafon * r);
     for (let i = 1; i <= tenorBulan; i++) {
-      const pokok = i === tenorBulan ? saldo : pokokTetap;
-      saldo = Math.max(0, saldo - pokok);
+      const pokok = i === tenorBulan ? sen(saldo) : pokokTetap;
+      saldo = sen(Math.max(0, saldo - pokok));
       rows.push({
         bulan: i,
         tanggal: isoDate(addMonths(akad, i)),
-        pokok: round(pokok),
-        bunga: round(bungaTetap),
-        angsuran: round(pokok + bungaTetap),
-        saldo: round(saldo),
+        pokok,
+        bunga: bungaTetap,
+        angsuran: sen(pokok + bungaTetap),
+        saldo,
       });
     }
   }
 
-  const totalAngsuran = rows.reduce((s, r) => s + r.angsuran, 0);
-  const totalBunga = rows.reduce((s, r) => s + r.bunga, 0);
+  const totalAngsuran = sen(rows.reduce((s, r) => s + r.angsuran, 0));
+  const totalBunga = sen(rows.reduce((s, r) => s + r.bunga, 0));
   return {
     rows,
     summary: {
@@ -207,7 +224,7 @@ export interface PotonganResult {
 }
 
 export function calcPotongan(p: PotonganInput): PotonganResult {
-  const asuransi = Math.max(0, Math.round(p.asuransiNominal || 0));
+  const asuransi = Math.max(0, sen(p.asuransiNominal || 0));
   const provisi = round((p.provisiPct / 100) * p.plafon);
 
   const legacy: BiayaItem[] = [];
@@ -216,14 +233,14 @@ export function calcPotongan(p: PotonganInput): PotonganResult {
 
   const biaya = (p.biayaItems && p.biayaItems.length ? p.biayaItems : legacy)
     .filter((b) => b && (b.label || b.nominal))
-    .map((b) => ({ label: b.label || 'Biaya', nominal: Math.max(0, Math.round(b.nominal || 0)) }));
+    .map((b) => ({ label: b.label || 'Biaya', nominal: Math.max(0, sen(b.nominal || 0)) }));
 
-  const biayaTotal = biaya.reduce((s, b) => s + b.nominal, 0);
+  const biayaTotal = sen(biaya.reduce((s, b) => s + b.nominal, 0));
   const notaris = biaya.find((b) => /notaris/i.test(b.label))?.nominal ?? 0;
   const perikatan = biaya.find((b) => /perikatan|apht|fidusia/i.test(b.label))?.nominal ?? 0;
 
   const blokir = round((p.blokirAngsuran || 0) * p.angsuranPertama);
-  const total = asuransi + provisi + biayaTotal + blokir;
+  const total = sen(asuransi + provisi + biayaTotal + blokir);
   return {
     asuransi,
     provisi,
@@ -233,7 +250,7 @@ export function calcPotongan(p: PotonganInput): PotonganResult {
     perikatan,
     blokir,
     total,
-    danaDiterima: p.plafon - total,
+    danaDiterima: sen(p.plafon - total),
   };
 }
 
@@ -346,10 +363,10 @@ export function calcDsr(i: DsrInput): DsrResult {
   const basisNilai = nilai(rule.sumber_penghasilan!);
   let maxAngsuran = (nilai(rule.sumber!) * (rule.max_pct || 0)) / 100;
   if (rule.faktor2_pct) maxAngsuran = (maxAngsuran * rule.faktor2_pct) / 100;
-  maxAngsuran = Math.round(maxAngsuran);
+  maxAngsuran = sen(maxAngsuran);
   if (rule.kurangi_ag) maxAngsuran -= selisihAG;
   if (rule.kurangi_ap) maxAngsuran -= ap;
-  maxAngsuran = Math.max(0, maxAngsuran);
+  maxAngsuran = sen(Math.max(0, maxAngsuran));
 
   return {
     basis: rule.kode,
@@ -485,15 +502,15 @@ export function calcMaxPlafonByDSR(input: {
   if (angsuranMax <= 0 || input.tenorBulan <= 0) return 0;
   const r = input.bungaPa / 100 / 12;
   if (input.skema === 'anuitas') {
-    if (r === 0) return Math.floor(angsuranMax * input.tenorBulan);
-    return Math.floor((angsuranMax * (1 - Math.pow(1 + r, -input.tenorBulan))) / r);
+    if (r === 0) return senBawah(angsuranMax * input.tenorBulan);
+    return senBawah((angsuranMax * (1 - Math.pow(1 + r, -input.tenorBulan))) / r);
   }
   if (input.skema === 'efektif') {
     // angsuran tetap = (P + P*r*(n+1)/2) / n → P = ang * n / (1 + r*(n+1)/2)
-    return Math.floor((angsuranMax * input.tenorBulan) / (1 + (r * (input.tenorBulan + 1)) / 2));
+    return senBawah((angsuranMax * input.tenorBulan) / (1 + (r * (input.tenorBulan + 1)) / 2));
   }
   // sliding & flat: angsuran (pertama) = P/n + P*r → P = ang / (1/n + r)
-  return Math.floor(angsuranMax / (1 / input.tenorBulan + r));
+  return senBawah(angsuranMax / (1 / input.tenorBulan + r));
 }
 
 export const fmtRp = (n: number) => formatRupiah(n);
