@@ -51,6 +51,9 @@ export interface UWResult {
   xPlusNOk: boolean;
 }
 
+/** Pembulatan ke sen — premi asuransi ikut dihitung sampai dua desimal. */
+const sen = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
+
 export function calcUmur(tglLahir: string | Date, tglAkad: string | Date): number {
   const lahir = new Date(tglLahir).getTime();
   const akad = new Date(tglAkad).getTime();
@@ -82,16 +85,16 @@ export function calcAlamin(input: {
   const { plafon, umur, tenorBulan, config, tarif } = input;
   const rate = lookupTarif(umur, tenorBulan, tarif);
   if (rate == null || rate <= 0) return null;
-  let premiGross = Math.round((rate * plafon) / 1000);
+  let premiGross = sen((rate * plafon) / 1000);
   let cappedToMin = false;
   if (premiGross < config.premi_min) {
     premiGross = config.premi_min;
     cappedToMin = true;
   }
-  const ujrohGross = Math.round((config.ujroh_pct / 100) * premiGross);
-  const pajak = Math.round((config.pajak_pct / 100) * ujrohGross);
-  const ujrohNet = ujrohGross - pajak;
-  const premiNet = premiGross - ujrohNet;
+  const ujrohGross = sen((config.ujroh_pct / 100) * premiGross);
+  const pajak = sen((config.pajak_pct / 100) * ujrohGross);
+  const ujrohNet = sen(ujrohGross - pajak);
+  const premiNet = sen(premiGross - ujrohNet);
   return { umur, rate, premiGross, ujrohGross, pajak, ujrohNet, premiNet, cappedToMin };
 }
 
