@@ -82,6 +82,11 @@ export const UploadMLFPanel: React.FC = () => {
         l0usid: findIdx('L0USID'),
         date: findIdx('DATE', 'TGL', 'TANGGAL', 'STARTDATE', 'TGLMULAI'),
         date1: findIdx('DATE1'),
+        // T = index 19 (0-indexed) — fallback kalau headernya tidak terbaca
+        tglbyrak: (() => {
+          const i = findIdx('TGLBYRAK', 'TGL BYRAK', 'TGLBAYARAK', 'TGL BAYAR ANGSURAN', 'TGLANGSURAN');
+          return i >= 0 ? i : 19;
+        })(),
       };
 
       const toDateISO = (v: any): string | null => {
@@ -148,6 +153,7 @@ export const UploadMLFPanel: React.FC = () => {
         l0usid: toStr(at(row, idx.l0usid)),
         date: toDateISO(at(row, idx.date)),
         date1: toDateISO(at(row, idx.date1)),
+        tglbyrak: toDateISO(at(row, idx.tglbyrak)),
       }));
 
       // Batch insert
