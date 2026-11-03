@@ -31,6 +31,8 @@ export interface MLFRow {
   l0usid: string | null;
   date: string | null;
   date1: string | null;
+  /** Tanggal angsuran bulanan (kolom T sheet Master_Loan_Filter). Kosong untuk unggahan lama. */
+  tglbyrak: string | null;
 }
 
 export const useMLFUploads = () => {

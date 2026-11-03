@@ -10,6 +10,10 @@ export interface ProyeksiRow {
   plafon: number;
   jangka_waktu_bulan: number;
   keterangan: string | null;
+  /** Perkiraan tanggal cair — menentukan rencana ini masuk minggu keberapa. */
+  tanggal_rencana: string | null;
+  /** Kode produk portal pipeline (mikro_kur, kecil_mk, konsumen_kpr, dst). */
+  segmen: string | null;
   created_at: string;
 }
 

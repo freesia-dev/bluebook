@@ -31,7 +31,7 @@ import {
   UNIT_LABEL,
   type UnitKredit,
 } from '@/lib/produktif-utils';
-import { LaporanBulananContent } from '@/pages/monitoring/LaporanBulananPage';
+import { LaporanPipelineContent } from '@/pages/monitoring/LaporanPipelinePage';
 import logoUrl from '@/assets/logo-bankaltimtara.png';
 import { cn } from '@/lib/utils';
 
@@ -572,19 +572,23 @@ const KreditProduktifPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Kredit Produktif Unit"
-        description="Pemisahan debitur kredit produktif (Modal Kerja & Investasi) Capem 143 Telihan berdasarkan Unit Telihan vs Meranti (dari nomor PK di MLF)."
+        title="Laporan Kredit"
+        description={
+          mainTab === 'laporan'
+            ? 'Booking, Run Off, dan Paid Off per minggu — bahan pengisian portal Weekly Pipeline.'
+            : 'Pemisahan debitur kredit produktif (Modal Kerja & Investasi) Capem 143 Telihan berdasarkan Unit Telihan vs Meranti (dari nomor PK di MLF).'
+        }
       />
 
       <Tabs value={mainTab} onValueChange={setMainTab} className="mb-4">
         <TabsList>
           <TabsTrigger value="produktif">Kredit Produktif Unit</TabsTrigger>
-          <TabsTrigger value="laporan">Laporan Bulanan</TabsTrigger>
+          <TabsTrigger value="laporan">Laporan Pipeline</TabsTrigger>
         </TabsList>
       </Tabs>
 
       {mainTab === 'laporan' ? (
-        <LaporanBulananContent />
+        <LaporanPipelineContent />
       ) : (
       <>
       {/* Controls */}
