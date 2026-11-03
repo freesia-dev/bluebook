@@ -49,7 +49,7 @@ export const COMMAND_PAGES: CommandPage[] = [
   { label: 'Rekening Taspen', path: '/cs/rekening/taspen', group: 'Customer Service' },
 
   { label: 'Monitoring Dashboard', path: '/monitoring/dashboard', group: 'Monitoring' },
-  { label: 'Kredit Produktif Unit', path: '/monitoring/kredit-produktif', group: 'Monitoring' },
+  { label: 'Laporan Kredit', path: '/monitoring/kredit-produktif', group: 'Monitoring', keywords: ['kredit produktif', 'pipeline', 'laporan pipeline', 'laporan bulanan'] },
   { label: 'Export PDF', path: '/monitoring/export-pdf', group: 'Monitoring' },
   { label: 'WA Blaster / Kirim Reminder', path: '/monitoring/reminder', group: 'Monitoring', keywords: ['tunggakan', 'wa blaster'] },
   { label: 'Kontak Debitur', path: '/monitoring/kontak', group: 'Monitoring' },

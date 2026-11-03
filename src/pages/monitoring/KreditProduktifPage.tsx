@@ -572,14 +572,14 @@ const KreditProduktifPage: React.FC = () => {
   return (
     <MainLayout>
       <PageHeader
-        title="Kredit Produktif Unit"
+        title="Laporan Kredit"
         description="Pemisahan debitur kredit produktif (Modal Kerja & Investasi) Capem 143 Telihan berdasarkan Unit Telihan vs Meranti (dari nomor PK di MLF)."
       />
 
       <Tabs value={mainTab} onValueChange={setMainTab} className="mb-4">
         <TabsList>
           <TabsTrigger value="produktif">Kredit Produktif Unit</TabsTrigger>
-          <TabsTrigger value="laporan">Laporan Bulanan</TabsTrigger>
+          <TabsTrigger value="laporan">Laporan Pipeline</TabsTrigger>
         </TabsList>
       </Tabs>
 
