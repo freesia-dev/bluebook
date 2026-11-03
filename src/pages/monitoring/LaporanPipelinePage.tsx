@@ -20,13 +20,15 @@ import {
 } from 'lucide-react';
 import { useMLFUploads, useMLFDataByBranch, type MLFRow } from '@/hooks/use-mlf-data';
 import { useProyeksi, useProyeksiMutations, type ProyeksiRow } from '@/hooks/use-proyeksi';
+import { useLoanSimulations, CANCEL_STAGE, PIPELINE_LABELS, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatRupiah, formatNominal } from '@/lib/uang';
 import { getUnit } from '@/lib/produktif-utils';
 import {
   BARIS_PORTAL, BATAS_MIKRO_DEFAULT, PRODUK_LABEL, SEGMEN_LABEL, URUTAN_PRODUK,
-  angsuranKenaMinggu, dalamMinggu, mingguBawaan, produkPipeline, runOffBulanan, tanggalAngsuran,
+  angsuranKenaMinggu, dalamMinggu, mingguBawaan, produkPipeline, produkSimulasi, runOffBulanan,
+  tanggalAngsuran,
   type KodeProduk, type KodeSegmen, type Minggu,
 } from '@/lib/pipeline-segmen';
 
@@ -419,6 +421,24 @@ export const LaporanPipelineContent: React.FC = () => {
 
   const { data: rowsMLF = [], isLoading } = useMLFDataByBranch(uploadId, '143');
   const { data: proyeksiAll = [] } = useProyeksi();
+  const { data: simulasiAll = [] } = useLoanSimulations();
+
+  /**
+   * Rencana pencairan dari Riwayat Simulasi Kalkulator Kredit — inilah pipeline
+   * kredit konsumtif (termasuk kredit PNS) sebelum masuk MLF.
+   *
+   * Yang dipakai: simulasi yang belum dibatalkan dan punya tanggal akad SESUDAH
+   * tanggal snapshot MLF. Yang akadnya sebelum atau sama dengan snapshot sudah
+   * ikut terhitung dari MLF, jadi dikecualikan supaya tidak dihitung dua kali.
+   */
+  const simulasi = useMemo(() => {
+    const batasMLF = info?.jobdate || '';
+    return simulasiAll.filter((r: LoanSimulationRow) => {
+      if (r.pipeline_status === CANCEL_STAGE) return false;
+      if (!r.tanggal_akad) return false;
+      return !batasMLF || r.tanggal_akad > batasMLF;
+    });
+  }, [simulasiAll, info?.jobdate]);
 
   const rows = useMemo(() => {
     if (unit === 'semua') return rowsMLF;
@@ -465,6 +485,15 @@ export const LaporanPipelineContent: React.FC = () => {
       });
     });
 
+    simulasi.forEach((sim) => {
+      const produk = produkSimulasi(sim, batasMikro);
+      minggu.forEach((m, i) => {
+        if (dalamMinggu(sim.tanggal_akad, m)) {
+          peta[produk][i].booking += Number(sim.plafon) || 0;
+        }
+      });
+    });
+
     rencana.forEach((p) => {
       const produk = (p.segmen as KodeProduk) || 'konsumen_multiguna';
       if (!peta[produk]) return;
@@ -476,7 +505,7 @@ export const LaporanPipelineContent: React.FC = () => {
     });
 
     return peta;
-  }, [rows, rencana, minggu, batasMikro]);
+  }, [rows, rencana, simulasi, minggu, batasMikro]);
 
   const barisPortal = useMemo(
     () =>
@@ -759,6 +788,60 @@ export const LaporanPipelineContent: React.FC = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">
+            Dari Riwayat Simulasi Kalkulator ({simulasi.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Simulasi yang belum dibatalkan dan tanggal akadnya setelah tanggal MLF terpilih. Yang akadnya
+            sebelum itu sudah terhitung dari MLF, jadi tidak dihitung dua kali.
+          </p>
+          {simulasi.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Belum ada simulasi dengan tanggal akad setelah periode MLF ini.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table className="text-xs sm:text-sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama Debitur</TableHead>
+                    <TableHead>Produk</TableHead>
+                    <TableHead>Masuk Baris</TableHead>
+                    <TableHead>Tahap</TableHead>
+                    <TableHead>Akad</TableHead>
+                    <TableHead className="text-right">Plafon</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {simulasi.map((sim, i) => (
+                    <TableRow key={sim.id} className={i % 2 ? 'bg-muted/30' : ''}>
+                      <TableCell className="font-medium">{sim.nama_debitur}</TableCell>
+                      <TableCell className="text-muted-foreground">{sim.product_nama || '—'}</TableCell>
+                      <TableCell>{PRODUK_LABEL[produkSimulasi(sim, batasMikro)]}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {PIPELINE_LABELS[(sim.pipeline_status as keyof typeof PIPELINE_LABELS)] || 'Simulasi Kredit'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {sim.tanggal_akad ? format(new Date(`${sim.tanggal_akad}T00:00:00`), 'dd/MM/yyyy') : '—'}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatRupiah(sim.plafon)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Rencana Pencairan (Booking Manual)</CardTitle>
         </CardHeader>
         <CardContent>
@@ -777,8 +860,9 @@ export const LaporanPipelineContent: React.FC = () => {
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>
             <Badge variant="outline" className="mr-2">Booking (+)</Badge>
-            Rencana pencairan manual yang tanggal rencananya jatuh di minggu itu, ditambah kredit di MLF
-            yang tanggal mulainya ada di minggu itu (sudah cair).
+            Tiga sumber: simulasi di Riwayat Kalkulator Kredit yang tanggal akadnya jatuh di minggu itu
+            (pipeline kredit konsumtif, termasuk kredit PNS), rencana pencairan manual di bawah, dan
+            kredit di MLF yang tanggal mulainya ada di minggu itu (sudah cair).
           </p>
           <p>
             <Badge variant="outline" className="mr-2">Run Off (−)</Badge>

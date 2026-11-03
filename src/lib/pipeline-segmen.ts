@@ -120,6 +120,29 @@ export const produkPipeline = (
   return g === 'kredit investasi' ? 'kecil_inv' : 'kecil_mk';
 };
 
+/**
+ * Produk portal untuk satu baris Riwayat Simulasi Kalkulator Kredit.
+ *
+ * Simulasi konsumtif — termasuk kredit PNS — masuk segmen Konsumen, dipecah
+ * dari nama produknya. Simulasi produktif memakai aturan yang sama dengan MLF:
+ * skema sliding berarti KUR, anuitas berarti bukan. Simulasi tidak menyimpan
+ * pembedaan Modal Kerja dan Investasi, jadi produktif non-KUR di atas batas
+ * mikro ditaruh di Modal Kerja; pindahkan lewat rencana manual bila perlu.
+ */
+export const produkSimulasi = (
+  s: { segmen?: string | null; skema?: string | null; plafon: number; product_nama?: string | null },
+  batasMikro: number = BATAS_MIKRO_DEFAULT,
+): KodeProduk => {
+  const plafon = Number(s.plafon) || 0;
+  const mikro = plafon <= batasMikro;
+
+  if ((s.segmen || 'konsumtif') === 'konsumtif') return produkKonsumen(s.product_nama || '');
+
+  const kur = /sliding/i.test(s.skema || '');
+  if (kur) return mikro ? 'mikro_kur' : 'kecil_kur';
+  return mikro ? 'mikro_non_kur' : 'kecil_mk';
+};
+
 /* -------------------------------------------------------------------------- */
 /*  Tanggal angsuran                                                          */
 /* -------------------------------------------------------------------------- */
