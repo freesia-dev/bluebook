@@ -58,6 +58,18 @@ const KUNCI_BATAS = 'bluebook-pipeline-batas-mikro';
 
 type Kolom = 'booking' | 'runOff' | 'paidOff';
 
+export type UnitPilihan = 'semua' | 'telihan' | 'meranti';
+
+/**
+ * Telihan dan Meranti dilaporkan sebagai unit terpisah ke kantor pusat.
+ * "Telihan" di sini berarti seluruh cabang tanpa Meranti.
+ */
+const UNIT_LABEL_PIPELINE: Record<UnitPilihan, string> = {
+  semua: 'Semua Unit (gabungan)',
+  telihan: 'Telihan (tanpa Meranti)',
+  meranti: 'Meranti saja',
+};
+
 interface AngkaProduk {
   booking: number;
   runOff: number;
@@ -429,7 +441,7 @@ export const LaporanPipelineContent: React.FC = () => {
 
   const { data: uploads = [] } = useMLFUploads();
   const [uploadId, setUploadId] = useState<string | undefined>(undefined);
-  const [unit, setUnit] = useState<'telihan' | 'meranti' | 'semua'>('semua');
+  const [unit, setUnit] = useState<UnitPilihan>('telihan');
   const [tersalin, setTersalin] = useState(false);
   /** Id simulasi yang baru ditekan tombol "Ambil" — membuka formulir rencana terisi. */
   const [tarikSimulasi, setTarikSimulasi] = useState<string | null>(null);
@@ -505,17 +517,29 @@ export const LaporanPipelineContent: React.FC = () => {
   );
 
 
-  const rows = useMemo(() => {
-    if (unit === 'semua') return rowsMLF;
-    return rowsMLF.filter((r) =>
-      unit === 'meranti' ? getUnit(r) === 'meranti' : getUnit(r) !== 'meranti',
-    );
-  }, [rowsMLF, unit]);
-
-  const rencana = useMemo(
-    () => (unit === 'semua' ? proyeksiAll : proyeksiAll.filter((p) => (p.unit || 'telihan') === unit)),
-    [proyeksiAll, unit],
+  /**
+   * Pemisahan Telihan dan Meranti memakai aturan yang sama dengan menu Kredit
+   * Produktif Unit: unit dibaca dari nomor PK di MLF, dan kredit yang nomor
+   * PK-nya tidak terbaca ikut dihitung ke Telihan. "Telihan" berarti seluruh
+   * cabang TANPA Meranti, "Meranti" berarti Meranti saja. Keduanya dilaporkan
+   * terpisah ke kantor pusat, jadi dua-duanya bisa dilihat dan diekspor.
+   */
+  const saringMLF = React.useCallback(
+    (u: UnitPilihan) =>
+      u === 'semua'
+        ? rowsMLF
+        : rowsMLF.filter((r) => (u === 'meranti' ? getUnit(r) === 'meranti' : getUnit(r) !== 'meranti')),
+    [rowsMLF],
   );
+
+  const saringRencana = React.useCallback(
+    (u: UnitPilihan) =>
+      u === 'semua' ? proyeksiAll : proyeksiAll.filter((p) => (p.unit || 'telihan') === u),
+    [proyeksiAll],
+  );
+
+  const rows = useMemo(() => saringMLF(unit), [saringMLF, unit]);
+  const rencana = useMemo(() => saringRencana(unit), [saringRencana, unit]);
 
   /** Nama debitur yang sudah terdaftar di rencana, supaya tidak dobel. */
   const sudahJadiRencana = useMemo(
@@ -526,14 +550,17 @@ export const LaporanPipelineContent: React.FC = () => {
   /** Berapa baris yang belum punya TGLBYRAK — jadi Run Off-nya masih perkiraan. */
   const tanpaTglByrak = useMemo(() => rows.filter((r) => !r.tglbyrak).length, [rows]);
 
-  /** angka[produk][indeks minggu] */
-  const angka = useMemo(() => {
+  /** angka[produk][indeks minggu] — dihitung untuk satu kumpulan data unit. */
+  const hitung = React.useCallback((
+    rowsU: MLFRow[],
+    rencanaU: ProyeksiRow[],
+  ): Record<KodeProduk, AngkaProduk[]> => {
     const peta: Record<KodeProduk, AngkaProduk[]> = {} as any;
     URUTAN_PRODUK.forEach((k) => {
       peta[k] = minggu.map(() => kosong());
     });
 
-    rows.forEach((r: MLFRow) => {
+    rowsU.forEach((r: MLFRow) => {
       const produk = produkPipeline(r, batasMikro);
       const { hari } = tanggalAngsuran(r);
       const angsuran = runOffBulanan(r);
@@ -555,7 +582,7 @@ export const LaporanPipelineContent: React.FC = () => {
     // Rencana Pencairan di bawah, supaya tiap nominal sudah lewat pemeriksaan
     // orang. Riwayat Kalkulator dipakai untuk mengisi formulirnya, bukan untuk
     // menambah angka sendiri.
-    rencana.forEach((p) => {
+    rencanaU.forEach((p) => {
       const produk = (p.segmen as KodeProduk) || 'konsumen_multiguna';
       if (!peta[produk]) return;
       minggu.forEach((m, i) => {
@@ -566,7 +593,20 @@ export const LaporanPipelineContent: React.FC = () => {
     });
 
     return peta;
-  }, [rows, rencana, minggu, batasMikro]);
+  }, [minggu, batasMikro]);
+
+  const angka = useMemo(() => hitung(rows, rencana), [hitung, rows, rencana]);
+
+  /** Net per minggu untuk satu unit — dipakai kartu perbandingan & ekspor. */
+  const netPerMinggu = React.useCallback(
+    (u: UnitPilihan): number[] => {
+      const peta = hitung(saringMLF(u), saringRencana(u));
+      return minggu.map((_, i) =>
+        URUTAN_PRODUK.reduce((acc, k) => acc + net(peta[k][i]), 0),
+      );
+    },
+    [hitung, saringMLF, saringRencana, minggu],
+  );
 
   const barisPortal = useMemo(
     () =>
@@ -600,35 +640,61 @@ export const LaporanPipelineContent: React.FC = () => {
     }
   };
 
+  /**
+   * Satu berkas memuat ketiga versi unit — Telihan, Meranti, dan gabungan —
+   * karena Telihan dan Meranti dilaporkan terpisah ke kantor pusat dan tidak
+   * praktis kalau harus ekspor dua kali.
+   */
   const exportExcel = () => {
     const wb = XLSX.utils.book_new();
     const judulMinggu = minggu.map((m) => `Minggu ${m.nomor} (${tglTampil(m.mulai)}–${tglTampil(m.selesai)})`);
+    const periodeTeks = info ? format(new Date(info.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-';
 
-    const lembar = (kolom: Kolom | 'net', judul: string) => {
+    const lembar = (u: UnitPilihan, kolom: Kolom | 'net', judul: string) => {
+      const peta = hitung(saringMLF(u), saringRencana(u));
+      const baris = BARIS_PORTAL.map((b) => ({
+        ...b,
+        perMinggu: minggu.map((_, i) => b.produk.reduce((acc, k) => tambah(acc, peta[k][i]), kosong())),
+      }));
+      const ambil = (a: AngkaProduk) => (kolom === 'net' ? net(a) : a[kolom]);
+
       const data: (string | number)[][] = [
         [`LAPORAN PIPELINE — ${judul.toUpperCase()}`],
-        [`Periode MLF: ${info ? format(new Date(info.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-'}`],
-        [`Unit: ${unit === 'semua' ? 'Semua' : unit === 'meranti' ? 'Meranti' : 'Telihan'}`],
+        [`Unit: ${UNIT_LABEL_PIPELINE[u]}`],
+        [`Periode MLF: ${periodeTeks}`],
         [],
         ['Produk', ...judulMinggu, 'Total Bulan'],
       ];
-      barisPortal.forEach((b) => {
-        const nilai = b.perMinggu.map((m) => (kolom === 'net' ? net(m) : m[kolom]));
-        const tot = kolom === 'net' ? net(totalBulan(b)) : totalBulan(b)[kolom];
-        data.push([b.label, ...nilai, tot]);
+      baris.forEach((b) => {
+        const nilai = b.perMinggu.map(ambil);
+        data.push([b.label, ...nilai, nilai.reduce((a, c) => a + c, 0)]);
       });
-      const totBaris = minggu.map((_, i) => (kolom === 'net' ? net(totalSemua(i)) : totalSemua(i)[kolom]));
-      const totAkhir = totBaris.reduce((a, b) => a + b, 0);
-      data.push(['TOTAL', ...totBaris, totAkhir]);
+      const totBaris = minggu.map((_, i) => baris.reduce((acc, b) => acc + ambil(b.perMinggu[i]), 0));
+      data.push(['TOTAL', ...totBaris, totBaris.reduce((a, b) => a + b, 0)]);
+
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws['!cols'] = [{ wch: 32 }, ...minggu.map(() => ({ wch: 20 })), { wch: 20 }];
       return ws;
     };
 
-    XLSX.utils.book_append_sheet(wb, lembar('net', 'Net'), 'Net');
-    XLSX.utils.book_append_sheet(wb, lembar('booking', 'Booking'), 'Booking');
-    XLSX.utils.book_append_sheet(wb, lembar('runOff', 'Run Off'), 'Run Off');
-    XLSX.utils.book_append_sheet(wb, lembar('paidOff', 'Paid Off'), 'Paid Off');
+    const namaUnit: Record<UnitPilihan, string> = {
+      telihan: 'Telihan',
+      meranti: 'Meranti',
+      semua: 'Gabungan',
+    };
+    const kolomUrut: { kunci: Kolom | 'net'; judul: string }[] = [
+      { kunci: 'net', judul: 'Net' },
+      { kunci: 'booking', judul: 'Booking' },
+      { kunci: 'runOff', judul: 'Run Off' },
+      { kunci: 'paidOff', judul: 'Paid Off' },
+    ];
+
+    (['telihan', 'meranti', 'semua'] as UnitPilihan[]).forEach((u) => {
+      kolomUrut.forEach(({ kunci, judul }) => {
+        // Nama lembar Excel maksimal 31 karakter
+        XLSX.utils.book_append_sheet(wb, lembar(u, kunci, judul), `${namaUnit[u]} ${judul}`.slice(0, 31));
+      });
+    });
 
     const periode = info ? format(new Date(info.jobdate), 'yyyy-MM') : 'periode';
     XLSX.writeFile(wb, `Laporan-Pipeline-${periode}.xlsx`);
@@ -730,12 +796,12 @@ export const LaporanPipelineContent: React.FC = () => {
           </div>
           <div className="w-full md:w-48">
             <Label className="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">Unit</Label>
-            <Select value={unit} onValueChange={(v) => setUnit(v as typeof unit)}>
+            <Select value={unit} onValueChange={(v) => setUnit(v as UnitPilihan)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="semua">Semua Unit</SelectItem>
-                <SelectItem value="telihan">Telihan</SelectItem>
-                <SelectItem value="meranti">Meranti</SelectItem>
+                {(['telihan', 'meranti', 'semua'] as UnitPilihan[]).map((u) => (
+                  <SelectItem key={u} value={u}>{UNIT_LABEL_PIPELINE[u]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -775,7 +841,9 @@ export const LaporanPipelineContent: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Angka untuk Portal Weekly Pipeline</CardTitle>
+          <CardTitle className="text-base">
+            Angka untuk Portal Weekly Pipeline — {UNIT_LABEL_PIPELINE[unit]}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -798,6 +866,60 @@ export const LaporanPipelineContent: React.FC = () => {
             Angka dalam Rupiah penuh — portal memang minta diketik Rupiah penuh, dan menyimpannya sendiri
             dalam Miliar. Net = Booking − Run Off − Paid Off.
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Telihan dan Meranti dilaporkan terpisah — tampilkan dua-duanya sekaligus */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Net per Unit (Miliar)</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Telihan dan Meranti dilaporkan terpisah ke kantor pusat. Tabel ini memperlihatkan keduanya
+            sekaligus tanpa perlu berganti pilihan unit di atas.
+          </p>
+          <Table className="text-xs sm:text-sm [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Unit</TableHead>
+                {minggu.map((m) => (
+                  <TableHead key={m.nomor} className="text-right">Minggu {m.nomor}</TableHead>
+                ))}
+                <TableHead className="text-right">Total Bulan</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(['telihan', 'meranti'] as UnitPilihan[]).map((u) => {
+                const nilai = netPerMinggu(u);
+                return (
+                  <TableRow key={u} className={u === unit ? 'bg-primary/5 font-medium' : ''}>
+                    <TableCell>{UNIT_LABEL_PIPELINE[u]}</TableCell>
+                    {nilai.map((n, i) => (
+                      <TableCell key={i} className="text-right tabular-nums">{keMiliar(n)}</TableCell>
+                    ))}
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {keMiliar(nilai.reduce((a, b) => a + b, 0))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {(() => {
+                const nilai = netPerMinggu('semua');
+                return (
+                  <TableRow className="bg-muted/50 font-bold">
+                    <TableCell>Gabungan</TableCell>
+                    {nilai.map((n, i) => (
+                      <TableCell key={i} className="text-right tabular-nums">{keMiliar(n)}</TableCell>
+                    ))}
+                    <TableCell className="text-right tabular-nums">
+                      {keMiliar(nilai.reduce((a, b) => a + b, 0))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })()}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
@@ -955,6 +1077,13 @@ export const LaporanPipelineContent: React.FC = () => {
           <p>
             <Badge variant="outline" className="mr-2">Paid Off (−)</Badge>
             Baki debet kredit yang jatuh temponya ada di minggu itu.
+          </p>
+          <p>
+            <Badge variant="outline" className="mr-2">Unit</Badge>
+            Telihan dan Meranti dilaporkan terpisah. Unit dibaca dari nomor PK di MLF, sama seperti menu
+            Kredit Produktif Unit; kredit yang nomor PK-nya tidak terbaca ikut ke Telihan. Pilihan
+            "Telihan (tanpa Meranti)" berarti seluruh cabang dikurangi Meranti. Berkas Excel memuat
+            ketiga versi sekaligus.
           </p>
           <p>
             <Badge variant="outline" className="mr-2">Segmen</Badge>
