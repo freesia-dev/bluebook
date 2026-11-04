@@ -1072,7 +1072,8 @@ export const LaporanPipelineContent: React.FC = () => {
           <p>
             <Badge variant="outline" className="mr-2">Run Off (−)</Badge>
             Angsuran pokok sebulan tiap debitur, dimasukkan ke minggu yang memuat tanggal angsurannya
-            (kolom TGLBYRAK berkas MLF).
+            (kolom TGLBYRAK berkas MLF). Khusus kol 3, 4, dan 5: kalau sisa baki debet lebih kecil
+            dari angsuran bulanan, yang dipakai baki debetnya.
           </p>
           <p>
             <Badge variant="outline" className="mr-2">Paid Off (−)</Badge>
