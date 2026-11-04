@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputNominal } from '@/components/ui/input-nominal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,13 +21,16 @@ import {
 } from 'lucide-react';
 import { useMLFUploads, useMLFDataByBranch, type MLFRow } from '@/hooks/use-mlf-data';
 import { useProyeksi, useProyeksiMutations, type ProyeksiRow } from '@/hooks/use-proyeksi';
+import { useLoanSimulations, CANCEL_STAGE, PIPELINE_LABELS, type LoanSimulationRow } from '@/hooks/use-loan-calc';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatRupiah, formatNominal } from '@/lib/uang';
+import { formatCurrencyInput } from '@/hooks/use-currency-input';
 import { getUnit } from '@/lib/produktif-utils';
 import {
   BARIS_PORTAL, BATAS_MIKRO_DEFAULT, PRODUK_LABEL, SEGMEN_LABEL, URUTAN_PRODUK,
-  angsuranKenaMinggu, dalamMinggu, mingguBawaan, produkPipeline, runOffBulanan, tanggalAngsuran,
+  angsuranKenaMinggu, dalamMinggu, mingguBawaan, produkPipeline, produkSimulasi, runOffBulanan,
+  tanggalAngsuran,
   type KodeProduk, type KodeSegmen, type Minggu,
 } from '@/lib/pipeline-segmen';
 
@@ -170,19 +174,58 @@ const RencanaManual: React.FC<{
   unit: 'telihan' | 'meranti';
   rows: ProyeksiRow[];
   canEdit: boolean;
-}> = ({ unit, rows, canEdit }) => {
+  simulasi: LoanSimulationRow[];
+  batasMikro: number;
+  /** Id simulasi yang diminta dari kartu calon di atas; membuka formulir terisi. */
+  tarik?: string | null;
+  onTarikSelesai?: () => void;
+}> = ({ unit, rows, canEdit, simulasi, batasMikro, tarik, onTarikSelesai }) => {
   const { create, update, remove } = useProyeksiMutations();
   const [buka, setBuka] = useState(false);
   const [edit, setEdit] = useState<ProyeksiRow | null>(null);
   const [form, setForm] = useState(formKosong(unit));
   const [plafonStr, setPlafonStr] = useState('');
+  const [dariSimulasi, setDariSimulasi] = useState('');
 
   const baru = () => {
     setEdit(null);
     setForm(formKosong(unit));
     setPlafonStr('');
+    setDariSimulasi('');
     setBuka(true);
   };
+
+  /**
+   * Isi formulir dari satu simulasi di Riwayat Kalkulator. Nilainya hanya
+   * diisikan ke kolom — tetap harus diperiksa dan disimpan sendiri, karena
+   * angka Booking memang disengaja melewati tangan orang.
+   */
+  const ambilDariSimulasi = (id: string) => {
+    setDariSimulasi(id);
+    const sim = simulasi.find((x) => x.id === id);
+    if (!sim) return;
+    setForm((f) => ({
+      ...f,
+      nama_debitur: sim.nama_debitur || f.nama_debitur,
+      jenis_kredit: (sim.segmen || 'konsumtif') === 'konsumtif' ? 'Konsumtif' : 'Produktif',
+      plafon: Number(sim.plafon) || 0,
+      jangka_waktu_bulan: sim.tenor_bulan || 0,
+      tanggal_rencana: sim.tanggal_akad || f.tanggal_rencana,
+      segmen: produkSimulasi(sim, batasMikro),
+      keterangan: sim.product_nama || f.keterangan,
+    }));
+    setPlafonStr(formatCurrencyInput(Number(sim.plafon) || 0));
+  };
+
+  useEffect(() => {
+    if (!tarik) return;
+    setEdit(null);
+    setForm(formKosong(unit));
+    setPlafonStr('');
+    ambilDariSimulasi(tarik);
+    setBuka(true);
+    onTarikSelesai?.();
+  }, [tarik]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ubah = (r: ProyeksiRow) => {
     setEdit(r);
@@ -196,7 +239,7 @@ const RencanaManual: React.FC<{
       tanggal_rencana: r.tanggal_rencana || new Date().toISOString().slice(0, 10),
       segmen: (r.segmen as KodeProduk) || 'konsumen_multiguna',
     });
-    setPlafonStr(String(Number(r.plafon) || 0));
+    setPlafonStr(formatCurrencyInput(Number(r.plafon) || 0));
     setBuka(true);
   };
 
@@ -275,6 +318,32 @@ const RencanaManual: React.FC<{
             <DialogTitle>{edit ? 'Ubah Rencana Pencairan' : 'Tambah Rencana Pencairan'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {!edit && simulasi.length > 0 && (
+              <div className="rounded-lg border bg-muted/40 p-3">
+                <Label className="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">
+                  Ambil dari Riwayat Kalkulator
+                </Label>
+                <SearchableSelect
+                  value={dariSimulasi}
+                  onValueChange={ambilDariSimulasi}
+                  options={simulasi.map((sim) => ({
+                    value: sim.id,
+                    label: `${sim.nama_debitur} — ${formatRupiah(sim.plafon)}${
+                      sim.tanggal_akad
+                        ? ` · akad ${format(new Date(`${sim.tanggal_akad}T00:00:00`), 'dd/MM/yyyy')}`
+                        : ''
+                    }`,
+                    keywords: `${sim.product_nama || ''} ${sim.instansi || ''} ${sim.nama_ao || ''}`,
+                  }))}
+                  placeholder="Cari simulasi…"
+                  searchPlaceholder="Ketik nama debitur atau produk…"
+                  emptyText="Tidak ada simulasi yang cocok"
+                />
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  Kolom di bawah akan terisi otomatis. Periksa dulu, baru simpan.
+                </p>
+              </div>
+            )}
             <div>
               <Label className="mb-1 block">Nama Debitur</Label>
               <Input
@@ -362,6 +431,8 @@ export const LaporanPipelineContent: React.FC = () => {
   const [uploadId, setUploadId] = useState<string | undefined>(undefined);
   const [unit, setUnit] = useState<'telihan' | 'meranti' | 'semua'>('semua');
   const [tersalin, setTersalin] = useState(false);
+  /** Id simulasi yang baru ditekan tombol "Ambil" — membuka formulir rencana terisi. */
+  const [tarikSimulasi, setTarikSimulasi] = useState<string | null>(null);
 
   const [batasMikro, setBatasMikro] = useState<number>(() => {
     try {
@@ -419,6 +490,20 @@ export const LaporanPipelineContent: React.FC = () => {
 
   const { data: rowsMLF = [], isLoading } = useMLFDataByBranch(uploadId, '143');
   const { data: proyeksiAll = [] } = useProyeksi();
+  const { data: simulasiAll = [] } = useLoanSimulations();
+
+  /**
+   * Simulasi di Riwayat Kalkulator Kredit — inilah pipeline kredit konsumtif
+   * (termasuk kredit PNS) sebelum masuk MLF.
+   *
+   * Dipakai untuk MENGISI formulir rencana pencairan, bukan untuk menambah
+   * angka Booking sendiri. Yang sudah dibatalkan tidak ditawarkan.
+   */
+  const simulasi = useMemo(
+    () => simulasiAll.filter((r: LoanSimulationRow) => r.pipeline_status !== CANCEL_STAGE),
+    [simulasiAll],
+  );
+
 
   const rows = useMemo(() => {
     if (unit === 'semua') return rowsMLF;
@@ -430,6 +515,12 @@ export const LaporanPipelineContent: React.FC = () => {
   const rencana = useMemo(
     () => (unit === 'semua' ? proyeksiAll : proyeksiAll.filter((p) => (p.unit || 'telihan') === unit)),
     [proyeksiAll, unit],
+  );
+
+  /** Nama debitur yang sudah terdaftar di rencana, supaya tidak dobel. */
+  const sudahJadiRencana = useMemo(
+    () => new Set(rencana.map((r) => (r.nama_debitur || '').trim().toLowerCase())),
+    [rencana],
   );
 
   /** Berapa baris yang belum punya TGLBYRAK — jadi Run Off-nya masih perkiraan. */
@@ -447,7 +538,6 @@ export const LaporanPipelineContent: React.FC = () => {
       const { hari } = tanggalAngsuran(r);
       const angsuran = runOffBulanan(r);
       const baki = Number(r.baki) || 0;
-      const plafon = Number(r.pla) || 0;
 
       minggu.forEach((m, i) => {
         // Run Off — angsuran pokok yang tanggalnya jatuh di minggu ini
@@ -458,13 +548,13 @@ export const LaporanPipelineContent: React.FC = () => {
         if (dalamMinggu(r.date1, m)) {
           peta[produk][i].paidOff += baki;
         }
-        // Booking — kredit yang tanggal mulainya di minggu ini (sudah cair)
-        if (dalamMinggu(r.date, m)) {
-          peta[produk][i].booking += plafon;
-        }
       });
     });
 
+    // Booking sengaja TIDAK dihitung otomatis. Angkanya selalu dari daftar
+    // Rencana Pencairan di bawah, supaya tiap nominal sudah lewat pemeriksaan
+    // orang. Riwayat Kalkulator dipakai untuk mengisi formulirnya, bukan untuk
+    // menambah angka sendiri.
     rencana.forEach((p) => {
       const produk = (p.segmen as KodeProduk) || 'konsumen_multiguna';
       if (!peta[produk]) return;
@@ -759,6 +849,77 @@ export const LaporanPipelineContent: React.FC = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">
+            Calon dari Riwayat Kalkulator ({simulasi.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Daftar ini <strong>belum</strong> masuk hitungan Booking. Pakai tombol Ambil untuk menyalinnya ke
+            Rencana Pencairan di bawah — di sana angkanya masih bisa kamu periksa dan ubah sebelum disimpan.
+          </p>
+          {simulasi.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Belum ada simulasi di Riwayat Kalkulator.
+            </p>
+          ) : (
+            <div className="max-h-[320px] overflow-auto rounded-lg border">
+              <Table className="text-xs sm:text-sm">
+                <TableHeader className="sticky top-0 z-10 bg-background">
+                  <TableRow>
+                    <TableHead>Nama Debitur</TableHead>
+                    <TableHead>Produk</TableHead>
+                    <TableHead>Masuk Baris</TableHead>
+                    <TableHead>Tahap</TableHead>
+                    <TableHead>Akad</TableHead>
+                    <TableHead className="text-right">Plafon</TableHead>
+                    {canEdit && <TableHead className="text-right">Aksi</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {simulasi.map((sim, i) => {
+                    const sudah = sudahJadiRencana.has((sim.nama_debitur || '').trim().toLowerCase());
+                    return (
+                      <TableRow key={sim.id} className={i % 2 ? 'bg-muted/30' : ''}>
+                        <TableCell className="font-medium">{sim.nama_debitur}</TableCell>
+                        <TableCell className="text-muted-foreground">{sim.product_nama || '—'}</TableCell>
+                        <TableCell>{PRODUK_LABEL[produkSimulasi(sim, batasMikro)]}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {PIPELINE_LABELS[(sim.pipeline_status as keyof typeof PIPELINE_LABELS)] || 'Simulasi Kredit'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {sim.tanggal_akad ? format(new Date(`${sim.tanggal_akad}T00:00:00`), 'dd/MM/yyyy') : '—'}
+                        </TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">
+                          {formatRupiah(sim.plafon)}
+                        </TableCell>
+                        {canEdit && (
+                          <TableCell className="text-right">
+                            {sudah ? (
+                              <Badge variant="outline" className="gap-1 text-[10px] text-emerald-600">
+                                <Check className="h-3 w-3" /> Sudah
+                              </Badge>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => setTarikSimulasi(sim.id)}>
+                                Ambil
+                              </Button>
+                            )}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Rencana Pencairan (Booking Manual)</CardTitle>
         </CardHeader>
         <CardContent>
@@ -766,6 +927,10 @@ export const LaporanPipelineContent: React.FC = () => {
             unit={unit === 'meranti' ? 'meranti' : 'telihan'}
             rows={rencana}
             canEdit={canEdit}
+            simulasi={simulasi}
+            batasMikro={batasMikro}
+            tarik={tarikSimulasi}
+            onTarikSelesai={() => setTarikSimulasi(null)}
           />
         </CardContent>
       </Card>
@@ -777,8 +942,10 @@ export const LaporanPipelineContent: React.FC = () => {
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>
             <Badge variant="outline" className="mr-2">Booking (+)</Badge>
-            Rencana pencairan manual yang tanggal rencananya jatuh di minggu itu, ditambah kredit di MLF
-            yang tanggal mulainya ada di minggu itu (sudah cair).
+            Hanya dari daftar Rencana Pencairan — selalu diisi manual, tidak ada yang dihitung otomatis.
+            Formulirnya bisa mengambil isian dari Riwayat Kalkulator Kredit (termasuk kredit PNS), jadi
+            tidak perlu mengetik ulang, tapi angkanya tetap lewat pemeriksaanmu dulu. Tanggal rencana
+            menentukan masuk minggu keberapa.
           </p>
           <p>
             <Badge variant="outline" className="mr-2">Run Off (−)</Badge>
