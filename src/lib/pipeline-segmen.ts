@@ -168,8 +168,27 @@ export const tanggalAngsuran = (
   return { hari: kira, perkiraan: kira !== null };
 };
 
-/** Angsuran pokok sebulan — dipakai sebagai nilai Run Off. */
-export const runOffBulanan = (row: MLFRow): number => getAngsuranPokok(row);
+/** Kolektibilitas yang dihitung bermasalah: 3 (Kurang Lancar), 4 (Diragukan), 5 (Macet). */
+export const KOL_BERMASALAH = [3, 4, 5];
+
+/**
+ * Nilai Run Off sebulan untuk satu debitur.
+ *
+ * Lancar dan DPK (kol 1–2): angsuran pokok sebulan, karena angsurannya memang
+ * diharapkan masuk sesuai jadwal.
+ *
+ * Bermasalah (kol 3, 4, 5): dibandingkan dulu dengan sisa baki debet. Kalau
+ * bakinya lebih kecil dari angsuran bulanan, yang dipakai bakinya — penurunan
+ * tidak mungkin melebihi sisa pinjaman. Kalau bakinya masih lebih besar,
+ * dipakai angsuran bulanannya seperti biasa. (Ketentuan kantor pusat.)
+ */
+export const runOffBulanan = (row: MLFRow): number => {
+  const angsuran = getAngsuranPokok(row);
+  const kol = Number(row.kol) || 0;
+  if (!KOL_BERMASALAH.includes(kol)) return angsuran;
+  const baki = Math.max(0, Number(row.baki) || 0);
+  return Math.min(baki, angsuran);
+};
 
 /* -------------------------------------------------------------------------- */
 /*  Minggu                                                                    */
