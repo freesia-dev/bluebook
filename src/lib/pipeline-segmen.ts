@@ -1,5 +1,5 @@
 import type { MLFRow } from '@/hooks/use-mlf-data';
-import { getAngsuranPokok, isProduktif } from '@/lib/produktif-utils';
+import { getJangkaWaktuBulan, isProduktif } from '@/lib/produktif-utils';
 
 /* -------------------------------------------------------------------------- */
 /*  Pemetaan portofolio MLF ke segmen Laporan Pipeline kantor pusat            */
@@ -187,6 +187,59 @@ export const tanggalAngsuran = (
 /** Kolektibilitas yang dihitung bermasalah: 3 (Kurang Lancar), 4 (Diragukan), 5 (Macet). */
 export const KOL_BERMASALAH = [3, 4, 5];
 
+/* -------------------------------------------------------------------------- */
+/*  Status kredit terhadap periode laporan                                    */
+/*                                                                            */
+/*  Tidak semua kredit yang masih hidup menyetor angsuran di periode ini.      */
+/*  Empat keadaan dibedakan, mengikuti cara laporan resmi kantor diisi:        */
+/*                                                                            */
+/*  - lewat_jt : jatuh temponya sudah terlewat sebelum periode dimulai. Tidak  */
+/*               ada lagi jadwal angsuran; sisa bakinya dicatat sebagai        */
+/*               Paid Off, bukan Run Off.                                      */
+/*  - lunas    : jatuh tempo di dalam periode. Setoran terakhirnya adalah      */
+/*               pelunasan, jadi masuk Paid Off saja — kalau angsurannya ikut  */
+/*               dihitung Run Off, debitur yang sama terhitung dua kali.       */
+/*  - baru     : akadnya di dalam periode ini. Angsuran pertamanya baru bulan  */
+/*               depan, jadi belum ada Run Off.                                */
+/*  - angsuran : berjalan normal.                                              */
+/* -------------------------------------------------------------------------- */
+
+export interface Periode {
+  awal: string; // yyyy-MM-dd
+  akhir: string; // yyyy-MM-dd
+}
+
+export type StatusPeriode = 'angsuran' | 'baru' | 'lunas' | 'lewat_jt';
+
+const hariTanggal = (v?: string | null): string | null => (v ? v.slice(0, 10) : null);
+
+export const statusPeriode = (
+  row: Pick<MLFRow, 'date' | 'date1'>,
+  periode: Periode,
+): StatusPeriode => {
+  const jatuhTempo = hariTanggal(row.date1);
+  if (jatuhTempo) {
+    if (jatuhTempo < periode.awal) return 'lewat_jt';
+    if (jatuhTempo <= periode.akhir) return 'lunas';
+  }
+  const mulai = hariTanggal(row.date);
+  if (mulai && mulai >= periode.awal) return 'baru';
+  return 'angsuran';
+};
+
+/**
+ * Angsuran pokok sebulan, tanpa pembulatan.
+ *
+ * Sengaja berbeda dari `getAngsuranPokok` yang membulatkan ke rupiah penuh:
+ * laporan pipeline dijumlahkan lintas puluhan debitur dan dibandingkan dengan
+ * berkas kantor yang memakai angka penuh, jadi sennya tidak boleh dibuang.
+ */
+export const angsuranPokokPresisi = (row: Pick<MLFRow, 'pla' | 'date' | 'date1'>): number => {
+  const pla = Number(row.pla) || 0;
+  const bulan = getJangkaWaktuBulan(row);
+  return bulan > 0 ? pla / bulan : 0;
+};
+
 /**
  * Nilai Run Off sebulan untuk satu debitur.
  *
@@ -198,12 +251,35 @@ export const KOL_BERMASALAH = [3, 4, 5];
  * tidak mungkin melebihi sisa pinjaman. Kalau bakinya masih lebih besar,
  * dipakai angsuran bulanannya seperti biasa. (Ketentuan kantor pusat.)
  */
-export const runOffBulanan = (row: MLFRow): number => {
-  const angsuran = getAngsuranPokok(row);
+export const runOffBulanan = (row: MLFRow, periode?: Periode): number => {
+  // Kredit yang lunas, baru akad, atau sudah lewat jatuh tempo tidak mengangsur
+  // di periode ini. Lihat statusPeriode di atas.
+  if (periode && statusPeriode(row, periode) !== 'angsuran') return 0;
+  const angsuran = angsuranPokokPresisi(row);
   const kol = Number(row.kol) || 0;
   if (!KOL_BERMASALAH.includes(kol)) return angsuran;
   const baki = Math.max(0, Number(row.baki) || 0);
   return Math.min(baki, angsuran);
+};
+
+/**
+ * Nilai Paid Off satu debitur di periode ini, beserta cara menaruhnya di minggu.
+ *
+ * Kredit yang jatuh tempo di dalam periode ditaruh pada tanggal jatuh temponya.
+ * Kredit yang jatuh temponya sudah terlewat tetapi bakinya masih bersisa
+ * ditaruh pada tanggal angsuran bulanannya, karena itulah tanggal setoran yang
+ * diharapkan. Selain itu, tidak ada Paid Off.
+ */
+export const paidOffPeriode = (
+  row: MLFRow,
+  periode: Periode,
+): { nilai: number; tanggal: string | null; hari: number | null } | null => {
+  const baki = Math.max(0, Number(row.baki) || 0);
+  if (baki <= 0) return null;
+  const status = statusPeriode(row, periode);
+  if (status === 'lunas') return { nilai: baki, tanggal: hariTanggal(row.date1), hari: null };
+  if (status === 'lewat_jt') return { nilai: baki, tanggal: null, hari: tanggalAngsuran(row).hari };
+  return null;
 };
 
 /* -------------------------------------------------------------------------- */
