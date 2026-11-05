@@ -17,6 +17,19 @@ export interface EntriPerubahan {
 
 export const CHANGELOG: EntriPerubahan[] = [
   {
+    id: '2026-11-05-laporan-pipeline',
+    tanggal: '2026-11-05',
+    judul: 'Laporan Pipeline, laporan PDF baru, dan sentuhan ukir Dayak',
+    poin: [
+      'Menu Kredit Produktif Unit kini bernama Laporan Kredit, dan Laporan Bulanan di dalamnya jadi Laporan Pipeline.',
+      'Laporan Pipeline menyiapkan Booking, Run Off, dan Paid Off per minggu — rentang minggunya bisa diatur sendiri sesuai pembagian kantor pusat.',
+      'Angka Telihan dan Meranti dipisah, lengkap dengan rincian Modal Kerja dan Investasi supaya komposisinya kelihatan.',
+      'Laporan Pipeline bisa diunduh sebagai PDF yang rapi atau Excel berisi ringkasan dan rincian tiap unit.',
+      'PDF Simulasi Kredit dipercantik: tabel angsurannya rata tengah semua, judul kolom ikut di tiap halaman, dan angkanya sampai dua desimal.',
+      'Sidebar diberi siluet ukir Dayak yang samar sebagai ciri khas kantor.',
+    ],
+  },
+  {
     id: '2026-09-23-gelombang-3',
     tanggal: '2026-09-23',
     judul: 'Tur pengenalan, Wrapped, dan aplikasi yang lebih ringan',
