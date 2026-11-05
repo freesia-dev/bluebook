@@ -524,12 +524,22 @@ export const LaporanPipelineContent: React.FC = () => {
    * cabang TANPA Meranti, "Meranti" berarti Meranti saja. Keduanya dilaporkan
    * terpisah ke kantor pusat, jadi dua-duanya bisa dilihat dan diekspor.
    */
+  /**
+   * Kredit ekstrakomtabel (kol 0) tidak masuk pipeline — bakinya sudah
+   * dihapusbukukan, jadi tidak ada lagi angsuran yang menurunkan baki debet
+   * maupun jatuh tempo yang perlu dilaporkan. Dibuang sebelum apa pun dihitung.
+   */
+  const rowsAktif = useMemo(() => rowsMLF.filter((r) => (Number(r.kol) || 0) !== 0), [rowsMLF]);
+
+  /** Berapa baris ekstrakomtabel yang dikecualikan — ditampilkan sebagai catatan. */
+  const jumlahEkstrakom = rowsMLF.length - rowsAktif.length;
+
   const saringMLF = React.useCallback(
     (u: UnitPilihan) =>
       u === 'semua'
-        ? rowsMLF
-        : rowsMLF.filter((r) => (u === 'meranti' ? getUnit(r) === 'meranti' : getUnit(r) !== 'meranti')),
-    [rowsMLF],
+        ? rowsAktif
+        : rowsAktif.filter((r) => (u === 'meranti' ? getUnit(r) === 'meranti' : getUnit(r) !== 'meranti')),
+    [rowsAktif],
   );
 
   const saringRencana = React.useCallback(
@@ -827,6 +837,12 @@ export const LaporanPipelineContent: React.FC = () => {
         </CardContent>
       </Card>
 
+      {jumlahEkstrakom > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {jumlahEkstrakom} kredit ekstrakomtabel (kol 0) dikecualikan dari seluruh hitungan di halaman ini.
+        </p>
+      )}
+
       {tanpaTglByrak > 0 && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
@@ -1078,6 +1094,11 @@ export const LaporanPipelineContent: React.FC = () => {
           <p>
             <Badge variant="outline" className="mr-2">Paid Off (−)</Badge>
             Baki debet kredit yang jatuh temponya ada di minggu itu.
+          </p>
+          <p>
+            <Badge variant="outline" className="mr-2">Ekstrakomtabel</Badge>
+            Kredit kol 0 tidak ikut dihitung sama sekali — bakinya sudah dihapusbukukan, jadi tidak ada
+            angsuran maupun jatuh tempo yang perlu dilaporkan ke pipeline.
           </p>
           <p>
             <Badge variant="outline" className="mr-2">Unit</Badge>
