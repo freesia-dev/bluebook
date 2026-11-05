@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { LatarUkirDayak } from '@/components/ornamen/UkirDayak';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -464,7 +465,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
         "transition-[width,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:w-[76px] lg:translate-x-0"
       )}>
-        <div className="flex h-full flex-col">
+        {/* Siluet ukir Dayak — hiasan samar, sengaja di bawah seluruh isi dan
+            tidak menangkap klik. Opasitasnya kecil supaya menu tetap jelas. */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden text-sidebar-foreground opacity-[0.05] dark:opacity-[0.07]">
+          <LatarUkirDayak ukuran={112} />
+        </div>
+
+        <div className="relative flex h-full flex-col">
           {/* Logo */}
           <div className={cn(
             "flex items-center border-b border-white/10 py-4 transition-all duration-300",

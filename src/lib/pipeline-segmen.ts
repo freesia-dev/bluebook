@@ -89,6 +89,22 @@ export const URUTAN_PRODUK: KodeProduk[] = [
   'konsumen_karyawan',
 ];
 
+/** Jenis kredit produktif: Modal Kerja atau Investasi. */
+export type JenisProduktif = 'KMK' | 'KI' | '-';
+
+export const jenisProduktifPipeline = (row: Pick<MLFRow, 'group2'>): JenisProduktif => {
+  const g = (row.group2 || '').toLowerCase();
+  if (g === 'kredit modal kerja') return 'KMK';
+  if (g === 'kredit investasi') return 'KI';
+  return '-';
+};
+
+export const JENIS_LABEL: Record<JenisProduktif, string> = {
+  KMK: 'Modal Kerja (KMK)',
+  KI: 'Investasi (KI)',
+  '-': 'Konsumtif',
+};
+
 /** KUR memakai bunga sliding; non-KUR anuitas. */
 export const isKUR = (row: Pick<MLFRow, 'lytitl'>): boolean =>
   /SLIDING/i.test(row.lytitl || '');

@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { formatNominal } from '@/lib/uang';
+import { gambarUkirPdf } from '@/components/ornamen/UkirDayak';
 import { InputNominal } from '@/components/ui/input-nominal';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
@@ -750,6 +752,9 @@ const KalkulatorPage: React.FC = () => {
     doc.text('Jl. Letjend S. Parman No. 14-15, Bontang 75383  ·  Telp. 0548-26567', kopX, M + 14.5);
     doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', kopX, M + 18);
 
+    // Aksen ukir Dayak di sudut kanan kop — samar, sekadar memberi ciri
+    gambarUkirPdf(doc, pageW - M - 19, M + 1.5, 18, [226, 238, 252]);
+
     doc.setFillColor(...BRAND_BLUE);
     doc.rect(M, M + 21, pageW - 2 * M, 1.2, 'F');
     doc.setFillColor(...BRAND_ORANGE);
@@ -934,7 +939,7 @@ const KalkulatorPage: React.FC = () => {
       body: [
         [
           { content: 'DANA DITERIMA DEBITUR (NILAI BERSIH)', styles: { fontStyle: 'bold', halign: 'right', fillColor: BRAND_ORANGE, textColor: 255 } },
-          { content: fmtNumber(danaBersih), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
+          { content: formatNominal(danaBersih), styles: { fontStyle: 'bold', fillColor: BRAND_ORANGE, textColor: 255, halign: 'right' } },
         ],
       ],
       styles: { fontSize: 9, cellPadding: 2.5, textColor: TEXT_DARK },
@@ -942,30 +947,51 @@ const KalkulatorPage: React.FC = () => {
       margin: { left: M, right: M },
     });
 
-    yy = (doc as any).lastAutoTable.finalY + 6;
+    yy = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...BRAND_BLUE);
+    doc.text('TABEL ANGSURAN', M, yy);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(120);
+    doc.text(`${result.rows.length} bulan  ·  skema ${SKEMA_LABELS[skema] || skema}`, pageW - M, yy, { align: 'right' });
+    gambarUkirPdf(doc, M + 36, yy - 5, 6.4, [209, 221, 236]);
+    yy += 3;
     autoTable(doc, {
       startY: yy,
       head: [['No', 'Tanggal', 'Pokok', 'Bunga', 'Angsuran', 'Saldo Pokok']],
+      // Dua desimal, sama dengan mesin hitungnya — kalau dibulatkan di sini,
+      // jumlah pokok tidak lagi persis sama dengan plafon saat dicek pembaca.
       body: result.rows.map((r) => [
         r.bulan,
         new Date(r.tanggal).toLocaleDateString('id-ID'),
-        fmtNumber(r.pokok),
-        fmtNumber(r.bunga),
-        fmtNumber(r.angsuran),
-        fmtNumber(r.saldo),
+        formatNominal(r.pokok),
+        formatNominal(r.bunga),
+        formatNominal(r.angsuran),
+        formatNominal(r.saldo),
       ]),
-      styles: { fontSize: 7, cellPadding: 1.2, textColor: TEXT_DARK },
-      headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold' },
+      // Seluruh isi dibuat rata tengah mengikuti judul kolomnya. Sebelumnya
+      // judul rata tengah tetapi angkanya rata kanan, dan itu bikin mata
+      // bolak-balik saat menelusuri baris.
+      styles: { fontSize: 7, cellPadding: 1.4, textColor: TEXT_DARK, halign: 'center', valign: 'middle' },
+      headStyles: { fillColor: BRAND_BLUE, textColor: 255, fontStyle: 'bold', halign: 'center' },
       alternateRowStyles: { fillColor: ZEBRA },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 10 },
-        1: { cellWidth: 24 },
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right', fontStyle: 'bold' },
-        5: { halign: 'right' },
+        0: { cellWidth: 11 },
+        1: { cellWidth: 26 },
+        4: { fontStyle: 'bold' },
       },
+      // Judul kolom diulang di tiap halaman — tabel angsuran bisa puluhan baris
+      showHead: 'everyPage',
       margin: { left: M, right: M },
+      didParseCell: (data: any) => {
+        // Baris terakhir (pelunasan) ditandai supaya gampang dicari
+        if (data.section === 'body' && data.row.index === result.rows.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [255, 247, 237];
+        }
+      },
     });
 
     const totalPages = (doc as any).internal.getNumberOfPages();

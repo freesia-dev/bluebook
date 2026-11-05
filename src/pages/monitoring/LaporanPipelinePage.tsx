@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  FileSpreadsheet, Plus, Pencil, Trash2, RotateCcw, Copy, Check, AlertCircle, CalendarRange,
+  FileSpreadsheet, FileDown, Plus, Pencil, Trash2, RotateCcw, Copy, Check, AlertCircle,
+  CalendarRange,
 } from 'lucide-react';
 import { useMLFUploads, useMLFDataByBranch, type MLFRow } from '@/hooks/use-mlf-data';
 import { useProyeksi, useProyeksiMutations, type ProyeksiRow } from '@/hooks/use-proyeksi';
@@ -25,13 +26,14 @@ import { useLoanSimulations, CANCEL_STAGE, PIPELINE_LABELS, type LoanSimulationR
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatRupiah, formatNominal } from '@/lib/uang';
+import { buatPdfPipeline, type DataUnitPdf } from '@/lib/pipeline-pdf';
 import { formatCurrencyInput } from '@/hooks/use-currency-input';
 import { getUnit } from '@/lib/produktif-utils';
 import {
-  BARIS_PORTAL, BATAS_MIKRO_DEFAULT, PRODUK_LABEL, SEGMEN_LABEL, URUTAN_PRODUK,
-  angsuranKenaMinggu, dalamMinggu, mingguBawaan, produkPipeline, produkSimulasi, runOffBulanan,
-  tanggalAngsuran,
-  type KodeProduk, type KodeSegmen, type Minggu,
+  BARIS_PORTAL, BATAS_MIKRO_DEFAULT, JENIS_LABEL, PRODUK_LABEL, SEGMEN_LABEL, URUTAN_PRODUK,
+  angsuranKenaMinggu, dalamMinggu, jenisProduktifPipeline, mingguBawaan, produkPipeline,
+  produkSimulasi, runOffBulanan, tanggalAngsuran,
+  type JenisProduktif, type KodeProduk, type KodeSegmen, type Minggu,
 } from '@/lib/pipeline-segmen';
 
 /* -------------------------------------------------------------------------- */
@@ -524,12 +526,22 @@ export const LaporanPipelineContent: React.FC = () => {
    * cabang TANPA Meranti, "Meranti" berarti Meranti saja. Keduanya dilaporkan
    * terpisah ke kantor pusat, jadi dua-duanya bisa dilihat dan diekspor.
    */
+  /**
+   * Kredit ekstrakomtabel (kol 0) tidak masuk pipeline — bakinya sudah
+   * dihapusbukukan, jadi tidak ada lagi angsuran yang menurunkan baki debet
+   * maupun jatuh tempo yang perlu dilaporkan. Dibuang sebelum apa pun dihitung.
+   */
+  const rowsAktif = useMemo(() => rowsMLF.filter((r) => (Number(r.kol) || 0) !== 0), [rowsMLF]);
+
+  /** Berapa baris ekstrakomtabel yang dikecualikan — ditampilkan sebagai catatan. */
+  const jumlahEkstrakom = rowsMLF.length - rowsAktif.length;
+
   const saringMLF = React.useCallback(
     (u: UnitPilihan) =>
       u === 'semua'
-        ? rowsMLF
-        : rowsMLF.filter((r) => (u === 'meranti' ? getUnit(r) === 'meranti' : getUnit(r) !== 'meranti')),
-    [rowsMLF],
+        ? rowsAktif
+        : rowsAktif.filter((r) => (u === 'meranti' ? getUnit(r) === 'meranti' : getUnit(r) !== 'meranti')),
+    [rowsAktif],
   );
 
   const saringRencana = React.useCallback(
@@ -597,6 +609,33 @@ export const LaporanPipelineContent: React.FC = () => {
 
   const angka = useMemo(() => hitung(rows, rencana), [hitung, rows, rencana]);
 
+  /**
+   * Rincian kredit produktif dipecah Modal Kerja dan Investasi.
+   * Baris portal menggabungkan Mikro KUR dan Kecil KUR jadi satu, sehingga
+   * komposisi KMK dan KI tidak kelihatan — rincian ini yang memperlihatkannya.
+   * Kuncinya `${produk}|${jenis}`.
+   */
+  const hitungRincian = React.useCallback(
+    (rowsU: MLFRow[]): Record<string, AngkaProduk[]> => {
+      const peta: Record<string, AngkaProduk[]> = {};
+      rowsU.forEach((r) => {
+        const jenis = jenisProduktifPipeline(r);
+        if (jenis === '-') return; // konsumtif tidak punya pecahan KMK/KI
+        const kunci = `${produkPipeline(r, batasMikro)}|${jenis}`;
+        if (!peta[kunci]) peta[kunci] = minggu.map(() => kosong());
+        const { hari } = tanggalAngsuran(r);
+        const angsuran = runOffBulanan(r);
+        const baki = Number(r.baki) || 0;
+        minggu.forEach((m, i) => {
+          if (angsuran > 0 && angsuranKenaMinggu(hari, m)) peta[kunci][i].runOff += angsuran;
+          if (dalamMinggu(r.date1, m)) peta[kunci][i].paidOff += baki;
+        });
+      });
+      return peta;
+    },
+    [minggu, batasMikro],
+  );
+
   /** Net per minggu untuk satu unit — dipakai kartu perbandingan & ekspor. */
   const netPerMinggu = React.useCallback(
     (u: UnitPilihan): number[] => {
@@ -645,55 +684,178 @@ export const LaporanPipelineContent: React.FC = () => {
    * karena Telihan dan Meranti dilaporkan terpisah ke kantor pusat dan tidak
    * praktis kalau harus ekspor dua kali.
    */
+  /** Kumpulan data satu unit untuk ekspor — dipakai PDF maupun Excel. */
+  const dataUnit = React.useCallback(
+    (u: UnitPilihan): DataUnitPdf => {
+      const rowsU = saringMLF(u);
+      const rencanaU = saringRencana(u);
+      return {
+        label: UNIT_LABEL_PIPELINE[u],
+        angka: hitung(rowsU, rencanaU),
+        rincian: hitungRincian(rowsU),
+        jumlahDebitur: rowsU.length,
+        rencana: rencanaU.map((r) => ({
+          nama: r.nama_debitur,
+          produk: (r.segmen as KodeProduk) || 'konsumen_multiguna',
+          tanggal: r.tanggal_rencana,
+          plafon: Number(r.plafon) || 0,
+          keterangan: r.keterangan,
+        })),
+      };
+    },
+    [saringMLF, saringRencana, hitung, hitungRincian],
+  );
+
+  const exportPdf = () => {
+    const doc = buatPdfPipeline({
+      periode: info ? format(new Date(info.jobdate), 'd MMMM yyyy', { locale: idLocale }) : '-',
+      minggu,
+      unit: [dataUnit('telihan'), dataUnit('meranti')],
+      batasMikro,
+      catatan: [
+        'Booking (+) — hanya dari daftar Rencana Pencairan; selalu diisi manual, tidak ada yang dihitung otomatis. Tanggal rencana menentukan masuk minggu keberapa.',
+        'Run Off (-) — bagian pokok angsuran sebulan, dimasukkan ke minggu yang memuat tanggal angsuran (kolom TGLBYRAK berkas MLF). Khusus kol 3, 4, dan 5: kalau sisa baki debet lebih kecil dari angsuran bulanan, yang dipakai baki debetnya.',
+        'Paid Off (-) — baki debet kredit yang jatuh temponya ada di minggu tersebut.',
+        `Segmen — KUR dikenali dari bunga sliding, non-KUR dari anuitas. Mikro bila plafon sampai ${formatRupiah(batasMikro)}, di atasnya Kecil. Kecil KUR ikut dijumlahkan ke baris "Mikro KUR (Inc. Kecil KUR)" sesuai format portal.`,
+        'Unit — Telihan dan Meranti dilaporkan terpisah; unit dibaca dari nomor PK di MLF, dan kredit yang nomor PK-nya tidak terbaca ikut ke Telihan.',
+        'Ekstrakomtabel — kredit kol 0 tidak ikut dihitung sama sekali karena bakinya sudah dihapusbukukan.',
+      ],
+    });
+    const nama = info ? format(new Date(info.jobdate), 'yyyy-MM') : 'periode';
+    doc.save(`Laporan-Pipeline-${nama}.pdf`);
+  };
+
+  /**
+   * Satu berkas Excel memuat semuanya: ringkasan Net semua unit, lalu per unit
+   * satu lembar berisi keempat kolom sekaligus (Booking, Run Off, Paid Off,
+   * Net) supaya tidak perlu loncat antar lembar, ditambah rincian Modal Kerja
+   * vs Investasi dan daftar rencana pencairan. Angka disimpan sebagai angka
+   * sungguhan dengan format Rupiah, bukan teks, jadi masih bisa dijumlahkan.
+   */
   const exportExcel = () => {
     const wb = XLSX.utils.book_new();
+    const periodeTeks = info ? format(new Date(info.jobdate), 'd MMMM yyyy', { locale: idLocale }) : '-';
     const judulMinggu = minggu.map((m) => `Minggu ${m.nomor} (${tglTampil(m.mulai)}–${tglTampil(m.selesai)})`);
-    const periodeTeks = info ? format(new Date(info.jobdate), 'dd MMMM yyyy', { locale: idLocale }) : '-';
+    const FMT = '#,##0.00';
+    const unitUrut: UnitPilihan[] = ['telihan', 'meranti'];
 
-    const lembar = (u: UnitPilihan, kolom: Kolom | 'net', judul: string) => {
-      const peta = hitung(saringMLF(u), saringRencana(u));
-      const baris = BARIS_PORTAL.map((b) => ({
-        ...b,
-        perMinggu: minggu.map((_, i) => b.produk.reduce((acc, k) => tambah(acc, peta[k][i]), kosong())),
-      }));
-      const ambil = (a: AngkaProduk) => (kolom === 'net' ? net(a) : a[kolom]);
+    /** Tandai sel angka supaya Excel memformatnya sebagai bilangan. */
+    const angkakan = (ws: XLSX.WorkSheet, dariBaris: number, dariKolom: number) => {
+      const jangkauan = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = dariBaris; R <= jangkauan.e.r; R++) {
+        for (let C = dariKolom; C <= jangkauan.e.c; C++) {
+          const sel = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (sel && typeof sel.v === 'number') {
+            sel.t = 'n';
+            sel.z = FMT;
+          }
+        }
+      }
+    };
 
+    /* ---------------------------------------------------- lembar ringkasan */
+    const ringkas: (string | number)[][] = [
+      ['LAPORAN PIPELINE MINGGUAN'],
+      ['PT BPD Kalimantan Timur & Kalimantan Utara — Kantor Cabang Pembantu Telihan'],
+      [`Periode MLF: ${periodeTeks}`],
+      [`Dicetak: ${format(new Date(), 'd MMMM yyyy HH:mm', { locale: idLocale })} WITA`],
+      [],
+      ['NET PER UNIT (Rupiah penuh)'],
+      ['Unit', ...judulMinggu, 'Total Bulan'],
+    ];
+    const totalGabungan = minggu.map(() => 0);
+    unitUrut.forEach((u) => {
+      const d = dataUnit(u);
+      const nilai = minggu.map((_, i) =>
+        BARIS_PORTAL.reduce((acc, b) => acc + net(b.produk.reduce((a, k) => tambah(a, d.angka[k][i]), kosong())), 0),
+      );
+      nilai.forEach((n, i) => { totalGabungan[i] += n; });
+      ringkas.push([d.label, ...nilai, nilai.reduce((a, b) => a + b, 0)]);
+    });
+    ringkas.push(['GABUNGAN', ...totalGabungan, totalGabungan.reduce((a, b) => a + b, 0)]);
+    ringkas.push([]);
+    ringkas.push(['Catatan']);
+    ringkas.push(['Booking selalu diisi manual lewat daftar Rencana Pencairan — tidak dihitung otomatis.']);
+    ringkas.push(['Run Off memakai pokok angsuran; kol 3/4/5 dibatasi sisa baki debet.']);
+    ringkas.push(['Kredit ekstrakomtabel (kol 0) tidak ikut dihitung.']);
+    const wsRingkas = XLSX.utils.aoa_to_sheet(ringkas);
+    wsRingkas['!cols'] = [{ wch: 30 }, ...minggu.map(() => ({ wch: 22 })), { wch: 22 }];
+    wsRingkas['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: minggu.length + 1 } }];
+    angkakan(wsRingkas, 7, 1);
+    XLSX.utils.book_append_sheet(wb, wsRingkas, 'Ringkasan');
+
+    /* ------------------------------------------------------- lembar per unit */
+    unitUrut.forEach((u) => {
+      const d = dataUnit(u);
       const data: (string | number)[][] = [
-        [`LAPORAN PIPELINE — ${judul.toUpperCase()}`],
-        [`Unit: ${UNIT_LABEL_PIPELINE[u]}`],
-        [`Periode MLF: ${periodeTeks}`],
+        [`LAPORAN PIPELINE — ${d.label.toUpperCase()}`],
+        [`Periode MLF: ${periodeTeks}`, '', `${d.jumlahDebitur} debitur`],
         [],
-        ['Produk', ...judulMinggu, 'Total Bulan'],
       ];
-      baris.forEach((b) => {
-        const nilai = b.perMinggu.map(ambil);
-        data.push([b.label, ...nilai, nilai.reduce((a, c) => a + c, 0)]);
+
+      (['net', 'booking', 'runOff', 'paidOff'] as (Kolom | 'net')[]).forEach((kolom) => {
+        const judul = kolom === 'net' ? 'NET' : kolom === 'runOff' ? 'RUN OFF (−)' : kolom === 'paidOff' ? 'PAID OFF (−)' : 'BOOKING (+)';
+        const ambil = (a: AngkaProduk) => (kolom === 'net' ? net(a) : a[kolom]);
+        data.push([judul]);
+        data.push(['Produk', ...judulMinggu, 'Total Bulan']);
+        let segKini = '';
+        const totalKolom = minggu.map(() => 0);
+        BARIS_PORTAL.forEach((b) => {
+          if (b.segmen !== segKini) {
+            segKini = b.segmen;
+            data.push([SEGMEN_LABEL[b.segmen].toUpperCase()]);
+          }
+          const nilai = minggu.map((_, i) => ambil(b.produk.reduce((a, k) => tambah(a, d.angka[k][i]), kosong())));
+          nilai.forEach((n, i) => { totalKolom[i] += n; });
+          data.push([b.label, ...nilai, nilai.reduce((a, c) => a + c, 0)]);
+        });
+        data.push(['TOTAL', ...totalKolom, totalKolom.reduce((a, b) => a + b, 0)]);
+        data.push([]);
       });
-      const totBaris = minggu.map((_, i) => baris.reduce((acc, b) => acc + ambil(b.perMinggu[i]), 0));
-      data.push(['TOTAL', ...totBaris, totBaris.reduce((a, b) => a + b, 0)]);
+
+      // rincian Modal Kerja vs Investasi
+      const kunci = Object.keys(d.rincian).sort();
+      if (kunci.length) {
+        data.push(['RINCIAN KREDIT PRODUKTIF — MODAL KERJA vs INVESTASI (Net)']);
+        data.push(['Produk', 'Jenis', ...judulMinggu, 'Total Bulan']);
+        kunci.forEach((k) => {
+          const [kode, jenis] = k.split('|');
+          const nilai = d.rincian[k].map((m) => net(m));
+          data.push([
+            PRODUK_LABEL[kode as KodeProduk],
+            JENIS_LABEL[jenis as JenisProduktif],
+            ...nilai,
+            nilai.reduce((a, b) => a + b, 0),
+          ]);
+        });
+        data.push([]);
+      }
+
+      // rencana pencairan
+      data.push(['RENCANA PENCAIRAN (sumber angka Booking)']);
+      data.push(['Nama Debitur', 'Produk', 'Rencana Cair', 'Minggu', 'Plafon', 'Keterangan']);
+      if (d.rencana.length === 0) {
+        data.push(['Belum ada rencana pencairan untuk unit ini']);
+      } else {
+        d.rencana.forEach((r) => {
+          const mg = minggu.find((m) => r.tanggal && r.tanggal >= m.mulai && r.tanggal <= m.selesai);
+          data.push([
+            r.nama,
+            PRODUK_LABEL[r.produk] || '-',
+            r.tanggal ? format(new Date(`${r.tanggal}T00:00:00`), 'dd/MM/yyyy') : '—',
+            mg ? `Minggu ${mg.nomor}` : 'di luar periode',
+            r.plafon,
+            r.keterangan || '',
+          ]);
+        });
+        data.push(['TOTAL BOOKING', '', '', '', d.rencana.reduce((a, r) => a + r.plafon, 0), '']);
+      }
 
       const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{ wch: 32 }, ...minggu.map(() => ({ wch: 20 })), { wch: 20 }];
-      return ws;
-    };
-
-    const namaUnit: Record<UnitPilihan, string> = {
-      telihan: 'Telihan',
-      meranti: 'Meranti',
-      semua: 'Gabungan',
-    };
-    const kolomUrut: { kunci: Kolom | 'net'; judul: string }[] = [
-      { kunci: 'net', judul: 'Net' },
-      { kunci: 'booking', judul: 'Booking' },
-      { kunci: 'runOff', judul: 'Run Off' },
-      { kunci: 'paidOff', judul: 'Paid Off' },
-    ];
-
-    (['telihan', 'meranti', 'semua'] as UnitPilihan[]).forEach((u) => {
-      kolomUrut.forEach(({ kunci, judul }) => {
-        // Nama lembar Excel maksimal 31 karakter
-        XLSX.utils.book_append_sheet(wb, lembar(u, kunci, judul), `${namaUnit[u]} ${judul}`.slice(0, 31));
-      });
+      ws['!cols'] = [{ wch: 34 }, { wch: 22 }, ...minggu.map(() => ({ wch: 20 })), { wch: 20 }];
+      angkakan(ws, 3, 1);
+      const namaLembar = u === 'telihan' ? 'Telihan' : 'Meranti';
+      XLSX.utils.book_append_sheet(wb, ws, namaLembar);
     });
 
     const periode = info ? format(new Date(info.jobdate), 'yyyy-MM') : 'periode';
@@ -820,12 +982,21 @@ export const LaporanPipelineContent: React.FC = () => {
               {tersalin ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
               {tersalin ? 'Tersalin' : 'Salin Net'}
             </Button>
+            <Button variant="outline" onClick={exportPdf} className="gap-2">
+              <FileDown className="h-4 w-4" /> PDF
+            </Button>
             <Button onClick={exportExcel} className="gap-2">
               <FileSpreadsheet className="h-4 w-4" /> Excel
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {jumlahEkstrakom > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {jumlahEkstrakom} kredit ekstrakomtabel (kol 0) dikecualikan dari seluruh hitungan di halaman ini.
+        </p>
+      )}
 
       {tanpaTglByrak > 0 && (
         <Alert>
@@ -1078,6 +1249,11 @@ export const LaporanPipelineContent: React.FC = () => {
           <p>
             <Badge variant="outline" className="mr-2">Paid Off (−)</Badge>
             Baki debet kredit yang jatuh temponya ada di minggu itu.
+          </p>
+          <p>
+            <Badge variant="outline" className="mr-2">Ekstrakomtabel</Badge>
+            Kredit kol 0 tidak ikut dihitung sama sekali — bakinya sudah dihapusbukukan, jadi tidak ada
+            angsuran maupun jatuh tempo yang perlu dilaporkan ke pipeline.
           </p>
           <p>
             <Badge variant="outline" className="mr-2">Unit</Badge>
