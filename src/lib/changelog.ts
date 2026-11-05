@@ -24,9 +24,9 @@ export const CHANGELOG: EntriPerubahan[] = [
       'Menu Kredit Produktif Unit kini bernama Laporan Kredit, dan Laporan Bulanan di dalamnya jadi Laporan Pipeline.',
       'Laporan Pipeline menyiapkan Booking, Run Off, dan Paid Off per minggu — rentang minggunya bisa diatur sendiri sesuai pembagian kantor pusat.',
       'Angka Telihan dan Meranti dipisah, lengkap dengan rincian Modal Kerja dan Investasi supaya komposisinya kelihatan.',
-      'Laporan Pipeline bisa diunduh sebagai PDF yang rapi atau Excel berisi ringkasan dan rincian tiap unit.',
+      'Laporan Pipeline bisa diunduh sebagai PDF atau Excel: PDF-nya dibuka kartu sorotan dan grafik per minggu, lalu tabel angka portal, rincian Modal Kerja vs Investasi, dan daftar rencana pencairan tiap unit.',
       'PDF Simulasi Kredit dipercantik: tabel angsurannya rata tengah semua, judul kolom ikut di tiap halaman, dan angkanya sampai dua desimal.',
-      'Sidebar diberi siluet ukir Dayak yang samar sebagai ciri khas kantor.',
+      'Motif ukir Dayak gambaran sendiri dijadikan vektor, lalu dipakai samar di sidebar dan sebagai pita hiasan di kepala laporan PDF.',
     ],
   },
   {

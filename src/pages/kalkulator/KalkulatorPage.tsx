@@ -753,7 +753,7 @@ const KalkulatorPage: React.FC = () => {
     doc.text('kcp.telihan@bankaltimtara.co.id  ·  bankaltimtara.co.id', kopX, M + 18);
 
     // Aksen ukir Dayak di sudut kanan kop — samar, sekadar memberi ciri
-    gambarUkirPdf(doc, pageW - M - 20, M + 1, 20, [219, 234, 254], 0.45);
+    gambarUkirPdf(doc, pageW - M - 19, M + 1.5, 18, [226, 238, 252]);
 
     doc.setFillColor(...BRAND_BLUE);
     doc.rect(M, M + 21, pageW - 2 * M, 1.2, 'F');
@@ -956,7 +956,7 @@ const KalkulatorPage: React.FC = () => {
     doc.setFontSize(7.5);
     doc.setTextColor(120);
     doc.text(`${result.rows.length} bulan  ·  skema ${SKEMA_LABELS[skema] || skema}`, pageW - M, yy, { align: 'right' });
-    gambarUkirPdf(doc, M + 36, yy - 4.2, 5.4, [203, 213, 225], 0.28);
+    gambarUkirPdf(doc, M + 36, yy - 5, 6.4, [209, 221, 236]);
     yy += 3;
     autoTable(doc, {
       startY: yy,

@@ -467,8 +467,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
       )}>
         {/* Siluet ukir Dayak — hiasan samar, sengaja di bawah seluruh isi dan
             tidak menangkap klik. Opasitasnya kecil supaya menu tetap jelas. */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden text-sidebar-foreground opacity-[0.045] dark:opacity-[0.07]">
-          <LatarUkirDayak ukuran={118} />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden text-sidebar-foreground opacity-[0.05] dark:opacity-[0.07]">
+          <LatarUkirDayak ukuran={112} />
         </div>
 
         <div className="relative flex h-full flex-col">
