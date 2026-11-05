@@ -32,7 +32,7 @@ import { getUnit } from '@/lib/produktif-utils';
 import {
   BARIS_PORTAL, BATAS_MIKRO_DEFAULT, JENIS_LABEL, PRODUK_LABEL, SEGMEN_LABEL, URUTAN_PRODUK,
   angsuranKenaMinggu, dalamMinggu, jenisProduktifPipeline, mingguBawaan, produkPipeline,
-  produkSimulasi, runOffBulanan, tanggalAngsuran,
+  produkSimulasi, paidOffPeriode, runOffBulanan, tanggalAngsuran,
   type JenisProduktif, type KodeProduk, type KodeSegmen, type Minggu,
 } from '@/lib/pipeline-segmen';
 
@@ -79,6 +79,12 @@ interface AngkaProduk {
 }
 
 const kosong = (): AngkaProduk => ({ booking: 0, runOff: 0, paidOff: 0 });
+
+/** Apakah satu nilai Paid Off jatuh di minggu ini — lewat tanggal atau tanggal angsuran. */
+const kenaMinggu = (
+  po: { tanggal: string | null; hari: number | null },
+  m: Minggu,
+): boolean => (po.tanggal ? dalamMinggu(po.tanggal, m) : angsuranKenaMinggu(po.hari, m));
 const net = (a: AngkaProduk) => a.booking - a.runOff - a.paidOff;
 
 const tambah = (a: AngkaProduk, b: AngkaProduk): AngkaProduk => ({
@@ -562,6 +568,16 @@ export const LaporanPipelineContent: React.FC = () => {
   /** Berapa baris yang belum punya TGLBYRAK — jadi Run Off-nya masih perkiraan. */
   const tanpaTglByrak = useMemo(() => rows.filter((r) => !r.tglbyrak).length, [rows]);
 
+  /**
+   * Rentang penuh periode laporan — dipakai untuk menentukan kredit mana yang
+   * memang mengangsur di bulan ini, mana yang lunas, baru akad, atau sudah
+   * lewat jatuh tempo.
+   */
+  const periode = useMemo(
+    () => ({ awal: minggu[0].mulai, akhir: minggu[minggu.length - 1].selesai }),
+    [minggu],
+  );
+
   /** angka[produk][indeks minggu] — dihitung untuk satu kumpulan data unit. */
   const hitung = React.useCallback((
     rowsU: MLFRow[],
@@ -575,17 +591,17 @@ export const LaporanPipelineContent: React.FC = () => {
     rowsU.forEach((r: MLFRow) => {
       const produk = produkPipeline(r, batasMikro);
       const { hari } = tanggalAngsuran(r);
-      const angsuran = runOffBulanan(r);
-      const baki = Number(r.baki) || 0;
+      const angsuran = runOffBulanan(r, periode);
+      const pelunasan = paidOffPeriode(r, periode);
 
       minggu.forEach((m, i) => {
         // Run Off — angsuran pokok yang tanggalnya jatuh di minggu ini
         if (angsuran > 0 && angsuranKenaMinggu(hari, m)) {
           peta[produk][i].runOff += angsuran;
         }
-        // Paid Off — jatuh tempo di minggu ini
-        if (dalamMinggu(r.date1, m)) {
-          peta[produk][i].paidOff += baki;
+        // Paid Off — pelunasan, ditaruh sesuai aturan paidOffPeriode
+        if (pelunasan && kenaMinggu(pelunasan, m)) {
+          peta[produk][i].paidOff += pelunasan.nilai;
         }
       });
     });
@@ -605,7 +621,7 @@ export const LaporanPipelineContent: React.FC = () => {
     });
 
     return peta;
-  }, [minggu, batasMikro]);
+  }, [minggu, batasMikro, periode]);
 
   const angka = useMemo(() => hitung(rows, rencana), [hitung, rows, rencana]);
 
@@ -624,16 +640,16 @@ export const LaporanPipelineContent: React.FC = () => {
         const kunci = `${produkPipeline(r, batasMikro)}|${jenis}`;
         if (!peta[kunci]) peta[kunci] = minggu.map(() => kosong());
         const { hari } = tanggalAngsuran(r);
-        const angsuran = runOffBulanan(r);
-        const baki = Number(r.baki) || 0;
+        const angsuran = runOffBulanan(r, periode);
+        const pelunasan = paidOffPeriode(r, periode);
         minggu.forEach((m, i) => {
           if (angsuran > 0 && angsuranKenaMinggu(hari, m)) peta[kunci][i].runOff += angsuran;
-          if (dalamMinggu(r.date1, m)) peta[kunci][i].paidOff += baki;
+          if (pelunasan && kenaMinggu(pelunasan, m)) peta[kunci][i].paidOff += pelunasan.nilai;
         });
       });
       return peta;
     },
-    [minggu, batasMikro],
+    [minggu, batasMikro, periode],
   );
 
   /** Net per minggu untuk satu unit — dipakai kartu perbandingan & ekspor. */
@@ -715,7 +731,8 @@ export const LaporanPipelineContent: React.FC = () => {
       catatan: [
         'Booking (+) — hanya dari daftar Rencana Pencairan; selalu diisi manual, tidak ada yang dihitung otomatis. Tanggal rencana menentukan masuk minggu keberapa.',
         'Run Off (-) — bagian pokok angsuran sebulan, dimasukkan ke minggu yang memuat tanggal angsuran (kolom TGLBYRAK berkas MLF). Khusus kol 3, 4, dan 5: kalau sisa baki debet lebih kecil dari angsuran bulanan, yang dipakai baki debetnya.',
-        'Paid Off (-) — baki debet kredit yang jatuh temponya ada di minggu tersebut.',
+        'Tidak dihitung Run Off — kredit yang jatuh tempo di dalam periode (masuk Paid Off, supaya tidak terhitung dua kali), kredit yang akadnya di dalam periode (angsuran pertamanya bulan depan), dan kredit yang jatuh temponya sudah terlewat sebelum periode dimulai.',
+        'Paid Off (-) — baki debet kredit yang jatuh temponya ada di minggu tersebut. Kredit yang jatuh temponya sudah terlewat tetapi bakinya masih bersisa juga dicatat di sini, ditaruh pada tanggal angsuran bulanannya.',
         `Segmen — KUR dikenali dari bunga sliding, non-KUR dari anuitas. Mikro bila plafon sampai ${formatRupiah(batasMikro)}, di atasnya Kecil. Kecil KUR ikut dijumlahkan ke baris "Mikro KUR (Inc. Kecil KUR)" sesuai format portal.`,
         'Unit — Telihan dan Meranti dilaporkan terpisah; unit dibaca dari nomor PK di MLF, dan kredit yang nomor PK-nya tidak terbaca ikut ke Telihan.',
         'Ekstrakomtabel — kredit kol 0 tidak ikut dihitung sama sekali karena bakinya sudah dihapusbukukan.',
