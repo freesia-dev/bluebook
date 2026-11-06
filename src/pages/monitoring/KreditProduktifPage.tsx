@@ -108,10 +108,12 @@ const KreditProduktifPage: React.FC = () => {
     data: arrearsMap,
     isLoading: arrearsLoading,
     isError: arrearsError,
+    error: arrearsErrorObj,
   } = useMLFArrears('143', selectedUploadInfo?.jobdate);
   /** Tanda pengganti saat riwayat tunggakan belum siap — supaya "—" tidak
    *  berarti tiga hal sekaligus: kosong, sedang dihitung, atau gagal. */
   const tandaArrears = arrearsLoading ? 'menghitung…' : arrearsError ? 'gagal dimuat' : null;
+  const sebabArrears = (arrearsErrorObj as any)?.message || undefined;
 
 
   // Enrich + filter Produktif
@@ -806,7 +808,7 @@ const KreditProduktifPage: React.FC = () => {
                                     <TableCell className={cn('text-right', tung > 0 && 'text-amber-700 font-medium')}>{fmtIDR(tung)}</TableCell>
                                     <TableCell className="text-center">
                                       {tandaArrears ? (
-                                        <span className="text-muted-foreground text-[11px] italic">{tandaArrears}</span>
+                                        <span className="text-muted-foreground text-[11px] italic" title={sebabArrears}>{tandaArrears}</span>
                                       ) : tung > 0 && ar?.hariTunggak !== null && ar?.hariTunggak !== undefined ? (
                                         <Badge
                                           variant="outline"
@@ -826,7 +828,7 @@ const KreditProduktifPage: React.FC = () => {
                                     </TableCell>
                                     <TableCell className="text-xs whitespace-nowrap">
                                       {tandaArrears ? (
-                                        <span className="text-muted-foreground text-[11px] italic">{tandaArrears}</span>
+                                        <span className="text-muted-foreground text-[11px] italic" title={sebabArrears}>{tandaArrears}</span>
                                       ) : ar?.lastPaymentDate ? (
                                         <span title={ar.recentPayments.map((p) => `${format(new Date(p.jobdate), 'dd/MM/yyyy')} · ${fmtIDR(p.amount)}`).join('\n')}>
                                           <span className="font-medium">{format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy')}</span>

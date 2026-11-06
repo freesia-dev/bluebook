@@ -303,6 +303,9 @@ export const useMLFArrears = (branchCode?: string, jobdateMax?: string) => {
         p_jobdate_max: jobdateMax ? String(jobdateMax).slice(0, 10) : null,
       });
       if (!error) return buildDariRpc((data || []) as BarisRpc[]);
+      // Pesan aslinya dicatat: tanpa ini "gagal dimuat" di layar tidak
+      // memberi tahu apa pun, dan kita kembali menebak-nebak.
+      console.warn('[arrears] rpc mlf_arrears gagal:', error?.code, error?.message, error?.hint);
       if (!rpcBelumAda(error)) throw error;
       return hitungDiBrowser(brcd, jobdateMax);
     },

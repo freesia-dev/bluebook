@@ -177,9 +177,11 @@ const MonitoringDashboardPage: React.FC = () => {
     data: arrearsMap,
     isLoading: arrearsLoading,
     isError: arrearsError,
+    error: arrearsErrorObj,
   } = useMLFArrears(selectedBranch, selectedUploadInfo?.jobdate);
   /** Lihat catatan yang sama di Laporan Kredit: "—" tidak boleh berarti tiga hal. */
   const tandaArrears = arrearsLoading ? 'menghitung…' : arrearsError ? 'gagal dimuat' : null;
+  const sebabArrears = (arrearsErrorObj as any)?.message || undefined;
 
 
   // Determine previous uploads for "baru cair" & "baru lunas"
@@ -876,7 +878,7 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableCell className="text-right font-semibold text-amber-600">{fmtIDR(d.tunggakan)}</TableCell>
                         <TableCell className="text-center text-xs">
                           {tandaArrears ? (
-                            <span className="text-muted-foreground text-[11px] italic">{tandaArrears}</span>
+                            <span className="text-muted-foreground text-[11px] italic" title={sebabArrears}>{tandaArrears}</span>
                           ) : ar?.hariTunggak != null ? (
                             <Badge variant="outline" className={ar.hariTunggak > 90 ? 'border-rose-500 text-rose-600' : ar.hariTunggak > 30 ? 'border-amber-500 text-amber-600' : ''}>
                               {fmtHariTunggak(ar)} hari
@@ -885,7 +887,7 @@ const MonitoringDashboardPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-xs">
                           {tandaArrears ? (
-                            <span className="text-muted-foreground text-[11px] italic">{tandaArrears}</span>
+                            <span className="text-muted-foreground text-[11px] italic" title={sebabArrears}>{tandaArrears}</span>
                           ) : ar?.lastPaymentDate ? (
                             <>
                               <span className="font-medium">{format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy')}</span>
