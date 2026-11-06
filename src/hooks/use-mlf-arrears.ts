@@ -165,14 +165,33 @@ export const buildArrearsMap = (rows: MLFArrearsRow[]) => {
 };
 
 /**
+ * Berapa bulan riwayat MLF ke belakang yang ditarik.
+ *
+ * Perhitungan hanya butuh riwayat sampai ketemu snapshot terakhir yang masih
+ * lancar; menarik seluruh riwayat sejak awal berarti mengunduh puluhan ribu
+ * baris ke browser tiap kali halaman dibuka, dan itulah yang membuat kolom
+ * Hari Tunggak serta Bayar Terakhir lama kosong. Tunggakan yang lebih tua dari
+ * jendela ini tetap terbaca, hanya ditandai sebagai angka minimal (≥).
+ */
+const BULAN_RIWAYAT = 24;
+
+const mundurBulan = (acuan: string | undefined, bulan: number) => {
+  const d = acuan ? new Date(acuan) : new Date();
+  if (isNaN(d.getTime())) return null;
+  d.setMonth(d.getMonth() - bulan);
+  return d.toISOString().slice(0, 10);
+};
+
+/**
  * Membaca riwayat snapshot MLF untuk menghitung lama tunggakan berjalan
  * & pembayaran terakhir per nomor loan.
  */
 export const useMLFArrears = (branchCode?: string, jobdateMax?: string) => {
   const brcd = branchCode || '143';
   return useQuery({
-    queryKey: ['mlf-arrears-v2', brcd, jobdateMax || 'latest'],
+    queryKey: ['mlf-arrears-v3', brcd, jobdateMax || 'latest'],
     queryFn: async () => {
+      const jobdateMin = mundurBulan(jobdateMax, BULAN_RIWAYAT);
       const all: MLFArrearsRow[] = [];
       let from = 0;
       const PAGE = 1000;
@@ -181,9 +200,14 @@ export const useMLFArrears = (branchCode?: string, jobdateMax?: string) => {
           .from('mlf_data')
           .select('l0lnno,jobdate,baki,tungpk,tungbg,pla,date,date1')
           .eq('brcd', brcd)
+          // Satu jobdate dipakai ratusan baris sekaligus, jadi urutannya harus
+          // dipatok sampai kolom unik — tanpa itu paging bisa melewatkan atau
+          // menggandakan baris, dan angkanya ikut meleset.
           .order('jobdate', { ascending: true })
+          .order('id', { ascending: true })
           .range(from, from + PAGE - 1);
         if (jobdateMax) q = q.lte('jobdate', jobdateMax);
+        if (jobdateMin) q = q.gte('jobdate', jobdateMin);
         const { data, error } = await q;
         if (error) throw error;
         const chunk = data || [];
@@ -195,6 +219,7 @@ export const useMLFArrears = (branchCode?: string, jobdateMax?: string) => {
       return buildArrearsMap(all);
     },
     staleTime: 1000 * 60 * 10,
+    retry: 1,
   });
 };
 

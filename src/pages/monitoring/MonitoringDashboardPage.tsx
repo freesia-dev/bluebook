@@ -173,7 +173,13 @@ const MonitoringDashboardPage: React.FC = () => {
   }, [rows, allRows]);
 
   const selectedUploadInfo = uploads.find((u) => u.id === selectedUpload);
-  const { data: arrearsMap } = useMLFArrears(selectedBranch, selectedUploadInfo?.jobdate);
+  const {
+    data: arrearsMap,
+    isLoading: arrearsLoading,
+    isError: arrearsError,
+  } = useMLFArrears(selectedBranch, selectedUploadInfo?.jobdate);
+  /** Lihat catatan yang sama di Laporan Kredit: "—" tidak boleh berarti tiga hal. */
+  const tandaArrears = arrearsLoading ? 'menghitung…' : arrearsError ? 'gagal dimuat' : null;
 
 
   // Determine previous uploads for "baru cair" & "baru lunas"
@@ -869,14 +875,18 @@ const MonitoringDashboardPage: React.FC = () => {
                         <TableCell className="text-right">{fmtIDR(Number(d.baki) || 0)}</TableCell>
                         <TableCell className="text-right font-semibold text-amber-600">{fmtIDR(d.tunggakan)}</TableCell>
                         <TableCell className="text-center text-xs">
-                          {ar?.hariTunggak != null ? (
+                          {tandaArrears ? (
+                            <span className="text-muted-foreground text-[11px] italic">{tandaArrears}</span>
+                          ) : ar?.hariTunggak != null ? (
                             <Badge variant="outline" className={ar.hariTunggak > 90 ? 'border-rose-500 text-rose-600' : ar.hariTunggak > 30 ? 'border-amber-500 text-amber-600' : ''}>
                               {fmtHariTunggak(ar)} hari
                             </Badge>
                           ) : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {ar?.lastPaymentDate ? (
+                          {tandaArrears ? (
+                            <span className="text-muted-foreground text-[11px] italic">{tandaArrears}</span>
+                          ) : ar?.lastPaymentDate ? (
                             <>
                               <span className="font-medium">{format(new Date(ar.lastPaymentDate), 'dd/MM/yyyy')}</span>
                               <span className="block text-emerald-600 font-medium">{fmtIDR(ar.lastPaymentAmount)}</span>
