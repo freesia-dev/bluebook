@@ -60,39 +60,39 @@ AS $$
     ORDER BY d.l0lnno, d.jobdate, d.id
   ),
   w AS (
+    -- Seluruh turunan dihitung sekali jalan dengan fungsi jendela. Versi
+    -- sebelumnya memakai subquery berkorelasi untuk mencari snapshot menunggak
+    -- pertama, dan itu menyisir ulang riwayat sekali per debitur — pada
+    -- riwayat ratusan ribu baris hasilnya belasan detik dan ditolak server.
     SELECT s.*,
-           LAG(baki) OVER (PARTITION BY loan ORDER BY jobdate) AS prev_baki,
-           LAG(tung) OVER (PARTITION BY loan ORDER BY jobdate) AS prev_tung,
-           MAX(jobdate) OVER (PARTITION BY loan)               AS max_jd,
-           MIN(jobdate) OVER (PARTITION BY loan)               AS min_jd
+           LAG(baki) OVER per_loan                                  AS prev_baki,
+           LAG(tung) OVER per_loan                                  AS prev_tung,
+           MAX(jobdate) OVER (PARTITION BY loan)                    AS max_jd,
+           MIN(jobdate) OVER (PARTITION BY loan)                    AS min_jd,
+           MAX(jobdate) FILTER (WHERE tung <= 0) OVER (PARTITION BY loan) AS clean_jd
     FROM s
+    WINDOW per_loan AS (PARTITION BY loan ORDER BY jobdate)
   ),
-  bayar AS (
-    -- Pembayaran = penurunan baki debet, atau penurunan tunggakan bila lebih besar
-    SELECT loan, jobdate,
+  w2 AS (
+    SELECT w.*,
+           MIN(jobdate) FILTER (WHERE clean_jd IS NOT NULL AND jobdate > clean_jd)
+             OVER (PARTITION BY loan) AS dirty_jd,
            GREATEST(COALESCE(prev_baki - baki, 0),
-                    GREATEST(COALESCE(prev_tung - tung, 0), 0)) AS amount
+                    GREATEST(COALESCE(prev_tung - tung, 0), 0)) AS bayar
     FROM w
   ),
   bayar5 AS (
     SELECT loan,
-           jsonb_agg(jsonb_build_object('jobdate', jobdate, 'amount', amount)
+           jsonb_agg(jsonb_build_object('jobdate', jobdate, 'amount', bayar)
                      ORDER BY jobdate DESC) AS payments
     FROM (
-      SELECT loan, jobdate, amount,
+      SELECT loan, jobdate, bayar,
              ROW_NUMBER() OVER (PARTITION BY loan ORDER BY jobdate DESC) AS rn
-      FROM bayar
-      WHERE amount >= 1000
+      FROM w2
+      WHERE bayar >= 1000
     ) t
     WHERE rn <= 5
     GROUP BY loan
-  ),
-  bersih AS (
-    SELECT loan, MAX(jobdate) AS clean_jobdate
-    FROM w WHERE tung <= 0 GROUP BY loan
-  ),
-  terakhir AS (
-    SELECT * FROM w WHERE jobdate = max_jd
   )
   SELECT
     t.loan,
@@ -101,26 +101,22 @@ AS $$
     t.tung,
     t.tungpk,
     CASE
-      WHEN t.mulai IS NULL OR t.tempo IS NULL THEN 0
+      WHEN t.mulai IS NULL OR t.tempo IS NULL OR t.pla <= 0 THEN 0
       ELSE (
-        SELECT CASE WHEN bln > 0 AND t.pla > 0 THEN t.pla / bln ELSE 0 END
-        FROM (
-          SELECT GREATEST(0,
-            (EXTRACT(YEAR FROM t.tempo) - EXTRACT(YEAR FROM t.mulai)) * 12
-            + (EXTRACT(MONTH FROM t.tempo) - EXTRACT(MONTH FROM t.mulai))
-            + CASE WHEN EXTRACT(DAY FROM t.tempo) - EXTRACT(DAY FROM t.mulai) >= 15
-                   THEN 1 ELSE 0 END
-          ) AS bln
-        ) x
+        SELECT CASE WHEN x.bln > 0 THEN t.pla / x.bln ELSE 0 END
+        FROM (SELECT GREATEST(0,
+                (EXTRACT(YEAR FROM t.tempo) - EXTRACT(YEAR FROM t.mulai)) * 12
+                + (EXTRACT(MONTH FROM t.tempo) - EXTRACT(MONTH FROM t.mulai))
+                + CASE WHEN EXTRACT(DAY FROM t.tempo) - EXTRACT(DAY FROM t.mulai) >= 15
+                       THEN 1 ELSE 0 END) AS bln) x
       )
     END::numeric AS angsuran_pokok,
-    b.clean_jobdate,
-    (SELECT MIN(x.jobdate) FROM w x
-      WHERE x.loan = t.loan AND b.clean_jobdate IS NOT NULL AND x.jobdate > b.clean_jobdate),
+    t.clean_jd,
+    t.dirty_jd,
     COALESCE(p.payments, '[]'::jsonb)
-  FROM terakhir t
-  LEFT JOIN bersih b ON b.loan = t.loan
-  LEFT JOIN bayar5 p ON p.loan = t.loan;
+  FROM w2 t
+  LEFT JOIN bayar5 p ON p.loan = t.loan
+  WHERE t.jobdate = t.max_jd;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.mlf_arrears(text, date) TO authenticated;
