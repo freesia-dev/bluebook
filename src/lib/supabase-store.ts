@@ -517,8 +517,12 @@ export const bulkUpdateAgendaKreditStatus = async (fromStatus: string, toStatus:
 export const getSPPK = async (): Promise<SPPK[]> => {
   const { data, error } = await supabase
     .from('sppk')
+    // Register dibaca menurut nomornya, bukan menurut kapan barisnya dibuat.
+    // Baris yang dipulihkan dari Recycle Bin masuk belakangan, dan kalau
+    // diurutkan menurut waktu pembuatan, nomornya terlihat berhamburan.
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('type', { ascending: true })
+    .order('nomor', { ascending: true });
   
   if (error) throw error;
   
@@ -538,14 +542,7 @@ export const getSPPK = async (): Promise<SPPK[]> => {
 };
 
 export const addSPPK = async (data: Omit<SPPK, 'id' | 'nomor' | 'nomorSPPK' | 'createdAt'>): Promise<SPPK> => {
-  const { data: existing } = await supabase
-    .from('sppk')
-    .select('nomor')
-    .eq('type', data.type)
-    .order('nomor', { ascending: false })
-    .limit(1);
-  
-  const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
+  const nomor = await nomorBerikutnya('sppk', data.type);
   const tanggal = data.tanggal || new Date();
   const prefix = data.type === 'telihan' ? 'D-1/BPD-TLH' : 'SPPK/ULM-TLH';
   const nomorSPPK = `${String(nomor).padStart(3, '0')}/${prefix}/${toRomanMonth(tanggal.getMonth())}/${tanggal.getFullYear()}`;
@@ -636,12 +633,76 @@ export const deleteSPPK = async (id: string): Promise<void> => {
   if (error) throw error;
 };
 
+/* -------------------------------------------------------------------------- */
+/*  Penomoran register kredit (SPPK, PK, KK & MPAK)                           */
+/*                                                                            */
+/*  Nomor register adalah nomor dokumen, bukan sekadar urutan baris: sekali    */
+/*  dipakai, ia tidak boleh dipakai ulang oleh entri lain. Baris yang dihapus  */
+/*  pindah ke Recycle Bin dan masih mungkin dipulihkan, jadi nomornya tetap    */
+/*  dianggap terpakai selama masih ada di sana. Tanpa ini, menghapus entri     */
+/*  terakhir lalu menambah entri baru akan memakai ulang nomornya, dan saat    */
+/*  yang lama dipulihkan keduanya memegang nomor dokumen yang sama.            */
+/* -------------------------------------------------------------------------- */
+
+type TabelRegister = 'sppk' | 'pk' | 'kkmpak';
+
+const nomorBerikutnya = async (tabel: TabelRegister, type: string): Promise<number> => {
+  const { data: existing } = await supabase
+    .from(tabel)
+    .select('nomor')
+    .eq('type', type)
+    .order('nomor', { ascending: false })
+    .limit(1);
+  const tertinggiAktif = existing && existing.length > 0 ? Number(existing[0].nomor) || 0 : 0;
+
+  // Nomor yang sedang "diparkir" di Recycle Bin tetap dihitung terpakai.
+  const { data: terhapus } = await supabase
+    .from('recycle_bin')
+    .select('data')
+    .eq('table_name', tabel)
+    .eq('table_type', type);
+  const tertinggiTerhapus = (terhapus || []).reduce((maks, baris) => {
+    const n = Number((baris.data as Record<string, unknown>)?.nomor) || 0;
+    return n > maks ? n : maks;
+  }, 0);
+
+  return Math.max(tertinggiAktif, tertinggiTerhapus) + 1;
+};
+
+/** Apakah satu nomor masih bebas di tabel register ini. */
+const nomorMasihBebas = async (tabel: TabelRegister, type: string, nomor: number): Promise<boolean> => {
+  const { data } = await supabase
+    .from(tabel)
+    .select('id')
+    .eq('type', type)
+    .eq('nomor', nomor)
+    .limit(1);
+  return !data || data.length === 0;
+};
+
+/**
+ * Ganti blok angka di awal nomor dokumen dengan nomor baru.
+ *
+ * Semua format nomor register diawali tiga digit urutan, apa pun bentuk
+ * sesudahnya, jadi penggantian ini tidak perlu tahu formatnya. Dipakai saat
+ * pemulihan terpaksa memberi nomor baru — supaya nomor urut dan nomor dokumen
+ * tidak pernah lagi bercerita berbeda.
+ */
+const gantiAwalanNomor = (nomorDokumen: unknown, nomorBaru: number): unknown => {
+  if (typeof nomorDokumen !== 'string') return nomorDokumen;
+  return nomorDokumen.replace(/^\d+/, String(nomorBaru).padStart(3, '0'));
+};
+
 // ============= PK FUNCTIONS =============
 export const getPK = async (): Promise<PK[]> => {
   const { data, error } = await supabase
     .from('pk')
+    // Register dibaca menurut nomornya, bukan menurut kapan barisnya dibuat.
+    // Baris yang dipulihkan dari Recycle Bin masuk belakangan, dan kalau
+    // diurutkan menurut waktu pembuatan, nomornya terlihat berhamburan.
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('type', { ascending: true })
+    .order('nomor', { ascending: true });
   
   if (error) throw error;
   
@@ -676,14 +737,7 @@ const isSpecialKreditType = (jenisKredit: string): boolean => {
 };
 
 export const addPK = async (data: Omit<PK, 'id' | 'nomor' | 'nomorPK' | 'createdAt'> & { isKBK?: boolean }): Promise<PK> => {
-  const { data: existing } = await supabase
-    .from('pk')
-    .select('nomor')
-    .eq('type', data.type)
-    .order('nomor', { ascending: false })
-    .limit(1);
-  
-  const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
+  const nomor = await nomorBerikutnya('pk', data.type);
   const tanggal = data.tanggal || new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
   const prefix = data.type === 'telihan' ? 'BPD-TLH' : 'ULM-TLH';
@@ -827,8 +881,12 @@ export const deletePK = async (id: string): Promise<void> => {
 export const getKKMPAK = async (): Promise<KKMPAK[]> => {
   const { data, error } = await supabase
     .from('kkmpak')
+    // Register dibaca menurut nomornya, bukan menurut kapan barisnya dibuat.
+    // Baris yang dipulihkan dari Recycle Bin masuk belakangan, dan kalau
+    // diurutkan menurut waktu pembuatan, nomornya terlihat berhamburan.
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('type', { ascending: true })
+    .order('nomor', { ascending: true });
   
   if (error) throw error;
   
@@ -851,14 +909,7 @@ export const getKKMPAK = async (): Promise<KKMPAK[]> => {
 };
 
 export const addKKMPAK = async (data: Omit<KKMPAK, 'id' | 'nomor' | 'nomorKK' | 'nomorMPAK' | 'createdAt'>): Promise<KKMPAK> => {
-  const { data: existing } = await supabase
-    .from('kkmpak')
-    .select('nomor')
-    .eq('type', data.type)
-    .order('nomor', { ascending: false })
-    .limit(1);
-  
-  const nomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
+  const nomor = await nomorBerikutnya('kkmpak', data.type);
   const tanggal = data.tanggal || new Date();
   const nomorPadded = String(nomor).padStart(3, '0');
   
@@ -1402,31 +1453,70 @@ export const getRecycleBin = async (): Promise<RecycleBinItem[]> => {
   }));
 };
 
-export const restoreFromRecycleBin = async (item: RecycleBinItem): Promise<void> => {
-  // Get max nomor for the table to assign new sequential number
-  let newNomor = 1;
-  
-  if (item.tableName === 'sppk' || item.tableName === 'pk' || item.tableName === 'kkmpak') {
-    const { data: existing } = await supabase
-      .from(item.tableName)
-      .select('nomor')
-      .eq('type', item.tableType || '')
-      .order('nomor', { ascending: false })
-      .limit(1);
-    newNomor = (existing && existing.length > 0 ? existing[0].nomor : 0) + 1;
-  } else {
-    const { data: existing } = await supabase
-      .from(item.tableName)
-      .select('nomor')
-      .order('nomor', { ascending: false })
-      .limit(1);
-    newNomor = (existing && existing.length > 0 ? (existing[0] as { nomor: number }).nomor : 0) + 1;
-  }
+/**
+ * Kolom nomor dokumen pada tiap tabel — ikut diperbaiki kalau nomor urutnya
+ * terpaksa berubah saat dipulihkan.
+ */
+const KOLOM_NOMOR_DOKUMEN: Record<string, string[]> = {
+  sppk: ['nomor_sppk'],
+  pk: ['nomor_pk'],
+  kkmpak: ['nomor_kk', 'nomor_mpak'],
+  surat_masuk: ['nomor_agenda'],
+  surat_keluar: ['nomor_agenda'],
+  agenda_kredit_entry: ['nomor_agenda'],
+};
 
-  // Prepare data for reinsertion - remove id and update nomor
+/**
+ * Pulihkan satu baris dari Recycle Bin.
+ *
+ * Nomor aslinya dipertahankan selama masih bebas — nomor PK adalah nomor
+ * dokumen yang sudah tercetak dan diteken, jadi memulihkan berkas yang
+ * terhapus tidak boleh mengubahnya. Hanya kalau nomor itu sudah terlanjur
+ * dipakai entri lain, barulah diberi nomor baru, dan nomor dokumennya ikut
+ * disesuaikan supaya keduanya tidak bercerita berbeda.
+ */
+export const restoreFromRecycleBin = async (item: RecycleBinItem): Promise<void> => {
   const restoreData = { ...item.data };
   delete restoreData.id;
-  restoreData.nomor = newNomor;
+
+  const register = item.tableName as TabelRegister;
+  const tabelRegister = register === 'sppk' || register === 'pk' || register === 'kkmpak';
+  const nomorAsli = Number(restoreData.nomor) || 0;
+
+  let nomorDipakai = nomorAsli;
+  let perluGantiNomor = false;
+
+  if (tabelRegister) {
+    const type = item.tableType || '';
+    if (nomorAsli <= 0 || !(await nomorMasihBebas(register, type, nomorAsli))) {
+      nomorDipakai = await nomorBerikutnya(register, type);
+      perluGantiNomor = true;
+    }
+  } else {
+    const { data: bentrok } = await supabase
+      .from(item.tableName)
+      .select('id')
+      .eq('nomor', nomorAsli)
+      .limit(1);
+    if (nomorAsli <= 0 || (bentrok && bentrok.length > 0)) {
+      const { data: existing } = await supabase
+        .from(item.tableName)
+        .select('nomor')
+        .order('nomor', { ascending: false })
+        .limit(1);
+      nomorDipakai = (existing && existing.length > 0 ? Number((existing[0] as { nomor: number }).nomor) || 0 : 0) + 1;
+      perluGantiNomor = true;
+    }
+  }
+
+  restoreData.nomor = nomorDipakai;
+  if (perluGantiNomor) {
+    (KOLOM_NOMOR_DOKUMEN[item.tableName] || []).forEach((kolom) => {
+      if (restoreData[kolom] !== undefined && restoreData[kolom] !== null) {
+        restoreData[kolom] = gantiAwalanNomor(restoreData[kolom], nomorDipakai);
+      }
+    });
+  }
 
   // Insert back to original table using raw query approach
   const { error: insertError } = await supabase
