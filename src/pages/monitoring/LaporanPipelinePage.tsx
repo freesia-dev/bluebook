@@ -26,7 +26,8 @@ import { useLoanSimulations, CANCEL_STAGE, PIPELINE_LABELS, type LoanSimulationR
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatRupiah, formatNominal } from '@/lib/uang';
-import { buatPdfPipeline, type DataUnitPdf } from '@/lib/pipeline-pdf';
+import { buatPdfPipeline, type DataUnitPdf, type IsiLaporanPipeline } from '@/lib/pipeline-pdf';
+import { buatPdfPipelineTegak } from '@/lib/pipeline-pdf-portrait';
 import { formatCurrencyInput } from '@/hooks/use-currency-input';
 import { getUnit } from '@/lib/produktif-utils';
 import {
@@ -722,8 +723,8 @@ export const LaporanPipelineContent: React.FC = () => {
     [saringMLF, saringRencana, hitung, hitungRincian],
   );
 
-  const exportPdf = () => {
-    const doc = buatPdfPipeline({
+  /** Isi laporan — sama untuk kedua bentuk halaman. */
+  const isiLaporan = (): IsiLaporanPipeline => ({
       periode: info ? format(new Date(info.jobdate), 'd MMMM yyyy', { locale: idLocale }) : '-',
       minggu,
       unit: [dataUnit('telihan'), dataUnit('meranti')],
@@ -737,9 +738,22 @@ export const LaporanPipelineContent: React.FC = () => {
         'Unit — Telihan dan Meranti dilaporkan terpisah; unit dibaca dari nomor PK di MLF, dan kredit yang nomor PK-nya tidak terbaca ikut ke Telihan.',
         'Ekstrakomtabel — kredit kol 0 tidak ikut dihitung sama sekali karena bakinya sudah dihapusbukukan.',
       ],
-    });
-    const nama = info ? format(new Date(info.jobdate), 'yyyy-MM') : 'periode';
-    doc.save(`Laporan-Pipeline-${nama}.pdf`);
+  });
+
+  const namaBerkas = () => (info ? format(new Date(info.jobdate), 'yyyy-MM') : 'periode');
+
+  /** A4 mendatar — muat tujuh kolom minggu sekaligus, untuk dibaca di layar. */
+  const exportPdf = () => {
+    buatPdfPipeline(isiLaporan()).save(`Laporan-Pipeline-${namaBerkas()}.pdf`);
+  };
+
+  /**
+   * A4 tegak — huruf besar, warna biru-jingga yang tetap terbedakan bagi mata
+   * yang tidak membedakan merah dan hijau, dan tiap angka membawa tanda + atau
+   * - supaya warnanya tidak pernah jadi satu-satunya penanda.
+   */
+  const exportPdfTegak = () => {
+    buatPdfPipelineTegak(isiLaporan()).save(`Laporan-Pipeline-${namaBerkas()}-tegak.pdf`);
   };
 
   /**
@@ -1000,7 +1014,15 @@ export const LaporanPipelineContent: React.FC = () => {
               {tersalin ? 'Tersalin' : 'Salin Net'}
             </Button>
             <Button variant="outline" onClick={exportPdf} className="gap-2">
-              <FileDown className="h-4 w-4" /> PDF
+              <FileDown className="h-4 w-4" /> PDF mendatar
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportPdfTegak}
+              className="gap-2"
+              title="A4 tegak, huruf besar, warna yang tetap terbedakan bagi mata yang sulit membedakan merah dan hijau"
+            >
+              <FileDown className="h-4 w-4" /> PDF tegak (huruf besar)
             </Button>
             <Button onClick={exportExcel} className="gap-2">
               <FileSpreadsheet className="h-4 w-4" /> Excel

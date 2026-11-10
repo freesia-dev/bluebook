@@ -64,27 +64,27 @@ export interface IsiLaporanPipeline {
   catatan: string[];
 }
 
-const rp = (n: number) =>
+export const rp = (n: number) =>
   n.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 /** Angka tabel: nol ditulis sebagai garis supaya mata langsung lari ke yang berisi. */
-const rpKosong = (n: number) => (n === 0 ? '-' : rp(n));
-const miliar = (n: number) =>
+export const rpKosong = (n: number) => (n === 0 ? '-' : rp(n));
+export const miliar = (n: number) =>
   (n / 1e9).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-const juta = (n: number) =>
+export const juta = (n: number) =>
   (n / 1e6).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-const net = (a: AngkaProduk) => a.booking - a.runOff - a.paidOff;
-const kosong = (): AngkaProduk => ({ booking: 0, runOff: 0, paidOff: 0 });
-const tambah = (a: AngkaProduk, b: AngkaProduk): AngkaProduk => ({
+export const net = (a: AngkaProduk) => a.booking - a.runOff - a.paidOff;
+export const kosong = (): AngkaProduk => ({ booking: 0, runOff: 0, paidOff: 0 });
+export const tambah = (a: AngkaProduk, b: AngkaProduk): AngkaProduk => ({
   booking: a.booking + b.booking,
   runOff: a.runOff + b.runOff,
   paidOff: a.paidOff + b.paidOff,
 });
 
-const tglPendek = (s: string) => format(new Date(`${s}T00:00:00`), 'd MMM', { locale: idLocale });
+export const tglPendek = (s: string) => format(new Date(`${s}T00:00:00`), 'd MMM', { locale: idLocale });
 
 /** Total satu unit pada satu minggu, digabung dari semua baris portal. */
-const totalMinggu = (u: DataUnitPdf, i: number): AngkaProduk =>
+export const totalMinggu = (u: DataUnitPdf, i: number): AngkaProduk =>
   BARIS_PORTAL.reduce(
     (acc, b) => tambah(acc, b.produk.reduce((a, k) => tambah(a, u.angka[k][i]), kosong())),
     kosong(),
