@@ -42,8 +42,11 @@ const JINGGA: [number, number, number] = [168, 71, 10];    // negatif / Run Off
 const JINGGA_MUDA: [number, number, number] = [213, 94, 0];
 const COKELAT: [number, number, number] = [110, 50, 10];   // Paid Off
 const BIRU_TUA: [number, number, number] = [8, 42, 76];
-const TEKS: [number, number, number] = [17, 24, 39];
-const TEKS_LEMBUT: [number, number, number] = [55, 65, 81];
+/* Semua teks hitam pekat. Warna hanya dipakai pada batang grafik, pita kop,
+   dan latar baris — tidak pernah pada huruf, supaya tidak ada tulisan yang
+   lebih sulit dibaca daripada yang lain. */
+const TEKS: [number, number, number] = [0, 0, 0];
+const TEKS_LEMBUT: [number, number, number] = [0, 0, 0];
 const ZEBRA: [number, number, number] = [240, 244, 249];
 const KARTU: [number, number, number] = [238, 243, 249];
 const GARIS: [number, number, number] = [203, 213, 225];
@@ -125,17 +128,17 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
     ruangBaru(32);
     gambarUkirPdf(doc, M, y - 5.6, 7.6, UKIR);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12.5);
-    doc.setTextColor(...BIRU_TUA);
+    doc.setFontSize(14);
+    doc.setTextColor(...TEKS);
     doc.text(teks, M + 10, y);
     y += 4;
     if (catatan) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.8);
+      doc.setFontSize(10);
       doc.setTextColor(...TEKS_LEMBUT);
       const baris = doc.splitTextToSize(catatan, isiLebar) as string[];
-      baris.forEach((t, i) => doc.text(t, M, y + i * 4));
-      y += baris.length * 4 + 1;
+      baris.forEach((t, i) => doc.text(t, M, y + i * 4.6));
+      y += baris.length * 4.6 + 1;
     }
     doc.setDrawColor(...GARIS);
     doc.setLineWidth(0.5);
@@ -154,21 +157,21 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
     doc.setFillColor(...aksen);
     doc.roundedRect(x, atas, 2.4, h, 1.2, 1.2, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.6);
+    doc.setFontSize(9.6);
     doc.setTextColor(...TEKS_LEMBUT);
-    doc.text(label.toUpperCase(), x + 6, atas + 6.6);
-    doc.setFontSize(20);
-    doc.setTextColor(...aksen);
-    doc.text(nilai, x + 6, atas + 16.6);
+    doc.text(label.toUpperCase(), x + 6, atas + 7);
+    doc.setFontSize(24);
+    doc.setTextColor(...TEKS);
+    doc.text(nilai, x + 6, atas + 18.5);
     const lebarNilai = doc.getTextWidth(nilai);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setTextColor(...TEKS_LEMBUT);
-    doc.text(satuan, x + 7.5 + lebarNilai, atas + 16.6);
-    doc.setFontSize(8.4);
+    doc.text(satuan, x + 7.5 + lebarNilai, atas + 18.5);
+    doc.setFontSize(9.4);
     doc.setTextColor(...TEKS);
     const baris = doc.splitTextToSize(bawah, w - 10) as string[];
-    baris.slice(0, 2).forEach((t, i) => doc.text(t, x + 6, atas + 22 + i * 4));
+    baris.slice(0, 2).forEach((t, i) => doc.text(t, x + 6, atas + 24.5 + i * 4.4));
   };
 
   /**
@@ -221,27 +224,27 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
       batangBergaris(kanan, dasar + tR, lb, tP, COKELAT);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(9.4);
       if (d.booking > 0) {
-        doc.setTextColor(...BIRU);
+        doc.setTextColor(...TEKS);
         doc.text(jutaBulat(d.booking), kiri + lb / 2, dasar - tB - 2, { align: 'center' });
       }
       if (d.runOff + d.paidOff > 0) {
-        doc.setTextColor(...JINGGA);
+        doc.setTextColor(...TEKS);
         doc.text(jutaBulat(d.runOff + d.paidOff), kanan + lb / 2, dasar + tR + tP + 3.6, { align: 'center' });
       }
 
       const n = net(d);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.2);
+      doc.setFontSize(9.4);
       doc.setTextColor(...TEKS_LEMBUT);
       doc.text(`MINGGU ${isi.minggu[i].nomor}`, tengah, atas + h - 10, { align: 'center' });
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.6);
-      doc.setTextColor(...(n < 0 ? JINGGA : BIRU));
+      doc.setFontSize(11);
+      doc.setTextColor(...TEKS);
       doc.text(`${n < 0 ? '-' : '+'}${jutaBulat(Math.abs(n))}`, tengah, atas + h - 5, { align: 'center' });
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.8);
+      doc.setFontSize(9);
       doc.setTextColor(...TEKS_LEMBUT);
       doc.text(n < 0 ? 'turun' : 'naik', tengah, atas + h - 0.8, { align: 'center' });
     });
@@ -258,7 +261,7 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
     ];
     let kx = x;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.4);
+    doc.setFontSize(9.6);
     butir.forEach(([t, w, bergaris]) => {
       if (bergaris) batangBergaris(kx, atas - 3, 4.5, 4, w);
       else {
@@ -274,8 +277,8 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
   /* --------------------------------------------------------- gaya tabel --- */
   const gaya = {
     styles: {
-      fontSize: 9.5,
-      cellPadding: { top: 2.4, bottom: 2.4, left: 2.6, right: 2.6 },
+      fontSize: 10.5,
+      cellPadding: { top: 2.8, bottom: 2.8, left: 2.6, right: 2.6 },
       halign: 'center' as const,
       valign: 'middle' as const,
       lineWidth: 0,
@@ -285,8 +288,8 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
       fillColor: BIRU_TUA,
       textColor: [255, 255, 255] as [number, number, number],
       fontStyle: 'bold' as const,
-      fontSize: 8.6,
-      cellPadding: { top: 2.8, bottom: 2.8, left: 2.6, right: 2.6 },
+      fontSize: 9.6,
+      cellPadding: { top: 3.2, bottom: 3.2, left: 2.6, right: 2.6 },
     },
     alternateRowStyles: { fillColor: ZEBRA },
     rowPageBreak: 'avoid' as const,
@@ -295,7 +298,7 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
       pastikanKop();
       if (d.pageNumber > 1 && judulAktif) {
         doc.setFont('helvetica', 'italic');
-        doc.setFontSize(8.6);
+        doc.setFontSize(9.6);
         doc.setTextColor(...TEKS_LEMBUT);
         doc.text(`${judulAktif} (lanjutan)`, M, 22.5);
       }
@@ -314,11 +317,11 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
 
   judulBagian(
     'Sorotan Bulan Ini',
-    'Angka dalam Miliar Rupiah. Tanda + berarti portofolio bertambah, tanda - berarti berkurang; warna hanya penegas, bukan satu-satunya penanda.',
+    'Angka dalam Miliar Rupiah. Tanda + berarti portofolio bertambah, tanda - berarti berkurang. Seluruh tulisan hitam; warna hanya dipakai pada batang grafik.',
   );
 
   const wK = (isiLebar - 5) / 2;
-  const hK = 29;
+  const hK = 33;
   kartu(M, y, wK, hK, 'Net Gabungan', bertandaMiliar(netBulan), 'M',
     netBulan < 0 ? 'Portofolio berkurang sebanyak ini' : 'Portofolio bertambah sebanyak ini',
     netBulan < 0 ? JINGGA : BIRU);
@@ -339,6 +342,8 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
   y += 75;
 
   /* ---------------------------------------------------------- net/unit --- */
+  // Tabelnya pendek; jangan sampai barisnya terbelah dua halaman.
+  ruangBaru(66);
   judulBagian('Net per Unit', 'Dalam Miliar Rupiah, seperti tampilan portal.');
   autoTable(doc, {
     ...gaya,
@@ -361,7 +366,6 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
         d.cell.styles.fontStyle = 'bold';
       }
       if (d.column.index > 0) {
-        d.cell.styles.textColor = String(d.cell.raw).startsWith('-') ? JINGGA : BIRU;
         d.cell.styles.fontStyle = 'bold';
       }
     },
@@ -390,17 +394,16 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
       head: [['Periode', 'Booking (+)', 'Run Off (-)', 'Paid Off (-)', 'Net']],
       body: baris,
       theme: 'plain',
-      columnStyles: { 0: { halign: 'left', cellWidth: 36, fontSize: 8.6 } },
+      columnStyles: { 0: { halign: 'left', cellWidth: 31, fontSize: 9.4 } },
       didParseCell: (d: any) => {
         if (d.section !== 'body') return;
         if (d.row.index === baris.length - 1) {
           d.cell.styles.fillColor = [225, 236, 247];
           d.cell.styles.fontStyle = 'bold';
         }
-        if (d.cell.raw === '-') d.cell.styles.textColor = [148, 163, 184];
+        if (d.cell.raw === '-') d.cell.styles.textColor = [90, 90, 90];
         if (d.column.index === 4) {
           d.cell.styles.fontStyle = 'bold';
-          d.cell.styles.textColor = String(d.cell.raw).startsWith('-') ? JINGGA : BIRU;
         }
       },
     });
@@ -427,7 +430,7 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
           body.push([{
             content: SEGMEN_LABEL[b.segmen].toUpperCase(),
             colSpan: kel.length + 1 + (terakhir ? 1 : 0),
-            styles: { fillColor: [221, 232, 244], textColor: BIRU_TUA, fontStyle: 'bold', fontSize: 8.8, halign: 'left' },
+            styles: { fillColor: [221, 232, 244], textColor: TEKS, fontStyle: 'bold', fontSize: 10, halign: 'left' },
           }]);
         }
         const nilai = kel.map((_, j) =>
@@ -448,10 +451,10 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
         head: [['Produk', ...judulKolomMinggu(kel), ...(terakhir ? ['TOTAL BULAN'] : [])]],
         body,
         theme: 'plain',
-        columnStyles: { 0: { halign: 'left', cellWidth: 46, fontSize: 8.8 } },
+        columnStyles: { 0: { halign: 'left', cellWidth: 42, fontSize: 9.6 } },
         didParseCell: (d: any) => {
           if (d.section !== 'body') return;
-          if (d.cell.raw === '-') d.cell.styles.textColor = [148, 163, 184];
+          if (d.cell.raw === '-') d.cell.styles.textColor = [90, 90, 90];
         },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
@@ -477,7 +480,7 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
         body.push([{
           content: u.label.toUpperCase(),
           colSpan: kel.length + 2 + (terakhir ? 1 : 0),
-          styles: { fillColor: [221, 232, 244], textColor: BIRU_TUA, fontStyle: 'bold', fontSize: 8.8, halign: 'left' },
+          styles: { fillColor: [221, 232, 244], textColor: TEKS, fontStyle: 'bold', fontSize: 10, halign: 'left' },
         }]);
         kunci.sort().forEach((k) => {
           const [produk, jenis] = k.split('|') as [KodeProduk, JenisProduktif];
@@ -495,13 +498,13 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
         head: [['Produk', 'Jenis', ...judulKolomMinggu(kel), ...(terakhir ? ['TOTAL'] : [])]],
         body,
         theme: 'plain',
-        styles: { ...gaya.styles, fontSize: 8.8 },
+        styles: { ...gaya.styles, fontSize: 9.8 },
         columnStyles: {
-          0: { halign: 'left', cellWidth: 33 },
-          1: { halign: 'left', cellWidth: 27 },
+          0: { halign: 'left', cellWidth: 31 },
+          1: { halign: 'left', cellWidth: 25 },
         },
         didParseCell: (d: any) => {
-          if (d.section === 'body' && d.cell.raw === '-') d.cell.styles.textColor = [148, 163, 184];
+          if (d.section === 'body' && d.cell.raw === '-') d.cell.styles.textColor = [90, 90, 90];
         },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
@@ -521,7 +524,7 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
       doc.setFillColor(250, 250, 247);
       doc.roundedRect(M, y, isiLebar, 12, 2, 2, 'F');
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(9.5);
+      doc.setFontSize(10.5);
       doc.setTextColor(...TEKS_LEMBUT);
       doc.text('Belum ada rencana pencairan untuk unit ini, jadi Booking dihitung nol.', M + 6, y + 7.5);
       y += 19;
@@ -541,10 +544,10 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
         rp(u.rencana.reduce((a, r) => a + r.plafon, 0))]],
       theme: 'plain',
       showFoot: 'lastPage' as const,
-      footStyles: { fillColor: [225, 236, 247], textColor: BIRU_TUA, fontStyle: 'bold', fontSize: 9.5, lineWidth: 0 },
+      footStyles: { fillColor: [225, 236, 247], textColor: TEKS, fontStyle: 'bold', fontSize: 10.5, lineWidth: 0 },
       columnStyles: {
         0: { halign: 'left', cellWidth: 54 },
-        1: { halign: 'left', cellWidth: 44, fontSize: 8.8 },
+        1: { halign: 'left', cellWidth: 42, fontSize: 9.6 },
         3: { halign: 'right', fontStyle: 'bold' },
       },
     });
@@ -553,9 +556,9 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
 
   /* ---------------------------------------------------------- catatan --- */
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.2);
+  doc.setFontSize(10.4);
   const barisCatatan = isi.catatan.map((c) => doc.splitTextToSize(c, isiLebar - 18) as string[]);
-  const tinggiCatatan = 9 + barisCatatan.reduce((a, b) => a + b.length * 4.4, 0) + (barisCatatan.length - 1) * 2;
+  const tinggiCatatan = 9 + barisCatatan.reduce((a, b) => a + b.length * 5, 0) + (barisCatatan.length - 1) * 2.4;
   ruangBaru(tinggiCatatan + 18);
   judulBagian('Cara Angka Ini Dihitung');
   doc.setFillColor(250, 250, 247);
@@ -567,10 +570,10 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
     doc.setFillColor(...JINGGA_MUDA);
     doc.circle(M + 7, yc - 1.2, 0.8, 'F');
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.2);
+    doc.setFontSize(10.4);
     doc.setTextColor(...TEKS);
-    baris.forEach((t, i) => doc.text(t, M + 11, yc + i * 4.4));
-    yc += baris.length * 4.4 + 2;
+    baris.forEach((t, i) => doc.text(t, M + 11, yc + i * 5));
+    yc += baris.length * 5 + 2.4;
   });
 
   /* -------------------------------------------------------------- kaki --- */
@@ -582,7 +585,7 @@ export const buatPdfPipelineTegak = (isi: IsiLaporanPipeline) => {
     doc.line(M, tinggi - 11, lebar - M, tinggi - 11);
     gambarUkirPdf(doc, M, tinggi - 10, 5.4, [214, 228, 243]);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.2);
+    doc.setFontSize(9);
     doc.setTextColor(...TEKS_LEMBUT);
     doc.text('Bluebook Telihan  ·  bahan pengisian portal', M + 8, tinggi - 6);
     doc.text(`Halaman ${i} dari ${halaman}`, lebar - M, tinggi - 6, { align: 'right' });
