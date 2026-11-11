@@ -56,6 +56,7 @@ const ExportPDFPage = lazy(() => import("./pages/monitoring/ExportPDFPage"));
 const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPage"));
 const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
 const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPage"));
+const SortirBerkasPage = lazy(() => import("./pages/arsip/SortirBerkasPage"));
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
 const BAHarianBulkPrintPage = lazy(() => import("./pages/security/BAHarianBulkPrintPage"));
@@ -267,6 +268,11 @@ const App = () => (
             } />
             <Route path="/monitoring/call-memo/print" element={
               <Suspense fallback={<LoginLoader />}><CallMemoPrintPage /></Suspense>
+            } />
+
+            {/* Arsip berkas & khasanah */}
+            <Route path="/arsip/sortir" element={
+              <Suspense fallback={<GenericPageSkeleton />}><SortirBerkasPage /></Suspense>
             } />
             {/* Install PWA */}
             <Route path="/install" element={

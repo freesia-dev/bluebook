@@ -19,7 +19,8 @@ import {
   Shield,
   Sparkles,
   Calculator,
-  Headphones
+  Headphones,
+  Archive
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -610,6 +611,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
                 icon={TrendingUp} 
                 label="Loan Monitoring" 
                 children={monitoringItems}
+                openGroup={openGroup}
+                setOpenGroup={setOpenGroup}
+                collapsed={collapsed}
+                onNavigate={navOnNavigate}
+              />
+            )}
+            {permissions.monitoring && (
+              <NavItem
+                icon={Archive}
+                label="Arsip & Khasanah"
+                children={[
+                  { label: 'Sortir Berkas', href: '/arsip/sortir' },
+                ]}
                 openGroup={openGroup}
                 setOpenGroup={setOpenGroup}
                 collapsed={collapsed}
