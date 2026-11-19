@@ -1,6 +1,7 @@
 // Bank kalimat penyemangat untuk sapaan awal hari (DailyGreetingOverlay).
-// Campuran Indonesia & Inggris, singkat, hangat, dan nggak menggurui —
-// dipilih satu secara acak (deterministik per hari) setiap kali overlay muncul.
+// Campuran Indonesia & Inggris, singkat, hangat, dan nggak menggurui.
+// Satu kalimat dipilih per orang per hari (lihat pickGreetingQuote), jadi
+// tiap pengguna bisa mendapat kalimat yang berbeda di hari yang sama.
 
 export const GREETING_QUOTES: string[] = [
   "Langkah kecil hari ini, hasil besar nanti.",
@@ -54,17 +55,157 @@ export const GREETING_QUOTES: string[] = [
   "Hari ini penuh kemungkinan — manfaatkan sebaik mungkin.",
   "Excellence is not an act, but a habit.",
   "Selamat bekerja, semoga harimu lancar dan berkah.",
+
+  // ---- kerja rapi & teliti
+  "Teliti di awal, tenang di akhir.",
+  "Angka yang benar hari ini menyelamatkan rapat besok.",
+  "Cek sekali lagi. Lima detik sekarang bisa menghemat satu jam nanti.",
+  "Berkas yang rapi adalah hadiah untuk dirimu di masa depan.",
+  "Kerjakan seolah-olah akan diperiksa, karena memang akan diperiksa.",
+  "Rapi itu bukan bakat, tapi kebiasaan.",
+  "Satu berkas lengkap lebih berharga dari sepuluh yang setengah jadi.",
+  "Pelan-pelan asal benar, daripada cepat tapi diulang.",
+  "Catat sekarang, jangan andalkan ingatan besok.",
+  "Tuntaskan yang kecil, supaya yang besar punya ruang.",
+  "Detail kecil yang kamu jaga hari ini adalah reputasi besar nanti.",
+  "Kerja yang tuntas tidak perlu dijelaskan panjang lebar.",
+  "Data yang bersih bikin keputusan jadi jernih.",
+  "Kalau ragu, tanyakan. Kalau yakin, tetap cek.",
+  "Kebiasaan kecil yang baik mengalahkan rencana besar yang tertunda.",
+  "Hari ini cukup satu target: jangan ada yang tertinggal.",
+  "Mulai dari yang paling dekat tenggatnya.",
+  "Daftar tugas yang pendek adalah daftar tugas yang selesai.",
+  "Selesaikan satu, centang satu, rasakan leganya.",
+  "Yang penting bukan sibuk, tapi beres.",
+  "Fokus lima belas menit lebih ampuh dari sibuk satu jam.",
+  "Matikan notifikasi sebentar, selesaikan satu hal sampai tuntas.",
+  "Jangan tunggu sempurna untuk mulai, tapi pastikan benar sebelum kirim.",
+  "Satu kesalahan yang ketahuan sekarang lebih murah daripada nanti.",
+  "Tertib administrasi, tenang saat audit.",
+  "Kerja yang jujur selalu menemukan jalannya.",
+  "Yang dikerjakan dengan hati jarang dikerjakan dua kali.",
+
+  // ---- melayani nasabah
+  "Senyum dulu, baru layani. Nasabah merasakannya.",
+  "Setiap nasabah membawa cerita. Dengarkan dulu sebelum menjawab.",
+  "Pelayanan terbaik adalah yang membuat orang ingin kembali.",
+  "Bantu satu nasabah dengan tulus, dia akan bercerita ke sepuluh orang.",
+  "Ramah itu gratis, tapi nilainya mahal sekali.",
+  "Kepercayaan nasabah dibangun dari janji kecil yang ditepati.",
+  "Jawaban yang jelas lebih menenangkan daripada jawaban yang cepat.",
+  "Perlakukan uang nasabah seperti uang orang tua sendiri.",
+  "Nasabah tidak ingat semua kata kita, tapi ingat cara kita memperlakukannya.",
+  "Hari ini, jadilah alasan seseorang pulang dengan lega.",
+  "Sabar menghadapi nasabah sulit adalah keahlian, bukan kelemahan.",
+  "Tepati waktu yang kamu janjikan, sekecil apa pun.",
+  "Kunjungan yang tulus lebih berkesan daripada brosur yang tebal.",
+  "Debitur yang lancar dimulai dari analisa yang jujur.",
+  "Monitoring hari ini mencegah tunggakan bulan depan.",
+  "Tagihan yang ditagih dengan sopan lebih sering dibayar.",
+  "Kenali usahanya, bukan cuma angkanya.",
+  "Kredit yang sehat berawal dari pertanyaan yang tepat.",
+
+  // ---- tim & kantor
+  "Kantor yang hebat bukan yang tanpa masalah, tapi yang saling bantu.",
+  "Tanya kabar rekan sebelah. Hari kerjanya bisa jadi lebih ringan.",
+  "Ucapkan terima kasih hari ini, sekecil apa pun bantuannya.",
+  "Kerja tim itu sederhana: kabari sebelum ditanya.",
+  "Bantu rekan selesai, kamu ikut menang.",
+  "Satu kata maaf yang tulus bisa menyelamatkan satu hari kerja.",
+  "Lebih baik bertanya bodoh sekali daripada salah berkali-kali.",
+  "Bagikan ilmu yang kamu tahu. Ilmu tidak berkurang saat dibagi.",
+  "Saling percaya bikin pekerjaan berat terasa setengahnya.",
+  "Hargai yang sudah dikerjakan orang lain, walau belum sempurna.",
+  "Hari ini, jadilah rekan kerja yang kamu harapkan.",
+  "Kabar baik dibagi, masalah diselesaikan bersama.",
+  "Rapat singkat, keputusan jelas, kerja lanjut.",
+
+  // ---- sabar & tumbuh
+  "Hasil besar itu sabar. Kamu juga harus begitu.",
+  "Pohon ulin tumbuh lambat, tapi kuatnya ratusan tahun.",
+  "Sungai Mahakam tidak terburu-buru, tapi selalu sampai ke laut.",
+  "Tidak apa-apa belum sampai, yang penting arahnya benar.",
+  "Bandingkan dirimu dengan kemarin, bukan dengan orang lain.",
+  "Belajar satu hal baru hari ini, sekecil apa pun.",
+  "Gagal hari ini adalah data untuk berhasil besok.",
+  "Setiap ahli dulunya pemula yang tidak berhenti.",
+  "Target bulan ini dicapai dengan langkah hari ini.",
+  "Kalau belum berhasil, mungkin hanya belum selesai.",
+  "Jalan memutar tetap jalan, asal terus melangkah.",
+  "Kesabaran adalah kerja keras yang tidak terlihat.",
+  "Tumbuh itu pelan, tapi kalau berhenti, kita tertinggal.",
+  "Hari yang biasa-biasa saja juga bagian dari perjalanan yang luar biasa.",
+  "Yang konsisten akan mengalahkan yang berbakat tapi malas.",
+  "Tidak ada kerja keras yang hilang, semuanya ditabung.",
+  "Kemarin sudah lewat, besok belum datang. Hari ini milikmu.",
+  "Masalah hari ini adalah cerita lucu tahun depan.",
+  "Jangan remehkan kemajuan satu persen setiap hari.",
+
+  // ---- jaga diri
+  "Minum air dulu, baru buka berkas.",
+  "Istirahat sebentar bukan berarti kalah.",
+  "Tubuh yang sehat bikin kepala yang jernih.",
+  "Tarik napas panjang. Satu per satu, semua akan selesai.",
+  "Jangan lupa makan siang. Pekerjaan bisa menunggu sepuluh menit.",
+  "Pulang tepat waktu juga bagian dari kerja yang baik.",
+  "Kamu bukan mesin. Wajar kalau butuh jeda.",
+  "Luruskan punggung, rilekskan bahu, lanjutkan.",
+  "Hari yang berat tidak berarti hidup yang berat.",
+  "Kalau hari ini terasa sulit, cukup lakukan yang bisa.",
+  "Bersyukur dulu, keluh kesah belakangan.",
+  "Semoga rezeki hari ini lancar dan berkah.",
+  "Awali dengan bismillah, akhiri dengan alhamdulillah.",
+  "Niatkan baik, kerjakan baik, hasilnya serahkan.",
+
+  // ---- peribahasa
+  "Sedikit demi sedikit, lama-lama menjadi bukit.",
+  "Berakit-rakit ke hulu, berenang-renang ke tepian.",
+  "Di mana ada kemauan, di situ ada jalan.",
+  "Rajin pangkal pandai, hemat pangkal kaya.",
+  "Bersatu kita teguh, bercerai kita runtuh.",
+  "Air tenang menghanyutkan.",
+  "Tak ada rotan, akar pun jadi.",
+  "Ringan sama dijinjing, berat sama dipikul.",
+  "Sekali merengkuh dayung, dua tiga pulau terlampaui.",
+  "Setetes demi setetes, lama-lama menjadi telaga.",
+  "Malu bertanya sesat di jalan.",
+  "Hemat pangkal kaya, teliti pangkal selamat.",
+  "Gunakan waktu sebelum waktu menggunakanmu.",
+  "Janji adalah utang.",
+  "Bagai padi, makin berisi makin merunduk.",
+
+  // ---- English, singkat
+  "Done is better than perfect, but correct is better than done.",
+  "Do it right the first time.",
+  "Clarity beats speed.",
+  "Small wins count. Celebrate them.",
+  "Be kind. Everyone is fighting a battle you can't see.",
+  "Show up, even on the slow days.",
+  "Make today count, not just pass.",
+  "Trust is built in drops and lost in buckets.",
+  "Do the hard thing first.",
+  "Quality is never an accident.",
+  "Stay curious. Ask why.",
+  "Focus on what you can control.",
+  "Start where you are. Use what you have. Do what you can.",
+  "Today is a good day to finish something.",
+  "Calm mind, sharp work.",
+  "Be the reason someone smiles today.",
+  "Every expert was once a beginner.",
+  "Discipline today, freedom tomorrow.",
+  "Your future self will thank you.",
+  "Less noise, more work.",
 ];
 
 /**
- * Ambil satu kalimat penyemangat secara deterministik berdasarkan tanggal,
- * supaya kalau overlay perlu re-render di hari yang sama, kalimatnya tetap
- * konsisten (bukan ganti-ganti tiap render).
+ * Ambil satu kalimat penyemangat secara deterministik dari sebuah kunci
+ * (biasanya "tanggal|id pengguna"), supaya kalimatnya tetap sama kalau
+ * sapaan perlu tampil ulang di hari yang sama, tapi berbeda antar orang.
  */
-export function pickGreetingQuote(dateKey: string): string {
-  let hash = 0;
-  for (let i = 0; i < dateKey.length; i++) {
-    hash = (hash * 31 + dateKey.charCodeAt(i)) >>> 0;
+export function pickGreetingQuote(kunci: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < kunci.length; i++) {
+    hash = Math.imul(hash ^ kunci.charCodeAt(i), 16777619) >>> 0;
   }
   return GREETING_QUOTES[hash % GREETING_QUOTES.length];
 }

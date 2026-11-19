@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +23,7 @@ export function useDailyGreeting(): DailyGreeting {
   const { user, isAuthenticated } = useAuth();
   const [show, setShow] = useState(false);
   const todayKey = format(new Date(), 'yyyy-MM-dd');
-  const [quote] = useState(() => pickGreetingQuote(todayKey));
+  const [quote, setQuote] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -41,6 +41,9 @@ export function useDailyGreeting(): DailyGreeting {
       const lastShown = data?.last_greeting_date;
       if (lastShown === todayKey) return; // sudah tampil hari ini
 
+      // Kutipan dipilih per orang per hari, jadi tiap pengguna dapat kalimat
+      // berbeda, tapi tetap sama kalau sapaan perlu tampil ulang di hari itu.
+      setQuote(pickGreetingQuote(`${todayKey}|${user.id}`));
       setShow(true);
     })();
 
@@ -49,18 +52,19 @@ export function useDailyGreeting(): DailyGreeting {
   }, [isAuthenticated, user?.id]);
 
   // Tanggal baru ditandai SETELAH sapaan benar-benar tampil & ditutup
-  // (klik / 5 detik). Sebelumnya ditandai begitu muncul, jadi kalau halaman
+  // (klik / tombol / 3 menit). Sebelumnya ditandai begitu muncul, jadi kalau halaman
   // langsung reload (mis. auto-update PWA sesaat setelah dibuka), sapaan
   // "hangus" padahal belum sempat terlihat.
-  const dismiss = () => {
+  const userId = user?.id;
+  const dismiss = useCallback(() => {
     setShow(false);
-    if (!user) return;
+    if (!userId) return;
     void supabase
       .from('profiles')
       .update({ last_greeting_date: todayKey })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .then(() => undefined, () => undefined);
-  };
+  }, [userId, todayKey]);
 
   return { show, quote, dismiss };
 }
