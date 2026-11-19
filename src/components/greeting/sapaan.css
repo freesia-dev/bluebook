@@ -1,0 +1,267 @@
+/* -------------------------------------------------------------------------- */
+/*  Sapaan harian — Poster Bangau                                             */
+/*                                                                            */
+/*  Lapisan dari bawah ke atas:                                               */
+/*    .sp-kain    kain bermotif bangau, bergoyang pelan seperti tertiup angin  */
+/*    .sp-tint    lapisan warna (acak per kemunculan) supaya teks terbaca     */
+/*    .sp-lipat   pita cahaya & bayangan lembut yang bergeser = kesan lipatan  */
+/*    teks        diam, supaya tetap mudah dibaca                              */
+/*  Semua gerak hanya memakai transform, jadi ringan juga di HP.              */
+/* -------------------------------------------------------------------------- */
+
+.sp {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  cursor: pointer;
+  color: #fff;
+  background: rgb(var(--tint));
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  opacity: 1;
+  transition: opacity 0.35s ease-out;
+  animation: sp-muncul 0.45s ease-out both;
+}
+.sp:focus { outline: none; }
+.sp.sp-tutup { opacity: 0; }
+
+/* ------------------------------------------------------------- kain */
+.sp-kain {
+  position: absolute;
+  inset: -5%;
+  perspective: 1400px;
+}
+.sp-kain-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform-origin: 0% 50%;
+  will-change: transform;
+  animation: sp-kibar 15s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+.sp-kain-img.sp-siap { opacity: 1; }
+
+.sp-tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--sudut, 100deg),
+    rgb(var(--tint) / 0.94) 0%,
+    rgb(var(--tint) / 0.8) 52%,
+    rgb(var(--tint) / 0.42) 100%
+  );
+}
+
+.sp-lipat {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  will-change: transform;
+}
+.sp-lipat-1 {
+  right: -40vw;
+  background: repeating-linear-gradient(
+    100deg,
+    rgb(255 255 255 / 0) 0vw,
+    rgb(255 255 255 / 0.16) 9vw,
+    rgb(255 255 255 / 0) 18vw,
+    rgb(0 0 0 / 0.22) 27vw,
+    rgb(255 255 255 / 0) 36vw
+  );
+  animation: sp-lipat-1 20s linear infinite;
+}
+.sp-lipat-2 {
+  right: -60vw;
+  opacity: 0.7;
+  background: repeating-linear-gradient(
+    78deg,
+    rgb(255 255 255 / 0) 0vw,
+    rgb(255 255 255 / 0.12) 13vw,
+    rgb(0 0 0 / 0.16) 34vw,
+    rgb(255 255 255 / 0) 52vw
+  );
+  animation: sp-lipat-2 31s linear infinite;
+}
+
+/* ------------------------------------------------------------- kepala */
+.sp-kepala {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  top: calc(env(safe-area-inset-top, 0px) + 22px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sp-merek { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sp-merek img { width: 34px; height: 31px; object-fit: contain; filter: brightness(0) invert(1); flex: none; }
+.sp-tanggal {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--aksen);
+  white-space: nowrap;
+}
+.sp-petunjuk {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.sp-petunjuk-atas { display: none; }
+.sp-petunjuk-bawah {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  text-align: center;
+}
+
+/* ------------------------------------------------------------- judul */
+.sp-judul {
+  position: absolute;
+  left: 4.5vw;
+  top: 19vh;
+  margin: 0;
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  /* --n = jumlah huruf baris terpanjang, supaya nama panjang otomatis mengecil */
+  font-size: min(calc(160vw / var(--n)), 21vh, 150px);
+}
+.sp-baris { display: block; white-space: nowrap; animation: sp-hentak 0.75s cubic-bezier(0.2, 1.35, 0.4, 1) both; }
+.sp-baris-2 { color: var(--aksen); animation-delay: 0.12s; }
+
+/* ------------------------------------------------------------- kutipan */
+.sp-kutip {
+  position: absolute;
+  left: 5vw;
+  right: 5vw;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 112px);
+  max-width: 380px;
+  margin: 0;
+  padding: 16px 20px;
+  background: var(--kotak);
+  color: var(--kotakTeks);
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  box-shadow: 9px 9px 0 rgb(0 0 0 / 0.35);
+  transform: rotate(var(--miring, -2.5deg));
+  animation: sp-tempel 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.45s both;
+}
+.sp-kutip--pendek { font-size: 23px; }
+.sp-kutip--sedang { font-size: 19px; }
+.sp-kutip--panjang { font-size: 16px; }
+
+/* ------------------------------------------------------------- pita */
+.sp-pita {
+  position: absolute;
+  left: -3vw;
+  right: -3vw;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 42px);
+  height: 40px;
+  overflow: hidden;
+  background: var(--pita);
+  color: var(--pitaTeks);
+  transform: rotate(-1deg);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+  animation: sp-pita-masuk 0.6s ease-out 0.3s both;
+}
+.sp-pita-jalan {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: center;
+  animation: sp-jalan 70s linear infinite;
+}
+.sp-pita-jalan span {
+  flex: none;
+  padding-right: 0.6em;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sp-pita-jalan i { font-style: normal; opacity: 0.55; padding: 0 0.7em; }
+
+/* ------------------------------------------------------------- layar lebar */
+@media (min-width: 900px) and (min-aspect-ratio: 1/1) {
+  .sp-kepala { left: 4.5vw; right: 4.5vw; top: 5vh; }
+  .sp-merek img { width: 46px; height: 42px; }
+  .sp-tanggal { font-size: 14px; }
+  .sp-petunjuk { font-size: 12px; }
+  .sp-petunjuk-atas { display: block; }
+  .sp-petunjuk-bawah { display: none; }
+
+  .sp-judul {
+    left: 4vw;
+    top: auto;
+    bottom: 19vh;
+    /* sisakan ±34% layar kanan untuk kotak kutipan */
+    font-size: min(calc(100vw / var(--n)), 31vh, 340px);
+  }
+
+  .sp-kutip {
+    left: auto;
+    right: 4.5vw;
+    top: 17vh;
+    bottom: auto;
+    width: min(460px, 31vw);
+    max-width: none;
+    padding: 26px 32px;
+    box-shadow: 12px 12px 0 rgb(0 0 0 / 0.35);
+  }
+  .sp-kutip--pendek { font-size: min(36px, 2.6vw); }
+  .sp-kutip--sedang { font-size: min(30px, 2.2vw); }
+  .sp-kutip--panjang { font-size: min(25px, 1.85vw); }
+
+  .sp-pita { bottom: 5vh; height: 54px; }
+  .sp-pita-jalan span { font-size: 19px; }
+}
+
+/* ------------------------------------------------------------- gerak */
+@keyframes sp-muncul { from { opacity: 0; } to { opacity: 1; } }
+
+/* Kain: ayunan kecil dan tidak simetris supaya tidak terasa seperti mesin. */
+@keyframes sp-kibar {
+  0%   { transform: rotateY(0deg)    skewY(0deg)     translate3d(0, 0, 0)       scale(1.02); }
+  22%  { transform: rotateY(-1.6deg) skewY(0.45deg)  translate3d(-0.4%, -0.3%, 0) scale(1.03); }
+  48%  { transform: rotateY(0.9deg)  skewY(-0.35deg) translate3d(0.3%, 0.25%, 0)  scale(1.025); }
+  74%  { transform: rotateY(-0.8deg) skewY(0.25deg)  translate3d(-0.2%, 0.1%, 0)  scale(1.03); }
+  100% { transform: rotateY(0deg)    skewY(0deg)     translate3d(0, 0, 0)       scale(1.02); }
+}
+@keyframes sp-lipat-1 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-36vw, 0, 0); } }
+@keyframes sp-lipat-2 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-52vw, 0, 0); } }
+
+@keyframes sp-hentak {
+  from { opacity: 0; transform: translate3d(0, 38%, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes sp-tempel {
+  from { opacity: 0; transform: rotate(calc(var(--miring, -2.5deg) - 6deg)) scale(0.85); }
+  to   { opacity: 1; transform: rotate(var(--miring, -2.5deg)) scale(1); }
+}
+@keyframes sp-pita-masuk {
+  from { opacity: 0; transform: rotate(-1deg) translate3d(0, 120%, 0); }
+  to   { opacity: 1; transform: rotate(-1deg) translate3d(0, 0, 0); }
+}
+@keyframes sp-jalan { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+/* Pengguna yang memilih "kurangi gerakan" mendapat tampilan diam. */
+@media (prefers-reduced-motion: reduce) {
+  .sp, .sp * { animation: none !important; }
+}
