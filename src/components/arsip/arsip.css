@@ -1,0 +1,252 @@
+/* -------------------------------------------------------------------------- */
+/*  Ilustrasi kabinet & laci untuk menu Arsip                                 */
+/* -------------------------------------------------------------------------- */
+
+.ab-kabinet {
+  border-radius: 14px;
+  padding: 0 8px 10px;
+  background: linear-gradient(180deg, hsl(214 25% 88%), hsl(214 22% 80%));
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.7),
+    0 14px 24px -14px hsl(207 60% 20% / 0.55);
+  position: relative;
+}
+.dark .ab-kabinet { background: linear-gradient(180deg, hsl(215 22% 26%), hsl(215 24% 20%)); }
+.ab-kabinet::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -10px;
+  height: 10px;
+  border-radius: 50%;
+  background: hsl(207 40% 20% / 0.18);
+  filter: blur(4px);
+}
+.ab-kabinet-kepala {
+  margin: 0 -8px 8px;
+  border-radius: 14px 14px 0 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  padding: 6px 0;
+}
+
+.ab-laci {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  border-radius: 10px;
+  padding: 8px 10px 9px;
+  text-align: left;
+  background: linear-gradient(180deg, hsl(0 0% 100%), hsl(214 30% 95%));
+  border: 1px solid hsl(214 25% 82%);
+  box-shadow: inset 0 -3px 0 hsl(214 25% 86%), 0 2px 3px hsl(207 40% 30% / 0.12);
+  transition: transform 0.25s cubic-bezier(0.2, 1.2, 0.4, 1), box-shadow 0.2s, background 0.2s;
+}
+.dark .ab-laci { background: linear-gradient(180deg, hsl(215 20% 32%), hsl(215 22% 27%)); border-color: hsl(215 18% 38%); box-shadow: inset 0 -3px 0 hsl(215 22% 22%); }
+.ab-laci:hover { transform: translateY(2px) scale(1.015); box-shadow: inset 0 -3px 0 hsl(214 25% 86%), 0 8px 14px -6px hsl(207 50% 25% / 0.35); }
+.ab-laci:active { transform: translateY(4px) scale(1.01); }
+.ab-laci.ab-aktif {
+  background: linear-gradient(180deg, hsl(207 80% 38%), hsl(207 87% 26%));
+  border-color: hsl(var(--secondary));
+  box-shadow: 0 0 0 2px hsl(var(--secondary) / 0.55), 0 10px 18px -8px hsl(207 70% 20% / 0.6);
+  color: #fff;
+}
+.ab-laci.ab-kosong { opacity: 0.7; }
+.ab-laci-kode {
+  display: inline-block;
+  min-width: 52px;
+  border-radius: 5px;
+  border: 1px solid hsl(214 25% 75%);
+  background: #fff;
+  padding: 1px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  text-align: center;
+}
+.dark .ab-laci-kode { background: hsl(215 25% 18%); border-color: hsl(215 18% 40%); }
+.ab-laci-gagang {
+  display: block;
+  width: 34px;
+  height: 5px;
+  border-radius: 4px;
+  margin: 6px auto 6px;
+  background: hsl(214 15% 70%);
+}
+.ab-aktif .ab-laci-gagang { background: hsl(0 0% 100% / 0.75); }
+.ab-isi { height: 4px; border-radius: 3px; background: hsl(214 25% 86%); overflow: hidden; }
+.ab-isi > i { display: block; height: 100%; border-radius: 3px; }
+
+/* ------------------------------------------------------------- laci terbuka */
+
+.ab-panggung {
+  position: relative;
+  height: 340px;
+  perspective: 900px;
+  perspective-origin: 50% -10%;
+  overflow: hidden;
+}
+.ab-badan {
+  position: absolute;
+  left: 50%;
+  width: min(480px, 92%);
+  transform: translateX(-50%);
+}
+.ab-badan-atas {
+  top: 0;
+  height: 150px;
+  border-radius: 14px 14px 6px 6px;
+  background: linear-gradient(180deg, hsl(214 25% 86%), hsl(214 22% 78%));
+  box-shadow: inset 0 1px 0 #fff;
+  padding: 0 14px;
+}
+.dark .ab-badan-atas { background: linear-gradient(180deg, hsl(215 22% 28%), hsl(215 24% 22%)); box-shadow: none; }
+.ab-badan-atas .ab-laci { margin-top: 8px; padding: 6px 10px; pointer-events: none; }
+
+.ab-wadah {
+  position: absolute;
+  left: 50%;
+  top: 118px;
+  width: min(450px, 86%);
+  height: 178px;
+  transform: translateX(-50%);
+  animation: ab-tarik 0.7s cubic-bezier(0.2, 1.05, 0.35, 1) both;
+}
+/* bagian dalam laci, dilihat dari depan-atas: menyempit ke belakang */
+.ab-lantai {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, hsl(214 18% 62%), hsl(214 22% 80%));
+}
+.dark .ab-lantai { background: linear-gradient(180deg, hsl(215 20% 14%), hsl(215 20% 26%)); }
+.ab-map {
+  position: absolute;
+  height: 30px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #f8e7bd, #e6c985);
+  border: 1px solid #c9a65c;
+  border-bottom: none;
+  box-shadow: 0 -1px 0 hsl(0 0% 100% / 0.6) inset;
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(0.2, 1.3, 0.4, 1), filter 0.15s;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #6b5320;
+  padding: 1px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.25;
+}
+.ab-map:hover { filter: brightness(1.08); transform: translateY(-3px); }
+.ab-map.ab-lunas { background: linear-gradient(180deg, #eef0f4, #cfd5de); border-color: #aab3c0; color: #536072; }
+.ab-map.ab-pinjam { background: linear-gradient(180deg, hsl(222 35% 22%), hsl(222 40% 12%)); border-color: hsl(222 40% 8%); color: hsl(38 92% 60%); }
+.ab-map.ab-pilih {
+  background: linear-gradient(180deg, #fff, #fff4e6);
+  border-color: hsl(var(--secondary));
+  border-width: 2px;
+  color: hsl(var(--primary));
+  transform: translateY(-22px);
+  z-index: 500 !important;
+  box-shadow: 0 -6px 14px -4px hsl(var(--secondary) / 0.55);
+}
+.ab-tab {
+  position: absolute;
+  top: 0;
+  padding: 0 5px;
+  border-radius: 0 0 3px 3px;
+  background: hsl(38 65% 58%);
+  color: #4a3510;
+  font-weight: 700;
+}
+.ab-map.ab-lunas .ab-tab { background: #b9c1cd; color: #3d4756; }
+.ab-map.ab-pilih .ab-tab { background: hsl(var(--secondary)); color: #fff; }
+
+.ab-kartu-map {
+  position: absolute;
+  left: 50%;
+  top: 84px;
+  width: min(330px, 74%);
+  transform: translateX(-50%);
+  z-index: 10;
+  border-radius: 10px;
+  border: 2px solid hsl(var(--secondary));
+  background: hsl(var(--card));
+  box-shadow: 0 18px 30px -12px hsl(207 60% 20% / 0.5);
+  padding: 10px 12px;
+  animation: ab-angkat 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) 0.45s both;
+}
+
+.ab-muka {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: min(480px, 92%);
+  height: 70px;
+  transform: translateX(-50%);
+  border-radius: 10px 10px 14px 14px;
+  background: linear-gradient(180deg, hsl(207 80% 40%), hsl(207 87% 24%));
+  box-shadow: 0 16px 24px -12px hsl(207 70% 15% / 0.7), inset 0 2px 0 hsl(207 80% 55%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  color: #fff;
+  z-index: 8;
+  animation: ab-muka 0.7s cubic-bezier(0.2, 1.05, 0.35, 1) both;
+}
+
+@keyframes ab-tarik {
+  from { transform: translateX(-50%) translateY(-70px) scale(0.86); opacity: 0.2; }
+  to   { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+}
+@keyframes ab-muka {
+  from { transform: translateX(-50%) translateY(-150px) scale(0.9); }
+  to   { transform: translateX(-50%) translateY(0) scale(1); }
+}
+@keyframes ab-angkat {
+  from { opacity: 0; transform: translateX(-50%) translateY(40px) scale(0.92); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ------------------------------------------------------------- strip isi laci */
+
+.ab-strip { display: flex; gap: 2px; align-items: flex-end; height: 40px; }
+.ab-slot {
+  flex: 1;
+  min-width: 2px;
+  height: 70%;
+  border-radius: 2px;
+  background: hsl(214 25% 80%);
+  transition: height 0.2s, background 0.2s;
+}
+.ab-slot.ab-kosong { background: hsl(214 25% 92%); }
+.dark .ab-slot { background: hsl(215 18% 40%); }
+.dark .ab-slot.ab-kosong { background: hsl(215 18% 24%); }
+.ab-slot.ab-lunas { background: hsl(214 10% 68%); }
+.ab-slot.ab-pinjam { background: hsl(38 92% 50%); }
+.ab-slot.ab-telusur { background: hsl(0 72% 60%); }
+.ab-slot.ab-pilih { background: hsl(var(--secondary)); height: 100%; box-shadow: 0 0 0 2px hsl(var(--secondary) / 0.3); }
+button.ab-slot:hover { height: 90%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ab-wadah, .ab-muka, .ab-kartu-map { animation: none !important; }
+}
+
+/* ------------------------------------------------------------- cetak label */
+
+/* Lembar cetak dipasang langsung di <body> (portal), jadi saat mencetak
+   cukup sembunyikan semua saudaranya. */
+.ab-lembar-cetak { display: none; }
+@media print {
+  body > *:not(.ab-lembar-cetak) { display: none !important; }
+  .ab-lembar-cetak { display: block !important; }
+  .ab-lembar-cetak .ab-hal-a4 { display: grid; grid-template-columns: repeat(3, 62mm); gap: 1.5mm; }
+  .ab-lembar-cetak .ab-hal-gulung > div { break-after: page; }
+}

@@ -47,6 +47,29 @@ export interface BerkasArsip {
   sumber: 'mlf' | 'manual';
   catatan: string | null;
   created_at: string;
+  /** centang isi map, mis. { "KTP & KK debitur": true } */
+  kelengkapan?: Record<string, boolean> | null;
+  /** tidak ditemukan saat opname terakhir */
+  perlu_telusur?: boolean;
+  diserahkan_at?: string | null;
+  diserahkan_kepada?: string | null;
+  catatan_serah?: string | null;
+}
+
+/** Satu kali map dipinjam. */
+export interface PinjamArsip {
+  id: string;
+  brcd: string;
+  berkas_id: string;
+  peminjam: string;
+  keperluan: string | null;
+  dipinjam_at: string;
+  tenggat: string;
+  diperpanjang: boolean;
+  kembali_at: string | null;
+  kondisi: 'lengkap' | 'kurang' | null;
+  catatan_kembali: string | null;
+  created_at: string;
 }
 
 /**
@@ -110,7 +133,7 @@ export const useDebiturArsip = (brcd: string = BRCD_TELIHAN) =>
     staleTime: 30 * 1000,
   });
 
-export type BerkasBaru = Omit<BerkasArsip, 'id' | 'created_at' | 'kode_map' | 'debitur_id'> & {
+export type BerkasBaru = Omit<BerkasArsip, 'id' | 'created_at' | 'kode_map' | 'debitur_id' | 'kelengkapan' | 'perlu_telusur' | 'diserahkan_at' | 'diserahkan_kepada' | 'catatan_serah'> & {
   dicatat_oleh?: string | null;
 };
 
@@ -406,3 +429,181 @@ export const saranDebitur = (
       || a.nama.localeCompare(b.nama))
     .slice(0, batas);
 };
+
+/* ================================================================ peminjaman */
+
+export const usePinjamArsip = (brcd: string = BRCD_TELIHAN) =>
+  useQuery({
+    queryKey: ['arsip-pinjam', brcd],
+    queryFn: async (): Promise<PinjamArsip[]> => {
+      const { data, error } = await (supabase as any)
+        .from('arsip_pinjam')
+        .select('*')
+        .eq('brcd', brcd)
+        .order('dipinjam_at', { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return (data || []) as PinjamArsip[];
+    },
+    staleTime: 20 * 1000,
+  });
+
+const segarkanArsip = (qc: ReturnType<typeof useQueryClient>) => {
+  qc.invalidateQueries({ queryKey: ['arsip-pinjam'] });
+  qc.invalidateQueries({ queryKey: ['arsip-berkas'] });
+};
+
+export const usePinjamkan = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (p: { berkas: BerkasArsip; peminjam: string; keperluan: string; tenggat: string }) => {
+      const { data, error } = await (supabase as any)
+        .from('arsip_pinjam')
+        .insert({
+          brcd: p.berkas.brcd,
+          berkas_id: p.berkas.id,
+          peminjam: p.peminjam,
+          keperluan: p.keperluan,
+          tenggat: p.tenggat,
+          dicatat_oleh: user?.id ?? null,
+        })
+        .select()
+        .single();
+      if (error) {
+        if (String(error.message || '').includes('uniq_arsip_pinjam_terbuka')) {
+          throw new Error('Map ini sedang dipinjam orang lain.');
+        }
+        throw error;
+      }
+      return data as PinjamArsip;
+    },
+    onSuccess: () => segarkanArsip(qc),
+  });
+};
+
+export const useKembalikan = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (p: { pinjam: PinjamArsip; kondisi: 'lengkap' | 'kurang'; catatan: string }) => {
+      const { error } = await (supabase as any)
+        .from('arsip_pinjam')
+        .update({
+          kembali_at: new Date().toISOString(),
+          kondisi: p.kondisi,
+          catatan_kembali: p.catatan || null,
+          dikembalikan_oleh: user?.id ?? null,
+        })
+        .eq('id', p.pinjam.id)
+        .is('kembali_at', null);
+      if (error) throw error;
+      // map yang dikembalikan jelas ada wujudnya — hapus tanda telusur
+      await (supabase as any).from('arsip_berkas').update({ perlu_telusur: false }).eq('id', p.pinjam.berkas_id);
+    },
+    onSuccess: () => segarkanArsip(qc),
+  });
+};
+
+/** Perpanjang tenggat — hanya sekali per peminjaman. */
+export const usePerpanjang = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { pinjam: PinjamArsip; tenggat: string }) => {
+      const { error } = await (supabase as any)
+        .from('arsip_pinjam')
+        .update({ tenggat: p.tenggat, diperpanjang: true })
+        .eq('id', p.pinjam.id)
+        .eq('diperpanjang', false);
+      if (error) throw error;
+    },
+    onSuccess: () => segarkanArsip(qc),
+  });
+};
+
+/* ================================================================ isi & serah-terima */
+
+export const useUbahBerkas = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { id: string; ubah: Partial<BerkasArsip> & Record<string, unknown> }) => {
+      const { error } = await (supabase as any).from('arsip_berkas').update(p.ubah).eq('id', p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['arsip-berkas'] }),
+  });
+};
+
+export const useSerahkanJaminan = () => {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (p: { berkas: BerkasArsip; kepada: string; catatan: string }) => {
+      const { error } = await (supabase as any)
+        .from('arsip_berkas')
+        .update({
+          diserahkan_at: new Date().toISOString(),
+          diserahkan_kepada: p.kepada,
+          diserahkan_oleh: user?.id ?? null,
+          catatan_serah: p.catatan || null,
+        })
+        .eq('id', p.berkas.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['arsip-berkas'] }),
+  });
+};
+
+/* ================================================================ opname */
+
+export interface HasilRapikan {
+  jumlah_scan: number;
+  cocok: number;
+  pindah: number;
+  telusur: number;
+  pindahan: { id: string; nama: string; dari: string }[];
+  hilang: { id: string; nama: string; nomor: number }[];
+}
+
+export const useRapikanLaci = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { brcd: string; kode_laci: string; urutan: string[] }) => {
+      const { data, error } = await (supabase as any).rpc('arsip_rapikan_laci', {
+        p_brcd: p.brcd, p_kode_laci: p.kode_laci, p_urutan: p.urutan,
+      });
+      if (error) throw error;
+      return data as HasilRapikan;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['arsip-berkas'] });
+      qc.invalidateQueries({ queryKey: ['arsip-opname'] });
+    },
+  });
+};
+
+export interface OpnameArsip {
+  id: string;
+  kode_laci: string;
+  jumlah_scan: number;
+  cocok: number;
+  pindah: number;
+  telusur: number;
+  created_at: string;
+}
+
+export const useOpnameArsip = (brcd: string = BRCD_TELIHAN) =>
+  useQuery({
+    queryKey: ['arsip-opname', brcd],
+    queryFn: async (): Promise<OpnameArsip[]> => {
+      const { data, error } = await (supabase as any)
+        .from('arsip_opname')
+        .select('id,kode_laci,jumlah_scan,cocok,pindah,telusur,created_at')
+        .eq('brcd', brcd)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data || []) as OpnameArsip[];
+    },
+    staleTime: 60 * 1000,
+  });
