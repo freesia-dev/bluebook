@@ -10,12 +10,14 @@ import { cn } from '@/lib/utils';
 import { fmtIDR } from '@/lib/mlf-utils';
 import {
   useArsipMaster, useBerkasArsip, useSimpanBerkas, useHapusBerkas,
-  cariRekening, cariTopUp, samakanNama,
-  type RekeningMaster, type BerkasArsip,
+  useDebiturArsip, useUnitLaci, useBalikUrutan,
+  cariRekening, cariTopUp, samakanNama, unitRekening, debiturSeNama, saranDebitur,
+  type RekeningMaster, type BerkasArsip, type DebiturArsip, type UnitLaci, type PilihanDebitur,
 } from '@/hooks/use-arsip';
+import { RiwayatDebiturDialog } from './RiwayatDebiturDialog';
 import {
   Search, Archive, Check, Trash2, ArrowUp, ArrowDown, HelpCircle,
-  RefreshCw, PackageOpen, AlertTriangle,
+  RefreshCw, PackageOpen, AlertTriangle, History, ArrowUpDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +42,18 @@ const tglPendek = (s: string | null | undefined) => {
 };
 
 const kunciJenis = (kode: string) => `arsip-jenis-${kode}`;
+const kunciUnit = (kode: string) => `arsip-unit-${kode}`;
+
+const UNIT_LABEL: Record<UnitLaci, string> = { telihan: 'Telihan', meranti: 'Meranti' };
+
+const bacaLokal = (k: string) => {
+  try { return localStorage.getItem(k); } catch { return null; }
+};
+const tulisLokal = (k: string, v: string) => {
+  try { localStorage.setItem(k, v); } catch { /* abaikan */ }
+};
+
+const nomor = (n: number) => String(n).padStart(3, '0');
 
 /* -------------------------------------------------------------------- lencana */
 
@@ -58,8 +72,12 @@ const LencanaStatus: React.FC<{ status: string }> = ({ status }) => {
 const SortirBerkasPage: React.FC = () => {
   const { data: master = [], isLoading: muatMaster, error: galatMaster, refetch } = useArsipMaster();
   const { data: berkas = [] } = useBerkasArsip();
+  const { data: daftarDebitur = [] } = useDebiturArsip();
   const simpan = useSimpanBerkas();
   const hapus = useHapusBerkas();
+  const ubahUnit = useUnitLaci();
+  const balik = useBalikUrutan();
+  const [lihatRiwayat, setLihatRiwayat] = useState<DebiturArsip | null>(null);
 
   const [ruang, setRuang] = useState<'berkas' | 'khasanah'>('berkas');
   const [cabinet, setCabinet] = useState(1);
@@ -69,6 +87,11 @@ const SortirBerkasPage: React.FC = () => {
   const [urutManual, setUrutManual] = useState<number | null>(null);
   const [formManual, setFormManual] = useState(false);
   const [namaManual, setNamaManual] = useState('');
+  const [pkManual, setPkManual] = useState('');
+  const [akadManual, setAkadManual] = useState('');
+  const [statusManual, setStatusManual] = useState<'lunas' | 'tidak_dikenali'>('lunas');
+  /** kunci saran yang dipilih, atau 'baru' untuk debitur baru */
+  const [sambungKe, setSambungKe] = useState<string | null>(null);
   const [pilihLaciTerbuka, setPilihLaciTerbuka] = useState(true);
   const kotakCari = useRef<HTMLInputElement>(null);
 
@@ -76,20 +99,82 @@ const SortirBerkasPage: React.FC = () => {
 
   // jenis laci diingat per laci, supaya tidak dipilih ulang tiap pindah
   useEffect(() => {
-    const simpanan = localStorage.getItem(kunciJenis(kodeLaci)) as JenisLaci | null;
+    const simpanan = bacaLokal(kunciJenis(kodeLaci)) as JenisLaci | null;
     if (simpanan) setJenis(simpanan);
     else setJenis(ruang === 'khasanah' ? 'jaminan' : 'produktif');
   }, [kodeLaci, ruang]);
 
   const gantiJenis = (j: JenisLaci) => {
     setJenis(j);
-    localStorage.setItem(kunciJenis(kodeLaci), j);
+    tulisLokal(kunciJenis(kodeLaci), j);
   };
 
   const isiLaci = useMemo(
     () => berkas.filter((b) => b.kode_laci === kodeLaci).sort((a, b) => a.nomor_urut - b.nomor_urut),
     [berkas, kodeLaci],
   );
+
+  // Unit laci (Telihan / Meranti). Kalau laci sudah berisi, unitnya dibaca dari
+  // map di dalamnya, jadi sama di semua HP; kalau masih kosong, diingat di HP ini.
+  const [unitLokal, setUnitLokal] = useState<UnitLaci>('telihan');
+  useEffect(() => {
+    setUnitLokal((bacaLokal(kunciUnit(kodeLaci)) as UnitLaci | null) || 'telihan');
+  }, [kodeLaci]);
+  const unitLaci: UnitLaci = isiLaci[0]?.unit ?? unitLokal;
+
+  const gantiUnit = async (u: UnitLaci) => {
+    if (u === unitLaci) return;
+    setUnitLokal(u);
+    tulisLokal(kunciUnit(kodeLaci), u);
+    if (isiLaci.length > 0) {
+      try {
+        await ubahUnit.mutateAsync({ brcd: '143', kode_laci: kodeLaci, unit: u });
+        toast.success(`${isiLaci.length} map di ${kodeLaci} ditandai unit ${UNIT_LABEL[u]}`);
+      } catch (e) {
+        toast.error((e as Error)?.message || 'Gagal mengganti unit');
+      }
+    }
+  };
+
+  const debiturPerId = useMemo(() => new Map(daftarDebitur.map((d) => [d.id, d])), [daftarDebitur]);
+
+  /** jumlah kredit lain (map atau rekening MLF) atas nama yang sama — untuk ikon riwayat */
+  const hitungRiwayat = (b: BerkasArsip) => {
+    const k = samakanNama(b.nama_debitur);
+    const mapLain = b.debitur_id ? berkas.filter((x) => x.debitur_id === b.debitur_id && x.id !== b.id) : [];
+    const rekSudah = new Set(berkas.map((x) => x.no_rekening).filter(Boolean));
+    const rekLain = master.filter(
+      (r) => r.no_rekening !== b.no_rekening && !rekSudah.has(r.no_rekening) && samakanNama(r.nama_debitur) === k,
+    );
+    return mapLain.length + rekLain.length;
+  };
+
+  const balikUrutan = async () => {
+    if (isiLaci.length < 2) return;
+    if (!confirm(
+      `Balik urutan ${isiLaci.length} map di ${kodeLaci}?\n\n`
+      + `Pakai ini kalau laci ini dulu dinomori dari DEPAN. Setelah dibalik, `
+      + `map 001 menjadi yang paling belakang.`,
+    )) return;
+    try {
+      await balik.mutateAsync({ brcd: '143', kode_laci: kodeLaci });
+      toast.success(`Urutan ${kodeLaci} dibalik — 001 sekarang paling belakang`);
+    } catch (e) {
+      toast.error((e as Error)?.message || 'Gagal membalik urutan');
+    }
+  };
+
+  const saran = useMemo(
+    () => (formManual ? saranDebitur(namaManual, daftarDebitur, master) : []),
+    [formManual, namaManual, daftarDebitur, master],
+  );
+  // pilihan sambungan default: nama yang persis sama, kalau ada
+  useEffect(() => {
+    setSambungKe((lama) => {
+      if (lama && (lama === 'baru' || saran.some((x) => x.kunci === lama))) return lama;
+      return saran.find((x) => x.persis)?.kunci ?? (namaManual.trim() ? 'baru' : null);
+    });
+  }, [saran, namaManual]);
 
   const urutBerikutnya = useMemo(() => {
     if (urutManual !== null) return urutManual;
@@ -105,15 +190,30 @@ const SortirBerkasPage: React.FC = () => {
 
   const hasil = useMemo(() => {
     const semua = cariRekening(master, kata);
-    if (jenis === 'jaminan') return semua;
+    // kredit unit yang sama dengan laci naik ke atas (berkas Meranti di laci sendiri)
+    const unitCocok = (r: RekeningMaster) => {
+      const u = unitRekening(r);
+      return u === 'unknown' || u === unitLaci;
+    };
     // laci produktif menaikkan kredit produktif ke atas, dan sebaliknya
-    const cocok = (r: RekeningMaster) => {
+    const jenisCocok = (r: RekeningMaster) => {
+      if (jenis === 'jaminan') return true;
       const produktif = (r.jenis_kredit || '').toLowerCase().includes('modal kerja')
         || (r.jenis_kredit || '').toLowerCase().includes('investasi');
       return jenis === 'produktif' ? produktif : !produktif;
     };
-    return [...semua].sort((a, b) => Number(cocok(b)) - Number(cocok(a)));
-  }, [master, kata, jenis]);
+    return [...semua].sort(
+      (a, b) => Number(unitCocok(b)) - Number(unitCocok(a)) || Number(jenisCocok(b)) - Number(jenisCocok(a)),
+    );
+  }, [master, kata, jenis, unitLaci]);
+
+  /** kredit lain atas nama yang sama, untuk ditampilkan sebagai riwayat singkat */
+  const kreditLain = (r: RekeningMaster) => {
+    const k = samakanNama(r.nama_debitur);
+    return master
+      .filter((x) => x.no_rekening !== r.no_rekening && samakanNama(x.nama_debitur) === k)
+      .sort((a, b) => (a.tanggal_akad || '').localeCompare(b.tanggal_akad || ''));
+  };
 
   const catat = async (r: RekeningMaster) => {
     const ada = r.no_rekening ? sudahMasuk.get(r.no_rekening) : undefined;
@@ -122,11 +222,13 @@ const SortirBerkasPage: React.FC = () => {
       return;
     }
     try {
-      await simpan.mutateAsync({
+      const d = debiturSeNama(r.nama_debitur, daftarDebitur);
+      await simpan.mutateAsync({ debitur: d ? { id: d.id } : { baru: r.nama_debitur }, baris: {
         brcd: '143',
         kode_laci: kodeLaci,
         nomor_urut: urutBerikutnya,
         jenis_laci: jenis,
+        unit: unitLaci,
         nama_debitur: r.nama_debitur,
         nomor_pk: r.nomor_pk,
         no_rekening: r.no_rekening,
@@ -137,44 +239,59 @@ const SortirBerkasPage: React.FC = () => {
         status_kredit: r.status,
         sumber: 'mlf',
         catatan: null,
-      });
-      toast.success(`${String(urutBerikutnya).padStart(3, '0')} · ${r.nama_debitur}`);
+      } });
+      const lama = d ? berkas.filter((b) => b.debitur_id === d.id).length : 0;
+      toast.success(
+        `${nomor(urutBerikutnya)} · ${r.nama_debitur}`,
+        lama > 0 ? { description: `Tersambung ke riwayat debitur ini (${lama} map lain).` } : undefined,
+      );
       setKata('');
       setUrutManual(null);
       kotakCari.current?.focus();
-    } catch (e: any) {
-      toast.error(e?.message || 'Gagal menyimpan');
+    } catch (e) {
+      toast.error((e as Error)?.message || 'Gagal menyimpan');
     }
   };
 
   const catatManual = async () => {
-    const nama = namaManual.trim();
+    const nama = namaManual.trim().toUpperCase();
     if (!nama) return;
+    const pilihan = saran.find((x) => x.kunci === sambungKe);
+    const debitur: PilihanDebitur = pilihan
+      ? (pilihan.debitur ? { id: pilihan.debitur.id } : { baru: pilihan.nama })
+      : { baru: nama };
     try {
-      await simpan.mutateAsync({
+      await simpan.mutateAsync({ debitur, baris: {
         brcd: '143',
         kode_laci: kodeLaci,
         nomor_urut: urutBerikutnya,
         jenis_laci: jenis,
-        nama_debitur: nama.toUpperCase(),
-        nomor_pk: null,
+        unit: unitLaci,
+        nama_debitur: nama,
+        nomor_pk: pkManual.trim() || null,
         no_rekening: null,
-        tanggal_akad: null,
+        tanggal_akad: akadManual || null,
         jatuh_tempo: null,
         plafon: null,
         jenis_kredit: null,
-        status_kredit: 'tidak_dikenali',
+        status_kredit: statusManual,
         sumber: 'manual',
-        catatan: 'belum ketemu di MLF',
-      });
-      toast.success(`${String(urutBerikutnya).padStart(3, '0')} · ${nama.toUpperCase()} (perlu ditinjau)`);
+        catatan: 'tidak ada di MLF (dicatat dari sampul map)',
+      } });
+      toast.success(
+        `${nomor(urutBerikutnya)} · ${nama}`,
+        { description: pilihan ? `Tersambung ke riwayat ${pilihan.nama}.` : 'Dicatat sebagai debitur baru.' },
+      );
       setNamaManual('');
+      setPkManual('');
+      setAkadManual('');
+      setSambungKe(null);
       setFormManual(false);
       setUrutManual(null);
       setKata('');
       kotakCari.current?.focus();
-    } catch (e: any) {
-      toast.error(e?.message || 'Gagal menyimpan');
+    } catch (e) {
+      toast.error((e as Error)?.message || 'Gagal menyimpan');
     }
   };
 
@@ -183,19 +300,25 @@ const SortirBerkasPage: React.FC = () => {
       await hapus.mutateAsync(b.id);
       toast.success(`Dibatalkan: ${b.nama_debitur}`);
       setUrutManual(null);
-    } catch (e: any) {
-      toast.error(e?.message || 'Gagal menghapus');
+    } catch (e) {
+      toast.error((e as Error)?.message || 'Gagal menghapus');
     }
   };
 
   const jumlahTercatat = berkas.length;
   const belumDikenali = berkas.filter((b) => b.status_kredit === 'tidak_dikenali').length;
 
+  const bukaRiwayat = (b: BerkasArsip) => {
+    const d = b.debitur_id ? debiturPerId.get(b.debitur_id) : undefined;
+    if (d) setLihatRiwayat(d);
+    else toast.message('Map ini belum tersambung ke debitur. Jalankan SQL 2026-11-23 dulu.');
+  };
+
   return (
     <MainLayout>
       <PageHeader
         title="Sortir Berkas"
-        description="Pilih lacinya, lalu ketik nama atau nomor PK tiap map. Status lunas dan top-up ditentukan sendiri dari data MLF."
+        description="Pilih lacinya, lalu catat map mulai dari yang paling BELAKANG laci. Status lunas, top up, dan riwayat debitur disambungkan sendiri dari data MLF."
         actions={
           <>
             <Badge variant="outline" className="h-9 px-3 text-sm">
@@ -221,7 +344,8 @@ const SortirBerkasPage: React.FC = () => {
             <div>
               <p className="font-semibold">Daftar induk gagal dimuat.</p>
               <p className="text-muted-foreground mt-1">
-                Jalankan dulu berkas SQL <code>2026-11-11_arsip_sortir_berkas.sql</code> di Supabase.
+                Jalankan dulu berkas SQL <code>2026-11-11_arsip_sortir_berkas.sql</code> dan{' '}
+                <code>2026-11-23_arsip_riwayat_debitur.sql</code> di Supabase.
                 Pesan aslinya: {(galatMaster as any)?.message}
               </p>
             </div>
@@ -237,7 +361,10 @@ const SortirBerkasPage: React.FC = () => {
               <span className="font-mono text-base font-bold text-primary leading-none">{kodeLaci}</span>
               <span className="text-[10px] text-muted-foreground">{isiLaci.length} map</span>
             </div>
-            <span className="text-sm text-muted-foreground">{JENIS_LABEL[jenis]}</span>
+            <span className="text-sm text-muted-foreground">
+              {JENIS_LABEL[jenis]}
+              {unitLaci === 'meranti' && <Badge className="ml-2 bg-secondary text-secondary-foreground border-0">Meranti</Badge>}
+            </span>
             <Button variant="outline" size="sm" className="ml-auto h-10"
               onClick={() => setPilihLaciTerbuka(true)}>
               Ganti laci
@@ -263,7 +390,7 @@ const SortirBerkasPage: React.FC = () => {
                 </button>
               ))}
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <Label className="text-xs text-muted-foreground">Isi laci</Label>
               <div className="flex rounded-lg border overflow-hidden">
                 {(ruang === 'khasanah'
@@ -279,6 +406,22 @@ const SortirBerkasPage: React.FC = () => {
                     )}
                   >
                     {JENIS_LABEL[j]}
+                  </button>
+                ))}
+              </div>
+              <Label className="text-xs text-muted-foreground ml-2">Unit</Label>
+              <div className="flex rounded-lg border overflow-hidden">
+                {(['telihan', 'meranti'] as UnitLaci[]).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => gantiUnit(u)}
+                    disabled={ubahUnit.isPending}
+                    className={cn(
+                      'px-3 h-10 text-xs font-semibold transition-colors',
+                      unitLaci === u ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-muted',
+                    )}
+                  >
+                    {UNIT_LABEL[u]}
                   </button>
                 ))}
               </div>
@@ -322,7 +465,10 @@ const SortirBerkasPage: React.FC = () => {
                   )}
                 >
                   <div className="font-mono text-sm font-bold text-primary">{kode}</div>
-                  <div className="text-[11px] text-muted-foreground">{jml} map</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {jml} map
+                    {berkas.some((b) => b.kode_laci === kode && b.unit === 'meranti') && ' · Meranti'}
+                  </div>
                 </button>
               );
             })}
@@ -331,13 +477,13 @@ const SortirBerkasPage: React.FC = () => {
       </Card>
 
       {/* ------------------------------------------------------ kotak pencarian */}
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr] items-start">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_1fr] items-start">
         <div className="space-y-4">
           <Card className="sticky top-2 z-10">
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <div className="shrink-0">
-                  <div className="text-[11px] text-muted-foreground">Map ke</div>
+                  <div className="text-[11px] text-muted-foreground">Map ke · dari belakang</div>
                   <div className="font-mono text-3xl font-bold text-primary leading-none">
                     {String(urutBerikutnya).padStart(3, '0')}
                   </div>
@@ -370,24 +516,99 @@ const SortirBerkasPage: React.FC = () => {
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                   Menyortir <span className="font-mono font-semibold text-primary">{kodeLaci}</span>
-                  {' · '}{JENIS_LABEL[jenis]}{' · '}{isiLaci.length} map di laci ini
+                  {' · '}{JENIS_LABEL[jenis]}{' · '}{UNIT_LABEL[unitLaci]}{' · '}{isiLaci.length} map di laci ini
                 </span>
                 <button className="underline underline-offset-2" onClick={() => setFormManual((v) => !v)}>
-                  Map tak dikenal
+                  Map lama / tak ada di MLF
                 </button>
               </div>
 
               {formManual && (
-                <div className="flex gap-2 pt-1">
+                <div className="space-y-2.5 pt-1 border-t mt-1">
+                  <p className="text-xs text-muted-foreground pt-2">
+                    Untuk map lama yang tidak ada di MLF (biasanya lunas sebelum 2026). Isi dari sampul map,
+                    lalu sambungkan ke debitur yang sama supaya masuk riwayatnya.
+                  </p>
                   <Input
                     value={namaManual}
                     onChange={(e) => setNamaManual(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') catatManual(); }}
-                    placeholder="Ketik nama seperti tertulis di sampul map"
+                    placeholder="Nama di sampul map (wajib)"
                     className="h-11"
+                    autoFocus
                   />
-                  <Button className="h-11" onClick={catatManual} disabled={!namaManual.trim()}>
-                    Simpan
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={pkManual}
+                      onChange={(e) => setPkManual(e.target.value)}
+                      placeholder="Nomor PK (kalau ada)"
+                      className="h-10 font-mono text-sm"
+                    />
+                    <Input
+                      type="date"
+                      value={akadManual}
+                      onChange={(e) => setAkadManual(e.target.value)}
+                      className="h-10 text-sm"
+                      aria-label="Tanggal akad (kalau ada)"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <div className="flex rounded-lg border overflow-hidden">
+                      {([['lunas', 'Sudah lunas'], ['tidak_dikenali', 'Belum tahu']] as const).map(([v, l]) => (
+                        <button
+                          key={v}
+                          onClick={() => setStatusManual(v)}
+                          className={cn(
+                            'px-3 h-9 text-xs font-semibold',
+                            statusManual === v ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-muted',
+                          )}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {namaManual.trim().length >= 3 && (
+                    <div className="space-y-1.5">
+                      <div className="text-xs font-semibold">Sambungkan ke riwayat</div>
+                      {saran.map((x) => {
+                        const aktif = x.rekening.filter((r) => r.status === 'aktif').length;
+                        const jmlMap = x.debitur ? berkas.filter((b) => b.debitur_id === x.debitur!.id).length : 0;
+                        return (
+                          <button
+                            key={x.kunci}
+                            onClick={() => setSambungKe(x.kunci)}
+                            className={cn(
+                              'w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors',
+                              sambungKe === x.kunci ? 'border-primary bg-accent' : 'hover:bg-muted',
+                            )}
+                          >
+                            <div className="font-medium">{x.nama}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {[
+                                aktif > 0 && `${aktif} kredit aktif`,
+                                x.rekening.length - aktif > 0 && `${x.rekening.length - aktif} lunas di MLF`,
+                                jmlMap > 0 && `${jmlMap} map sudah di laci`,
+                              ].filter(Boolean).join(' · ') || 'debitur tercatat'}
+                            </div>
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setSambungKe('baru')}
+                        className={cn(
+                          'w-full text-left rounded-lg border border-dashed px-3 py-2 text-sm',
+                          sambungKe === 'baru' ? 'border-primary bg-accent' : 'hover:bg-muted',
+                        )}
+                      >
+                        Debitur baru — tidak ada yang cocok
+                      </button>
+                    </div>
+                  )}
+
+                  <Button className="h-11 w-full" onClick={catatManual} disabled={!namaManual.trim() || simpan.isPending}>
+                    Simpan sebagai map {nomor(urutBerikutnya)}
                   </Button>
                 </div>
               )}
@@ -423,6 +644,8 @@ const SortirBerkasPage: React.FC = () => {
             {hasil.map((r) => {
               const ada = r.no_rekening ? sudahMasuk.get(r.no_rekening) : undefined;
               const topUp = r.status === 'lunas' ? cariTopUp(r, master) : null;
+              const unitR = unitRekening(r);
+              const lain = kreditLain(r);
               return (
                 <Card
                   key={r.no_rekening}
@@ -441,6 +664,9 @@ const SortirBerkasPage: React.FC = () => {
                           {r.kol != null && r.kol > 1 && (
                             <Badge variant="destructive" className="text-[10px]">Kol {r.kol}</Badge>
                           )}
+                          {unitR === 'meranti' && (
+                            <Badge className="text-[10px] bg-secondary text-secondary-foreground border-0">Meranti</Badge>
+                          )}
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground font-mono">
                           {r.nomor_pk || '(tanpa nomor PK)'}
@@ -454,6 +680,28 @@ const SortirBerkasPage: React.FC = () => {
                           <div className="mt-2 text-xs rounded-lg bg-secondary/15 text-secondary-foreground px-2.5 py-1.5">
                             Sudah top up → <b>{topUp.nomor_pk || topUp.no_rekening}</b>, akad{' '}
                             {tglPendek(topUp.tanggal_akad)}. Map ini jadi berkas lama debitur yang sama.
+                          </div>
+                        )}
+
+                        {unitR !== 'unknown' && unitR !== unitLaci && !ada && (
+                          <div className="mt-2 text-xs rounded-lg bg-warning/15 px-2.5 py-1.5">
+                            Kredit unit {unitR === 'meranti' ? 'Meranti' : 'Telihan'}, sedangkan laci ini {UNIT_LABEL[unitLaci]}.
+                          </div>
+                        )}
+
+                        {lain.length > 0 && (
+                          <div className="mt-2 text-[11px] text-muted-foreground space-y-0.5">
+                            <div className="font-semibold text-foreground/80">Riwayat nama ini:</div>
+                            {lain.slice(0, 3).map((x) => {
+                              const m = sudahMasuk.get(x.no_rekening);
+                              return (
+                                <div key={x.no_rekening} className="truncate">
+                                  · {tglPendek(x.tanggal_akad)} {x.status === 'aktif' ? 'aktif' : 'lunas'}
+                                  {' — '}{m ? `map ${m.kode_laci} · ${nomor(m.nomor_urut)}` : 'belum ada map'}
+                                </div>
+                              );
+                            })}
+                            {lain.length > 3 && <div>· dan {lain.length - 3} lainnya</div>}
                           </div>
                         )}
 
@@ -486,6 +734,15 @@ const SortirBerkasPage: React.FC = () => {
               <PackageOpen className="w-4 h-4 text-primary" />
               <h2 className="font-semibold">Isi laci {kodeLaci}</h2>
               <span className="ml-auto text-xs text-muted-foreground">{isiLaci.length} map</span>
+              {isiLaci.length > 1 && (
+                <Button
+                  variant="ghost" size="sm" className="h-7 px-2 text-xs"
+                  onClick={balikUrutan} disabled={balik.isPending}
+                  title="Untuk laci yang dulu dinomori dari depan"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Balik urutan
+                </Button>
+              )}
             </div>
 
             {isiLaci.length === 0 ? (
@@ -494,20 +751,40 @@ const SortirBerkasPage: React.FC = () => {
               </p>
             ) : (
               <div className="space-y-1 max-h-[52vh] overflow-y-auto pr-1">
+                <div className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground text-center pb-1 border-b border-dashed">
+                  DEPAN LACI
+                </div>
                 {[...isiLaci].reverse().map((b) => (
                   <div
                     key={b.id}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/60 group"
                   >
                     <span className="font-mono text-xs font-bold text-primary w-8 shrink-0">
-                      {String(b.nomor_urut).padStart(3, '0')}
+                      {nomor(b.nomor_urut)}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">{b.nama_debitur}</div>
                       <div className="text-[11px] text-muted-foreground truncate font-mono">
+                        {b.kode_map ? `${b.kode_map} · ` : ''}
                         {b.nomor_pk || (b.sumber === 'manual' ? 'dicatat manual' : '—')}
                       </div>
                     </div>
+                    {(() => {
+                      const n = hitungRiwayat(b);
+                      return (
+                        <button
+                          onClick={() => bukaRiwayat(b)}
+                          className={cn(
+                            'h-7 px-1.5 rounded-md inline-flex items-center gap-1 text-[11px] font-semibold',
+                            n > 0 ? 'text-primary hover:bg-accent' : 'text-muted-foreground/60 hover:bg-muted',
+                          )}
+                          title="Lihat riwayat debitur"
+                        >
+                          <History className="w-3.5 h-3.5" />
+                          {n > 0 && `+${n}`}
+                        </button>
+                      );
+                    })()}
                     <LencanaStatus status={b.status_kredit} />
                     <Button
                       size="icon"
@@ -519,11 +796,22 @@ const SortirBerkasPage: React.FC = () => {
                     </Button>
                   </div>
                 ))}
+                <div className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground text-center pt-1 border-t border-dashed">
+                  BELAKANG LACI · 001
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <RiwayatDebiturDialog
+        debitur={lihatRiwayat}
+        onClose={() => setLihatRiwayat(null)}
+        berkas={berkas}
+        master={master}
+        semuaDebitur={daftarDebitur}
+      />
     </MainLayout>
   );
 };
