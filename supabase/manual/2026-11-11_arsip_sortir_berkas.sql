@@ -2,7 +2,7 @@
 --  Menu Sortir Berkas — tabel penyimpan hasil pemetaan + pencarian dari MLF
 --  Jalankan seluruh berkas ini sekaligus di Supabase SQL Editor.
 --  Jangan menyorot sebagian teks — yang tersorot saja yang dijalankan.
---  Aman dijalankan berulang.
+--  Aman dijalankan berulang. Semuanya berjalan dalam satu transaksi.
 -- ============================================================================
 --
 --  Dua hal yang dibuat di sini:
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.arsip_berkas (
 
   -- lokasi fisik
   kode_laci     text NOT NULL,            -- B3.2 (berkas) atau J1.3 (khasanah)
-  nomor_urut    integer NOT NULL,         -- urutan map dari depan laci
+  nomor_urut    integer NOT NULL,         -- urutan map, 1 = paling belakang laci
   jenis_laci    text NOT NULL DEFAULT 'produktif'
                 CHECK (jenis_laci IN ('produktif', 'konsumtif', 'jaminan')),
 
@@ -119,9 +119,6 @@ CREATE POLICY "zz_demo_tidak_boleh_ubah" ON public.arsip_berkas
   AS RESTRICTIVE FOR UPDATE TO authenticated USING (NOT public.is_demo_user());
 CREATE POLICY "zz_demo_tidak_boleh_hapus" ON public.arsip_berkas
   AS RESTRICTIVE FOR DELETE TO authenticated USING (NOT public.is_demo_user());
-
-COMMIT;
-
 
 -- ============================================================================
 -- 3. Daftar induk rekening untuk pencocokan
@@ -205,10 +202,23 @@ $$;
 GRANT EXECUTE ON FUNCTION public.arsip_master(text) TO authenticated;
 
 
+-- Beri tahu PostgREST supaya daftar fungsinya ikut diperbarui.
+NOTIFY pgrst, 'reload schema';
+
+COMMIT;
+
+
 -- ----------------------------------------------------------------------------
--- Periksa hasilnya
+-- Periksa hasilnya. Sengaja TIDAK memanggil arsip_master(): SQL Editor berjalan
+-- tanpa sesi pengguna, jadi fungsi itu menolak — dan dulu penolakan itu ikut
+-- membatalkan pemasangan fungsinya. Sekarang semuanya sudah di-commit lebih
+-- dulu, dan pemeriksaannya hanya melihat katalog.
 -- ----------------------------------------------------------------------------
-SELECT status, count(*) AS jumlah
-FROM public.arsip_master('143')
-GROUP BY status
-ORDER BY status;
+SELECT p.proname,
+       p.prosecdef                                               AS security_definer,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') AS boleh_authenticated
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname = 'arsip_master';
+
+SELECT count(*) AS isi_tabel_arsip FROM public.arsip_berkas;
