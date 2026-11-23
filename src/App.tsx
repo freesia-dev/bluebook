@@ -57,6 +57,14 @@ const KontakDebiturPage = lazy(() => import("./pages/monitoring/KontakDebiturPag
 const ReminderTunggakanPage = lazy(() => import("./pages/monitoring/ReminderTunggakanPage"));
 const CallMemoPrintPage = lazy(() => import("./pages/monitoring/CallMemoPrintPage"));
 const SortirBerkasPage = lazy(() => import("./pages/arsip/SortirBerkasPage"));
+const PetaKabinetPage = lazy(() => import("./pages/arsip/PetaKabinetPage"));
+const LaciArsipPage = lazy(() => import("./pages/arsip/LaciPage"));
+const DetailMapPage = lazy(() => import("./pages/arsip/DetailMapPage"));
+const DaftarBerkasPage = lazy(() => import("./pages/arsip/DaftarBerkasPage"));
+const PeminjamanArsipPage = lazy(() => import("./pages/arsip/PeminjamanPage"));
+const PindaiArsipPage = lazy(() => import("./pages/arsip/PindaiPage"));
+const OpnameArsipPage = lazy(() => import("./pages/arsip/OpnamePage"));
+const CetakLabelPage = lazy(() => import("./pages/arsip/CetakLabelPage"));
 const LogSecurityPage = lazy(() => import("./pages/security/LogSecurityPage"));
 const BAHarianPrintPage = lazy(() => import("./pages/security/BAHarianPrintPage"));
 const BAHarianBulkPrintPage = lazy(() => import("./pages/security/BAHarianBulkPrintPage"));
@@ -273,6 +281,30 @@ const App = () => (
             {/* Arsip berkas & khasanah */}
             <Route path="/arsip/sortir" element={
               <Suspense fallback={<GenericPageSkeleton />}><SortirBerkasPage /></Suspense>
+            } />
+            <Route path="/arsip" element={
+              <Suspense fallback={<GenericPageSkeleton />}><PetaKabinetPage /></Suspense>
+            } />
+            <Route path="/arsip/laci/:kode" element={
+              <Suspense fallback={<GenericPageSkeleton />}><LaciArsipPage /></Suspense>
+            } />
+            <Route path="/arsip/map/:id" element={
+              <Suspense fallback={<GenericPageSkeleton />}><DetailMapPage /></Suspense>
+            } />
+            <Route path="/arsip/daftar" element={
+              <Suspense fallback={<GenericPageSkeleton />}><DaftarBerkasPage /></Suspense>
+            } />
+            <Route path="/arsip/pinjam" element={
+              <Suspense fallback={<GenericPageSkeleton />}><PeminjamanArsipPage /></Suspense>
+            } />
+            <Route path="/arsip/pindai" element={
+              <Suspense fallback={<GenericPageSkeleton />}><PindaiArsipPage /></Suspense>
+            } />
+            <Route path="/arsip/opname" element={
+              <Suspense fallback={<GenericPageSkeleton />}><OpnameArsipPage /></Suspense>
+            } />
+            <Route path="/arsip/label" element={
+              <Suspense fallback={<GenericPageSkeleton />}><CetakLabelPage /></Suspense>
             } />
             {/* Install PWA */}
             <Route path="/install" element={
