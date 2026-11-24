@@ -29,7 +29,7 @@ const AUTO_COLLAPSE_MS = 5000;
 const PIN_KEY = 'bluebook-sidebar-pinned';
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isAuthenticated, isDemo, permissions } = useAuth();
+  const { isAuthenticated, isDemo, permissions, peranSiap } = useAuth();
   const location = useLocation();
   const [pinned, setPinned] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -79,6 +79,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Tunggu peran terbaca dulu sebelum menilai boleh-tidaknya halaman ini.
+  if (!peranSiap) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+      </div>
+    );
   }
 
   // Role-based route guard: redirect to /dashboard if current route isn't allowed
