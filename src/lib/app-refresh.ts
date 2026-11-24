@@ -80,6 +80,52 @@ export const muatUlangUntukVersiBaru = (alasan: string): boolean => {
 };
 
 /**
+ * Buang berkas JS/CSS yang ternyata berisi halaman HTML.
+ *
+ * Kalau sebuah berkas /assets/* diminta tepat saat deploy belum selesai,
+ * server menjawab dengan index.html. Jawaban itu bisa tersimpan di cache
+ * service worker maupun cache browser, dan karena nama berkasnya tidak
+ * berubah, halaman yang membutuhkannya gagal dimuat terus (Nov 2026: Loan
+ * Monitoring). Fungsi ini menghapus isian rusak dari cache service worker
+ * lalu mengambil ulang berkasnya dari server tanpa cache browser.
+ * Mengembalikan jumlah berkas yang diperbaiki.
+ */
+export const perbaikiAsetRusak = async (alamatGagal?: string): Promise<number> => {
+  let jumlah = 0;
+  const ambilUlang = new Set<string>();
+  if (alamatGagal) ambilUlang.add(alamatGagal);
+  try {
+    if ('caches' in window) {
+      for (const nama of await caches.keys()) {
+        const cache = await caches.open(nama);
+        for (const req of await cache.keys()) {
+          if (!/\/assets\/[^?#]+\.(js|css)(\?|#|$)/.test(req.url)) continue;
+          const res = await cache.match(req);
+          if ((res?.headers.get('content-type') || '').includes('text/html')) {
+            await cache.delete(req);
+            ambilUlang.add(req.url);
+            jumlah++;
+          }
+        }
+      }
+    }
+  } catch {
+    /* noop */
+  }
+  // segarkan cache browser untuk berkas yang bermasalah
+  await Promise.all(
+    [...ambilUlang].map((u) => fetch(u, { cache: 'reload' }).catch(() => undefined)),
+  );
+  return jumlah;
+};
+
+/** Ambil alamat berkas dari pesan galat import dinamis, kalau ada. */
+const alamatDariPesan = (pesan: string) => {
+  const m = /https?:\/\/[^\s'"]+\/assets\/[^\s'"]+\.(js|css)/.exec(pesan);
+  return m ? m[0] : undefined;
+};
+
+/**
  * Pasang penjaga untuk berkas halaman (chunk) yang hilang setelah deploy.
  * Ini penyebab utama "halaman gagal muat" di browser: index.html lama masih
  * menunjuk berkas dengan hash lama yang sudah tidak ada di server.
@@ -94,7 +140,11 @@ export const pasangPenjagaChunk = () => {
       pesan.includes('Loading CSS chunk'));
 
   const tangani = (pesan: string) => {
-    if (cocokChunkHilang(pesan)) muatUlangUntukVersiBaru('chunk lama tidak ditemukan');
+    if (!cocokChunkHilang(pesan)) return;
+    // perbaiki dulu cache yang mungkin berisi HTML, baru muat ulang
+    void perbaikiAsetRusak(alamatDariPesan(pesan)).finally(() =>
+      muatUlangUntukVersiBaru('chunk lama tidak ditemukan'),
+    );
   };
 
   window.addEventListener('error', (e) => tangani(e.message));
@@ -104,6 +154,17 @@ export const pasangPenjagaChunk = () => {
   // Event khusus Vite saat preload modul gagal — lebih awal daripada error di atas
   window.addEventListener('vite:preloadError', (e) => {
     e.preventDefault();
-    muatUlangUntukVersiBaru('preload modul gagal');
+    const pesan = String((e as Event & { payload?: Error }).payload?.message || '');
+    void perbaikiAsetRusak(alamatDariPesan(pesan)).finally(() =>
+      muatUlangUntukVersiBaru('preload modul gagal'),
+    );
   });
+
+  // Sekali saat aplikasi dibuka, saat browser sedang senggang: bersihkan
+  // isian cache yang rusak sebelum sempat dipakai.
+  const nanti = (f: () => void) =>
+    'requestIdleCallback' in window
+      ? (window as Window & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(f)
+      : setTimeout(f, 3000);
+  nanti(() => { void perbaikiAsetRusak(); });
 };

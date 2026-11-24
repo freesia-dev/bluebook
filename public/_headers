@@ -12,6 +12,12 @@
 /manifest.webmanifest
   Cache-Control: no-cache, must-revalidate
 
-# Aset hasil build punya hash di nama file-nya, jadi aman di-cache lama.
+# Aset hasil build punya hash di nama file-nya, jadi aman di-cache lama
+# di browser. Tapi cache server Cloudflare (edge) dibatasi 10 menit: kalau
+# sebuah berkas diminta sebelum deploy selesai, Cloudflare menjawab dengan
+# index.html (aturan SPA di _redirects) — dan jawaban salah itu dulu ikut
+# tersimpan setahun, membuat Loan Monitoring tidak bisa dibuka (Nov 2026).
+# Dengan batas ini jawaban salah hilang sendiri dalam 10 menit.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+  Cloudflare-CDN-Cache-Control: max-age=600

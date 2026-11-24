@@ -19,6 +19,8 @@ interface AuthContextType {
   isDemo: boolean;
   canEdit: boolean;
   isLoading: boolean;
+  /** true setelah peran (role) pengguna selesai dibaca dari database */
+  peranSiap: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   signup: (email: string, password: string, nama: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
@@ -33,6 +35,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isApproved, setIsApproved] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  // Peran belum diketahui sampai user_roles selesai dibaca. Sebelum itu peran
+  // sementara 'user', dan penjaga rute di MainLayout tidak boleh memutuskan
+  // apa pun — dulu halaman Loan Monitoring yang di-refresh langsung dilempar
+  // ke Dashboard karena dikira milik peran 'user'.
+  const [peranSiap, setPeranSiap] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -50,6 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setRole('user');
           setIsApproved(false);
           setIsPending(false);
+          setPeranSiap(true);
         }
       }
     );
@@ -60,6 +68,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(session?.user ?? null);
       if (session?.user) {
         checkUserStatus(session.user.id);
+      } else {
+        setPeranSiap(true);
       }
       setIsLoading(false);
     });
@@ -88,6 +98,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setRole('user');
       setIsApproved(false);
       setIsPending(false);
+    } finally {
+      setPeranSiap(true);
     }
   };
 
@@ -124,6 +136,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         setRole((roleResult.data?.role as AppRole) || 'user');
+        setPeranSiap(true);
         setIsApproved(status === 'approved');
         setIsPending(status === 'pending');
       }
@@ -259,6 +272,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isDemo,
       canEdit,
       isLoading,
+      peranSiap,
       login,
       signup,
       logout,
