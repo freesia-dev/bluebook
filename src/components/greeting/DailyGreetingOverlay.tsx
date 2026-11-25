@@ -8,14 +8,15 @@ const AUTO_DISMISS_MS = 3 * 60 * 1000;
 const DURASI_MEMUDAR_MS = 350;
 
 /**
- * Sapaan harian yang muncul sekali di kunjungan/login PERTAMA hari itu
- * (dilacak lewat useDailyGreeting -> profiles.last_greeting_date).
+ * Sapaan yang muncul tiga kali sehari — pagi, siang, sore — saat Bluebook
+ * pertama dibuka di waktu itu (lihat useDailyGreeting). Isinya ayat
+ * Al-Qur'an, atau Alkitab untuk pengguna di PENGGUNA_ALKITAB.
  * Tutup dengan klik/ketuk di mana saja, menekan tombol apa pun, atau
  * otomatis setelah 3 menit.
  */
 export const DailyGreetingOverlay: React.FC = () => {
   const { userName } = useAuth();
-  const { show, quote, dismiss } = useDailyGreeting();
+  const { show, ayat, kunci, dismiss } = useDailyGreeting();
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
 
@@ -47,5 +48,5 @@ export const DailyGreetingOverlay: React.FC = () => {
 
   if (!show) return null;
 
-  return <SapaanPoster nama={userName} kutipan={quote} menutup={closing} onTutup={handleClose} />;
+  return <SapaanPoster nama={userName} ayat={ayat} kunci={kunci} menutup={closing} onTutup={handleClose} />;
 };

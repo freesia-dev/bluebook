@@ -56,6 +56,16 @@ export function salamSekarang(jam = new Date().getHours()): Salam {
   return 'MALAM';
 }
 
+/** Tiga waktu sapaan dalam sehari. Malam (18.00 ke atas) tidak ada sapaan. */
+export type WaktuSapaan = 'pagi' | 'siang' | 'sore';
+
+export function waktuSapaan(jam = new Date().getHours()): WaktuSapaan | null {
+  if (jam < 10) return 'pagi';
+  if (jam < 15) return 'siang';
+  if (jam < 18) return 'sore';
+  return null;
+}
+
 // ------------------------------------------------------------------ pita berjalan
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
