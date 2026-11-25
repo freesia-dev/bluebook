@@ -10,6 +10,7 @@ import { KembaliDialog, PinjamDialog } from '@/components/arsip/DialogAksi';
 import { LencanaFisik, LencanaKredit } from '@/components/arsip/Lencana';
 import { nomor, type IsiQR } from '@/lib/arsip';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 
 type Mode = 'pinjam' | 'kembali' | 'cek';
 
@@ -59,6 +60,9 @@ const PindaiPage: React.FC = () => {
 
   return (
     <MainLayout>
+      <button type="button" onClick={() => navigate('/arsip')} className="text-sm text-muted-foreground flex items-center gap-1 mb-2 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Peta kabinet
+      </button>
       <PageHeader title="Pindai label" description="Pinjam, kembalikan, atau cek posisi map cukup dengan scan QR di punggung map." />
       <div className="max-w-xl mx-auto space-y-3">
         <div className="grid grid-cols-3 rounded-xl border p-1 bg-muted/40">

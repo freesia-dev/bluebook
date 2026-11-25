@@ -7,16 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { samakanNama } from '@/hooks/use-arsip';
+import { DetailMapDialog } from '@/components/arsip/DetailMap';
 import { useArsipKonteks } from '@/hooks/use-arsip-konteks';
 import { LencanaFisik, LencanaJenis, LencanaKredit } from '@/components/arsip/Lencana';
 import { nomor, rupiahPendek, tglPanjang, type StatusFisik } from '@/lib/arsip';
-import { Search, FolderPlus, Download } from 'lucide-react';
+import { Search, FolderPlus, Download, ArrowLeft } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 type Kredit = 'semua' | 'aktif' | 'lunas' | 'tidak_dikenali';
 
 const DaftarBerkasPage: React.FC = () => {
   const k = useArsipKonteks();
+  const [detail, setDetail] = useState<string | null>(null);
   const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
   const tab = sp.get('tab') === 'belum' ? 'belum' : 'map';
@@ -60,6 +62,9 @@ const DaftarBerkasPage: React.FC = () => {
 
   return (
     <MainLayout>
+      <button type="button" onClick={() => navigate('/arsip')} className="text-sm text-muted-foreground flex items-center gap-1 mb-2 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Peta kabinet
+      </button>
       <PageHeader
         title="Daftar Berkas"
         description={`${k.maps.length} map di arsip · ${belum.length} kredit aktif belum punya map`}
@@ -110,7 +115,7 @@ const DaftarBerkasPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y">
                   {daftar.slice(0, batas).map((m) => (
-                    <tr key={m.id} className="hover:bg-muted/40 cursor-pointer" onClick={() => navigate(`/arsip/map/${m.id}`)}>
+                    <tr key={m.id} className="hover:bg-muted/40 cursor-pointer" onClick={() => setDetail(m.id)}>
                       <td className="px-3 py-2.5 whitespace-nowrap">
                         <div className="font-mono font-bold text-primary">{m.kode_laci.slice(1)} · {nomor(m.nomor_urut)}</div>
                         <div className="text-[10px] font-mono text-muted-foreground">{m.kode_map}</div>
@@ -160,6 +165,7 @@ const DaftarBerkasPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
+      <DetailMapDialog id={detail} onClose={() => setDetail(null)} />
     </MainLayout>
   );
 };

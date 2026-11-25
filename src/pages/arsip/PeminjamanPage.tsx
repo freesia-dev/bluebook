@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DetailMapDialog } from '@/components/arsip/DetailMap';
 import { useArsipKonteks, type MapLengkap } from '@/hooks/use-arsip-konteks';
 import { KembaliDialog, PinjamDialog } from '@/components/arsip/DialogAksi';
 import { CariArsip, usePintasanCari } from '@/components/arsip/CariArsip';
@@ -13,6 +14,7 @@ import { ArrowUpRight, ScanLine, Search, Undo2, AlarmClock, Clock } from 'lucide
 
 const PeminjamanPage: React.FC = () => {
   const k = useArsipKonteks();
+  const [detail, setDetail] = useState<string | null>(null);
   const navigate = useNavigate();
   const [tab, setTab] = useState<'dipinjam' | 'riwayat'>('dipinjam');
   const [pinjam, setPinjam] = useState<MapLengkap | null>(null);
@@ -58,7 +60,7 @@ const PeminjamanPage: React.FC = () => {
               <Card key={m.id} className={cn(sisa < 0 && 'border-destructive/50')}>
                 <CardContent className="p-4">
                   <div className="flex items-start gap-2">
-                    <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate(`/arsip/map/${m.id}`)}>
+                    <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setDetail(m.id)}>
                       <div className="font-display font-bold truncate">{m.nama_debitur}</div>
                       <div className="text-xs text-muted-foreground font-mono">Laci {m.kode_laci.slice(1)} · #{nomor(m.nomor_urut)}</div>
                     </button>
@@ -87,7 +89,7 @@ const PeminjamanPage: React.FC = () => {
               const m = k.perId.get(p.berkas_id);
               const telat = p.kembali_at && p.kembali_at.slice(0, 10) > p.tenggat;
               return (
-                <button key={p.id} type="button" onClick={() => m && navigate(`/arsip/map/${m.id}`)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40">
+                <button key={p.id} type="button" onClick={() => m && setDetail(m.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40">
                   <span className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0"><ArrowUpRight className="w-4 h-4" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold truncate">{p.peminjam} · {m?.nama_debitur ?? 'map terhapus'}</span>
@@ -107,6 +109,7 @@ const PeminjamanPage: React.FC = () => {
       <PinjamDialog map={pinjam} onClose={() => setPinjam(null)} namaTerakhir={[...new Set(k.pinjam.map((p) => p.peminjam))].slice(0, 20)} />
       <KembaliDialog map={kembali} isiLaci={kembali ? k.perLaci.get(kembali.kode_laci) ?? [] : []} onClose={() => setKembali(null)} />
       <CariArsip buka={cari} onBuka={setCari} k={k} onPinjam={setPinjam} />
+      <DetailMapDialog id={detail} onClose={() => setDetail(null)} />
     </MainLayout>
   );
 };

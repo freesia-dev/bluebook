@@ -622,13 +622,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
                 icon={Archive}
                 label="Arsip & Khasanah"
                 children={[
+                  // Cukup tiga pintu masuk. Daftar berkas, pindai QR, opname, dan
+                  // cetak label dibuka dari tombol di Peta Kabinet.
                   { label: 'Peta Kabinet', href: '/arsip' },
                   { label: 'Sortir Berkas', href: '/arsip/sortir' },
-                  { label: 'Daftar Berkas', href: '/arsip/daftar' },
                   { label: 'Peminjaman', href: '/arsip/pinjam' },
-                  { label: 'Pindai QR', href: '/arsip/pindai' },
-                  { label: 'Opname', href: '/arsip/opname' },
-                  { label: 'Cetak Label', href: '/arsip/label' },
                 ]}
                 openGroup={openGroup}
                 setOpenGroup={setOpenGroup}

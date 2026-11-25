@@ -9,6 +9,7 @@ import { LaciTerbuka, StripLaci } from '@/components/arsip/Kabinet';
 import { LencanaFisik, LencanaJenis, LencanaKredit } from '@/components/arsip/Lencana';
 import { KembaliDialog, PinjamDialog } from '@/components/arsip/DialogAksi';
 import { CariArsip, usePintasanCari } from '@/components/arsip/CariArsip';
+import { DetailMapDialog } from '@/components/arsip/DetailMap';
 import { KAPASITAS_LACI, namaKabinet, nomor, rupiahPendek, tglPanjang, urai } from '@/lib/arsip';
 import { ArrowLeft, ArrowUpRight, ClipboardCheck, FileText, Printer, Sparkles, Undo2, Layers, Search, GitBranch } from 'lucide-react';
 
@@ -20,6 +21,7 @@ const LaciPage: React.FC = () => {
   const [pinjam, setPinjam] = useState<MapLengkap | null>(null);
   const [kembali, setKembali] = useState<MapLengkap | null>(null);
   const [cari, setCari] = useState(false);
+  const [detail, setDetail] = useState<string | null>(null);
   usePintasanCari(setCari);
 
   const isi = useMemo(() => k.perLaci.get(kode) ?? [], [k.perLaci, kode]);
@@ -32,6 +34,8 @@ const LaciPage: React.FC = () => {
   useEffect(() => { if (isi.length && ms === null) setMs(Math.round(performance.now() - mulai)); }, [isi.length, ms, mulai]);
 
   const pilihMap = (m: MapLengkap) => setSp({ map: m.id }, { replace: true });
+  // ketuk nama map = pilih sekaligus buka detail berkasnya sebagai pop up
+  const bukaMap = (m: MapLengkap) => { pilihMap(m); setDetail(m.id); };
   const u = urai(kode);
   const jenis = isi[0]?.jenis_laci ?? (u?.ruang === 'khasanah' ? 'jaminan' : 'konsumtif');
   const jenisLabel = jenis === 'produktif' ? 'Produktif' : jenis === 'jaminan' ? 'Jaminan' : 'Konsumtif';
@@ -74,10 +78,10 @@ const LaciPage: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2 text-sm font-semibold">
                 <Sparkles className="w-4 h-4 text-secondary" />
-                {pilih ? 'Laci meluncur terbuka, map yang dicari terangkat' : 'Pilih map di laci atau di bilah bawah'}
+                {pilih ? 'Map terangkat — ketuk label atau kartunya untuk detail' : 'Ketuk label map di laci untuk melihat detailnya'}
                 {ms !== null && <span className="ml-auto rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[11px] text-primary">{ms} ms</span>}
               </div>
-              <LaciTerbuka kode={kode} isi={isi} pilih={pilih} onPilih={pilihMap} judulKabinet={namaKabinet(kode)} jenisLabel={jenisLabel} />
+              <LaciTerbuka kode={kode} isi={isi} pilih={pilih} onPilih={bukaMap} onBuka={(m) => setDetail(m.id)} judulKabinet={namaKabinet(kode)} jenisLabel={jenisLabel} />
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-sm bg-[#e9cd8f]" /> Map di tempat</span>
                 <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-sm bg-slate-300" /> Lunas</span>
@@ -107,7 +111,7 @@ const LaciPage: React.FC = () => {
             {isi.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">Laci ini belum berisi map. Isi lewat <Link className="underline" to="/arsip/sortir">Sortir Berkas</Link>.</p>}
             <div className="space-y-1">
               {sekitar.map((m) => (
-                <button key={m.id} type="button" onClick={() => pilihMap(m)}
+                <button key={m.id} type="button" onClick={() => bukaMap(m)}
                   className={cn('w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-left border', pilih?.id === m.id ? 'border-secondary bg-secondary/10' : 'border-transparent hover:bg-muted/60')}>
                   <span className={cn('font-mono text-xs font-bold rounded-md px-1.5 py-1', pilih?.id === m.id ? 'bg-secondary text-white' : 'bg-primary/10 text-primary')}>{nomor(m.nomor_urut)}</span>
                   <span className="min-w-0 flex-1">
@@ -148,7 +152,7 @@ const LaciPage: React.FC = () => {
                   ) : (
                     <Button className="h-11" onClick={() => setPinjam(pilih)} disabled={pilih.fisik === 'diserahkan'}><ArrowUpRight className="w-4 h-4 mr-1.5" />Pinjam</Button>
                   )}
-                  <Button variant="outline" className="h-11" onClick={() => navigate(`/arsip/map/${pilih.id}`)}><FileText className="w-4 h-4 mr-1.5" />Detail</Button>
+                  <Button variant="outline" className="h-11" onClick={() => setDetail(pilih.id)}><FileText className="w-4 h-4 mr-1.5" />Detail</Button>
                 </div>
               </div>
             )}
@@ -159,6 +163,7 @@ const LaciPage: React.FC = () => {
       <PinjamDialog map={pinjam} onClose={() => setPinjam(null)} namaTerakhir={[...new Set(k.pinjam.map((p) => p.peminjam))].slice(0, 20)} />
       <KembaliDialog map={kembali} isiLaci={isi} onClose={() => setKembali(null)} />
       <CariArsip buka={cari} onBuka={setCari} k={k} onPinjam={setPinjam} />
+      <DetailMapDialog id={detail} onClose={() => setDetail(null)} />
     </MainLayout>
   );
 };

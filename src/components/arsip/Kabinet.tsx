@@ -1,6 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { ScaleToFit } from '@/components/ui/scale-to-fit';
 import { KAPASITAS_LACI, LACI_PER_KABINET, QR_LACI, kodeLaci, nomor, type Ruang } from '@/lib/arsip';
 import type { MapLengkap } from '@/hooks/use-arsip-konteks';
 import './arsip.css';
@@ -108,74 +109,84 @@ export const StripLaci: React.FC<{
 
 /* ------------------------------------------------------------- laci terbuka */
 
+/** Label yang mencuat: nomor + nama depan, cukup untuk dikenali sekilas. */
+const teksLabel = (m: MapLengkap) =>
+  `${nomor(m.nomor_urut)} ${m.fisik === 'dipinjam' || m.fisik === 'terlambat' ? 'DIPINJAM' : m.nama_debitur.split(' ')[0]}`;
+
+const LAJUR = 4; // label digeser bergiliran ke 4 lajur supaya tidak saling menutupi
+
 export const LaciTerbuka: React.FC<{
   kode: string;
   isi: MapLengkap[];
   pilih: MapLengkap | null;
   onPilih: (m: MapLengkap) => void;
+  /** ketuk kartu map yang terangkat */
+  onBuka?: (m: MapLengkap) => void;
   judulKabinet: string;
   jenisLabel: string;
-}> = ({ kode, isi, pilih, onPilih, judulKabinet, jenisLabel }) => {
+}> = ({ kode, isi, pilih, onPilih, onBuka, judulKabinet, jenisLabel }) => {
   // Laci dilihat dari depan-atas: map 001 (belakang) paling atas dan paling
-  // sempit, map paling depan paling bawah dan paling lebar — seperti melihat
-  // ke dalam laci yang ditarik.
+  // sempit, map paling depan paling bawah dan paling lebar.
   const n = isi.length;
   return (
-    <div className="ab-panggung" key={kode}>
-      <div className="ab-badan ab-badan-atas">
-        <div className="ab-kabinet-kepala" style={{ margin: '0 -14px 0' }}>{judulKabinet.toUpperCase()}</div>
-        <div className="ab-laci"><span className="ab-laci-kode">—</span><span className="ab-laci-gagang" /></div>
-      </div>
+    <ScaleToFit mode="width" maxScale={1.4}>
+      <div className="ab-panggung" key={kode}>
+        <div className="ab-badan-atas">
+          <div className="ab-kabinet-kepala" style={{ margin: '0 -14px 0' }}>{judulKabinet.toUpperCase()}</div>
+          <div className="ab-laci"><span className="ab-laci-kode">—</span><span className="ab-laci-gagang" /></div>
+        </div>
 
-      <div className="ab-wadah">
-        <div className="ab-lantai" />
-        {isi.map((m, i) => {
-          const t = n <= 1 ? 1 : i / (n - 1);
-          const sisi = 9 - 8 * t; // persen dari tepi
-          const fs = 7 + 3 * t;
-          return (
-            <div
-              key={m.id}
-              onClick={() => onPilih(m)}
-              className={cn(
-                'ab-map',
-                (m.kredit === 'lunas' || m.kredit === 'topup') && 'ab-lunas',
-                (m.fisik === 'dipinjam' || m.fisik === 'terlambat') && 'ab-pinjam',
-                pilih?.id === m.id && 'ab-pilih',
-              )}
-              style={{ top: 4 + t * 140, left: `${sisi}%`, right: `${sisi}%`, zIndex: i + 1, fontSize: fs, paddingTop: fs * 0.2 }}
-              title={`${nomor(m.nomor_urut)} · ${m.nama_debitur}`}
-            >
-              {nomor(m.nomor_urut)} · {m.fisik === 'dipinjam' || m.fisik === 'terlambat' ? 'DIPINJAM' : m.nama_debitur}
-              <span className="ab-tab" style={{ right: `${6 + ((m.nomor_urut * 37) % 58)}%`, fontSize: fs }}>{nomor(m.nomor_urut)}</span>
-            </div>
-          );
-        })}
-      </div>
+        <div className="ab-wadah">
+          <div className="ab-lantai" />
+          {isi.map((m, i) => {
+            const t = n <= 1 ? 1 : i / (n - 1);
+            const sisi = 8 - 7 * t; // persen dari tepi
+            const lajur = (m.nomor_urut - 1) % LAJUR;
+            return (
+              <div
+                key={m.id}
+                onClick={() => onPilih(m)}
+                className={cn(
+                  'ab-map',
+                  (m.kredit === 'lunas' || m.kredit === 'topup') && 'ab-lunas',
+                  (m.fisik === 'dipinjam' || m.fisik === 'terlambat') && 'ab-pinjam',
+                  pilih?.id === m.id && 'ab-pilih',
+                )}
+                style={{ top: 26 + t * 146, left: `${sisi}%`, right: `${sisi}%`, zIndex: i + 1 }}
+                title={`${nomor(m.nomor_urut)} · ${m.nama_debitur}`}
+              >
+                <div className="ab-map-badan" />
+                <span className="ab-tab" style={{ left: `${2 + lajur * 24.5}%` }}>{teksLabel(m)}</span>
+              </div>
+            );
+          })}
+        </div>
 
-      {pilih && (
-        <div className="ab-kartu-map" key={pilih.id}>
-          <div className="flex items-start gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="font-display font-bold text-primary truncate">{pilih.nama_debitur}</div>
-              <div className="text-[10px] font-mono text-muted-foreground">MAP {nomor(pilih.nomor_urut)} · LACI {kode}</div>
+        {pilih && (
+          <div className="ab-kartu-map" key={pilih.id} onClick={() => onBuka?.(pilih)} title="Lihat detail berkas">
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="font-display font-bold text-primary truncate">{pilih.nama_debitur}</div>
+                <div className="text-[10px] font-mono text-muted-foreground">MAP {nomor(pilih.nomor_urut)} · LACI {kode}</div>
+                {onBuka && <div className="text-[10px] font-semibold text-secondary-foreground mt-0.5">Ketuk untuk detail berkas</div>}
+              </div>
+              <QRCodeSVG value={pilih.kode_map} size={40} level="M" />
             </div>
-            <QRCodeSVG value={pilih.kode_map} size={40} level="M" />
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="ab-muka">
-        <div className="rounded-lg bg-white text-primary px-3 py-1.5 flex items-center gap-3">
-          <span className="font-mono text-2xl font-bold leading-none">{kode.slice(1)}</span>
-          <span className="text-[9px] leading-tight">
-            <b className="text-secondary block tracking-widest">{jenisLabel.toUpperCase()}</b>
-            MAP 001 — {nomor(Math.max(isi.length, 1))}
-          </span>
+        <div className="ab-muka">
+          <div className="rounded-lg bg-white text-primary px-3 py-1.5 flex items-center gap-3">
+            <span className="font-mono text-2xl font-bold leading-none">{kode.slice(1)}</span>
+            <span className="text-[9px] leading-tight">
+              <b className="text-secondary block tracking-widest">{jenisLabel.toUpperCase()}</b>
+              MAP 001 — {nomor(Math.max(isi.length, 1))}
+            </span>
+          </div>
+          <span className="mx-auto h-2 w-20 rounded-full bg-white/70" />
+          <div className="rounded-md bg-white p-1"><QRCodeSVG value={QR_LACI(kode)} size={40} level="M" /></div>
         </div>
-        <span className="mx-auto h-2 w-20 rounded-full bg-white/70" />
-        <div className="rounded-md bg-white p-1"><QRCodeSVG value={QR_LACI(kode)} size={40} level="M" /></div>
       </div>
-    </div>
+    </ScaleToFit>
   );
 };

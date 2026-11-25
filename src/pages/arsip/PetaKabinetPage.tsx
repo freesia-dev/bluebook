@@ -9,13 +9,15 @@ import { useArsipKonteks, type MapLengkap } from '@/hooks/use-arsip-konteks';
 import { KabinetIlustrasi } from '@/components/arsip/Kabinet';
 import { CariArsip, usePintasanCari } from '@/components/arsip/CariArsip';
 import { PinjamDialog } from '@/components/arsip/DialogAksi';
+import { DetailMapDialog } from '@/components/arsip/DetailMap';
 import {
   KABINET, KAPASITAS_LACI, jamAtauTanggal, rupiahPendek, selisihHari, semuaLaci, type Ruang,
 } from '@/lib/arsip';
 import {
   FolderOpen, Layers, ArrowUpRight, Link2, Printer, ClipboardCheck, ScanLine, Search, History,
-  Undo2, GitBranch, AlarmClock, AlertTriangle, HandHeart, Archive,
+  Undo2, GitBranch, AlarmClock, AlertTriangle, HandHeart, Archive, MoreHorizontal, List,
 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const Stat: React.FC<{ ikon: React.ElementType; warna: string; judul: string; angka: React.ReactNode; sub: string }> = ({ ikon: Ikon, warna, judul, angka, sub }) => (
   <Card>
@@ -36,6 +38,7 @@ const PetaKabinetPage: React.FC = () => {
   const [ruang, setRuang] = useState<Ruang>('berkas');
   const [cari, setCari] = useState(false);
   const [pinjam, setPinjam] = useState<MapLengkap | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
   usePintasanCari(setCari);
 
   const stat = useMemo(() => {
@@ -53,16 +56,16 @@ const PetaKabinetPage: React.FC = () => {
   }, [k]);
 
   const aktivitas = useMemo(() => {
-    const ev: { waktu: string; ikon: React.ElementType; judul: string; sub: string; ke?: string }[] = [];
+    const ev: { waktu: string; ikon: React.ElementType; judul: string; sub: string; ke?: string; map?: string }[] = [];
     k.pinjam.slice(0, 40).forEach((p) => {
       const m = k.perId.get(p.berkas_id);
       if (!m) return;
-      ev.push({ waktu: p.dipinjam_at, ikon: ArrowUpRight, judul: `${p.peminjam} meminjam map`, sub: `${m.nama_debitur} · laci ${m.kode_laci.slice(1)}`, ke: `/arsip/map/${m.id}` });
-      if (p.kembali_at) ev.push({ waktu: p.kembali_at, ikon: Undo2, judul: `${p.peminjam} mengembalikan map`, sub: `${m.nama_debitur} · laci ${m.kode_laci.slice(1)}`, ke: `/arsip/map/${m.id}` });
+      ev.push({ waktu: p.dipinjam_at, ikon: ArrowUpRight, judul: `${p.peminjam} meminjam map`, sub: `${m.nama_debitur} · laci ${m.kode_laci.slice(1)}`, map: m.id });
+      if (p.kembali_at) ev.push({ waktu: p.kembali_at, ikon: Undo2, judul: `${p.peminjam} mengembalikan map`, sub: `${m.nama_debitur} · laci ${m.kode_laci.slice(1)}`, map: m.id });
     });
     [...k.maps].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 15).forEach((m) => {
-      ev.push({ waktu: m.created_at, ikon: Archive, judul: 'Map masuk laci', sub: `${m.nama_debitur} · laci ${m.kode_laci.slice(1)} #${String(m.nomor_urut).padStart(3, '0')}`, ke: `/arsip/map/${m.id}` });
-      if (m.diserahkan_at) ev.push({ waktu: m.diserahkan_at, ikon: HandHeart, judul: 'Jaminan diserahkan', sub: `${m.nama_debitur} → ${m.diserahkan_kepada}`, ke: `/arsip/map/${m.id}` });
+      ev.push({ waktu: m.created_at, ikon: Archive, judul: 'Map masuk laci', sub: `${m.nama_debitur} · laci ${m.kode_laci.slice(1)} #${String(m.nomor_urut).padStart(3, '0')}`, map: m.id });
+      if (m.diserahkan_at) ev.push({ waktu: m.diserahkan_at, ikon: HandHeart, judul: 'Jaminan diserahkan', sub: `${m.nama_debitur} → ${m.diserahkan_kepada}`, map: m.id });
     });
     return ev.sort((a, b) => b.waktu.localeCompare(a.waktu)).slice(0, 6);
   }, [k]);
@@ -98,9 +101,17 @@ const PetaKabinetPage: React.FC = () => {
             <Button variant="outline" className="h-11" onClick={() => setCari(true)}>
               <Search className="w-4 h-4 mr-2" /> Cari map <kbd className="ml-2 hidden sm:inline text-[10px] rounded border px-1">Ctrl K</kbd>
             </Button>
-            <Button variant="outline" className="h-11" onClick={() => navigate('/arsip/label')}><Printer className="w-4 h-4 mr-2" />Cetak label</Button>
-            <Button variant="outline" className="h-11" onClick={() => navigate('/arsip/opname')}><ClipboardCheck className="w-4 h-4 mr-2" />Opname</Button>
             <Button className="h-11" onClick={() => navigate('/arsip/pindai')}><ScanLine className="w-4 h-4 mr-2" />Pindai QR</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-11"><MoreHorizontal className="w-4 h-4 mr-2" />Lainnya</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => navigate('/arsip/daftar')}><List className="w-4 h-4 mr-2" />Daftar berkas</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/arsip/opname')}><ClipboardCheck className="w-4 h-4 mr-2" />Opname & rapikan laci</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/arsip/label')}><Printer className="w-4 h-4 mr-2" />Cetak label QR</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         }
       />
@@ -161,7 +172,7 @@ const PetaKabinetPage: React.FC = () => {
             {aktivitas.length === 0 && <p className="text-sm text-muted-foreground py-4">Belum ada aktivitas.</p>}
             <div className="divide-y">
               {aktivitas.map((a, i) => (
-                <button key={i} type="button" onClick={() => a.ke && navigate(a.ke)} className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-muted/40 rounded-lg px-1">
+                <button key={i} type="button" onClick={() => (a.map ? setDetail(a.map) : a.ke && navigate(a.ke))} className="w-full flex items-center gap-3 py-2.5 text-left hover:bg-muted/40 rounded-lg px-1">
                   <span className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0"><a.ikon className="w-4 h-4" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold truncate">{a.judul}</span>
@@ -193,6 +204,7 @@ const PetaKabinetPage: React.FC = () => {
       </div>
 
       <CariArsip buka={cari} onBuka={setCari} k={k} onPinjam={setPinjam} />
+      <DetailMapDialog id={detail} onClose={() => setDetail(null)} />
       <PinjamDialog map={pinjam} onClose={() => setPinjam(null)} namaTerakhir={[...new Set(k.pinjam.map((p) => p.peminjam))].slice(0, 20)} />
     </MainLayout>
   );

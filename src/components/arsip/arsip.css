@@ -86,21 +86,21 @@
 
 /* ------------------------------------------------------------- laci terbuka */
 
+/* Panggung laci digambar di kanvas tetap 480 × 360 px, lalu seluruhnya
+   diskalakan mengikuti lebar layar (ScaleToFit). Jadi di HP, tablet, maupun
+   PWA bentuknya selalu sama — tidak ada bagian yang berubah ukuran sendiri
+   atau terpotong. */
 .ab-panggung {
   position: relative;
-  height: 340px;
-  perspective: 900px;
-  perspective-origin: 50% -10%;
+  width: 480px;
+  height: 360px;
   overflow: hidden;
 }
-.ab-badan {
-  position: absolute;
-  left: 50%;
-  width: min(480px, 92%);
-  transform: translateX(-50%);
-}
 .ab-badan-atas {
+  position: absolute;
+  left: 0;
   top: 0;
+  width: 480px;
   height: 150px;
   border-radius: 14px 14px 6px 6px;
   background: linear-gradient(180deg, hsl(214 25% 86%), hsl(214 22% 78%));
@@ -112,84 +112,96 @@
 
 .ab-wadah {
   position: absolute;
-  left: 50%;
-  top: 118px;
-  width: min(450px, 86%);
-  height: 178px;
-  transform: translateX(-50%);
+  left: 18px;
+  top: 112px;
+  width: 444px;
+  height: 196px;
   animation: ab-tarik 0.7s cubic-bezier(0.2, 1.05, 0.35, 1) both;
 }
 /* bagian dalam laci, dilihat dari depan-atas: menyempit ke belakang */
 .ab-lantai {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: 14px;
+  bottom: 0;
   clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%);
   background: linear-gradient(180deg, hsl(214 18% 62%), hsl(214 22% 80%));
 }
 .dark .ab-lantai { background: linear-gradient(180deg, hsl(215 20% 14%), hsl(215 20% 26%)); }
+
+/* Satu map. Badannya memotong teks sendiri, tapi labelnya (.ab-tab) mencuat
+   ke atas di luar badan — seperti label tempel di map sungguhan — jadi tetap
+   terbaca di antara tumpukan. */
 .ab-map {
   position: absolute;
   height: 30px;
-  border-radius: 3px 3px 0 0;
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(0.2, 1.3, 0.4, 1), filter 0.15s;
+}
+.ab-map-badan {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px 2px 0 0;
   background: linear-gradient(180deg, #f8e7bd, #e6c985);
   border: 1px solid #c9a65c;
   border-bottom: none;
-  box-shadow: 0 -1px 0 hsl(0 0% 100% / 0.6) inset;
-  cursor: pointer;
-  transition: transform 0.35s cubic-bezier(0.2, 1.3, 0.4, 1), filter 0.15s;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: #6b5320;
-  padding: 1px 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  line-height: 1.25;
+  box-shadow: 0 -1px 0 hsl(0 0% 100% / 0.6) inset, 0 -2px 4px -2px rgb(0 0 0 / 0.25);
 }
-.ab-map:hover { filter: brightness(1.08); transform: translateY(-3px); }
-.ab-map.ab-lunas { background: linear-gradient(180deg, #eef0f4, #cfd5de); border-color: #aab3c0; color: #536072; }
-.ab-map.ab-pinjam { background: linear-gradient(180deg, hsl(222 35% 22%), hsl(222 40% 12%)); border-color: hsl(222 40% 8%); color: hsl(38 92% 60%); }
-.ab-map.ab-pilih {
+.ab-map:hover { filter: brightness(1.07); transform: translateY(-3px); z-index: 400 !important; }
+.ab-map.ab-lunas .ab-map-badan { background: linear-gradient(180deg, #eef0f4, #cfd5de); border-color: #aab3c0; }
+.ab-map.ab-pinjam .ab-map-badan { background: linear-gradient(180deg, hsl(222 35% 22%), hsl(222 40% 12%)); border-color: hsl(222 40% 8%); }
+.ab-map.ab-pilih { transform: translateY(-20px); z-index: 500 !important; }
+.ab-map.ab-pilih .ab-map-badan {
   background: linear-gradient(180deg, #fff, #fff4e6);
-  border-color: hsl(var(--secondary));
-  border-width: 2px;
-  color: hsl(var(--primary));
-  transform: translateY(-22px);
-  z-index: 500 !important;
+  border: 2px solid hsl(var(--secondary));
+  border-bottom: none;
   box-shadow: 0 -6px 14px -4px hsl(var(--secondary) / 0.55);
 }
 .ab-tab {
   position: absolute;
-  top: 0;
+  bottom: 100%;
+  height: 14px;
+  max-width: 24%;
   padding: 0 5px;
-  border-radius: 0 0 3px 3px;
-  background: hsl(38 65% 58%);
-  color: #4a3510;
+  border-radius: 4px 4px 0 0;
+  border: 1px solid #b48a3c;
+  border-bottom: none;
+  background: hsl(45 92% 70%);
+  color: #3f2c08;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
   font-weight: 700;
+  line-height: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.ab-map.ab-lunas .ab-tab { background: #b9c1cd; color: #3d4756; }
-.ab-map.ab-pilih .ab-tab { background: hsl(var(--secondary)); color: #fff; }
+.ab-map.ab-lunas .ab-tab { background: #c7ced8; border-color: #9aa4b2; color: #2f3846; }
+.ab-map.ab-pinjam .ab-tab { background: hsl(222 40% 16%); border-color: hsl(222 40% 8%); color: hsl(38 92% 62%); }
+.ab-map.ab-pilih .ab-tab { background: hsl(var(--secondary)); border-color: hsl(var(--secondary)); color: #fff; height: 16px; line-height: 15px; font-size: 10px; max-width: 44%; }
 
 .ab-kartu-map {
   position: absolute;
-  left: 50%;
-  top: 84px;
-  width: min(330px, 74%);
-  transform: translateX(-50%);
+  left: 75px;
+  top: 40px;
+  width: 330px;
   z-index: 10;
   border-radius: 10px;
   border: 2px solid hsl(var(--secondary));
   background: hsl(var(--card));
   box-shadow: 0 18px 30px -12px hsl(207 60% 20% / 0.5);
   padding: 10px 12px;
+  cursor: pointer;
   animation: ab-angkat 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) 0.45s both;
 }
 
 .ab-muka {
   position: absolute;
-  left: 50%;
-  bottom: 6px;
-  width: min(480px, 92%);
+  left: 0;
+  top: 284px;
+  width: 480px;
   height: 70px;
-  transform: translateX(-50%);
   border-radius: 10px 10px 14px 14px;
   background: linear-gradient(180deg, hsl(207 80% 40%), hsl(207 87% 24%));
   box-shadow: 0 16px 24px -12px hsl(207 70% 15% / 0.7), inset 0 2px 0 hsl(207 80% 55%);
@@ -203,16 +215,16 @@
 }
 
 @keyframes ab-tarik {
-  from { transform: translateX(-50%) translateY(-70px) scale(0.86); opacity: 0.2; }
-  to   { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  from { transform: translateY(-70px) scale(0.86); opacity: 0.2; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 @keyframes ab-muka {
-  from { transform: translateX(-50%) translateY(-150px) scale(0.9); }
-  to   { transform: translateX(-50%) translateY(0) scale(1); }
+  from { transform: translateY(-150px) scale(0.9); }
+  to   { transform: translateY(0) scale(1); }
 }
 @keyframes ab-angkat {
-  from { opacity: 0; transform: translateX(-50%) translateY(40px) scale(0.92); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(40px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ------------------------------------------------------------- strip isi laci */
