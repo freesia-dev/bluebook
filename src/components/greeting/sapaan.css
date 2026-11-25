@@ -1,3 +1,15 @@
+/* Huruf Arab untuk ayat Al-Qur'an (Amiri, SIL OFL 1.1 — lihat
+   src/assets/fonts/AMIRI-OFL.txt). Disimpan di aplikasi sendiri supaya
+   tetap tampil benar tanpa internet / di PWA. */
+@font-face {
+  font-family: 'Amiri Bluebook';
+  src: url('../../assets/fonts/amiri-arabic-700.woff2') format('woff2');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Sapaan harian — Poster Bangau                                             */
 /*                                                                            */
@@ -162,9 +174,32 @@
   transform: rotate(var(--miring, -2.5deg));
   animation: sp-tempel 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.45s both;
 }
-.sp-kutip--pendek { font-size: 23px; }
-.sp-kutip--sedang { font-size: 19px; }
-.sp-kutip--panjang { font-size: 16px; }
+.sp-kutip { max-height: 52vh; overflow-y: auto; }
+.sp-arab {
+  margin: 0 0 0.45em;
+  font-family: 'Amiri Bluebook', 'Amiri', 'Noto Naskh Arabic', 'Traditional Arabic', serif;
+  font-weight: 700;
+  line-height: 1.9;
+  letter-spacing: 0;
+  text-align: right;
+}
+.sp-teks { margin: 0; }
+.sp-sumber {
+  display: block;
+  margin-top: 0.6em;
+  font-style: normal;
+  font-size: 0.62em;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.sp-kutip--pendek  { font-size: 19px; } .sp-kutip--pendek  .sp-arab { font-size: 1.7em; }
+.sp-kutip--sedang  { font-size: 16px; } .sp-kutip--sedang  .sp-arab { font-size: 1.55em; }
+.sp-kutip--panjang { font-size: 14px; } .sp-kutip--panjang .sp-arab { font-size: 1.45em; }
+.sp-teks { font-weight: 700; }
+/* ayat panjang: judul sedikit dinaikkan dan dikecilkan supaya tidak bertumpuk */
+.sp--panjang .sp-judul { top: 13vh; font-size: min(calc(140vw / var(--n)), 16vh, 130px); }
 
 /* ------------------------------------------------------------- pita */
 .sp-pita {
@@ -212,7 +247,7 @@
     top: auto;
     bottom: 19vh;
     /* sisakan ±34% layar kanan untuk kotak kutipan */
-    font-size: min(calc(100vw / var(--n)), 31vh, 340px);
+    font-size: min(calc(84vw / var(--n)), 31vh, 300px);
   }
 
   .sp-kutip {
@@ -220,14 +255,16 @@
     right: 4.5vw;
     top: 17vh;
     bottom: auto;
-    width: min(460px, 31vw);
+    width: min(560px, 38vw);
     max-width: none;
+    max-height: 66vh;
     padding: 26px 32px;
     box-shadow: 12px 12px 0 rgb(0 0 0 / 0.35);
   }
-  .sp-kutip--pendek { font-size: min(36px, 2.6vw); }
-  .sp-kutip--sedang { font-size: min(30px, 2.2vw); }
-  .sp-kutip--panjang { font-size: min(25px, 1.85vw); }
+  .sp-kutip--pendek { font-size: min(28px, 2vw); }
+  .sp-kutip--sedang { font-size: min(23px, 1.65vw); }
+  .sp-kutip--panjang { font-size: min(19px, 1.35vw); }
+  .sp--panjang .sp-judul { top: auto; font-size: min(calc(84vw / var(--n)), 31vh, 300px); }
 
   .sp-pita { bottom: 5vh; height: 54px; }
   .sp-pita-jalan span { font-size: 19px; }
