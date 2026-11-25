@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useArsipKonteks } from '@/hooks/use-arsip-konteks';
 import { LabelLaci, LabelMap } from '@/components/arsip/Label';
 import { KABINET, LACI_PER_KABINET, kodeLaci, nomor, type Ruang } from '@/lib/arsip';
-import { Printer } from 'lucide-react';
+import { Printer, ArrowLeft } from 'lucide-react';
 import '@/components/arsip/arsip.css';
 
 type Tata = 'a4' | 'gulung';
@@ -20,6 +20,7 @@ type Tata = 'a4' | 'gulung';
  * (3 kolom × 9 baris label 62×29 mm) atau gulungan printer label 62 mm.
  */
 const CetakLabelPage: React.FC = () => {
+  const navigate = useNavigate();
   const k = useArsipKonteks();
   const [sp] = useSearchParams();
   const [ruang, setRuang] = useState<Ruang>(sp.get('laci')?.startsWith('J') ? 'khasanah' : 'berkas');
@@ -53,6 +54,9 @@ const CetakLabelPage: React.FC = () => {
 
   return (
     <MainLayout>
+      <button type="button" onClick={() => navigate('/arsip')} className="text-sm text-muted-foreground flex items-center gap-1 mb-2 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Peta kabinet
+      </button>
       <div>
         <PageHeader
           title="Cetak Label"

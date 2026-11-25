@@ -11,7 +11,7 @@ import { useArsipKonteks, type MapLengkap } from '@/hooks/use-arsip-konteks';
 import { PemindaiQR } from '@/components/arsip/PemindaiQR';
 import { StripLaci } from '@/components/arsip/Kabinet';
 import { KABINET, LACI_PER_KABINET, kodeLaci, nomor, tglPanjang, type IsiQR, type Ruang } from '@/lib/arsip';
-import { CheckCircle2, ArrowDown, AlertTriangle, SearchX, Undo, ClipboardCheck, Search, Sparkles } from 'lucide-react';
+import { CheckCircle2, ArrowDown, AlertTriangle, SearchX, Undo, ClipboardCheck, Search, Sparkles, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
@@ -84,6 +84,9 @@ const OpnamePage: React.FC = () => {
   if (!laci) {
     return (
       <MainLayout>
+      <button type="button" onClick={() => navigate('/arsip')} className="text-sm text-muted-foreground flex items-center gap-1 mb-2 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Peta kabinet
+      </button>
         <PageHeader title="Opname & rapikan laci" description="Pilih laci, atau scan label di muka laci." />
         <div className="grid lg:grid-cols-[1fr_1fr] gap-4">
           <Card>
@@ -122,6 +125,9 @@ const OpnamePage: React.FC = () => {
     const isiBaru = k.perLaci.get(laci) ?? [];
     return (
       <MainLayout>
+      <button type="button" onClick={() => navigate('/arsip')} className="text-sm text-muted-foreground flex items-center gap-1 mb-2 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Peta kabinet
+      </button>
         <PageHeader title={`Laci ${laci.slice(1)} selesai dirapikan`} description="Hasil rapikan sekaligus jadi catatan opname." />
         <div className="grid lg:grid-cols-2 gap-4">
           <Card>
@@ -157,6 +163,9 @@ const OpnamePage: React.FC = () => {
   const sisaLama = isiLama.filter((m) => !urutan.some((x) => x.id === m.id));
   return (
     <MainLayout>
+      <button type="button" onClick={() => navigate('/arsip')} className="text-sm text-muted-foreground flex items-center gap-1 mb-2 hover:text-foreground">
+        <ArrowLeft className="w-4 h-4" /> Peta kabinet
+      </button>
       <PageHeader
         title={`Rapikan laci ${laci.slice(1)}`}
         description="Scan map satu per satu, mulai dari yang paling BELAKANG laci."
