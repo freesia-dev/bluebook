@@ -14,11 +14,28 @@ export interface Periode {
   label: string;
 }
 
+/**
+ * Penanda satu rekening tertentu milik debitur, kalau yang dimaksud bukan
+ * semua rekeningnya. Boleh diisi salah satu saja.
+ */
+export interface PilihRekening {
+  /** tanggal akad YYYY-MM-DD */
+  akad?: string;
+  /** tahun akad */
+  tahun?: number;
+  /** plafon (rupiah), dicocokkan ±5% */
+  plafon?: number;
+  /** nomor PK atau nomor rekening, sebagian juga boleh */
+  nomor?: string;
+  /** diisi Bluebook setelah dicocokkan: nomor loan (l0lnno) yang kena */
+  ln?: string[];
+}
+
 /** Satu langkah "bagaimana jika". */
 export type Skenario =
-  | { aksi: 'kol'; nama: string; kol: number }
-  | { aksi: 'lunas'; nama: string }
-  | { aksi: 'bayar'; nama: string }
+  | { aksi: 'kol'; nama: string; kol: number; rek?: PilihRekening }
+  | { aksi: 'lunas'; nama: string; rek?: PilihRekening }
+  | { aksi: 'bayar'; nama: string; rek?: PilihRekening }
   | { aksi: 'cair'; nominal: number }
   | { aksi: 'kol2_turun' };
 
@@ -75,16 +92,29 @@ function periodeAman(p: any): Periode | null {
   return p.dari <= p.sampai ? { dari: p.dari, sampai: p.sampai, label } : { dari: p.sampai, sampai: p.dari, label };
 }
 
+function rekAman(r: any): PilihRekening | undefined {
+  if (!r || typeof r !== 'object') return undefined;
+  const o: PilihRekening = {};
+  if (tglAman(r.akad)) o.akad = r.akad;
+  const th = Number(r.tahun);
+  if (Number.isInteger(th) && th >= 1990 && th <= 2100) o.tahun = th;
+  const pl = Number(r.plafon);
+  if (Number.isFinite(pl) && pl > 0) o.plafon = pl;
+  const no = teks(r.nomor, 60);
+  if (no) o.nomor = no;
+  return Object.keys(o).length ? o : undefined;
+}
+
 function skenarioAman(s: any): Skenario | null {
   switch (s?.aksi) {
     case 'kol': {
       const nama = teks(s.nama);
-      return nama ? { aksi: 'kol', nama, kol: angka(s.kol, 1, 5, 5) } : null;
+      return nama ? { aksi: 'kol', nama, kol: angka(s.kol, 1, 5, 5), rek: rekAman(s.rekening ?? s.rek) } : null;
     }
     case 'lunas':
     case 'bayar': {
       const nama = teks(s.nama);
-      return nama ? { aksi: s.aksi, nama } : null;
+      return nama ? { aksi: s.aksi, nama, rek: rekAman(s.rekening ?? s.rek) } : null;
     }
     case 'cair': {
       const nominal = angka(s.nominal, 1, 1e13, 0);

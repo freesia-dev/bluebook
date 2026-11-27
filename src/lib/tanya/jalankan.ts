@@ -9,7 +9,7 @@ import type { BerkasArsip, RekeningMaster } from '@/hooks/use-arsip';
 import { getAngsuranPokok, getJangkaWaktuBulan, getUnit, isProduktif, jenisProduktif } from '@/lib/produktif-utils';
 import { tanggalAngsuran } from '@/lib/pipeline-segmen';
 import { calcAmortization } from '@/lib/loan-calc';
-import { iso, LABEL_UNIT, type Perintah, type Skenario, type UnitTanya } from './perintah';
+import { iso, LABEL_UNIT, type Perintah, type PilihRekening, type Skenario, type UnitTanya } from './perintah';
 import {
   nadaKol, nadaNpl, persen, rp, tgl, tglHari,
   type HasilTanya, type Jawaban, type JawabTabel, type KreditProfil, type MapProfil, type Lencana,
@@ -102,6 +102,35 @@ export function cariNama<T extends { l0name?: string | null }>(rows: T[], nama: 
   });
   const namaUnik = Array.from(new Set(cocok.map((r) => (r.l0name || '').trim()).filter(Boolean)));
   return { persis: false, nama: namaUnik, rows: cocok };
+}
+
+/**
+ * Seperti cariNama, tapi kalau tidak ketemu, kata di belakang dibuang satu
+ * per satu — "endang purwaningsih akad 26 sep" tetap menemukan ENDANG
+ * PURWANINGSIH walau ada kata yang tidak dikenali.
+ */
+export function cariNamaLonggar<T extends { l0name?: string | null }>(rows: T[], nama: string) {
+  const kata = nama.trim().split(/\s+/);
+  for (let n = kata.length; n >= 1; n--) {
+    const coba = kata.slice(0, n).join(' ');
+    if (kunciNama(coba).length < 3) break;
+    const c = cariNama(rows, coba);
+    if (c.nama.length) return c;
+  }
+  return cariNama(rows, nama);
+}
+
+/** Apakah baris MLF cocok dengan penanda rekening yang disebut. */
+export function cocokRekening(r: MLFRow, rek: PilihRekening): boolean {
+  if (rek.akad && (r.date || '').slice(0, 10) !== rek.akad) return false;
+  if (rek.tahun && (r.date || '').slice(0, 4) !== String(rek.tahun)) return false;
+  if (rek.plafon && Math.abs(n(r.pla) - rek.plafon) > rek.plafon * 0.05) return false;
+  if (rek.nomor) {
+    const no = rek.nomor.toUpperCase().replace(/\s+/g, '');
+    const narr = (r.l0narr || '').toUpperCase().replace(/\s+/g, '');
+    if (!narr.includes(no) && r.l0lnno !== rek.nomor) return false;
+  }
+  return true;
 }
 
 const urutTanggal = (a: string | null, b: string | null) => (a || '9999').localeCompare(b || '9999');
@@ -199,7 +228,7 @@ function bantuan(): Jawaban {
 
 // ------------------------------------------------------------------ profil
 async function profil(nama: string, rows: MLFRow[], d: SumberData, tglData: string): Promise<HasilTanya> {
-  const cari = cariNama(rows, nama);
+  const cari = cariNamaLonggar(rows, nama);
   let master: RekeningMaster[] = [];
   try {
     master = await d.arsipMaster();
@@ -753,10 +782,13 @@ async function rencana(p: Extract<Perintah, { jenis: 'rencana_kunjungan' }>, row
 }
 
 // ------------------------------------------------------------------ simulasi
+const labelRek = (r?: PilihRekening) =>
+  !r ? '' : r.akad ? ` (akad ${tgl(r.akad)})` : r.tahun ? ` (akad ${r.tahun})` : r.plafon ? ` (plafon ${rp(r.plafon)})` : r.nomor ? ` (${r.nomor.toUpperCase()})` : '';
+
 const LABEL_LANGKAH = (s: Skenario) =>
-  s.aksi === 'kol' ? `${s.nama} → kol ${s.kol}`
-    : s.aksi === 'lunas' ? `${s.nama} lunas`
-      : s.aksi === 'bayar' ? `${s.nama} bayar tunggakan`
+  s.aksi === 'kol' ? `${s.nama}${labelRek(s.rek)} → kol ${s.kol}`
+    : s.aksi === 'lunas' ? `${s.nama}${labelRek(s.rek)} lunas`
+      : s.aksi === 'bayar' ? `${s.nama}${labelRek(s.rek)} bayar tunggakan`
         : s.aksi === 'cair' ? `cair ${rp(s.nominal)}`
           : 'kol 2 → kol 3';
 
@@ -773,7 +805,7 @@ function simulasi(
   const final: Skenario[] = [...(lama?.langkah ?? [])];
   for (const s of p.langkah) {
     if (s.aksi === 'kol' || s.aksi === 'lunas' || s.aksi === 'bayar') {
-      const c = cariNama(rows, s.nama);
+      const c = cariNamaLonggar(rows, s.nama);
       if (!c.nama.length) {
         return {
           paham: ['simulasi', LABEL_LANGKAH(s)],
@@ -788,26 +820,55 @@ function simulasi(
             pola.test(ctx.kalimat) ? ctx.kalimat.replace(pola, `"${nm}"`) : `simulasikan kalau "${nm}" ${s.aksi === 'kol' ? `jadi kol ${s.kol}` : s.aksi === 'lunas' ? 'lunas' : 'bayar tunggakan'}`),
         };
       }
-      final.push({ ...s, nama: c.nama[0] });
+      const namaPasti = c.nama[0];
+      if (s.rek && !s.rek.ln) {
+        const milik = rows.filter((r) => kunciNama(r.l0name) === kunciNama(namaPasti));
+        const cocok = milik.filter((r) => cocokRekening(r, s.rek!));
+        if (!cocok.length) {
+          const aksiTeks = s.aksi === 'kol' ? `jadi kol ${s.kol}` : s.aksi === 'lunas' ? 'lunas' : 'bayar tunggakan';
+          return {
+            paham: ['simulasi', LABEL_LANGKAH({ ...s, nama: namaPasti })],
+            jawab: {
+              tipe: 'pilih',
+              teks: `${namaPasti} tidak punya rekening${labelRek(s.rek)} di MLF ${tglData}. Rekening yang ada:`,
+              opsi: milik.map((r) => ({
+                label: `Akad ${tgl(r.date)} · ${rp(n(r.pla))}`,
+                sub: `${r.l0narr || r.l0lnno} · baki ${rp(n(r.baki))} · kol ${kolOf(r)}`,
+                kirim: `simulasikan kalau "${namaPasti}" rekening ${r.l0narr || r.l0lnno} ${aksiTeks}${unit !== 'semua' ? `, berapa NPL ${unit}?` : ''}`,
+              })),
+            },
+          };
+        }
+        final.push({ ...s, nama: namaPasti, rek: { ...s.rek, ln: cocok.map((r) => r.l0lnno || r.id) } });
+      } else {
+        final.push({ ...s, nama: namaPasti });
+      }
     } else {
       final.push(s);
     }
   }
 
+  const catatanRek: string[] = [];
   const salin = rows.map((r) => ({ ...r }));
   let data = salin;
   const perubahan: Extract<Jawaban, { tipe: 'simulasi' }>['perubahan'] = [];
   for (const s of final) {
     if (s.aksi === 'kol' || s.aksi === 'lunas' || s.aksi === 'bayar') {
       const kn = kunciNama(s.nama);
-      const kena = data.filter((r) => kunciNama(r.l0name) === kn);
+      const ln = s.rek?.ln;
+      const kenaRek = (r: MLFRow) => kunciNama(r.l0name) === kn && (!ln || ln.includes(r.l0lnno || r.id));
+      const kena = data.filter(kenaRek);
+      const sisaRek = ln ? data.filter((r) => kunciNama(r.l0name) === kn && !kenaRek(r)) : [];
       const baki = kena.reduce((a, r) => a + n(r.baki), 0);
       const kolLama = Math.max(0, ...kena.map(kolOf));
       if (s.aksi === 'kol') {
         kena.forEach((r) => { r.kol = s.kol; });
+        if (sisaRek.length) {
+          catatanRek.push(`Hanya ${kena.length} rekening ${s.nama}${labelRek(s.rek)} yang diubah; ${sisaRek.length} rekening lainnya (baki ${rp(sisaRek.reduce((a, r) => a + n(r.baki), 0))}) tetap kol ${Math.max(...sisaRek.map(kolOf))}. Catatan: aturan OJK biasanya menyamakan kol semua rekening satu debitur di bank yang sama.`);
+        }
         perubahan.push({ nama: s.nama, ket: `${kena.length} rekening · baki ${rp(baki)}`, sebelum: `Kol ${kolLama}`, sesudah: `Kol ${s.kol}`, nadaSesudah: nadaKol(s.kol) });
       } else if (s.aksi === 'lunas') {
-        data = data.filter((r) => kunciNama(r.l0name) !== kn);
+        data = data.filter((r) => !kenaRek(r));
         perubahan.push({ nama: s.nama, ket: `${kena.length} rekening · baki ${rp(baki)}`, sebelum: `Kol ${kolLama}`, sesudah: 'Lunas', nadaSesudah: 'abu' });
       } else {
         const tg = kena.reduce((a, r) => a + tunggakan(r), 0);
@@ -838,6 +899,7 @@ function simulasi(
   const catatan = [
     `Rumus: baki kol 3–5 ÷ baki kol 1–5 ${unit === 'semua' ? 'KCP Telihan' : LABEL_UNIT[unit]} (ekstrakomtabel tidak dihitung). Sesudah: ${rp(sesudah.bermasalah)} ÷ ${rp(sesudah.dasar)}.`,
     `Dihitung dari MLF ${tglData}. Baki debitur lain dan angsuran yang berjalan sampai bulan yang disebut tidak ikut diperkirakan.`,
+    ...catatanRek,
     ...catatanUnit(rows, unit),
   ];
   return {
