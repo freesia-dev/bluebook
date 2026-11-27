@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/ui/page-header';
+import { TanyaBluebook, TombolTanya } from '@/components/tanya/TanyaBluebook';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -309,6 +310,7 @@ const ExecutiveDashboardPage: React.FC = () => {
       <PageHeader
         title="Executive Dashboard"
         description="Ringkasan KPI portofolio kredit, kualitas aset, dan pipeline — khusus Pemimpin."
+        actions={<TombolTanya />}
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-5">
@@ -594,6 +596,7 @@ const ExecutiveDashboardPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      <TanyaBluebook />
     </MainLayout>
   );
 };

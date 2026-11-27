@@ -61,6 +61,7 @@
 .sp-tint {
   position: absolute;
   inset: 0;
+  opacity: var(--kepekatan, 1);
   background: linear-gradient(
     var(--sudut, 100deg),
     rgb(var(--tint) / 0.94) 0%,
@@ -151,7 +152,7 @@
   letter-spacing: -0.035em;
   text-transform: uppercase;
   /* --n = jumlah huruf baris terpanjang, supaya nama panjang otomatis mengecil */
-  font-size: min(calc(160vw / var(--n)), 21vh, 150px);
+  font-size: calc(min(calc(160vw / var(--n)), 21vh, 150px) * var(--skala-judul, 1));
 }
 .sp-baris { display: block; white-space: nowrap; animation: sp-hentak 0.75s cubic-bezier(0.2, 1.35, 0.4, 1) both; }
 .sp-baris-2 { color: var(--aksen); animation-delay: 0.12s; }
@@ -194,12 +195,12 @@
   text-transform: uppercase;
   opacity: 0.85;
 }
-.sp-kutip--pendek  { font-size: 19px; } .sp-kutip--pendek  .sp-arab { font-size: 1.7em; }
-.sp-kutip--sedang  { font-size: 16px; } .sp-kutip--sedang  .sp-arab { font-size: 1.55em; }
-.sp-kutip--panjang { font-size: 14px; } .sp-kutip--panjang .sp-arab { font-size: 1.45em; }
+.sp-kutip--pendek  { font-size: calc(19px * var(--skala-kutip, 1)); } .sp-kutip--pendek  .sp-arab { font-size: 1.7em; }
+.sp-kutip--sedang  { font-size: calc(16px * var(--skala-kutip, 1)); } .sp-kutip--sedang  .sp-arab { font-size: 1.55em; }
+.sp-kutip--panjang { font-size: calc(14px * var(--skala-kutip, 1)); } .sp-kutip--panjang .sp-arab { font-size: 1.45em; }
 .sp-teks { font-weight: 700; }
 /* ayat panjang: judul sedikit dinaikkan dan dikecilkan supaya tidak bertumpuk */
-.sp--panjang .sp-judul { top: 13vh; font-size: min(calc(140vw / var(--n)), 16vh, 130px); }
+.sp--panjang .sp-judul { top: 13vh; font-size: calc(min(calc(140vw / var(--n)), 16vh, 130px) * var(--skala-judul, 1)); }
 
 /* ------------------------------------------------------------- pita */
 .sp-pita {
@@ -247,7 +248,7 @@
     top: auto;
     bottom: 19vh;
     /* sisakan ±34% layar kanan untuk kotak kutipan */
-    font-size: min(calc(84vw / var(--n)), 31vh, 300px);
+    font-size: calc(min(calc(84vw / var(--n)), 31vh, 300px) * var(--skala-judul, 1));
   }
 
   .sp-kutip {
@@ -261,10 +262,10 @@
     padding: 26px 32px;
     box-shadow: 12px 12px 0 rgb(0 0 0 / 0.35);
   }
-  .sp-kutip--pendek { font-size: min(28px, 2vw); }
-  .sp-kutip--sedang { font-size: min(23px, 1.65vw); }
-  .sp-kutip--panjang { font-size: min(19px, 1.35vw); }
-  .sp--panjang .sp-judul { top: auto; font-size: min(calc(84vw / var(--n)), 31vh, 300px); }
+  .sp-kutip--pendek { font-size: calc(min(28px, 2vw) * var(--skala-kutip, 1)); }
+  .sp-kutip--sedang { font-size: calc(min(23px, 1.65vw) * var(--skala-kutip, 1)); }
+  .sp-kutip--panjang { font-size: calc(min(19px, 1.35vw) * var(--skala-kutip, 1)); }
+  .sp--panjang .sp-judul { top: auto; font-size: calc(min(calc(84vw / var(--n)), 31vh, 300px) * var(--skala-judul, 1)); }
 
   .sp-pita { bottom: 5vh; height: 54px; }
   .sp-pita-jalan span { font-size: 19px; }
@@ -297,6 +298,13 @@
   to   { opacity: 1; transform: rotate(-1deg) translate3d(0, 0, 0); }
 }
 @keyframes sp-jalan { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+/* Efek kibar dimatikan dari Konfigurasi → Layar Sapaan. */
+.sp--diam .sp-kain-img, .sp--diam .sp-lipat { animation: none; }
+.sp--diam .sp-lipat { display: none; }
+
+/* Tanpa pita: kotak kutipan dan judul turun sedikit di HP. */
+.sp--tanpa-pita .sp-kutip { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
 
 /* Pengguna yang memilih "kurangi gerakan" mendapat tampilan diam. */
 @media (prefers-reduced-motion: reduce) {

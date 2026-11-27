@@ -63,6 +63,7 @@ export const COMMAND_PAGES: CommandPage[] = [
   { label: 'Pengaturan User', path: '/konfigurasi/users', group: 'Konfigurasi' },
   { label: 'User Online (Realtime)', path: '/konfigurasi/online-users', group: 'Konfigurasi' },
   { label: 'Menu per Role', path: '/konfigurasi/menu-role', group: 'Konfigurasi' },
+  { label: 'Layar Sapaan', path: '/konfigurasi/sapaan', group: 'Konfigurasi', keywords: ['greeting', 'sapaan', 'reset sapaan', 'quotes', 'ayat'] },
   { label: 'Jenis Kredit', path: '/konfigurasi/jenis-kredit', group: 'Konfigurasi' },
   { label: 'Jenis Debitur', path: '/konfigurasi/jenis-debitur', group: 'Konfigurasi' },
   { label: 'Jenis Penggunaan', path: '/konfigurasi/jenis-penggunaan', group: 'Konfigurasi' },

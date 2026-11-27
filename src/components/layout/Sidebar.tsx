@@ -438,6 +438,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onHoverChange
         { label: 'Menu per Role', href: '/konfigurasi/menu-role' },
         { label: 'Data Referensi', children: dataReferensiItems },
         { label: 'Template Kondisi Kantor', href: '/konfigurasi/kondisi-kantor' },
+        { label: 'Layar Sapaan', href: '/konfigurasi/sapaan' },
         { label: 'Activity Log', href: '/activity-log' },
         { label: 'Recycle Bin', href: '/recycle-bin' },
       ]

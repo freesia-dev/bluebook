@@ -1,22 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDailyGreeting } from '@/hooks/use-daily-greeting';
+import { useKonfigSapaan } from '@/hooks/use-sapaan-konfig';
 import { SapaanPoster } from './SapaanPoster';
 
-/** Sapaan bertahan paling lama 3 menit, lalu menutup sendiri. */
-const AUTO_DISMISS_MS = 3 * 60 * 1000;
 const DURASI_MEMUDAR_MS = 350;
 
 /**
- * Sapaan yang muncul tiga kali sehari — pagi, siang, sore — saat Bluebook
- * pertama dibuka di waktu itu (lihat useDailyGreeting). Isinya ayat
- * Al-Qur'an, atau Alkitab untuk pengguna di PENGGUNA_ALKITAB.
+ * Sapaan yang muncul di tiap waktu yang dijadwalkan (bawaan pagi, siang,
+ * sore) saat Bluebook pertama dibuka di waktu itu. Isi, tampilan, dan jam
+ * munculnya diatur di Konfigurasi → Layar Sapaan.
  * Tutup dengan klik/ketuk di mana saja, menekan tombol apa pun, atau
- * otomatis setelah 3 menit.
+ * otomatis setelah durasi yang diatur.
  */
 export const DailyGreetingOverlay: React.FC = () => {
   const { userName } = useAuth();
-  const { show, ayat, kunci, dismiss } = useDailyGreeting();
+  const { konfig } = useKonfigSapaan();
+  const { show, ayat, slot, kunci, dismiss } = useDailyGreeting();
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
 
@@ -34,19 +34,29 @@ export const DailyGreetingOverlay: React.FC = () => {
 
   useEffect(() => {
     if (!show) return;
-    const t = window.setTimeout(handleClose, AUTO_DISMISS_MS);
+    const t = konfig.durasiDetik > 0 ? window.setTimeout(handleClose, konfig.durasiDetik * 1000) : undefined;
     const onKey = (e: KeyboardEvent) => {
       e.preventDefault();
       handleClose();
     };
     window.addEventListener('keydown', onKey);
     return () => {
-      window.clearTimeout(t);
+      if (t) window.clearTimeout(t);
       window.removeEventListener('keydown', onKey);
     };
-  }, [show, handleClose]);
+  }, [show, handleClose, konfig.durasiDetik]);
 
   if (!show) return null;
 
-  return <SapaanPoster nama={userName} ayat={ayat} kunci={kunci} menutup={closing} onTutup={handleClose} />;
+  return (
+    <SapaanPoster
+      nama={userName}
+      ayat={ayat}
+      kunci={kunci}
+      salam={slot?.salam}
+      konfig={konfig}
+      menutup={closing}
+      onTutup={handleClose}
+    />
+  );
 };
