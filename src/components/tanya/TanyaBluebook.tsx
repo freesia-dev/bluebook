@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import { AlertTriangle, Calendar, CheckCircle2, Clock, LineChart, Send, User, X, FlaskConical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -21,8 +22,8 @@ export const bukaTanya = (teks?: string) => window.dispatchEvent(new CustomEvent
 
 /** Tanya Bluebook memakai data MLF, jadi hanya untuk peran yang boleh membuka Loan Monitoring. */
 export const useBolehTanya = () => {
-  const { permissions } = useAuth();
-  return !!(permissions.monitoring || permissions.executiveDashboard);
+  const { permissions, isAuthenticated } = useAuth();
+  return !!(isAuthenticated && (permissions.monitoring || permissions.executiveDashboard));
 };
 
 const KUNCI_RIWAYAT = 'tanya-bluebook:riwayat';
@@ -81,6 +82,107 @@ export const TombolTanya: React.FC<{ className?: string }> = ({ className }) => 
       </span>
       Tanya Bluebook!
       <kbd className="hidden rounded bg-white/20 px-1.5 font-mono text-[10px] font-bold sm:inline">/</kbd>
+    </button>
+  );
+};
+
+const KUNCI_POSISI = 'tanya-bluebook:posisi';
+const UKURAN_FAB = 62;
+const TEPI = 10;
+
+type Posisi = { kanan: number; bawah: number };
+const POSISI_AWAL: Posisi = { kanan: 18, bawah: 22 };
+
+const jepit = (p: Posisi): Posisi => {
+  const maxK = Math.max(TEPI, window.innerWidth - UKURAN_FAB - TEPI);
+  const maxB = Math.max(TEPI, window.innerHeight - UKURAN_FAB - TEPI);
+  return { kanan: Math.min(maxK, Math.max(TEPI, p.kanan)), bawah: Math.min(maxB, Math.max(TEPI, p.bawah)) };
+};
+
+const bacaPosisi = (): Posisi => {
+  try {
+    const v = JSON.parse(localStorage.getItem(KUNCI_POSISI) || 'null');
+    if (v && Number.isFinite(v.kanan) && Number.isFinite(v.bawah)) return jepit(v);
+  } catch {
+    /* penyimpanan browser tidak tersedia */
+  }
+  return POSISI_AWAL;
+};
+
+/**
+ * Tombol bulat Tanya Bluebook. Bisa digeser ke mana saja (mouse atau jari);
+ * posisinya diingat di perangkat ini. Klik/ketuk tanpa menggeser = buka.
+ */
+const TombolMelayang: React.FC<{ onBuka: () => void }> = ({ onBuka }) => {
+  const [pos, setPos] = useState<Posisi>(() => (typeof window === 'undefined' ? POSISI_AWAL : bacaPosisi()));
+  const [geser, setGeser] = useState(false);
+  const awal = useRef<{ x: number; y: number; pos: Posisi; pindah: boolean } | null>(null);
+
+  useEffect(() => {
+    const ubahUkuran = () => setPos((p) => jepit(p));
+    window.addEventListener('resize', ubahUkuran);
+    return () => window.removeEventListener('resize', ubahUkuran);
+  }, []);
+
+  const diKiri = pos.kanan > window.innerWidth / 2;
+
+  return (
+    <button
+      type="button"
+      className={cn('tb-fab', geser && 'tb-fab-geser', diKiri && 'tb-fab-kiri')}
+      style={{ right: pos.kanan, bottom: pos.bawah }}
+      aria-label="Tanya Bluebook (bisa digeser)"
+      title="Tanya Bluebook! — geser untuk memindahkan"
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        awal.current = { x: e.clientX, y: e.clientY, pos, pindah: false };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const a = awal.current;
+        if (!a) return;
+        const dx = e.clientX - a.x;
+        const dy = e.clientY - a.y;
+        if (!a.pindah && Math.hypot(dx, dy) < 6) return;
+        a.pindah = true;
+        setGeser(true);
+        setPos(jepit({ kanan: a.pos.kanan - dx, bawah: a.pos.bawah - dy }));
+      }}
+      onPointerUp={(e) => {
+        const a = awal.current;
+        awal.current = null;
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch {
+          /* sudah dilepas */
+        }
+        if (a?.pindah) {
+          setGeser(false);
+          setPos((p) => {
+            try {
+              localStorage.setItem(KUNCI_POSISI, JSON.stringify(p));
+            } catch {
+              /* abaikan */
+            }
+            return p;
+          });
+        } else {
+          onBuka();
+        }
+      }}
+      onPointerCancel={() => {
+        awal.current = null;
+        setGeser(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onBuka();
+        }
+      }}
+    >
+      <img src={kepala} alt="" draggable={false} />
+      <span className="tb-fab-label">Tanya Bluebook!</span>
     </button>
   );
 };
@@ -195,12 +297,7 @@ export const TanyaBluebook: React.FC<{ fab?: boolean }> = ({ fab = true }) => {
 
   return (
     <>
-      {fab && !buka && (
-        <button type="button" className="tb-fab" onClick={() => { setBuka(true); fokus(); }} aria-label="Tanya Bluebook">
-          <img src={kepala} alt="" />
-          <span className="tb-fab-label">Tanya Bluebook!</span>
-        </button>
-      )}
+      {fab && !buka && <TombolMelayang onBuka={() => { setBuka(true); fokus(); }} />}
       <DialogPrimitive.Root open={buka} onOpenChange={setBuka}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0" />
@@ -326,6 +423,21 @@ export const TanyaBluebook: React.FC<{ fab?: boolean }> = ({ fab = true }) => {
       </DialogPrimitive.Root>
     </>
   );
+};
+
+/**
+ * Dipasang sekali di App (di dalam router) supaya percakapan tidak hilang
+ * saat pindah halaman. Tombol bulatnya tampil di Dashboard, Executive
+ * Dashboard, dan semua halaman Loan Monitoring; pop up-nya tetap bisa dibuka
+ * dari TombolTanya atau "/" di halaman lain.
+ */
+export const TanyaGlobal: React.FC = () => {
+  const { pathname, search } = useLocation();
+  const fab =
+    (pathname === '/dashboard' || pathname === '/executive' || pathname.startsWith('/monitoring')) &&
+    !pathname.includes('/print') &&
+    !search.includes('mode=kontrol');
+  return <TanyaBluebook fab={fab} />;
 };
 
 export default TanyaBluebook;

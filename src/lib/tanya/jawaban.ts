@@ -93,6 +93,7 @@ export interface JawabSimulasi {
   unitLabel: string;
   perubahan: { nama: string; ket: string; sebelum: string; sesudah: string; nadaSesudah: Nada }[];
   saran?: string;
+  catatan?: string[];
 }
 
 export interface JawabPilih {

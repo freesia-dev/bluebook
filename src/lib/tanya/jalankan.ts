@@ -40,6 +40,15 @@ const tunggakan = (r: MLFRow) => n(r.tungpk) + n(r.tungbg);
 export const saringUnit = (rows: MLFRow[], unit: UnitTanya) =>
   unit === 'semua' ? rows : rows.filter((r) => getUnit(r) === unit);
 
+/** Peringatan kalau ada rekening yang tidak bisa dipastikan unitnya. */
+export function catatanUnit(rows: MLFRow[], unit: UnitTanya): string[] {
+  if (unit === 'semua') return [];
+  const tanpa = rows.filter((r) => kolOf(r) !== 0 && getUnit(r) === 'unknown');
+  if (!tanpa.length) return [];
+  const baki = tanpa.reduce((s, r) => s + n(r.baki), 0);
+  return [`${tanpa.length} rekening (baki ${rp(baki)}) nomor PK-nya bukan format BPD-TLH/ULM-TLH, jadi tidak ikut Telihan maupun Meranti. Tanya "NPL semua unit" untuk angka seluruh KCP.`];
+}
+
 export function hitungNpl(rows: MLFRow[]) {
   let bermasalah = 0;
   let dasar = 0;
@@ -400,7 +409,7 @@ async function npl(unit: UnitTanya, rows: MLFRow[], d: SumberData, terbaru: MLFU
       debiturBermasalah: h.debiturBermasalah,
       perKol: h.perKol,
       banding,
-      catatan: ['NPL = baki kol 3–5 ÷ total baki kol 1–5 (ekstrakomtabel tidak dihitung), sama seperti Loan Monitoring.'],
+      catatan: ['NPL = baki kol 3–5 ÷ total baki kol 1–5 (ekstrakomtabel tidak dihitung), sama seperti Loan Monitoring.', ...catatanUnit(rows, unit)],
     },
   };
 }
@@ -826,6 +835,11 @@ function simulasi(
     saran = 'Dengan skenario ini NPL kembali di bawah 2%.';
   }
 
+  const catatan = [
+    `Rumus: baki kol 3–5 ÷ baki kol 1–5 ${unit === 'semua' ? 'KCP Telihan' : LABEL_UNIT[unit]} (ekstrakomtabel tidak dihitung). Sesudah: ${rp(sesudah.bermasalah)} ÷ ${rp(sesudah.dasar)}.`,
+    `Dihitung dari MLF ${tglData}. Baki debitur lain dan angsuran yang berjalan sampai bulan yang disebut tidak ikut diperkirakan.`,
+    ...catatanUnit(rows, unit),
+  ];
   return {
     paham: ['simulasi', ...final.map(LABEL_LANGKAH), `NPL ${LABEL_UNIT[unit]}`],
     jawab: {
@@ -835,6 +849,7 @@ function simulasi(
       unitLabel: unit === 'semua' ? 'KCP Telihan' : LABEL_UNIT[unit],
       perubahan,
       saran,
+      catatan,
     },
     simulasi: { langkah: final, unit },
   };

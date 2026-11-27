@@ -332,6 +332,7 @@ const Simulasi: React.FC<{ s: JawabSimulasi } & Aksi> = ({ s, onUbah, onKeluarSi
         </table>
       </div>
       {s.saran && <p className="mt-2 text-[11px] text-foreground">{s.saran}</p>}
+      {s.catatan?.map((c, i) => <p key={i} className="mt-1 text-[10.5px] leading-snug text-muted-foreground">{c}</p>)}
       <div className="mt-2.5 flex flex-wrap gap-1.5">
         <button type="button" className="tb-aksi tb-aksi-utama" onClick={() => onUbah('terus kalau ')}>
           <Plus className="h-3.5 w-3.5" /> Tambah skenario
