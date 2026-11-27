@@ -3,7 +3,7 @@
 // Pertanyaan yang umum dikenali langsung di sini: cepat, gratis, dan tidak
 // keluar dari HP. Yang tidak cocok pola mana pun baru dikirim ke Workers AI.
 
-import { iso, namaBulan, periodeBulan, type Perintah, type Periode, type Skenario, type UnitTanya } from './perintah';
+import { iso, namaBulan, periodeBulan, type Perintah, type Periode, type PilihRekening, type Skenario, type UnitTanya } from './perintah';
 
 // ------------------------------------------------------------------ angka
 const KATA_ANGKA: Record<string, number> = {
@@ -33,6 +33,7 @@ export function bacaNominal(s: string): number | null {
 
 // ------------------------------------------------------------------ unit
 export function bacaUnit(t: string, bawaan: UnitTanya = 'semua'): UnitTanya {
+  t = t.replace(/\b\d{2,4}\/\d{3}\/[\w/.-]+/gi, ' '); // nomor PK "…/BPD-TLH/…" bukan penanda unit
   if (/\bsemua unit\b|\bseluruh\b/.test(t)) return 'semua';
   if (/\bmeranti\b|\bulm\b/.test(t)) return 'meranti';
   if (/\btelihan\b|\btlh\b/.test(t)) return 'telihan';
@@ -118,16 +119,77 @@ export function rapikanNama(s: string): string {
     .trim();
 }
 
+// ------------------------------------------------------------------ rekening
+const BULAN_PENDEK: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, jun: 5, jul: 6, agu: 7, ags: 7, aug: 7, sep: 8, okt: 9, oct: 9, nov: 10, des: 11, dec: 11,
+};
+const KATA_PENGANTAR = '(?:(?:yang|yg)\\s+)?(?:(?:akad|akan|cair|pencairan|realisasi|kredit|rekening|rek|pk|fasilitas|pinjaman)\\s+)?(?:(?:tanggal|tgl|tahun|thn|th)\\s+)?';
+
+/**
+ * Ambil penanda rekening dari potongan kalimat, mis. "akad 26 Sep 2023",
+ * "yang tahun 2023", "plafon 520 jt", atau nomor PK. Kembalikan sisa
+ * kalimat (tanpa penanda) supaya nama debitur tetap bersih.
+ */
+export function ambilRekening(k: string): { sisa: string; rek?: PilihRekening } {
+  let sisa = k;
+  const rek: PilihRekening = {};
+  const buang = (re: RegExp) => {
+    sisa = sisa.replace(re, ' ');
+  };
+  // nomor PK "068/886/89/9990/BPD-TLH/2023" atau nomor rekening 8 digit lebih
+  const pk = sisa.match(/\b\d{2,4}\/\d{3}\/[\w/.-]+/i);
+  if (pk) {
+    rek.nomor = pk[0];
+    buang(new RegExp(KATA_PENGANTAR + pk[0].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'), 'i'));
+  } else {
+    const no = sisa.match(/\b(?:rekening|rek|no\.?|nomor)\s*(\d{6,})\b/i);
+    if (no) {
+      rek.nomor = no[1];
+      buang(new RegExp(no[0], 'i'));
+    }
+  }
+  // tanggal "26 sep 2023" / "26 september 2023" / "26-09-2023" / "2023-09-26"
+  const tglNama = sisa.match(new RegExp(KATA_PENGANTAR + '(\\d{1,2})\\s+([a-z]{3})[a-z]*\\.?\\s+(20\\d{2})\\b', 'i'));
+  const tglAngka = sisa.match(new RegExp(KATA_PENGANTAR + '(\\d{1,2})[-/.](\\d{1,2})[-/.](20\\d{2})\\b', 'i'));
+  const tglIso = sisa.match(new RegExp(KATA_PENGANTAR + '(20\\d{2})-(\\d{2})-(\\d{2})\\b', 'i'));
+  if (tglNama && BULAN_PENDEK[tglNama[2].toLowerCase()] !== undefined) {
+    rek.akad = iso(new Date(Number(tglNama[3]), BULAN_PENDEK[tglNama[2].toLowerCase()], Number(tglNama[1])));
+    buang(new RegExp(tglNama[0], 'i'));
+  } else if (tglAngka) {
+    rek.akad = iso(new Date(Number(tglAngka[3]), Number(tglAngka[2]) - 1, Number(tglAngka[1])));
+    buang(new RegExp(tglAngka[0].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'), 'i'));
+  } else if (tglIso) {
+    rek.akad = `${tglIso[1]}-${tglIso[2]}-${tglIso[3]}`;
+    buang(new RegExp(tglIso[0], 'i'));
+  } else {
+    // hanya tahun: "yang 2023", "akad tahun 2023"
+    const th = sisa.match(/(?:(?:yang|yg)\s+)?(?:(?:akad|akan|cair|kredit|rekening|pinjaman)\s+)?(?:(?:tahun|thn|th)\s+)?\b(20\d{2})\b/i);
+    if (th && /(?:akad|akan|cair|kredit|rekening|pinjaman|tahun|thn|th|yang|yg)\s+(?:tahun\s+|thn\s+|th\s+)?20\d{2}/i.test(th[0])) {
+      rek.tahun = Number(th[1]);
+      buang(new RegExp(th[0], 'i'));
+    }
+  }
+  const pl = sisa.match(/(?:(?:yang|yg)\s+)?(?:plafon|plafond|limit)\s+((?:rp\.?\s*)?\d+(?:[.,]\d+)*\s*(?:miliar|milyar|m\b|juta|jt\b|ribu|rb\b)?)/i);
+  if (pl) {
+    const v = bacaNominal(pl[1]);
+    if (v) rek.plafon = v;
+    buang(new RegExp(pl[0].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'), 'i'));
+  }
+  sisa = sisa.replace(/\s+/g, ' ').trim();
+  return Object.keys(rek).length ? { sisa, rek } : { sisa: k };
+}
+
 // ------------------------------------------------------------------ simulasi
 const PEMICU_SIMULASI = /\b(simulasi(?:kan)?|andai(?:kan)?|seandainya|misal(?:nya)?|kalau|kalo|klo|jika|bila|apabila|gimana kalau|bagaimana jika)\b/;
 const AWAL_LANJUT = /^(terus|trus|lalu|kemudian|tambah(?:kan|in)?|ditambah|plus|sekalian|dan juga|lanjut)\b/;
 
 function bacaSkenario(klausa: string): Skenario | null {
-  const k = klausa
+  const k0 = klausa
     .replace(/^(?:terus|trus|lalu|kemudian|tambah(?:kan|in)?|ditambah|plus|sekalian|dan juga|lanjut|coba|tolong|simulasi(?:kan)?|kalau|kalo|klo|jika|bila|apabila|andai(?:kan)?|seandainya|misal(?:nya)?|gimana kalau|bagaimana jika)\s+/g, '')
     .replace(/^(?:terus|trus|lalu|kalau|kalo|klo|jika|bila|misal(?:nya)?)\s+/g, '')
     .trim();
-  if (!k) return null;
+  if (!k0) return null;
+  const { sisa: k, rek } = ambilRekening(k0);
   if (/\bkol(?:ek(?:tibilitas)?)?\s*2\b.*\b(tidak|gak|ga|nggak|enggak|ndak|tdk)\s*bayar|semua (?:debitur )?kol(?:ek)?\s*2\s*(?:turun|jadi|masuk)/.test(k)) {
     return { aksi: 'kol2_turun' };
   }
@@ -139,17 +201,17 @@ function bacaSkenario(klausa: string): Skenario | null {
   const kol = k.match(/^(.*?)\s*(?:(?:jadi|menjadi|turun(?: ke)?|naik(?: ke)?|masuk(?: ke)?|ke|di)\s*)?kol(?:ek(?:tibilitas)?)?\s*([1-5])\b/);
   if (kol) {
     const nama = rapikanNama(kol[1]);
-    if (nama) return { aksi: 'kol', nama, kol: Number(kol[2]) };
+    if (nama) return { aksi: 'kol', nama, kol: Number(kol[2]), rek };
   }
   const bayar = k.match(/^(.*?)\s*(?:bayar|membayar|melunasi tunggakan|lunasi tunggakan|lunas tunggakan|setor)\b/);
   if (bayar && /tunggak|bayar|setor/.test(k)) {
     const nama = rapikanNama(bayar[1]);
-    if (nama) return { aksi: 'bayar', nama };
+    if (nama) return { aksi: 'bayar', nama, rek };
   }
   const lunas = k.match(/^(?:pelunasan\s+)?(.*?)\s*(?:lunas|melunasi|dilunasi|melunasi kreditnya|pelunasan)?\s*$/);
   if (/lunas|pelunasan/.test(k) && lunas) {
     const nama = rapikanNama(k.replace(/\b(?:sudah\s+)?(?:lunas|melunasi|dilunasi|pelunasan|kreditnya|semua)\b/g, ' '));
-    if (nama) return { aksi: 'lunas', nama };
+    if (nama) return { aksi: 'lunas', nama, rek };
   }
   return null;
 }
