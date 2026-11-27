@@ -86,8 +86,9 @@ function hariKerjaTersisa(d: Date): number {
 }
 
 /**
- * Isi pita berjalan: kalimat harian yang berganti sendiri tanpa perlu data
- * dari server — tanggal, sisa hari kerja bulan ini, dan sisa hari tahun ini.
+ * Isi otomatis pita berjalan: kalimat harian yang berganti sendiri tanpa perlu
+ * data dari server — tanggal, sisa hari kerja bulan ini, dan sisa hari tahun
+ * ini. Teks tambahan (mis. "Bluebook Telihan") diatur di Konfigurasi.
  */
 export function isiPita(d = new Date()): string[] {
   const kerja = hariKerjaTersisa(d);
@@ -97,7 +98,5 @@ export function isiPita(d = new Date()): string[] {
     `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]}`,
     kerja === 0 ? 'Hari kerja terakhir bulan ini' : `${kerja} hari kerja tersisa bulan ini`,
     sisaTahun === 0 ? `Hari terakhir tahun ${d.getFullYear()}` : `Tahun ${d.getFullYear()} tinggal ${sisaTahun} hari`,
-    'Bluebook Telihan',
-    'KCP 143',
   ];
 }

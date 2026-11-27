@@ -24,6 +24,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { OjkReportDialog } from '@/components/ojk/OjkReportDialog';
+import { TanyaBluebook, TombolTanya } from '@/components/tanya/TanyaBluebook';
 import { CustomizableGrid, type WidgetDef } from '@/components/dashboard/CustomizableGrid';
 import { supabase } from '@/integrations/supabase/client';
 import { getStorageUsage } from '@/lib/storage';
@@ -666,7 +667,8 @@ const Dashboard: React.FC = () => {
             title="Dashboard"
             description="Selamat datang di Bluebook Telihan - Sistem Manajemen Arsip"
             actions={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <TombolTanya />
                 <Button variant={editing ? 'secondary' : 'outline'} onClick={toggle} className="gap-2">
                   <LayoutGrid className="w-4 h-4" />
                   <span className="hidden sm:inline">{editing ? 'Selesai mengatur' : 'Atur dashboard'}</span>
@@ -680,6 +682,7 @@ const Dashboard: React.FC = () => {
           />
         )}
       />
+      <TanyaBluebook />
     </MainLayout>
   );
 };

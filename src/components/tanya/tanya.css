@@ -1,0 +1,76 @@
+/* Tanya Bluebook — gaya kecil yang tidak praktis ditulis dengan Tailwind. */
+
+.tb-aksi {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.tb-aksi:hover { background: hsl(var(--muted)); }
+.tb-aksi:disabled { opacity: 0.6; cursor: progress; }
+.tb-aksi-utama {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.tb-aksi-utama:hover { background: hsl(var(--primary) / 0.9); }
+
+/* tombol bulat melayang di pojok kanan bawah */
+.tb-fab {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 4px);
+  z-index: 40;
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 25%, #ffffff 0%, #e8f1fb 60%, #cfe0f3 100%);
+  box-shadow: 0 10px 26px rgba(10, 80, 138, 0.35), inset 0 0 0 2px #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease-out, box-shadow 0.18s;
+  animation: tb-fab-masuk 0.5s ease-out 0.4s both;
+}
+.tb-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 14px 30px rgba(10, 80, 138, 0.42), inset 0 0 0 2px #fff; }
+.tb-fab img { width: 52px; height: 52px; object-fit: contain; }
+.tb-fab-label {
+  position: absolute;
+  right: 70px;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #0a3a66;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+.tb-fab:hover .tb-fab-label { opacity: 1; transform: translateX(0); }
+@keyframes tb-fab-masuk { from { opacity: 0; transform: translateY(20px) scale(0.8); } to { opacity: 1; transform: none; } }
+
+/* titik-titik "sedang berpikir" */
+.tb-titik { display: inline-flex; gap: 4px; }
+.tb-titik i { width: 6px; height: 6px; border-radius: 99px; background: hsl(var(--primary)); opacity: 0.35; animation: tb-titik 1s infinite; }
+.tb-titik i:nth-child(2) { animation-delay: 0.15s; }
+.tb-titik i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes tb-titik { 0%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+
+.tb-maskot-goyang { animation: tb-goyang 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes tb-goyang { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg) translateY(-2px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-fab, .tb-maskot-goyang, .tb-titik i { animation: none !important; }
+}
+
+@media print { .tb-fab { display: none !important; } }

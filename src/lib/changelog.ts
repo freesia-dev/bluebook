@@ -17,6 +17,18 @@ export interface EntriPerubahan {
 
 export const CHANGELOG: EntriPerubahan[] = [
   {
+    id: '2026-11-27-tanya-bluebook',
+    tanggal: '2026-11-27',
+    judul: 'Tanya Bluebook! dan pengaturan layar sapaan',
+    poin: [
+      'Tombol baru "Tanya Bluebook!" di Dashboard: tanya soal data MLF pakai bahasa sehari-hari, mis. "info debitur atas nama …", "jatuh tempo bulan depan", atau "berapa NPL Telihan?". Bisa juga dibuka dengan tombol / di keyboard.',
+      'Bisa membuat rencana kunjungan debitur yang baru cair, mencari calon top up, dan menunjukkan letak map arsip debitur.',
+      'Mode simulasi: "kalau … jadi kol 5, berapa NPL?" — hitungan saja, data asli tidak berubah. Skenario bisa ditumpuk ("terus kalau … lunas?").',
+      'Semua jawaban berbentuk tabel bisa diunduh sebagai PDF atau Excel.',
+      'Admin bisa mengatur layar sapaan dari Konfigurasi → Layar Sapaan: jam muncul, gambar latar, warna, kutipan, tulisan, dan reset sapaan per pengguna.',
+    ],
+  },
+  {
     id: '2026-11-05-laporan-pipeline',
     tanggal: '2026-11-05',
     judul: 'Laporan Pipeline, laporan PDF baru, dan sentuhan ukir Dayak',

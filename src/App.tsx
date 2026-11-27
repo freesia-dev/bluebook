@@ -38,6 +38,7 @@ const UsersPage = lazy(() => import("./pages/konfigurasi/UsersPage"));
 const OnlineUsersPage = lazy(() => import("./pages/konfigurasi/OnlineUsersPage"));
 const MenuRolePage = lazy(() => import("./pages/konfigurasi/MenuRolePage"));
 const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
+const SapaanConfigPage = lazy(() => import("./pages/konfigurasi/SapaanConfigPage"));
 const About = lazy(() => import("./pages/About"));
 const WrappedPage = lazy(() => import("./pages/WrappedPage"));
 const Panduan = lazy(() => import("./pages/Panduan"));
@@ -225,6 +226,9 @@ const App = () => (
             } />
             <Route path="/konfigurasi/asal-instansi" element={
               <Suspense fallback={<TablePageSkeleton />}><ConfigPage type="asal-instansi" /></Suspense>
+            } />
+            <Route path="/konfigurasi/sapaan" element={
+              <Suspense fallback={<GenericPageSkeleton />}><SapaanConfigPage /></Suspense>
             } />
             <Route path="/konfigurasi/kondisi-kantor" element={
               <Suspense fallback={<TablePageSkeleton />}><KondisiKantorTemplatePage /></Suspense>
