@@ -107,6 +107,8 @@ export interface JawabTeks {
   judul?: string;
   teks: string;
   saran?: string[];
+  /** keterangan teknis kecil, mis. pesan error dari AI */
+  detail?: string;
 }
 
 export type Jawaban = JawabTabel | JawabProfil | JawabNpl | JawabSimulasi | JawabPilih | JawabTeks;

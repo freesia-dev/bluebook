@@ -88,26 +88,29 @@ export async function siapkanSumber(qc: QueryClient): Promise<SumberData> {
   };
 }
 
-export type GagalAi = 'belum_dipasang' | 'jatah_habis' | 'gagal' | 'tidak_paham';
+export type GagalAi = 'belum_dipasang' | 'jatah_habis' | 'gagal' | 'tidak_paham' | 'belum_login';
 
 /** Minta Workers AI menerjemahkan pertanyaan. Hanya kalimatnya yang dikirim. */
-export async function tanyaAi(teks: string): Promise<{ perintah: Perintah } | { gagal: GagalAi }> {
+export async function tanyaAi(teks: string): Promise<{ perintah: Perintah } | { gagal: GagalAi; detail?: string }> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return { gagal: 'gagal' };
+  if (!session) return { gagal: 'belum_login' };
   try {
     const res = await fetch('/api/tanya', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ teks, hariIni: iso(new Date()) }),
     });
+    const json = (res.headers.get('content-type') || '').includes('json');
+    const body = json ? ((await res.json().catch(() => ({}))) as { perintah?: unknown; error?: string; detail?: string }) : {};
     if (res.status === 503) return { gagal: 'belum_dipasang' };
-    if (res.status === 429) return { gagal: 'jatah_habis' };
+    if (res.status === 429) return { gagal: 'jatah_habis', detail: body.detail };
+    if (res.status === 401) return { gagal: 'belum_login' };
     // di mode dev (vite) /api/* tidak ada dan yang kembali adalah index.html
-    if (!res.ok || !(res.headers.get('content-type') || '').includes('json')) return { gagal: res.status === 404 || res.ok ? 'belum_dipasang' : 'gagal' };
-    const body = (await res.json()) as { perintah?: unknown };
+    if (res.ok && !json) return { gagal: 'belum_dipasang' };
+    if (!res.ok) return { gagal: 'gagal', detail: `${res.status} ${body.error ?? ''} ${body.detail ?? ''}`.trim() };
     const perintah = rapikanPerintah(body.perintah);
-    return perintah ? { perintah } : { gagal: 'tidak_paham' };
-  } catch {
-    return { gagal: 'gagal' };
+    return perintah ? { perintah } : { gagal: 'tidak_paham', detail: JSON.stringify(body.perintah ?? null).slice(0, 200) };
+  } catch (e) {
+    return { gagal: 'gagal', detail: e instanceof Error ? e.message : String(e) };
   }
 }

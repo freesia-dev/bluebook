@@ -19,7 +19,16 @@ interface Env extends EnvDasar {
   TANYA_MODEL?: string;
 }
 
-const MODEL_BAWAAN = "@cf/meta/llama-3.1-8b-instruct";
+/**
+ * Dicoba berurutan sampai ada yang berhasil. Kalau satu model dipensiunkan
+ * Cloudflare atau sedang sibuk, model berikutnya dipakai.
+ */
+const DAFTAR_MODEL = [
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "@cf/meta/llama-3.1-8b-instruct-fast",
+  "@cf/meta/llama-3.1-8b-instruct",
+  "@cf/mistralai/mistral-small-3.1-24b-instruct",
+];
 
 const sistem = (hariIni: string) => `Kamu penerjemah pertanyaan untuk aplikasi internal bank "Bluebook" (KCP Telihan, Bontang).
 Tugasmu HANYA mengubah pertanyaan pengguna menjadi SATU objek JSON perintah. Jangan menjawab pertanyaannya, jangan menambah teks lain.
@@ -40,7 +49,7 @@ Pilihan perintah (field "jenis"):
 - {"jenis":"calon_topup","unit":"semua","minPersen":50}
 - {"jenis":"simulasi","langkah":[...],"unit":"semua","lanjut":<true kalau melanjutkan simulasi sebelumnya, mis. diawali "terus"/"lalu">}
   langkah boleh: {"aksi":"kol","nama":"<nama>","kol":<1-5>}, {"aksi":"lunas","nama":"<nama>"}, {"aksi":"bayar","nama":"<nama>"}, {"aksi":"cair","nominal":<rupiah>}, {"aksi":"kol2_turun"}
-  Untuk kol/lunas/bayar boleh ditambah "rekening" kalau yang dimaksud hanya satu rekening: {"akad":"YYYY-MM-DD"} atau {"tahun":2023} atau {"plafon":<rupiah>} atau {"nomor":"<nomor PK/rekening>"}
+  Untuk kol/lunas/bayar boleh ditambah "rekening" kalau yang dimaksud hanya satu rekening: {"akad":"YYYY-MM-DD"} atau {"tahun":2023} atau {"plafon":<rupiah>} atau {"nominal":<plafon atau baki>} atau {"urutan":"lama"|"baru"} atau {"nomor":"<nomor PK/rekening>"}, atau {"semua":true} kalau jelas semua rekening.
 - {"jenis":"target_npl","target":<persen>,"unit":"semua"} — berapa yang harus ditagih supaya NPL di bawah target
 - {"jenis":"angsuran","plafon":<rupiah>,"bulan":<tenor bulan>,"bunga":<persen per tahun>}
 - {"jenis":"bantuan"} — sapaan, atau pertanyaan di luar data kredit
@@ -86,23 +95,37 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ? body.hariIni
     : new Date().toISOString().slice(0, 10);
 
-  try {
-    const keluar = (await env.AI.run(env.TANYA_MODEL || MODEL_BAWAAN, {
-      messages: [
-        { role: "system", content: sistem(hariIni) },
-        { role: "user", content: teks },
-      ],
-      max_tokens: 256,
-      temperature: 0,
-    })) as { response?: unknown };
-    const r = keluar?.response;
-    const perintah = typeof r === "string" ? ambilJson(r) : r && typeof r === "object" ? r : null;
-    if (!perintah) return json({ error: "AI tidak mengembalikan perintah" }, 502);
-    return json({ perintah });
-  } catch (e) {
-    const pesan = e instanceof Error ? e.message : String(e);
-    // jatah harian habis atau layanan sibuk
-    const habis = /limit|quota|neuron|429/i.test(pesan);
-    return json({ error: habis ? "JATAH_HABIS" : "AI gagal", detail: pesan.slice(0, 200) }, habis ? 429 : 502);
+  const daftar = [...new Set([env.TANYA_MODEL, ...DAFTAR_MODEL].filter(Boolean) as string[])];
+  const galat: string[] = [];
+  for (const model of daftar) {
+    try {
+      const keluar = (await env.AI.run(model, {
+        messages: [
+          { role: "system", content: sistem(hariIni) },
+          { role: "user", content: teks },
+        ],
+        max_tokens: 400,
+        temperature: 0,
+      })) as { response?: unknown };
+      const r = keluar?.response;
+      const perintah = typeof r === "string" ? ambilJson(r) : r && typeof r === "object" ? r : null;
+      if (perintah) return json({ perintah, model });
+      const mentah = typeof r === "string" ? r.slice(0, 160) : JSON.stringify(keluar).slice(0, 160);
+      galat.push(`${model}: bukan JSON (${mentah})`);
+      console.error("tanya: keluaran bukan JSON", model, mentah);
+    } catch (e) {
+      const pesan = e instanceof Error ? e.message : String(e);
+      galat.push(`${model}: ${pesan.slice(0, 160)}`);
+      console.error("tanya: model gagal", model, pesan);
+      // jatah harian habis: model lain juga akan ditolak
+      if (/daily|quota|neuron|limit exceeded|4006/i.test(pesan)) {
+        return json({ error: "JATAH_HABIS", detail: galat.join(" | ") }, 429);
+      }
+    }
   }
+  return json({ error: "AI gagal", detail: galat.join(" | ").slice(0, 600) }, 502);
 };
+
+
+/** GET /api/tanya — cek cepat apakah binding Workers AI sudah terpasang. */
+export const onRequestGet: PagesFunction<Env> = async ({ env }) => json({ ai: !!env.AI });

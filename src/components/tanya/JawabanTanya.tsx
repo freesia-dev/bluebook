@@ -377,6 +377,7 @@ export const IsiJawaban: React.FC<{ hasil: HasilTanya } & Aksi> = ({ hasil, ...a
         <div>
           {j.judul && <div className="mb-1 text-[12px] font-bold text-primary">{j.judul}</div>}
           <p className="text-[12.5px] leading-relaxed">{j.teks}</p>
+          {j.detail && <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">Detail: {j.detail}</p>}
           {j.saran?.length ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {j.saran.map((s) => (

@@ -27,6 +27,12 @@ export interface PilihRekening {
   plafon?: number;
   /** nomor PK atau nomor rekening, sebagian juga boleh */
   nomor?: string;
+  /** plafon atau baki (rupiah), dicocokkan ±5% */
+  nominal?: number;
+  /** "yang lama" / "yang baru" */
+  urutan?: 'lama' | 'baru';
+  /** sengaja semua rekening debitur */
+  semua?: boolean;
   /** diisi Bluebook setelah dicocokkan: nomor loan (l0lnno) yang kena */
   ln?: string[];
 }
@@ -102,6 +108,10 @@ function rekAman(r: any): PilihRekening | undefined {
   if (Number.isFinite(pl) && pl > 0) o.plafon = pl;
   const no = teks(r.nomor, 60);
   if (no) o.nomor = no;
+  const nom = Number(r.nominal);
+  if (Number.isFinite(nom) && nom > 0) o.nominal = nom;
+  if (r.urutan === 'lama' || r.urutan === 'baru') o.urutan = r.urutan;
+  if (r.semua === true) o.semua = true;
   return Object.keys(o).length ? o : undefined;
 }
 

@@ -54,6 +54,7 @@ const PESAN_GAGAL: Record<GagalAi, string> = {
   jatah_habis: 'Bluebook belum mengenali pertanyaan ini, dan jatah AI gratis hari ini sudah habis. Pertanyaan berpola seperti contoh di bawah tetap bisa dijawab.',
   gagal: 'Bluebook belum mengenali pertanyaan ini dan AI sedang tidak bisa dihubungi. Coba lagi sebentar, atau pakai contoh di bawah.',
   tidak_paham: 'Maaf, Bluebook belum paham maksudnya. Coba tulis lebih singkat, misalnya seperti contoh di bawah.',
+  belum_login: 'Sesi login sudah habis. Muat ulang halaman atau login lagi, lalu tanyakan sekali lagi.',
 };
 
 const SARAN_DASAR = [
@@ -225,7 +226,8 @@ export const TanyaBluebook: React.FC<{ fab?: boolean }> = ({ fab = true }) => {
       if (!perintah) {
         const ai = await tanyaAi(teks);
         if ('gagal' in ai) {
-          selesai({ paham: [], jawab: { tipe: 'teks', teks: PESAN_GAGAL[ai.gagal], saran: SARAN_DASAR } }, 'pola');
+          if (ai.detail) console.warn('Tanya Bluebook AI:', ai.gagal, ai.detail);
+          selesai({ paham: [], jawab: { tipe: 'teks', teks: PESAN_GAGAL[ai.gagal], saran: SARAN_DASAR, detail: ai.detail } }, 'pola');
           return;
         }
         perintah = ai.perintah;

@@ -125,6 +125,7 @@ export function cocokRekening(r: MLFRow, rek: PilihRekening): boolean {
   if (rek.akad && (r.date || '').slice(0, 10) !== rek.akad) return false;
   if (rek.tahun && (r.date || '').slice(0, 4) !== String(rek.tahun)) return false;
   if (rek.plafon && Math.abs(n(r.pla) - rek.plafon) > rek.plafon * 0.05) return false;
+  if (rek.nominal && Math.abs(n(r.pla) - rek.nominal) > rek.nominal * 0.05 && Math.abs(n(r.baki) - rek.nominal) > rek.nominal * 0.05) return false;
   if (rek.nomor) {
     const no = rek.nomor.toUpperCase().replace(/\s+/g, '');
     const narr = (r.l0narr || '').toUpperCase().replace(/\s+/g, '');
@@ -783,7 +784,7 @@ async function rencana(p: Extract<Perintah, { jenis: 'rencana_kunjungan' }>, row
 
 // ------------------------------------------------------------------ simulasi
 const labelRek = (r?: PilihRekening) =>
-  !r ? '' : r.akad ? ` (akad ${tgl(r.akad)})` : r.tahun ? ` (akad ${r.tahun})` : r.plafon ? ` (plafon ${rp(r.plafon)})` : r.nomor ? ` (${r.nomor.toUpperCase()})` : '';
+  !r ? '' : r.semua ? ' (semua rekening)' : r.urutan ? ` (rekening ${r.urutan === 'lama' ? 'terlama' : 'terbaru'})` : r.nominal ? ` (${rp(r.nominal)})` : r.akad ? ` (akad ${tgl(r.akad)})` : r.tahun ? ` (akad ${r.tahun})` : r.plafon ? ` (plafon ${rp(r.plafon)})` : r.nomor ? ` (${r.nomor.toUpperCase()})` : '';
 
 const LABEL_LANGKAH = (s: Skenario) =>
   s.aksi === 'kol' ? `${s.nama}${labelRek(s.rek)} → kol ${s.kol}`
@@ -821,27 +822,42 @@ function simulasi(
         };
       }
       const namaPasti = c.nama[0];
-      if (s.rek && !s.rek.ln) {
-        const milik = rows.filter((r) => kunciNama(r.l0name) === kunciNama(namaPasti));
-        const cocok = milik.filter((r) => cocokRekening(r, s.rek!));
-        if (!cocok.length) {
-          const aksiTeks = s.aksi === 'kol' ? `jadi kol ${s.kol}` : s.aksi === 'lunas' ? 'lunas' : 'bayar tunggakan';
-          return {
-            paham: ['simulasi', LABEL_LANGKAH({ ...s, nama: namaPasti })],
-            jawab: {
-              tipe: 'pilih',
-              teks: `${namaPasti} tidak punya rekening${labelRek(s.rek)} di MLF ${tglData}. Rekening yang ada:`,
-              opsi: milik.map((r) => ({
-                label: `Akad ${tgl(r.date)} · ${rp(n(r.pla))}`,
-                sub: `${r.l0narr || r.l0lnno} · baki ${rp(n(r.baki))} · kol ${kolOf(r)}`,
-                kirim: `simulasikan kalau "${namaPasti}" rekening ${r.l0narr || r.l0lnno} ${aksiTeks}${unit !== 'semua' ? `, berapa NPL ${unit}?` : ''}`,
-              })),
+      const milik = rows
+        .filter((r) => kunciNama(r.l0name) === kunciNama(namaPasti))
+        .sort((a, b) => urutTanggal(a.date, b.date));
+      const aksiTeks = s.aksi === 'kol' ? `jadi kol ${s.kol}` : s.aksi === 'lunas' ? 'lunas' : 'bayar tunggakan';
+      const ekor = unit !== 'semua' ? `, berapa NPL ${unit}?` : '';
+      const tanyaRekening = (teks: string, pilihan: MLFRow[]): HasilTanya => ({
+        paham: ['simulasi', LABEL_LANGKAH({ ...s, nama: namaPasti })],
+        jawab: {
+          tipe: 'pilih',
+          teks,
+          opsi: [
+            ...pilihan.map((r) => ({
+              label: `Akad ${tgl(r.date)} · plafon ${rp(n(r.pla))}`,
+              sub: `${r.l0narr || r.l0lnno} · baki ${rp(n(r.baki))} · kol ${kolOf(r)}`,
+              kirim: `simulasikan kalau "${namaPasti}" rekening ${r.l0narr || r.l0lnno} ${aksiTeks}${ekor}`,
+            })),
+            {
+              label: `Semua ${milik.length} rekening`,
+              sub: `total baki ${rp(milik.reduce((a, r) => a + n(r.baki), 0))}`,
+              kirim: `simulasikan kalau "${namaPasti}" semua rekening ${aksiTeks}${ekor}`,
             },
-          };
-        }
+          ],
+        },
+      });
+
+      if (s.rek?.ln || s.rek?.semua || milik.length <= 1) {
+        final.push({ ...s, nama: namaPasti });
+      } else if (s.rek) {
+        let cocok = milik.filter((r) => cocokRekening(r, s.rek!));
+        if (s.rek.urutan && cocok.length) cocok = [s.rek.urutan === 'lama' ? cocok[0] : cocok[cocok.length - 1]];
+        if (!cocok.length) return tanyaRekening(`${namaPasti} tidak punya rekening${labelRek(s.rek)} di MLF ${tglData}. Pilih rekeningnya:`, milik);
+        if (cocok.length > 1) return tanyaRekening(`Ada ${cocok.length} rekening ${namaPasti} yang cocok${labelRek(s.rek)}. Yang mana?`, cocok);
         final.push({ ...s, nama: namaPasti, rek: { ...s.rek, ln: cocok.map((r) => r.l0lnno || r.id) } });
       } else {
-        final.push({ ...s, nama: namaPasti });
+        // debitur punya beberapa rekening dan tidak disebut yang mana → tanya dulu
+        return tanyaRekening(`${namaPasti} punya ${milik.length} rekening. Mau simulasikan yang mana?`, milik);
       }
     } else {
       final.push(s);
