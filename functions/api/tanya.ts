@@ -49,7 +49,7 @@ Pilihan perintah (field "jenis"):
 - {"jenis":"calon_topup","unit":"semua","minPersen":50}
 - {"jenis":"simulasi","langkah":[...],"unit":"semua","lanjut":<true kalau melanjutkan simulasi sebelumnya, mis. diawali "terus"/"lalu">}
   langkah boleh: {"aksi":"kol","nama":"<nama>","kol":<1-5>}, {"aksi":"lunas","nama":"<nama>"}, {"aksi":"bayar","nama":"<nama>"}, {"aksi":"cair","nominal":<rupiah>}, {"aksi":"kol2_turun"}
-  Untuk kol/lunas/bayar boleh ditambah "rekening" kalau yang dimaksud hanya satu rekening: {"akad":"YYYY-MM-DD"} atau {"tahun":2023} atau {"plafon":<rupiah>} atau {"nomor":"<nomor PK/rekening>"}
+  Untuk kol/lunas/bayar boleh ditambah "rekening" kalau yang dimaksud hanya satu rekening: {"akad":"YYYY-MM-DD"} atau {"tahun":2023} atau {"plafon":<rupiah>} atau {"nominal":<plafon atau baki>} atau {"urutan":"lama"|"baru"} atau {"nomor":"<nomor PK/rekening>"}, atau {"semua":true} kalau jelas semua rekening.
 - {"jenis":"target_npl","target":<persen>,"unit":"semua"} — berapa yang harus ditagih supaya NPL di bawah target
 - {"jenis":"angsuran","plafon":<rupiah>,"bulan":<tenor bulan>,"bunga":<persen per tahun>}
 - {"jenis":"bantuan"} — sapaan, atau pertanyaan di luar data kredit

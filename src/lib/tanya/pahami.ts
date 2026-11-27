@@ -175,6 +175,29 @@ export function ambilRekening(k: string): { sisa: string; rek?: PilihRekening } 
     if (v) rek.plafon = v;
     buang(new RegExp(pl[0].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'), 'i'));
   }
+  // "semua rekening", "kedua loannya", "keduanya"
+  const semua = sisa.match(/\b(?:(?:semua|seluruh|kedua|dua)\s+(?:rekening|rek|loan|pinjaman|kredit|fasilitas|pk)(?:nya)?|keduanya|semuanya)\b/i);
+  if (semua) {
+    rek.semua = true;
+    buang(new RegExp(semua[0], 'i'));
+  }
+  // "yang lama/pertama" atau "yang baru/kedua/terakhir"
+  const urut = sisa.match(/\b(?:yang|yg)\s+(?:(?:rekening|rek|loan|pinjaman|kredit|pk)\s+)?(lama|pertama|terlama|duluan|lebih lama|baru|terbaru|kedua|terakhir|lebih baru)\b/i);
+  if (urut) {
+    rek.urutan = /lama|pertama|duluan/i.test(urut[1]) ? 'lama' : 'baru';
+    buang(new RegExp(urut[0], 'i'));
+  }
+  // "yang 520 jt", "baki 489 jt" (plafon atau baki)
+  if (!rek.plafon) {
+    const nom = sisa.match(/\b(?:(?:yang|yg)\s+)?(?:baki|os|outstanding|sisa)?\s*((?:rp\.?\s*)?\d+(?:[.,]\d+)?\s*(?:miliar|milyar|m\b|juta|jt\b))/i);
+    if (nom && /(?:yang|yg|baki|os|outstanding|sisa|rp)/i.test(nom[0])) {
+      const v = bacaNominal(nom[1]);
+      if (v) {
+        rek.nominal = v;
+        buang(new RegExp(nom[0].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'), 'i'));
+      }
+    }
+  }
   sisa = sisa.replace(/\s+/g, ' ').trim();
   return Object.keys(rek).length ? { sisa, rek } : { sisa: k };
 }
@@ -189,7 +212,7 @@ function bacaSkenario(klausa: string): Skenario | null {
     .replace(/^(?:terus|trus|lalu|kalau|kalo|klo|jika|bila|misal(?:nya)?)\s+/g, '')
     .trim();
   if (!k0) return null;
-  const { sisa: k, rek } = ambilRekening(k0);
+  const { sisa: k, rek } = /\b(?:cair|pencairan|realisasi|kredit baru)\b/.test(k0) ? { sisa: k0, rek: undefined } : ambilRekening(k0);
   if (/\bkol(?:ek(?:tibilitas)?)?\s*2\b.*\b(tidak|gak|ga|nggak|enggak|ndak|tdk)\s*bayar|semua (?:debitur )?kol(?:ek)?\s*2\s*(?:turun|jadi|masuk)/.test(k)) {
     return { aksi: 'kol2_turun' };
   }
