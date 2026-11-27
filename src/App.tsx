@@ -39,6 +39,7 @@ const OnlineUsersPage = lazy(() => import("./pages/konfigurasi/OnlineUsersPage")
 const MenuRolePage = lazy(() => import("./pages/konfigurasi/MenuRolePage"));
 const ConfigPage = lazy(() => import("./pages/konfigurasi/ConfigPage"));
 const SapaanConfigPage = lazy(() => import("./pages/konfigurasi/SapaanConfigPage"));
+const TanyaGlobal = lazy(() => import("@/components/tanya/TanyaBluebook").then((m) => ({ default: m.TanyaGlobal })));
 const About = lazy(() => import("./pages/About"));
 const WrappedPage = lazy(() => import("./pages/WrappedPage"));
 const Panduan = lazy(() => import("./pages/Panduan"));
@@ -147,6 +148,7 @@ const App = () => (
           <BrowserRouter>
           <SilentBoundary name="command-palette"><CommandPalette /></SilentBoundary>
           <SilentBoundary name="presence"><LivePresence /></SilentBoundary>
+          <SilentBoundary name="tanya-bluebook"><Suspense fallback={null}><TanyaGlobal /></Suspense></SilentBoundary>
           <RouteErrorBoundary>
           <Routes>
             <Route path="/" element={

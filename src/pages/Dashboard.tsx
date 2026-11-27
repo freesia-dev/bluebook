@@ -24,7 +24,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { OjkReportDialog } from '@/components/ojk/OjkReportDialog';
-import { TanyaBluebook, TombolTanya } from '@/components/tanya/TanyaBluebook';
+import { TombolTanya } from '@/components/tanya/TanyaBluebook';
 import { CustomizableGrid, type WidgetDef } from '@/components/dashboard/CustomizableGrid';
 import { supabase } from '@/integrations/supabase/client';
 import { getStorageUsage } from '@/lib/storage';
@@ -682,7 +682,6 @@ const Dashboard: React.FC = () => {
           />
         )}
       />
-      <TanyaBluebook />
     </MainLayout>
   );
 };
